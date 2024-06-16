@@ -3,7 +3,7 @@ export default function Navbar() {
         
         <nav className="border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
-                <a href="#" className="flex items-center space-x-3 rtl:space-x-reverse">
+                <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
                     <img src="/icons/leadstore.png" className="h-8" alt="Flowbite Logo" />
                     <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white">Leadstore</span>
                 </a>
@@ -11,19 +11,19 @@ export default function Navbar() {
                     <span className="sr-only">Open main menu</span>
                     <img src="/icons/burger-menu.svg" />
                 </button>
-                <div className="hidden w-full md:block md:w-auto" id="navbar-solid-bg">
+                <div className="hidden w-full md:block md:w-auto">
                     <ul className="navbar">
                         <li>
                             <a href="#" className="navbar-item" aria-current="page">Why Leadstore</a>
                         </li>
                         <li>
-                            <a href="#" className="navbar-item">Pricing</a>
-                        </li>
-                        <li>
-                            <a href="#" className="navbar-item">Awards</a>
+                            <a href="/" className="navbar-item">Pricing</a>
                         </li>
                         <li>
                             <a href="#" className="navbar-item">Customers</a>
+                        </li>
+                        <li>
+                            <a href="/about" className="navbar-item">About</a>
                         </li>
                     </ul>
                 </div>

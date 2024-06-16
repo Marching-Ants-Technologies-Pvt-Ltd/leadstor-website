@@ -4,6 +4,8 @@ import Hero from "@/components/Hero";
 import InfoCard from "@/components/InfoCard";
 import Footer from "@/components/Footer";
 import Slideshow from "@/components/Slideshow";
+import Pricing from "@/components/Pricing";
+import Customers from "@/components/Customers";
 
 export default function Home() {
   return (
@@ -57,6 +59,8 @@ export default function Home() {
       </main>
 
       <Slideshow />
+      <Pricing />
+      <Customers />
       <Footer />
 
     </>
