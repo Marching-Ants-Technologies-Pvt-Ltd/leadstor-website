@@ -225,7 +225,7 @@ export default function Pricing() {
 
                     <div className="border-[1px] border-[#b5b8bc] gap-0 bg-white px-6 py-4 rounded-xl mt-10">
                         <h4 className="text-xl font-semibold">Free Sales Comunication Integrations</h4>
-                        <p className="mt-2 antialiased font-normal text-sm">If you've subscribed to third-party services with active Webhooks or APIs and want to integrate them with Leadstore, we're here to assist you. Our team will ensure a seamless integration process, enhancing your lead management experience. Even if you're not tech-savvy, we'll guide you every step of the way to make the process simple and effective. We currently offer Email, SMS, Whatsapp Message Service, IVR Phone Call Tracking.</p>
+                        <p className="mt-2 antialiased font-normal text-sm">If you have subscribed to third-party services with active Webhooks or APIs and want to integrate them with Leadstore, we are here to assist you. Our team will ensure a seamless integration process, enhancing your lead management experience. Even if you are not tech-savvy, we will guide you every step of the way to make the process simple and effective. We currently offer Email, SMS, Whatsapp Message Service, IVR Phone Call Tracking.</p>
                     </div>
                 </div>
             </section>
