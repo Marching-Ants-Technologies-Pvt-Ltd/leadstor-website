@@ -1,13 +1,14 @@
 import Image from "next/image";
+import Button from '@/components/elements/Button';
 
 export default function Footer() {
     return (
         <>
             <footer className="bg-white footer-bg">
                 <div className="container mx-auto px-4 max-w-screen-md pt-24 text-center pb-[150px]">
-                    <h3 className="text-3xl leading-10 font-bold text-[#0b1320]">Nurture leads efficiently with Leadstore, the best lead management software.</h3>
+                    <h3 className="text-3xl leading-10 font-bold text-gray-800">Nurture leads efficiently with Leadstore, the best lead management software.</h3>
                     <p className="mt-3 text-base text-slate-600">Start with 10 free leads &amp; 1 integration. No credit card required. No strings attached.</p>
-                    <button className="mt-8 bg-[#0b1320]/100 hover:bg-[#0b1320]/90 text-white px-4 py-2 text-sm font-medium rounded uppercase">Signup for free</button>
+                    <Button href="/signup" className="mt-8 bg-gray-800 hover:bg-gray-900 text-white px-8 py-2 text-sm font-medium rounded uppercase">Signup for free</Button>
                     <p className="mt-3 text-gray-400 text-sm">Get full access to the product, no credit card required</p>
                 </div>
             </footer>

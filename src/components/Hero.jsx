@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Button from '@/components/elements/Button';
 
 export default function Hero() {
     return (
@@ -9,15 +10,15 @@ export default function Hero() {
                         <div className="m-auto">
                             <h1 className="text-4xl hero-text-color font-bold text-[#0b1320]">Choose Leadstore for intelligent lead management</h1>
                             <p className="mt-4 text-lg text-gray-600">Convert leads into customers faster with lead management system like Leadstore</p>
-                            <button className="mt-8 bg-[#4382df]/100 hover:bg-[#4382df]/90 text-white px-4 py-2 text-sm font-medium rounded uppercase">Create A Free Account</button>
+                            <Button className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded text-sm px-5 py-2 text-center me-2 mt-8 uppercase" href='/signup'>Create A Free Account</Button>
                             <p className="mt-4 text-gray-400 text-sm">Get full access to the product, no credit card required</p>
                         </div>
                         <div>
                             <Image
                                 placeholder = 'empty'
-                                src="/banners/hero.png"
-                                width={600}
-                                height={500}
+                                src="/banners/leadstore-hero-image.png"
+                                width={1000}
+                                height={604}
                                 alt="Leadstore Hero banner"
                                 priority
                             />

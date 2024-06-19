@@ -9,18 +9,18 @@ export default function Navbar() {
                 </a>
                 <button data-collapse-toggle="navbar-solid-bg" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600" aria-controls="navbar-solid-bg" aria-expanded="false">
                     <span className="sr-only">Open main menu</span>
-                    <img src="/icons/burger-menu.svg" />
+                    <img src="/icons/burger-menu.svg" alt="Leadstore menu icon" />
                 </button>
                 <div className="hidden w-full md:block md:w-auto">
                     <ul className="navbar">
                         <li>
-                            <a href="#" className="navbar-item" aria-current="page">Why Leadstore</a>
+                            <a href="/" className="navbar-item" aria-current="page">Why Leadstore</a>
                         </li>
                         <li>
-                            <a href="/" className="navbar-item">Pricing</a>
+                            <a href="/#pricing" className="navbar-item">Pricing</a>
                         </li>
                         <li>
-                            <a href="#" className="navbar-item">Customers</a>
+                            <a href="/#customer" className="navbar-item">Customers</a>
                         </li>
                         <li>
                             <a href="/about" className="navbar-item">About</a>

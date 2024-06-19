@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Button from '@/components/elements/Button';
 
 export default function Pricing() {
     return (
@@ -18,7 +19,7 @@ export default function Pricing() {
                                 <div className="text-center">
                                     <p className="font-semibold">₹3,500</p>
                                     <p className="mt-3 mb-6">/month, billed monthly</p>
-                                    <button className="text-sm font-semibold hover:bg-[#4382df] hover:text-white hover:border-[#4382df] rounded border-[1px] border-black px-6 py-2 uppercase">Sign Up</button>
+                                    <Button href="/signup?sub=bm" className="text-sm font-semibold hover:bg-[#4382df] hover:text-white hover:border-[#4382df] rounded border-[1px] border-black px-6 py-2 uppercase">Sign Up</Button>
                                 </div>
                                 <p className="mt-8 font-normal text-sm italic">Free Sales Comunication Integrations, Plus</p>
                                 <ul role="list" className="mt-6 space-y-4 text-left">
@@ -101,7 +102,7 @@ export default function Pricing() {
                                 <div className="text-center">
                                     <p className="font-semibold">₹6,000</p>
                                     <p className="mt-3 mb-6">/month, billed monthly</p>
-                                    <button className="text-sm font-semibold bg-[#4382df]/80 hover:bg-[#4382df]/100 text-white border-[#4382df] rounded border-[1px] px-6 py-2 uppercase">Sign Up</button>
+                                    <Button href="/signup?sub=pm" className="text-sm font-semibold bg-[#4382df]/80 hover:bg-[#4382df]/100 text-white border-[#4382df] rounded border-[1px] px-6 py-2 uppercase">Sign Up</Button>
                                 </div>
                                 <p className="mt-8 font-normal text-sm italic">Everything in Basic, plus</p>
                                 <ul role="list" className="mt-6 space-y-4 text-left">
@@ -150,7 +151,7 @@ export default function Pricing() {
                                 <div className="text-center">
                                     <p className="font-semibold">₹12,000</p>
                                     <p className="mt-3 mb-6">/month, billed monthly</p>
-                                    <button className="text-sm font-semibold hover:bg-[#4382df] hover:text-white hover:border-[#4382df] rounded border-[1px] border-black px-6 py-2 uppercase">Sign Up</button>
+                                    <Button href="/signup?sub=sm" className="text-sm font-semibold hover:bg-[#4382df] hover:text-white hover:border-[#4382df] rounded border-[1px] border-black px-6 py-2 uppercase">Sign Up</Button>
                                 </div>
                                 <p className="mt-8 font-normal text-sm italic">Everything in Pro, plus</p>
                                 <ul role="list" className="mt-6 space-y-4 text-left">
@@ -223,9 +224,26 @@ export default function Pricing() {
                         </div>
                     </div>
 
-                    <div className="border-[1px] border-[#b5b8bc] gap-0 bg-white px-6 py-4 rounded-xl mt-10">
-                        <h4 className="text-xl font-semibold">Free Sales Comunication Integrations</h4>
-                        <p className="mt-2 antialiased font-normal text-sm">If you have subscribed to third-party services with active Webhooks or APIs and want to integrate them with Leadstore, we are here to assist you. Our team will ensure a seamless integration process, enhancing your lead management experience. Even if you are not tech-savvy, we will guide you every step of the way to make the process simple and effective. We currently offer Email, SMS, Whatsapp Message Service, IVR Phone Call Tracking.</p>
+                    <div className="border-[1px] border-[#b5b8bc] gap-0 bg-white px-10 py-1 rounded-xl mt-10">
+                        <div className='flex gap-20'>
+                            <div className='flex-1 inline-flex items-center '>
+                                <div>
+                                    <h4 className="text-2xl font-semibold">Free Sales Comunication Integrations</h4>
+                                    <p className="mt-6 mb-8 antialiased font-normal text-sm text-gray-500 ">If you have subscribed to third-party services with active Webhooks or APIs and want to integrate them with Leadstore, we are here to assist you. Our team will ensure a seamless integration process, enhancing your lead management experience. Even if you are not tech-savvy, we will guide you every step of the way to make the process simple and effective. We currently offer Email, SMS, Whatsapp Message Service, IVR Phone Call Tracking.</p>
+                                    <Button className='border border-gray-400 px-6 py-2 text-sm rounded text-gray-500 hover:border-gray-500 hover:text-gray-600'>View All Integrations</Button>
+                                </div>
+                            </div>
+                            <div className='flex-none'>
+                                <Image
+                                    placeholder='empty'
+                                    src="/banners/ls-integrations.png"
+                                    width={350}
+                                    height={350}
+                                    alt="Leadstore Hero banner"
+                                    priority
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
