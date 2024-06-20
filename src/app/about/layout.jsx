@@ -1,5 +1,5 @@
 export const metadata = {
-    title: 'About Leadstore'
+    title: 'About Leadstor'
 }
 
 export default function ClientLayout({ children }) {

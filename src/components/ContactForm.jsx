@@ -17,13 +17,13 @@ export default function ContactForm() {
 
     async function resetFormInputs() {
 
-        const inputs = document.querySelectorAll('div[data-contact-form="leadstore"] input');
+        const inputs = document.querySelectorAll('div[data-contact-form="leadstor"] input');
         inputs[0].value = "";
         inputs[1].value = "";
         inputs[2].value = "";
         inputs[3].value = "";
-        document.querySelector('div[data-contact-form="leadstore"] select').selectedIndex = 0;
-        document.querySelector('div[data-contact-form="leadstore"] textarea').value = "";
+        document.querySelector('div[data-contact-form="leadstor"] select').selectedIndex = 0;
+        document.querySelector('div[data-contact-form="leadstor"] textarea').value = "";
 
     }
 
@@ -33,13 +33,13 @@ export default function ContactForm() {
         const target = e.target;
 
         //Compose Payload
-        const inputs = document.querySelectorAll('div[data-contact-form="leadstore"] input');
-        const payload = { source: "leadstore" };
+        const inputs = document.querySelectorAll('div[data-contact-form="leadstor"] input');
+        const payload = { source: "leadstor" };
         payload.name = (`${inputs[0].value} ${inputs[1].value}`).trim();
         payload.email = inputs[2].value.trim();
         payload.mobile = inputs[3].value.trim().substr(-10);
-        payload.course = document.querySelector('div[data-contact-form="leadstore"] select').value.trim()
-        payload.message = document.querySelector('div[data-contact-form="leadstore"] textarea').value.trim()
+        payload.course = document.querySelector('div[data-contact-form="leadstor"] select').value.trim()
+        payload.message = document.querySelector('div[data-contact-form="leadstor"] textarea').value.trim()
 
         //Validate Payload
         if (payload.name < 3) {
@@ -68,7 +68,7 @@ export default function ContactForm() {
             target.innerHTML = 'Processing...';
             target.setAttribute('disabled', '');
 
-            const response = await fetch('https://dashboard.conceptninjas.com/services/web/syncLead/SE1wWDNSVUFPNnQ3Z3E2ME1iVlFidz09', {
+            const response = await fetch('https://dev-dashboard.conceptninjas.com/services/web/syncLead/SE1wWDNSVUFPNnQ3Z3E2ME1iVlFidz09', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ export default function ContactForm() {
                 theme="light"
                 transition={Bounce}
             />
-            <div className="container h-full pl-16 py-4" data-contact-form="leadstore">
+            <div className="lg:container h-full pl-0 lg:pl-16 py-4" data-contact-form="leadstor">
                 <div className="bg-white h-full rounded-2xl px-10 py-6">
 
                     <div className="">
@@ -148,7 +148,7 @@ export default function ContactForm() {
 
                     <button onClick={handelFormSubmit} className="rounded-md bg-black/100 w-full px-4 py-3 mt-10 font-semibold text-white hover:bg-black/80">Submit</button>
 
-                    <p className="text-xs text-gray-500 text-center mt-4">By clicking Submit, I accept the Leadstore <a target="_blank" href="/terms-of-use" className="underline">Terms</a> &amp; <a href="/privacy-policy" target="_blank" className="underline">Privacy Notice</a>.</p>
+                    <p className="text-xs text-gray-500 text-center mt-4">By clicking Submit, I accept the Leadstor <a target="_blank" href="/terms-of-use" className="underline">Terms</a> &amp; <a href="/privacy-policy" target="_blank" className="underline">Privacy Notice</a>.</p>
 
                 </div>
             </div>
