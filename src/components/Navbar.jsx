@@ -1,6 +1,10 @@
-export default function Navbar() {
+import Image from 'next/image';
+
+export default function Navbar({
+    user = {}
+}) {
     return (
-        
+
         <nav className="border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
             <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
                 <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
@@ -11,22 +15,37 @@ export default function Navbar() {
                     <span className="sr-only">Open main menu</span>
                     <img src="/icons/burger-menu.svg" alt="Leadstor menu icon" />
                 </button>
-                <div className="hidden w-full md:block md:w-auto">
-                    <ul className="navbar">
-                        <li>
-                            <a href="/" className="navbar-item" aria-current="page">Why Leadstor</a>
-                        </li>
-                        <li>
-                            <a href="/#pricing" className="navbar-item">Pricing</a>
-                        </li>
-                        <li>
-                            <a href="/#customer" className="navbar-item">Customers</a>
-                        </li>
-                        <li>
-                            <a href="/about" className="navbar-item">About</a>
-                        </li>
-                    </ul>
-                </div>
+
+                {(!user.name) &&
+                    <div className="hidden w-full md:block md:w-auto">
+                        <ul className="navbar">
+                            <li>
+                                <a href="/" className="navbar-item" aria-current="page">Why Leadstor</a>
+                            </li>
+                            <li>
+                                <a href="/#pricing" className="navbar-item">Pricing</a>
+                            </li>
+                            <li>
+                                <a href="/#customer" className="navbar-item">Customers</a>
+                            </li>
+                            <li>
+                                <a href="/about" className="navbar-item">About</a>
+                            </li>
+                        </ul>
+                    </div>
+                }
+                {(user.name) &&
+                    <div className="hidden w-full md:block md:w-auto">
+                        <ul className="navbar">
+                            <li className='content-center mr-[-1rem]'>
+                                <p className='text-gray-600 font-semibold text-base'>Hi, {user.name}</p>
+                            </li>
+                            <li className='content-center'>
+                                <img src={user.image} alt='Leadstore User Image' height={35} width={35} className='rounded-xl' />
+                            </li>
+                        </ul>
+                    </div>
+                }
             </div>
         </nav>
 

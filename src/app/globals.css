@@ -74,3 +74,78 @@ body {
   background-size: cover;
   background-position: bottom;
 }
+
+/* Business Details Form */
+.business-details-form {
+  @apply py-6 w-full px-10;
+}
+
+.business-details-form label {
+  @apply block mb-2 text-sm font-medium text-gray-900 dark:text-white relative;
+}
+
+.business-details-form label span {
+  @apply text-rose-500 font-bold text-lg absolute top-[-5px] ml-[2px];
+}
+
+.business-details-form input,
+.business-details-form select,
+.business-details-form textarea {
+  @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5 px-3.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 outline-2 outline-blue-500/50;
+}
+
+.business-details-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M7.247 11.14 2.451 5.658C2.152 5.26 2.392 4.5 2.904 4.5h10.192c.512 0 .752.76.453 1.158l-4.796 5.482a.5.5 0 0 1-.756 0z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px 16px;
+  outline: none;
+  cursor: pointer;
+}
+
+
+.business-details-form input {
+  position: relative;
+}
+
+.business-details-form input::after {
+  content: attr(data-message);
+  display: none;
+  position: absolute;
+  top: -1.5em; /* Adjust as needed */
+  left: 0;
+  background-color: #333;
+  color: #fff;
+  padding: 0.5em;
+  border-radius: 0.3em;
+  font-size: 0.8em;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.business-details-form input:focus::after {
+  display: block;
+}
+
+.h-grab-all-view {
+  height: calc(100vh - 131px);
+}
+
+.progress-animation{
+  animation: progress-animation 5s linear infinite;
+}
+
+@keyframes progress-animation {
+  0% {
+    width: 5%;
+  }
+  80% {
+    width: 100%;
+  }
+  100% {
+    width: 5%;
+  }
+}

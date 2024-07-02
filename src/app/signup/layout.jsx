@@ -1,7 +1,12 @@
-export const metadata = {
-    title: 'Leadstor SignUp'
-}
+"use client";
+
+import React from "react";
+import { SessionProvider } from "next-auth/react";
 
 export default function ClientLayout({ children }) {
-    return children
+    return (
+        <SessionProvider>
+            {children}
+        </SessionProvider>
+    );
 }

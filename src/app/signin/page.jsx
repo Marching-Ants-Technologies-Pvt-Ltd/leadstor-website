@@ -1,13 +1,79 @@
 "use client";
 
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import { Bounce, Slide, ToastContainer, Zoom, toast } from 'react-toastify';
+import 'react-toastify/ReactToastify.min.css';
 import Link from 'next/link';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import * as z from 'zod';
+import Loading from '@/components/elements/Loading';
 
-export default function SignUp() {
+export default function SignIn() {
+
+    const signinFormSchema = z.object({
+        email: z
+            .string()
+            .min(1, 'Email is required')
+            .email('Invalid email format'),
+        password: z
+            .string()
+            .min(1, 'Password is required')
+            .min(8, 'Password must be at least 8 characters')
+    })
+
+    const router = useRouter();
+    const { data: session, status } = useSession();
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            router.push('/profile');
+        }
+    }, [status, router]);
+
+    if (status === 'loading') {
+        return <Loading />;
+    }
+
+    if (status === 'authenticated') {
+        return <div>Session Created, taking you to profile page</div>;
+    }
 
     function handelForgetPassword() {
         toast.error("Unavailable to process!");
+    }
+
+    async function handleSubmit(event) {
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const inputs = Object.fromEntries(formData);
+
+        try {
+
+            const payload = await signinFormSchema.parse(inputs);
+            const signInData = await signIn('credentials', {
+                email: payload.email,
+                password: payload.password,
+                redirect: false
+            });
+
+            if(signInData?.error){
+                toast.error("Error: Unable to signin");
+            }
+
+            console.log(signInData);
+
+        } catch (error) {
+
+            let errorMessage = error.message;
+            if (!signinFormSchema.success) {
+                errorMessage = JSON.parse(error.message)[0].message;
+            }
+
+            toast.error(errorMessage);
+        }
     }
 
     return (
@@ -38,23 +104,24 @@ export default function SignUp() {
                             <div className="mt-8 grid grid-cols-6 gap-6">
 
                                 <div className="select-none col-span-6 sm:col-span-3">
-                                    <div className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
+                                    <div onClick={() => signIn('google')} className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
                                         <div className='inline-flex items-center px-4 py-3 m-auto'>
                                             <Image
                                                 placeholder='empty'
                                                 src="/icons/google.svg"
-                                                width={22}
-                                                height={22}
+                                                width={0}
+                                                height={0}
                                                 alt="Google Icon"
                                                 priority={false}
+                                                style={{ width: '22px', height: "22px" }}
                                             />
-                                            <span className='ml-2'>Sign up with Google</span>
+                                            <span className='ml-2'>Sign In with Google</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="select-none col-span-6 sm:col-span-3">
-                                    <div className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
+                                    <div onClick={() => signIn('facebook')} className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
                                         <div className='inline-flex items-center px-4 py-3 m-auto'>
                                             <Image
                                                 placeholder='empty'
@@ -64,7 +131,7 @@ export default function SignUp() {
                                                 alt="Google Icon"
                                                 priority={false}
                                             />
-                                            <span className='ml-2'>Sign up with Facebook</span>
+                                            <span className='ml-2'>Sign In with Facebook</span>
                                         </div>
                                     </div>
                                 </div>
@@ -84,6 +151,9 @@ export default function SignUp() {
 
                                     </div>
                                 </div>
+                            </div>
+
+                            <form  onSubmit={handleSubmit} className="mt-8 grid grid-cols-6 gap-6">
 
                                 <div className="col-span-6">
                                     <label htmlFor="Email" className="block text-sm font-medium text-gray-700"> Email </label>
@@ -129,6 +199,7 @@ export default function SignUp() {
 
                                 <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
                                     <button
+                                        type='submit'
                                         className="inline-block shrink-0 rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
                                     >
                                         Continue
@@ -139,6 +210,7 @@ export default function SignUp() {
                                         <a href="/signup" className="text-gray-700 underline ml-1">Sign up</a>.
                                     </p>
                                 </div>
+
 
                                 <div className="col-span-6">
                                     <div className="w-full mt-6 border-t pt-4 border-gray-300 md:flex md:items-center md:justify-between">
@@ -159,8 +231,8 @@ export default function SignUp() {
                                         </ul>
                                     </div>
                                 </div>
+                            </form>
 
-                            </div>
                         </div>
                     </main>
                 </div>

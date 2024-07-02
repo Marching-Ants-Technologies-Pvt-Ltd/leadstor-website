@@ -1,9 +1,12 @@
 "use client";
 
 import { Bounce, Slide, ToastContainer, Zoom, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import 'react-toastify/ReactToastify.min.css';
 
 export default function ContactForm() {
+
+    const FormURL = process.env.NEXT_PUBLIC_CONTACT_FORM_URL;
+    console.log(FormURL);
 
     const validatePhoneNumber = (phoneNumber) => {
         const phoneRegex = /^\d{10}$/;
@@ -68,7 +71,7 @@ export default function ContactForm() {
             target.innerHTML = 'Processing...';
             target.setAttribute('disabled', '');
 
-            const response = await fetch('https://dev-dashboard.conceptninjas.com/services/web/syncLead/SE1wWDNSVUFPNnQ3Z3E2ME1iVlFidz09', {
+            const response = await fetch(FormURL, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',

@@ -1,10 +1,110 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import Footer from '@/components/Footer';
+import { Bounce, Slide, ToastContainer, Zoom, toast } from 'react-toastify';
+import 'react-toastify/ReactToastify.min.css';
+import * as z from 'zod';
+import Loading from '@/components/elements/Loading';
+
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn, useSession } from 'next-auth/react';
 
 export default function SignUp() {
+
+    const router = useRouter();
+    let { status } = useSession();
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            router.push('/profile');
+        }
+
+    }, [status, router]);
+
+    if (status === 'loading') {
+        return <Loading />;
+    }
+
+    if (status === 'authenticated') {
+        return <div>Session Created, taking you to profile page</div>;
+    }
+
+    const signupFormSchema = z.object({
+        first_name: z
+            .string()
+            .min(3, 'First name is required'),
+        email: z
+            .string()
+            .min(1, 'Email is required')
+            .email('Invalid email format'),
+        password: z
+            .string()
+            .min(1, 'Password is required')
+            .min(8, 'Password must be at least 8 characters'),
+        password_confirmation: z
+            .string()
+            .min(1, 'Password confirmation is required')
+            .min(8, 'Password must be at least 8 characters'),
+    }).refine((data) => data.password === data.password_confirmation, {
+        path: ['password_confirmation'],
+        message: 'Password do not match',
+    });
+
+    async function handleSubmit(event) {
+
+        event.preventDefault();
+
+        const formData = new FormData(event.target);
+        const inputs = Object.fromEntries(formData);
+
+        try {
+
+            const payload = await signupFormSchema.parse(inputs);
+            payload.name = `${inputs.first_name}${(inputs.last_name.length > 0) ? ' ' : ''}${inputs.last_name}`;
+
+            delete payload['first_name'];
+            delete payload['last_name'];
+            delete payload['password_confirmation'];
+
+            const response = await fetch('/api/user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                let json = await response.json();
+                return toast.error(json.error);
+            }
+
+            toast.success('User Registered Successfully!');
+            router.push('/signin');
+
+        } catch (error) {
+
+            let errorMessage = error.message;
+            if (!signupFormSchema.success) {
+                errorMessage = JSON.parse(error.message)[0].message;
+            }
+
+            toast.error(errorMessage);
+        }
+
+    }
+
     return (
         <div>
+            <ToastContainer
+                position="top-center"
+                autoClose={2000}
+                hideProgressBar={true}
+                theme="light"
+                transition={Bounce}
+            />
             <section className="bg-white">
                 <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
 
@@ -24,7 +124,7 @@ export default function SignUp() {
                             <div className="mt-8 grid grid-cols-6 gap-6">
 
                                 <div className="col-span-6 sm:col-span-3">
-                                    <div className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
+                                    <div  onClick={()=> signIn('google') }  className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
                                         <div className='inline-flex items-center px-4 py-3 m-auto'>
                                             <Image
                                                 placeholder='empty'
@@ -40,7 +140,7 @@ export default function SignUp() {
                                 </div>
 
                                 <div className="col-span-6 sm:col-span-3">
-                                    <div className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
+                                    <div onClick={()=> signIn('facebook') }  className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
                                         <div className='inline-flex items-center px-4 py-3 m-auto'>
                                             <Image
                                                 placeholder='empty'
@@ -70,6 +170,8 @@ export default function SignUp() {
 
                                     </div>
                                 </div>
+                            </div>
+                            <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-6 gap-6">
 
                                 <div className="col-span-6 sm:col-span-3">
                                     <label htmlFor="FirstName" className="block text-sm font-medium text-gray-700">
@@ -158,6 +260,7 @@ export default function SignUp() {
 
                                 <div className="col-span-6 sm:flex sm:items-center sm:gap-4">
                                     <button
+                                        type='submit'
                                         className="inline-block shrink-0 rounded-md border border-blue-600 bg-blue-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-transparent hover:text-blue-600 focus:outline-none focus:ring active:text-blue-500"
                                     >
                                         Create an account
@@ -168,6 +271,7 @@ export default function SignUp() {
                                         <a href="/signin" className="text-gray-700 underline ml-1">Sign in</a>.
                                     </p>
                                 </div>
+
 
                                 <div className="col-span-6">
                                     <div className="w-full mt-6 border-t pt-4 border-gray-300 md:flex md:items-center md:justify-between">
@@ -189,7 +293,7 @@ export default function SignUp() {
                                     </div>
                                 </div>
 
-                            </div>
+                            </form>
                         </div>
                     </main>
 

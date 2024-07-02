@@ -1,0 +1,98 @@
+"use client";
+
+import Image from 'next/image';
+import React, { useRef } from 'react';
+
+export default function BusinessDetailsForm({ onSubmit }) {
+
+    const formRef = useRef(null);
+
+    const handleButtonClick = () => {
+        if (formRef.current) {
+            formRef.current.requestSubmit();
+        }
+    };
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        const formData = new FormData(formRef.current);
+        const data = Object.fromEntries(formData.entries());
+        onSubmit(data, 1);
+
+    };
+
+    return (
+        <div id='business-form' className='w-full mt-14'>
+            <div className='bg-white flex flex-row py-4 px-2 rounded-md text-base font-semibold text-gray-600 text-center'>
+                <div className='grow flex flex-row justify-center items-center'>
+                    <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-blue-200 text-sm text-blue-700'>1</div>
+                    <div className='text-blue-700'>Business Details</div>
+                </div>
+                <div className='grow flex flex-row justify-center items-center cursor-not-allowed'>
+                    <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-gray-200 text-sm'>2</div>
+                    <div>Contact Person</div>
+                </div>
+                <div className='grow flex flex-row justify-center items-center cursor-not-allowed'>
+                    <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-gray-200 text-sm'>3</div>
+                    <div>Subscription</div>
+                </div>
+            </div>
+            <div className='bg-white w-full flex flex-row-reverse mt-2 py-4 px-2 rounded-md'>
+                <div className='text-center px-4 py-6'>
+                    <Image
+                        placeholder='empty'
+                        src="/banners/business-details.svg"
+                        width={512}
+                        height={512}
+                        alt="Leadstor Hero banner"
+                        priority
+                    />
+                    <div className='text-xl font-semibold text-gray-600'>Business Details</div>
+                    <div className='mt-2 text-sm text-gray-400'>Let us know about your business</div>
+                    <button type="button" onClick={handleButtonClick} className="py-2 px-5 me-2 mb-2 text-sm font-medium text-white focus:outline-none bg-blue-700 rounded-full border-2 border-blue-700 mt-8 hover:bg-blue-600 hover:border-blue-600">Save &amp; Continue</button>
+                </div>
+                <div className='grow'>
+                    <form ref={formRef} onSubmit={handleSubmit} className='business-details-form'>
+                        <div className=''>
+                            <label>Business Name<span>*</span></label>
+                            <input type='text' required name='business_name' />
+                        </div>
+                        <div className='mt-4'>
+                            <label>Business Type<span>*</span></label>
+                            <select required name='business_type' className='relative inline-block'>
+                                <option value="">Choose your business type</option>
+                                <option value="Institute">&#127891; Institute</option>
+                                <option value="Agency">&#129333; Consultant/Agency</option>
+                                <option value="Repair">&#129520; Repair/Services</option>
+                                <option value="School">&#127979; School Coaching</option>
+                                <option value="Digital">&#128227; Digital Marketing Business</option>
+                                <option value="B2blead">&#129309; B2B Lead Management</option>
+                                <option value="Education">&#128210; Education Consultancy</option>
+                            </select>
+                        </div>
+                        <div className='flex gap-6 mt-4'>
+                            <div className='grow'>
+                                <label>Email Id<span>*</span></label>
+                                <input required type='text' name='business_email' />
+                            </div>
+                            <div className='grow'>
+                                <label>Phone No<span>*</span></label>
+                                <input required type='text' name='business_phone' />
+                            </div>
+                        </div>
+
+                        <div className='mt-4'>
+                            <label>Business Website</label>
+                            <input type='text' name='business_website' />
+                        </div>
+
+                        <div className='mt-4'>
+                            <label>Business Address</label>
+                            <textarea rows={4} name='business_address'></textarea>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}
