@@ -93,7 +93,7 @@ export default function Profile() {
                         Welcome to Leadstor
                     </h2>
                     <p className="ml-8 text-center text-gray-400 text-sm sm:text-base">
-                        Let's complete the 3 simple steps to get started!
+                        Let&apos;s complete the 3 simple steps to get started!
                     </p>
 
                     <BusinessDetailsForm onSubmit={pushDataOnPayload} />
