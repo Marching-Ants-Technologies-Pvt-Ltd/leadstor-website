@@ -14,7 +14,7 @@ import { signIn, useSession } from 'next-auth/react';
 export default function SignUp() {
 
     const router = useRouter();
-    let { status } = useSession();
+    let { data: session, status } = useSession();
 
     useEffect(() => {
         if (status === 'authenticated') {
@@ -24,14 +24,16 @@ export default function SignUp() {
     }, [status, router]);
 
     if (status === 'loading') {
+        console.log('Checking session...');
         return <Loading />;
     }
 
     if (status === 'authenticated') {
-        return <div>Session Created, taking you to profile page</div>;
+        console.log('Session restored, taking you to next page');
+        return <Loading />;
     }
 
-    const signupFormSchema = z.object({
+    const signUpFormSchema = z.object({
         first_name: z
             .string()
             .min(3, 'First name is required'),
@@ -61,33 +63,24 @@ export default function SignUp() {
 
         try {
 
-            const payload = await signupFormSchema.parse(inputs);
-            payload.name = `${inputs.first_name}${(inputs.last_name.length > 0) ? ' ' : ''}${inputs.last_name}`;
-
-            delete payload['first_name'];
-            delete payload['last_name'];
-            delete payload['password_confirmation'];
-
-            const response = await fetch('/api/user', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
+            const payload = await signUpFormSchema.parse(inputs);
+            const signInData = await signIn('credentials', {
+                email: payload.email,
+                password: payload.password,
+                first_name: payload.first_name,
+                last_name: inputs.last_name,
+                redirect: false
             });
 
-            if (!response.ok) {
-                let json = await response.json();
-                return toast.error(json.error);
+            if (signInData?.error) {
+                let errorMessage = JSON.parse(signInData.error);
+                toast.error(`${errorMessage.error}`);
             }
-
-            toast.success('User Registered Successfully!');
-            router.push('/signin');
 
         } catch (error) {
 
             let errorMessage = error.message;
-            if (!signupFormSchema.success) {
+            if (!signUpFormSchema.success) {
                 errorMessage = JSON.parse(error.message)[0].message;
             }
 
@@ -124,7 +117,7 @@ export default function SignUp() {
                             <div className="mt-8 grid grid-cols-6 gap-6">
 
                                 <div className="col-span-6 sm:col-span-3">
-                                    <div  onClick={()=> signIn('google') }  className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
+                                    <div onClick={() => signIn('google')} className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
                                         <div className='inline-flex items-center px-4 py-3 m-auto'>
                                             <Image
                                                 placeholder='empty'
@@ -140,7 +133,7 @@ export default function SignUp() {
                                 </div>
 
                                 <div className="col-span-6 sm:col-span-3">
-                                    <div onClick={()=> signIn('facebook') }  className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
+                                    <div onClick={() => signIn('facebook')} className='mt-1 border w-full rounded-md border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm grid cursor-pointer'>
                                         <div className='inline-flex items-center px-4 py-3 m-auto'>
                                             <Image
                                                 placeholder='empty'

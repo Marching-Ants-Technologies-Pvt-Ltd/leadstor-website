@@ -33,11 +33,13 @@ export default function SignIn() {
     }, [status, router]);
 
     if (status === 'loading') {
+        console.log('Checking session...');
         return <Loading />;
     }
 
     if (status === 'authenticated') {
-        return <div>Session Created, taking you to profile page</div>;
+        console.log('Session restored, taking you to next page');
+        return <Loading />;
     }
 
     function handelForgetPassword() {
@@ -59,11 +61,10 @@ export default function SignIn() {
                 redirect: false
             });
 
-            if(signInData?.error){
-                toast.error("Error: Unable to signin");
+            if (signInData?.error) {
+                let errorMessage = JSON.parse(signInData.error);
+                toast.error(`${errorMessage.error}`);
             }
-
-            console.log(signInData);
 
         } catch (error) {
 
@@ -153,7 +154,7 @@ export default function SignIn() {
                                 </div>
                             </div>
 
-                            <form  onSubmit={handleSubmit} className="mt-8 grid grid-cols-6 gap-6">
+                            <form onSubmit={handleSubmit} className="mt-8 grid grid-cols-6 gap-6">
 
                                 <div className="col-span-6">
                                     <label htmlFor="Email" className="block text-sm font-medium text-gray-700"> Email </label>
