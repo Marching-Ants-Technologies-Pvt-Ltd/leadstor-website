@@ -18,7 +18,7 @@ export default function Customers() {
 
     return (
         <>
-            <section className="bg-white pt-12">
+            <section id='customer'  className="bg-white pt-12">
                 <h3 className="mb-16 text-center text-xl px-3 sm:text-3xl font-semibold text-gray-800">Trusted by over 100+ organizations around the world</h3>
 
                 <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">

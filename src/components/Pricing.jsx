@@ -4,7 +4,7 @@ import Button from '@/components/elements/Button';
 export default function Pricing() {
     return (
         <>
-            <section className="container mx-auto px-4 max-w-screen-xl">
+            <section id='pricing' className="container mx-auto px-4 max-w-screen-xl">
                 <div className="py-14 cursor-default">
                     <p className="text-sm sm:text-base text-center">Discover the best leads, boost customer engagement, and drive deals to closure with a smart, comprehensive solution.</p>
 
