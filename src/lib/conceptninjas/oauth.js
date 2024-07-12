@@ -30,16 +30,14 @@ const oauth = async ({
         redirect: "follow"
     };
 
-    const suffix = (auth_provider === 'EMAIL' && first_name.length>3) ? 'signupWithEmail' : 'oauth';
-
-    console.log('Suffix', suffix, 'Data', raw);
+    const suffix = (auth_provider === 'EMAIL' && first_name.length > 3) ? 'signupWithEmail' : 'oauth';
 
     try {
         const response = await fetch(`${service_url}/${suffix}`, requestOptions);
         const result = await response.json();
         return result;
     } catch (error) {
-        return error;
+        return { error: error.message || 'An unknown error occurred' };
     }
 }
 

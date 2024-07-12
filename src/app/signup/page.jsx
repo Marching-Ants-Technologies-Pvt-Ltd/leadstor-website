@@ -127,7 +127,7 @@ export default function SignUp() {
                                                 alt="Google Icon"
                                                 priority={false}
                                             />
-                                            <span className='ml-2'>Sign up with Google</span>
+                                            <span className='ml-2'>Continue with Google</span>
                                         </div>
                                     </div>
                                 </div>
@@ -143,7 +143,7 @@ export default function SignUp() {
                                                 alt="Google Icon"
                                                 priority={false}
                                             />
-                                            <span className='ml-2'>Sign up with Facebook</span>
+                                            <span className='ml-2'>Continue with Facebook</span>
                                         </div>
                                     </div>
                                 </div>

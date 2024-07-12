@@ -2,41 +2,63 @@ import { remark } from 'remark';
 import html from 'remark-html';
 import matter from 'gray-matter';
 import fs from 'fs';
+import path from 'path';
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PageNotFound from "@/components/PageNotFound";
 import './remark-stylesheet.css';
-import { metadata } from '../layout';
+
+const legalPageList = {
+    "terms": {
+        title: "Modernizing Cloud Business Software - Leadstor Terms",
+        name: "Terms of Service"
+    },
+    "privacy-policy": {
+        title: "Modernizing Cloud Business Software - Leadstor Privacy Policy",
+        name: "Privacy Policy"
+    },
+    "refund-cancellation": {
+        title: "Modernizing Cloud Business Software - Leadstor Refund Cancellation",
+        name: "Refund Cancellation"
+    },
+}
+
+export async function generateMetadata({ params }) {
+
+    const pageList = legalPageList;
+
+    return {
+        title: pageList[`${params.legalPage}`]?.title ??'404 - Page Not Found | Leadstor'
+    }
+
+}
 
 export default async function LegalPage({ params }) {
 
-    const legalPageList = {
-        "terms": {
-            title: "Modernizing Cloud Business Software - Leadstor Terms",
-            name: "Terms of Service"
-        },
-        "privacy-policy": {
-            title: "Modernizing Cloud Business Software - Leadstor Privacy Policy",
-            name: "Privacy Policy"
-        },
-        "refund-cancellation": {
-            title: "Modernizing Cloud Business Software - Leadstor Refund Cancellation",
-            name: "Refund Cancellation"
-        },
-    }
-
     if (!Object.keys(legalPageList).includes(params.legalPage)) return <PageNotFound />
 
-    metadata.title = legalPageList[params.legalPage].title;
+    let fileContents;
+    let contentHtml;
 
-    const fileContents = fs.readFileSync(`./data/${params.legalPage}.md`, 'utf8');
+    try {
+        const filePath = path.join(process.cwd(), 'data', `${params.legalPage}.md`);
+        fileContents = fs.readFileSync(filePath, 'utf8');
+    } catch (error) {
+        console.error('Error reading markdown file:', error.message);
+        return <PageNotFound errorMessage={`Error reading markdown file: ${error.message}`} />;
+    }
+
     const matterResult = matter(fileContents);
-
-    const processedContent = await remark()
-        .use(html)
-        .process(matterResult.content);
-
-    const contentHtml = processedContent.toString();
+    
+    try {
+        const processedContent = await remark()
+            .use(html)
+            .process(matterResult.content);
+        contentHtml = processedContent.toString();
+    } catch (error) {
+        console.error('Error processing markdown content:', error.message);
+        return <PageNotFound errorMessage={`Error processing markdown content: ${error.message}`}/>;
+    }
 
     return (
         <>

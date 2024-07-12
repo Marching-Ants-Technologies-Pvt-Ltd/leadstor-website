@@ -2,10 +2,26 @@
 
 import Image from 'next/image';
 import React, { useRef } from 'react';
+import * as z from 'zod';
+import { toast } from 'react-toastify';
 
 export default function BusinessDetailsForm({ onSubmit }) {
 
     const formRef = useRef(null);
+
+    const businessFormSchema = z.object({
+        business_name: z
+            .string()
+            .min(3, 'Business name is required'),
+        business_email: z
+            .string()
+            .min(1, 'Business Email is required')
+            .email('Invalid email format'),
+        business_phone: z
+            .string()
+            .min(10, 'Enter a valid 10 digit phone number')
+            .max(14, 'Given phone no is not valid')
+    })
 
     const handleButtonClick = () => {
         if (formRef.current) {
@@ -13,11 +29,25 @@ export default function BusinessDetailsForm({ onSubmit }) {
         }
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
-        onSubmit(data, 1);
+        
+        try {
+
+            await businessFormSchema.parse(data);
+            onSubmit(data, 1);
+
+        } catch (error) {
+
+            let errorMessage = error.message;
+            if (!businessFormSchema.success) {
+                errorMessage = JSON.parse(error.message)[0].message;
+            }
+
+            toast.error(errorMessage);
+        }
 
     };
 
@@ -66,18 +96,18 @@ export default function BusinessDetailsForm({ onSubmit }) {
                                 <option value="Repair">&#129520; Repair/Services</option>
                                 <option value="School">&#127979; School Coaching</option>
                                 <option value="Digital">&#128227; Digital Marketing Business</option>
-                                <option value="B2blead">&#129309; B2B Lead Management</option>
+                                <option value="B2BLead">&#129309; B2B Lead Management</option>
                                 <option value="Education">&#128210; Education Consultancy</option>
                             </select>
                         </div>
                         <div className='flex gap-6 mt-4'>
                             <div className='grow'>
                                 <label>Email Id<span>*</span></label>
-                                <input required type='text' name='business_email' />
+                                <input required type='email' name='business_email' />
                             </div>
                             <div className='grow'>
                                 <label>Phone No<span>*</span></label>
-                                <input required type='text' name='business_phone' />
+                                <input required type='number' name='business_phone' />
                             </div>
                         </div>
 

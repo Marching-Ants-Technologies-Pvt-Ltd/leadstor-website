@@ -30,6 +30,11 @@ export default function SignIn() {
         if (status === 'authenticated') {
             router.push('/profile');
         }
+
+        if (status === 'unauthenticated') {
+            showErrorFromAddressBar();
+        }
+
     }, [status, router]);
 
     if (status === 'loading') {
@@ -44,6 +49,22 @@ export default function SignIn() {
 
     function handelForgetPassword() {
         toast.error("Unavailable to process!");
+    }
+
+    //On show error message appeared on address bar and update url
+    function showErrorFromAddressBar() {
+        const params = new URLSearchParams(window.location.search);
+        let error = params.get('error');
+
+        if (!error) return;
+        error = JSON.parse(decodeURIComponent(error));
+        console.error(error);
+        const newURL = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, newURL);
+
+        setTimeout(() => {
+            toast.error('Failed to  signin, Please try again later');
+        }, 100);
     }
 
     async function handleSubmit(event) {
@@ -116,7 +137,7 @@ export default function SignIn() {
                                                 priority={false}
                                                 style={{ width: '22px', height: "22px" }}
                                             />
-                                            <span className='ml-2'>Sign In with Google</span>
+                                            <span className='ml-2'>Continue with Google</span>
                                         </div>
                                     </div>
                                 </div>
@@ -132,7 +153,7 @@ export default function SignIn() {
                                                 alt="Google Icon"
                                                 priority={false}
                                             />
-                                            <span className='ml-2'>Sign In with Facebook</span>
+                                            <span className='ml-2'>Continue with Facebook</span>
                                         </div>
                                     </div>
                                 </div>

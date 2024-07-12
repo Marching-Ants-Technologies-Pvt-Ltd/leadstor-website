@@ -11,8 +11,8 @@ export default function InfoCard({ icon, label, description }) {
                     height={36}
                     alt={label}
                 />
-                <div className="font-semibold text-sm text-[#0b1320] my-3">{label}</div>
-                <div className='text-sm sm:text-base text-justify font-normal leading-6 text-[#3b3f47]'>{description}</div>
+                <div className="font-semibold text-sm text-gray-700 my-3">{label}</div>
+                <div className='text-sm sm:text-base text-justify font-normal leading-6 text-gray-600'>{description}</div>
             </div>
         </>
     );

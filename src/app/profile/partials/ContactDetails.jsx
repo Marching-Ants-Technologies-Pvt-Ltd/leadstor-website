@@ -1,11 +1,27 @@
 "use client";
 
 import Image from 'next/image';
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
+import * as z from 'zod';
+import { toast } from 'react-toastify';
 
 export default function ContactDetailsForm({ onSubmit, userData }) {
 
     const formRef = useRef(null);
+
+    const contactFormSchema = z.object({
+        contact_name: z
+            .string()
+            .min(3, 'Business name is required'),
+        contact_email: z
+            .string()
+            .min(1, 'Business Email is required')
+            .email('Invalid email format'),
+        contact_number: z
+            .string()
+            .min(10, 'Enter a valid 10 digit phone number')
+            .max(14, 'Given phone no is not valid')
+    })
 
     const handleButtonClick = () => {
         if (formRef.current) {
@@ -13,20 +29,31 @@ export default function ContactDetailsForm({ onSubmit, userData }) {
         }
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
-        onSubmit(data, 2);
+
+        try {
+
+            await contactFormSchema.parse(data);
+            onSubmit(data, 2);
+
+        } catch (error) {
+
+            let errorMessage = error.message;
+            if (!contactFormSchema.success) {
+                errorMessage = JSON.parse(error.message)[0].message;
+            }
+
+            toast.error(errorMessage);
+        }
 
     };
 
     const handelPreviousFormMove = () => {
         onSubmit({}, 0);
     }
-
-    const [name, setName] = useState(userData.name || '');
-    const [email, setEmail] = useState(userData.email || '');
 
     return (
         <div id='contact-form' className='w-full mt-14 hidden'>
@@ -67,7 +94,7 @@ export default function ContactDetailsForm({ onSubmit, userData }) {
                     <form ref={formRef} onSubmit={handleSubmit} className='business-details-form'>
                         <div className=''>
                             <label>Full Name<span>*</span></label>
-                            <input type='text' name='contact_name' value={name} onChange={(e) => setName(e.target.value)} />
+                            <input className='cursor-not-allowed' type='text' readOnly name='contact_name' value={userData.name} />
                         </div>
                         <div className='mt-4'>
                             <label>Role/Designation<span>*</span></label>
@@ -80,17 +107,17 @@ export default function ContactDetailsForm({ onSubmit, userData }) {
                         <div className='flex gap-6 mt-4'>
                             <div className='grow'>
                                 <label>Email Id<span>*</span></label>
-                                <input type='email' name='contact_email' value={email} onChange={(e) => setEmail(e.target.value)} />
+                                <input className='cursor-not-allowed' type='email' readOnly name='contact_email' value={userData.email} />
                             </div>
                             <div className='grow'>
-                                <label>Whatsapp No<span>*</span></label>
-                                <input type='number' name='contact_whatsapp' />
+                                <label>Contact No<span>*</span></label>
+                                <input required type='number' name='contact_number' />
                             </div>
                         </div>
 
                         <div className='mt-4'>
-                            <label>Alternate Phone No.</label>
-                            <input type='number' name='contact_altphone' />
+                            <label>Whatsapp No.</label>
+                            <input type='number' name='contact_whatsapp' />
                         </div>
 
                         <div className='mt-4'>

@@ -15,8 +15,8 @@ export default function Home() {
 
       <main className="container mx-auto px-4 max-w-screen-xl">
         <div className="py-14 cursor-default">
-          <h2 className="text-center text-2xl sm:text-3xl font-bold color-[#0b1320] mb-3">Lead Management has never been so easy!</h2>
-          <p className="text-center color-[#3b3f47] text-sm sm:text-base">Engage your leads from click to close with Leadstor, your go-to lead management software</p>
+          <h2 className="text-center text-2xl sm:text-3xl font-bold text-gray-700 poppins mb-3">Lead Management has never been so easy!</h2>
+          <p className="text-center poppins text-gray-500 text-sm sm:text-base">Engage your leads from click to close with Leadstor, your go-to lead management software</p>
           <div className="my-16 grid grid-cols-1 gap-5 px-5 sm:px-10 sm:grid-cols-2 xl:px-0 lg:grid-cols-3 lg:gap-10">
 
             <InfoCard
