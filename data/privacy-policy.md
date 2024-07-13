@@ -6,7 +6,6 @@ This document can be printed for reference by using the print command in the set
 ---
 
 ## Owner and Data Controller
-Pankaj Dwivedi
 Marching Ants Technologies Pvt. Ltd.
 402, Cowork Studio, Marigold complex, Viman Nagar Rd, Viman Nagar, Pune, Maharashtra 411014
 
