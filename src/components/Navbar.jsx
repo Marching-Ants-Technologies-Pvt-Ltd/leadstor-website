@@ -1,6 +1,26 @@
+"use client";
+
+import React, { useRef } from 'react';
+
 export default function Navbar({
     user = {}
 }) {
+
+    const cover = useRef(null);
+    const menu = useRef(null);
+
+    function handelMenuVisibility(show = false) {
+
+        if(show){
+            cover.current.classList.remove('hidden');
+            menu.current.classList.remove('hidden');
+            return;
+        }
+
+        cover.current.classList.add('hidden');
+        menu.current.classList.add('hidden');
+    }
+
     return (
         <div>
             <header className="bg-white fixed z-10 top-0 w-full shadow-sm">
@@ -10,7 +30,7 @@ export default function Navbar({
                             <img src="/icons/leadstor.png" className="h-8" alt="Leadstor Logo" loading='lazy' />
                             <span className="self-center text-2xl font-semibold whitespace-nowrap dark:text-white text-gray-700">Leadstor</span>
                         </a>
-                        <button data-collapse-toggle="navbar-solid-bg" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600" aria-controls="navbar-solid-bg" aria-expanded="false">
+                        <button onClick={() => handelMenuVisibility(true)} data-collapse-toggle="navbar-solid-bg" type="button" className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600" aria-controls="navbar-solid-bg" aria-expanded="false">
                             <span className="sr-only">Open main menu</span>
                             <img src="/icons/burger-menu.svg" alt="Leadstor menu icon" loading='lazy' />
                         </button>
@@ -55,6 +75,27 @@ export default function Navbar({
                 </nav>
             </header>
             <div className='h-16'></div>
+
+            <div onTouchStart={() => handelMenuVisibility()} ref={cover} className="hidden absolute top-0 left-0 w-full h-full bg-slate-500 opacity-25 z-10"></div>
+            <div ref={menu} className="hidden min-w-52 bg-white min-h-28 fixed top-20 right-2 rounded-md shadow-2xl z-20">
+                <ul className="poppins text-base py-2 px-4" onClick={() => handelMenuVisibility()}>
+                    <li className="py-2">
+                        <a href="/#why-leadstor">Why Leadstor?</a>
+                    </li>
+                    <li className="py-2">
+                        <a href="/#pricing">Pricing</a>
+                    </li>
+                    <li className="py-2">
+                        <a href="/#customer">Customers</a>
+                    </li>
+                    <li className="py-2">
+                        <a href="/about">Out Story</a>
+                    </li>
+                    <li className="py-2">
+                        <a href="/contact">Contact Us</a>
+                    </li>
+                </ul>
+            </div>
         </div>
     );
 }

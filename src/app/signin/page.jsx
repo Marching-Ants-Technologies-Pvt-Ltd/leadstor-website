@@ -57,8 +57,13 @@ export default function SignIn() {
         let error = params.get('error');
 
         if (!error) return;
-        error = JSON.parse(decodeURIComponent(error));
-        console.error(error);
+        try{
+            error = JSON.parse(decodeURIComponent(error));
+            console.error(error);
+        }catch (e) {
+            console.log('Invalid JSON');
+        }
+        
         const newURL = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, newURL);
 

@@ -106,14 +106,34 @@ export default function Profile() {
 
     }    
 
-    const reSendVerificationEmail = () => {
+    const reSendVerificationEmail = async () => {
         setLoadingText('Sending Verification Link on Your Email. Please Await Confirmation.');
         loadingSection(true);
 
-        setTimeout(() => {
-            toast.success('Verification link sent!');
-            loadingSection();
-        }, 1500);
+        const payload = {};
+        payload.api_token = session.user.cn_token;
+
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        const requestOptions = {
+            method: "POST",
+            headers: myHeaders,
+            body: JSON.stringify(payload),
+            redirect: "follow"
+        };
+
+        const response = await fetch(`/api/conceptninjas/resend-verification-link`, requestOptions);
+        const result = await response.json();
+
+        loadingSection();
+
+        if (result.error) {
+            toast.error(result.error);
+            return;
+        }
+
+        toast.success('Verification link sent!');
     }
 
     let currentFormIndex = 0;

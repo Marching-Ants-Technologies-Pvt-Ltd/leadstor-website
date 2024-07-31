@@ -138,6 +138,10 @@ body {
   animation: progress-animation 5s linear infinite;
 }
 
+.grecaptcha-badge {
+  display: none;
+}
+
 @keyframes progress-animation {
   0% {
     width: 5%;

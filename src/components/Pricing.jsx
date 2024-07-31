@@ -253,7 +253,7 @@ export default function Pricing() {
                     </div>
 
                     <div className="border border-gray-200 gap-0 px-7 sm:px-10 py-10 rounded-xl mt-10 w-full flex bg-gray-100">
-                        <div className='w-1/2'>
+                        <div className='w-full xl:w-1/2'>
                             <h4 className="text-xl poppins text-gray-700 sm:text-2xl font-semibold">Sales Communication Integrations</h4>
                             <div className="my-8 antialiased font-normal text-xs sm:text-sm text-gray-500 text-justify">
                                 If you have subscribed to third-party services with active Webhooks or APIs and want to integrate them with Leadstor, we are here to assist you. Our team will ensure a seamless integration process, enhancing your lead management experience. Even if you are not tech-savvy, we will guide you every step of the way to make the process simple and effective. We currently offer Email, SMS, Whatsapp Message Service, IVR Phone Call Tracking.
