@@ -17,6 +17,10 @@ const legalPageList = {
         title: "Modernizing Cloud Business Software - Leadstor Privacy Policy",
         name: "Privacy Policy"
     },
+    "data-deletion-policy": {
+        title: "Modernizing Cloud Business Software - Leadstor Privacy Policy",
+        name: "Data Deletion Policy"
+    },
     "refund-cancellation": {
         title: "Modernizing Cloud Business Software - Leadstor Refund Cancellation",
         name: "Refund Cancellation"
@@ -28,7 +32,7 @@ export async function generateMetadata({ params }) {
     const pageList = legalPageList;
 
     return {
-        title: pageList[`${params.legalPage}`]?.title ??'404 - Page Not Found | Leadstor'
+        title: pageList[`${params.legalPage}`]?.title ?? '404 - Page Not Found | Leadstor'
     }
 
 }
@@ -49,7 +53,7 @@ export default async function LegalPage({ params }) {
     }
 
     const matterResult = matter(fileContents);
-    
+
     try {
         const processedContent = await remark()
             .use(html)
@@ -57,7 +61,7 @@ export default async function LegalPage({ params }) {
         contentHtml = processedContent.toString();
     } catch (error) {
         console.error('Error processing markdown content:', error.message);
-        return <PageNotFound errorMessage={`Error processing markdown content: ${error.message}`}/>;
+        return <PageNotFound errorMessage={`Error processing markdown content: ${error.message}`} />;
     }
 
     return (
