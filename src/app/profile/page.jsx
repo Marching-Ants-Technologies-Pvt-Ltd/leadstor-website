@@ -14,17 +14,26 @@ import Footer from '@/components/Footer';
 import BusinessDetailsForm from '@/app/profile/partials/BusinessDetails';
 import ContactDetailsForm from '@/app/profile/partials/ContactDetails';
 import SubscriptionPlan from '@/app/profile/partials/SubscriptionPlan';
+import Welcome from '@/app/profile/partials/Welcome';
+import EmailVerification from '@/app/profile/partials/EmailVerification';
 
 export default function Profile() {
-
+    
     const router = useRouter();
     const { data: session, status } = useSession();
     const [loadingText, setLoadingText] = useState('Checking Onboarding Status. Please Await Confirmation.');
-
+    
     const getNextPage = useCallback(async () => {
 
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
+
+        const sessionToken = session?.user?.cn_token??'';
+        if(sessionToken.length < 3) {
+            console.log('Taking you to signin page');
+            signOut();
+            return;
+        }
 
         const requestOptions = {
             method: "POST",
@@ -103,9 +112,8 @@ export default function Profile() {
     if (status === 'authenticated') {
         if (session.user?.name) localStorage.setItem('session_user', JSON.stringify(session.user));
         if (!session.user?.name) session.user = JSON.parse(localStorage.getItem('session_user'));
-
-    }    
-
+    }
+    
     const reSendVerificationEmail = async () => {
         setLoadingText('Sending Verification Link on Your Email. Please Await Confirmation.');
         loadingSection(true);
@@ -137,7 +145,7 @@ export default function Profile() {
     }
 
     let currentFormIndex = 0;
-    let forms = ['business', 'contact', 'subscription'];
+    let forms = ['contact', 'business', 'subscription'];
 
     const loadingSection = (status) => {
 
@@ -227,18 +235,11 @@ export default function Profile() {
 
             <Navbar user={session.user} />
 
-            <main id='forms-section' className="container hidden mx-auto px-4 max-w-screen-xl">
+            <main id='forms-section' className="hidden container mx-auto px-4 max-w-screen-xl">
 
                 <div className="pt-14 cursor-default" id='onboarding-section'>
-                    <h2 className="justify-center text-2xl flex sm:text-3xl font-semibold text-gray-700 mb-2">
-                        <img className='relative mr-3' referrerPolicy='no-referrer' src='/icons/waving-hand-sign.svg' height={35} width={35} alt='Hello!' />
-                        Welcome to Leadstor
-                    </h2>
-                    <p className="ml-8 text-center text-gray-400 text-sm sm:text-base">
-                        Let&apos;s complete the 3 simple steps to get started!
-                    </p>
-
-                    <BusinessDetailsForm onSubmit={pushDataOnPayload} />
+                    <Welcome userData={session.user} />
+                    <BusinessDetailsForm onSubmit={pushDataOnPayload} userData={session.user} />
                     <ContactDetailsForm onSubmit={pushDataOnPayload} userData={session.user} />
                     <SubscriptionPlan onSubmit={pushDataOnPayload} />
 
@@ -251,22 +252,7 @@ export default function Profile() {
                 </div>
 
                 <div className="pt-24 cursor-default hidden h-grab-all-view justify-center align-middle" id='email-validation-section'>
-                    <div className='w-[600px]'>
-                        <div className='flex justify-center align-middle'>
-                            <img src='/banners/secure-email.png' alt='Verification Email Leadstor' className='h-[200px]' />
-                        </div>
-
-                        <h2 className="mt-8 justify-center text-2xl flex sm:text-3xl font-bold text-gray-700 mb-4">
-                            Check your inbox, please!
-                        </h2>
-                        <p className="ml-8 text-center text-gray-500 text-sm">
-                            Hey {session.user.name.toLocaleLowerCase().split(' ')[0]}, to start using Leadstor, we need to verify your email. we&apos;ve already sent out the verification link. Please check it and confirm it&apos;s really you.
-                        </p>
-                        <p className='mt-14 text-center font-semibold text-gray-600'>Didn&apos;s get e-mail?<span className='text-blue-500 cursor-pointer ml-2' onClick={reSendVerificationEmail}>Send it again</span></p>
-                        <div className='text-sm text-gray-500 text-center px-10 py-14'>
-                            You are signed in as {session.user.email}, <label className='font-semibold text-rose-500 cursor-pointer hover:underline' onClick={() => signOut()}>Sign out</label>
-                        </div>
-                    </div>
+                    <EmailVerification userData={session.user} onGetLink={reSendVerificationEmail} />
                 </div>
             </main >
 

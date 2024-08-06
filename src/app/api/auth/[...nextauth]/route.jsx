@@ -63,6 +63,7 @@ const handler = NextAuth({
                 session.user.email = currentUser.email;
                 session.user.image = currentUser.image;
                 session.user.cn_token = currentUser.api_token;
+                session.user.auth_provider = currentUser.auth_provider;
             }
             return session;
         },
@@ -84,6 +85,7 @@ const handler = NextAuth({
                 }
 
                 currentUser = response;
+                currentUser.auth_provider = 'Email';
                 return true;
             }
 
@@ -103,6 +105,7 @@ const handler = NextAuth({
                 }
 
                 currentUser = response;
+                currentUser.auth_provider = 'Google';
                 return true;
             }
 
@@ -127,6 +130,7 @@ const handler = NextAuth({
                 }
 
                 currentUser = response;
+                currentUser.auth_provider = 'Facebook';
                 return true;
             }
 

@@ -22,7 +22,7 @@ export default function Footer({
             <section className="border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                 <div className="container mx-auto px-4 max-w-screen-xl">
                     <div className="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
-                        <span className="cursor-default poppins text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 <Link href="/" className="hover:underline">Leadstor</Link>. All Rights Reserved.
+                        <span className="cursor-default poppins text-sm text-gray-500 sm:text-center dark:text-gray-400">Copyright &copy; {new Date().getFullYear()} Leadstor.in | All Rights Reserved.
                         </span>
                         <ul className="flex poppins flex-wrap items-center mt-3 text-sm font-normal text-gray-500 dark:text-gray-400 sm:mt-0">
                             <li>

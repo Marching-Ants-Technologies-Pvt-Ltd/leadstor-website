@@ -46,11 +46,11 @@ export default function SubscriptionPlan({ onSubmit }) {
             <div className='bg-white w-full flex flex-row py-4 px-2 rounded-md text-base font-semibold text-gray-600 text-center'>
                 <div onClick={() => handelPreviousFormMove(0)} className='grow flex flex-row justify-center items-center cursor-pointer'>
                     <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-blue-200 text-sm text-blue-700'>1</div>
-                    <div className='text-blue-700'>Business Details</div>
+                    <div className='text-blue-700'>Contact Person</div>
                 </div>
                 <div onClick={() => handelPreviousFormMove(1)} className='grow flex flex-row justify-center items-center cursor-pointer'>
                     <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-blue-200 text-sm text-blue-700'>2</div>
-                    <div className='text-blue-700'>Contact Person</div>
+                    <div className='text-blue-700'>Business Details</div>
                 </div>
                 <div className='grow flex flex-row justify-center items-center'>
                     <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-blue-200 text-sm text-blue-700'>3</div>
@@ -62,9 +62,9 @@ export default function SubscriptionPlan({ onSubmit }) {
                     <div className='flex justify-center items-center'>
                         <Image
                             placeholder='empty'
-                            src="/banners/subscription-plan.jpg"
-                            width={315}
-                            height={315}
+                            src="/banners/business-subscription.png"
+                            width={300}
+                            height={300}
                             alt="Leadstor Hero banner"
                             priority
                         />

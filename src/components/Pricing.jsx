@@ -252,7 +252,7 @@ export default function Pricing() {
                         </div>
                     </div>
 
-                    <div className="border border-gray-200 gap-0 px-7 sm:px-10 py-10 rounded-xl mt-10 w-full flex bg-gray-100">
+                    <div className="border border-gray-200 gap-0 px-7 sm:px-10 py-10 rounded-xl mt-10 w-full flex bg-gray-50">
                         <div className='w-full xl:w-1/2'>
                             <h4 className="text-xl poppins text-gray-700 sm:text-2xl font-semibold">Sales Communication Integrations</h4>
                             <div className="my-8 antialiased font-normal text-xs sm:text-sm text-gray-500 text-justify">
@@ -261,7 +261,7 @@ export default function Pricing() {
                             <Button className='border border-gray-400 px-6 py-2 text-xs sm:text-xs rounded text-gray-600 hover:border-gray-500 hover:text-gray-800 poppins'>View All Integrations</Button>
                         </div>
                         <div className='flex-grow relative'>
-                            <img style={{ height: '265px' }} className='absolute z-0 right-[-45px]' src='/banners/integrations-sm.png' alt='integrations banner' loading='lazy' />
+                            <img style={{ height: '265px' }} className='absolute z-0 right-[-45px]' src='/banners/third-party-integrations.png' alt='integrations banner' loading='lazy' />
                         </div>
                     </div>
                 </div>

@@ -1,13 +1,14 @@
 "use client";
 
 import Image from 'next/image';
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import * as z from 'zod';
 import { toast } from 'react-toastify';
 
-export default function BusinessDetailsForm({ onSubmit }) {
+export default function BusinessDetailsForm({ onSubmit, userData }) {
 
     const formRef = useRef(null);
+    const [businessEmail, setBusinessEmail] = useState(userData.email);
 
     const businessFormSchema = z.object({
         business_name: z
@@ -16,11 +17,7 @@ export default function BusinessDetailsForm({ onSubmit }) {
         business_email: z
             .string()
             .min(1, 'Business Email is required')
-            .email('Invalid email format'),
-        business_phone: z
-            .string()
-            .min(10, 'Enter a valid 10 digit phone number')
-            .max(14, 'Given phone no is not valid')
+            .email('Invalid business email!')
     })
 
     const handleButtonClick = () => {
@@ -33,11 +30,11 @@ export default function BusinessDetailsForm({ onSubmit }) {
         event.preventDefault();
         const formData = new FormData(formRef.current);
         const data = Object.fromEntries(formData.entries());
-        
+
         try {
 
             await businessFormSchema.parse(data);
-            onSubmit(data, 1);
+            onSubmit(data, 2);
 
         } catch (error) {
 
@@ -51,16 +48,23 @@ export default function BusinessDetailsForm({ onSubmit }) {
 
     };
 
+    const handelPreviousFormMove = () => {
+        onSubmit({}, 0);
+    }
+    const handleEmailChange = (e) => {
+        setBusinessEmail(e.target.value);
+    };
+
     return (
-        <div id='business-form' className='w-full mt-14'>
+        <div id='business-form' className='w-full mt-14 hidden'>
             <div className='bg-white flex flex-row py-4 px-2 rounded-md text-base font-semibold text-gray-600 text-center'>
-                <div className='grow flex flex-row justify-center items-center'>
+                <div onClick={handelPreviousFormMove} className='grow flex flex-row justify-center items-center cursor-pointer'>
                     <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-blue-200 text-sm text-blue-700'>1</div>
-                    <div className='text-blue-700'>Business Details</div>
+                    <div className='text-blue-700'>Contact Person</div>
                 </div>
-                <div className='grow flex flex-row justify-center items-center cursor-not-allowed'>
-                    <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-gray-200 text-sm'>2</div>
-                    <div>Contact Person</div>
+                <div className='grow flex flex-row justify-center items-center'>
+                    <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-blue-200 text-sm text-blue-700'>2</div>
+                    <div className='text-blue-700'>Business Details</div>
                 </div>
                 <div className='grow flex flex-row justify-center items-center cursor-not-allowed'>
                     <div className='h-6 w-6 flex justify-center items-center mr-2 rounded-2xl bg-gray-200 text-sm'>3</div>
@@ -68,15 +72,17 @@ export default function BusinessDetailsForm({ onSubmit }) {
                 </div>
             </div>
             <div className='bg-white w-full flex flex-row-reverse mt-2 py-4 px-2 rounded-md'>
-                <div className='text-center px-4 py-6'>
-                    <Image
-                        placeholder='empty'
-                        src="/banners/business-details.svg"
-                        width={512}
-                        height={512}
-                        alt="Leadstor Hero banner"
-                        priority
-                    />
+                <div className='text-center px-4 py-6 min-w-[548px]'>
+                    <div className='flex justify-center items-center'>
+                        <Image
+                            placeholder='empty'
+                            src="/banners/business-section.png"
+                            width={325}
+                            height={325}
+                            alt="Leadstor Banners"
+                            priority
+                        />
+                    </div>
                     <div className='text-xl font-semibold text-gray-600'>Business Details</div>
                     <div className='mt-2 text-sm text-gray-400'>Let us know about your business</div>
                     <button type="button" onClick={handleButtonClick} className="py-2 px-5 me-2 mb-2 text-sm font-medium text-white focus:outline-none bg-blue-700 rounded-full border-2 border-blue-700 mt-8 hover:bg-blue-600 hover:border-blue-600">Save &amp; Continue</button>
@@ -103,22 +109,22 @@ export default function BusinessDetailsForm({ onSubmit }) {
                         <div className='flex gap-6 mt-4'>
                             <div className='grow'>
                                 <label>Email Id<span>*</span></label>
-                                <input required type='email' name='business_email' />
+                                <input required type='email' onChange={handleEmailChange} value={businessEmail} name='business_email' />
                             </div>
-                            <div className='grow'>
+                            <div className='grow hidden'>
                                 <label>Phone No<span>*</span></label>
-                                <input required type='number' name='business_phone' />
+                                <input type='number' name='business_phone' />
                             </div>
                         </div>
 
                         <div className='mt-4'>
                             <label>Business Website</label>
-                            <input type='text' name='business_website' />
+                            <input type='text' name='business_website' placeholder='https://' />
                         </div>
 
                         <div className='mt-4'>
                             <label>Business Address</label>
-                            <textarea rows={4} name='business_address'></textarea>
+                            <textarea rows={4} name='business_address' placeholder='Example: 123 Main St, Apt 4B, Springfield, IL 62704'></textarea>
                         </div>
                     </form>
                 </div>

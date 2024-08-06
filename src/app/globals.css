@@ -33,6 +33,10 @@ body {
     rgb(var(--background-start-rgb));
 } */
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-start-rgb));
@@ -130,6 +134,10 @@ body {
   display: block;
 }
 
+.business-details-form input[type='checkbox']:focus::after{
+  display: none;
+}
+
 .h-grab-all-view {
   height: calc(100vh - 131px);
 }
@@ -140,6 +148,15 @@ body {
 
 .grecaptcha-badge {
   display: none;
+}
+
+.dropdown-search{
+  all: unset;
+  width: auto;
+  box-sizing: border-box;
+  background: transparent !important;
+  cursor: pointer;
+  padding-left: 4px !important;
 }
 
 @keyframes progress-animation {

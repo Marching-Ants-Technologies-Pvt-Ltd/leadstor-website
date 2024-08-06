@@ -6,7 +6,7 @@ export default function Hero() {
         <>
             <section className="border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
                 <div className="container mx-auto px-4 max-w-screen-xl">
-                    <div className="grid grid-cols-1 gap-10 py-5 lg:py-20 px-5 sm:px-10 xl:gap-20 xl:px-0 lg:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-10 py-5 lg:py-24 px-5 sm:px-10 xl:gap-20 xl:px-0 lg:grid-cols-2">
                         <div className="m-auto">
                             <h1 className="text-2xl sm:text-4xl hero-text-color font-bold text-gray-800 ">Choose Leadstor for intelligent lead management</h1>
                             <p className="mt-4 text-base sm:text-lg text-gray-600">Convert leads into customers faster with lead management system like Leadstor</p>
