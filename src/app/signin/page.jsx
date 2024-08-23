@@ -57,13 +57,13 @@ export default function SignIn() {
         let error = params.get('error');
 
         if (!error) return;
-        try{
+        try {
             error = JSON.parse(decodeURIComponent(error));
             console.error(error);
-        }catch (e) {
+        } catch (e) {
             console.log('Invalid JSON');
         }
-        
+
         const newURL = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, newURL);
 
@@ -206,7 +206,7 @@ export default function SignIn() {
 
                                 <div className="col-span-6 sm:col-span-3">
                                     <label htmlFor="Password" className="max-sm:hidden block text-sm font-medium text-white">.</label>
-                                    <div onClick={handelForgetPassword} className='inline-flex items-center px-4 py-3 max-sm:p-0 font-semibold text-sm text-blue-600 cursor-pointer'>Forget password?</div>
+                                    <div onClick={handelForgetPassword} className='inline-flex items-center px-4 py-3 max-sm:p-0 font-semibold text-sm text-blue-600 cursor-pointer'>Forgot password?</div>
                                 </div>
 
                                 <div className="col-span-6">
