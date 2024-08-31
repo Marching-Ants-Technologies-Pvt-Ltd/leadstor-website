@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Leadstor | Advanced Lead Management & Tracking Software",
   description: "Leadstor is a comprehensive lead management and tracking system designed to streamline your sales process from lead generation to closing. Optimize campaigns in real-time, automate follow-ups, and gain actionable insights with detailed analytics. Enhance your sales pipeline and improve conversion rates with Leadstor's intuitive platform.",
-  keywords: "lead management software, lead tracking software, lead generation software, lead software, sales lead tracking software, lead distribution software, customer relationship software, CRM software, CRM System, sales optimization, lead conversion, sales analytics",
+  keywords: "lead management software, lead tracking software, lead generation software, lead software, sales lead tracking software, lead distribution software, customer relationship software, CRM software, CRM System, sales optimization, lead conversion, sales , leadstore, lead store, lead stor, leadstore crm, leadstor crm, lead store crm",
   robots: "index, follow",
   openGraph: {
     title: "Leadstor | Advanced Lead Management & Tracking Software",
