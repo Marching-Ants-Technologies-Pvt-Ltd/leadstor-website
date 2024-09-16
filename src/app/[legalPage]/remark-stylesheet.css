@@ -72,4 +72,21 @@
     .rk a {
         @apply text-blue-500 cursor-pointer hover:underline;
     }
+
+    .rk img[alt="ApplyBtn"] {
+        mix-blend-mode: darken;
+        height: 88px;
+        cursor: pointer;
+        margin-left: -12px;
+    }
+
+    .rk img[alt="ApplyBtn"]:focus {
+        outline: none;
+    }
+
+    .rk img[alt="ApplyBtn"]:active{
+        outline: none;
+        transform: scale(.9);
+    }
+    
 }
