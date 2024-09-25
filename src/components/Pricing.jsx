@@ -6,7 +6,10 @@ export default function Pricing() {
         <>
             <section id='pricing' className="container mx-auto px-4 max-w-screen-xl">
                 <div className="py-14 cursor-default">
-                    <h1 className='font-semibold text-4xl poppins text-center'>Plans &amp; pricing</h1>
+                    <div className="flex justify-center align-middle">
+                        <h2 className="bg-blue-100 px-6 py-2 rounded-full text-sm text-gray-800 font-medium uppercase">Pricing Plans</h2>
+                    </div>
+                    <h3 className='font-semibold text-4xl poppins text-center mt-10'>Grow with the right plan </h3>
                     <p className="text-sm poppins sm:text-base text-center mt-4 text-gray-500">Discover the best leads, boost customer engagement, and drive deals to closure with a smart, comprehensive solution.</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 border-[1px] border-[#b5b8bc] gap-0 bg-white p-0 rounded-xl mt-10">

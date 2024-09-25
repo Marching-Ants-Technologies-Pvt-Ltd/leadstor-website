@@ -23,7 +23,7 @@ export default function About() {
                             />
                         </div>
                     </div>
-                    <h2 className="text-3xl md:text-5xl font-bold text-gray-800 mb-2 poppins">About Leadstor</h2>
+                    <h1 className="text-3xl md:text-5xl font-bold text-gray-800 mb-2 poppins">About Us</h1>
                     <p className="color-gray-600 mt-2 md:mt-4 text-lg md:text-xl">Leadstor makes it fast and easy for businesses to delight their customers and employees.</p>
 
                     <div className="text-center text-gray-700 text-base">
@@ -37,7 +37,10 @@ export default function About() {
             <section className="container mx-auto max-w-screen-xl py-16 px-5 md:px-10 2xl:px-0">
                 <div className="lg:grid grid-flow-row-dense grid-cols-4 grid-rows-1 gap-32">
                     <div className="col-span-2">
-                        <h2 className="text-3xl md:text-5xl font-bold text-gray-800 poppins">Our people make us great</h2>
+                        <div className="flex justify-start align-middle">
+                            <h2 className="bg-blue-100 px-6 py-2 rounded-full text-sm text-gray-800 font-medium uppercase">Our Team</h2>
+                        </div>
+                        <h3 className="text-3xl md:text-5xl mt-8 font-bold text-gray-800 poppins">Our people make us great</h3>
                         <p className=" text-gray-600 mt-4 md:mt-8 text-lg text-justify">At Leadstor, we believe that when passionate, driven individuals collaborate toward a shared goal, remarkable results are achieved. Our Leadership Team brings extensive expertise in developing and scaling successful B2B software products and businesses, ensuring innovative solutions that drive growth and deliver exceptional value.</p>
                         <div className='mt-10 lg:block hidden'>
                             <a className='border border-sky-500 flex w-fit rounded-lg pl-4 py-2 cursor-pointer text-sky-500 font-normal text-sm poppins'>

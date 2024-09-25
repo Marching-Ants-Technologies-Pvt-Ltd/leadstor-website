@@ -122,35 +122,37 @@ function ContactFormContainer() {
                 theme="light"
                 transition={Bounce}
             />
-            <form onSubmit={handelFormSubmit} className="lg:container h-full pl-0 lg:pl-16 py-4">
+            <form onSubmit={handelFormSubmit} className="lg:container h-full pl-0 lg:pl-16 py-4 contact-us-form">
                 <div className="bg-white h-full rounded-2xl px-10 py-6">
 
-                    <div className="">
-                        <p className="font-semibold text-zinc-700 text-sm">First Name<span className="ml-1 text-rose-500">*</span></p>
-                        <input type="text" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="Enter your first name" name="firstName" />
-                    </div>
+                    <div className="flex gap-4">
+                        <div className="grow">
+                            <p className="font-semibold text-zinc-700 text-sm">First Name<span className="ml-1 text-rose-500">*</span></p>
+                            <input type="text" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="Tanish" name="firstName" />
+                        </div>
 
-                    <div className="mt-4">
-                        <p className="font-semibold text-zinc-700 text-sm">Last Name</p>
-                        <input type="text" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="Enter your last name" name="lastName" />
+                        <div className="mt-4 sm:mt-0 grow">
+                            <p className="font-semibold text-zinc-700 text-sm">Last Name</p>
+                            <input type="text" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="Raj" name="lastName" />
+                        </div>
                     </div>
 
                     <div className="mt-4">
                         <p className="font-semibold text-zinc-700 text-sm">Business Email<span className="ml-1 text-rose-500">*</span></p>
-                        <input type="email" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="Enter your business email" name="email" />
+                        <input type="email" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="name@company.com" name="email" />
                     </div>
 
                     <div className="mt-4">
                         <p className="font-semibold text-zinc-700 text-sm">Phone Number</p>
-                        <input type="number" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="Enter your phone number" name="phone" />
+                        <input type="number" className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="+91 ..." name="phone" />
                     </div>
 
                     <div className="mt-4">
                         <p className="font-semibold text-zinc-700 text-sm">Type of query</p>
                         <select className="mt-1 outline-0 rounded-md border border-zinc-300 w-full px-4 py-2" placeholder="Choose type of query" name="query">
-                            <option value={"sales"}>Sales</option>
-                            <option value={"support"}>Support</option>
-                            <option value={"other"}>Other</option>
+                            <option value={"sales"}>&#x1F4E3;&nbsp;Sales</option>
+                            <option value={"support"}>&#x1F9D1;&nbsp;Support</option>
+                            <option value={"other"}>Other...</option>
                         </select>
                     </div>
 

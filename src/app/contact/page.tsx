@@ -15,12 +15,12 @@ export default function Contact() {
                             <div className='flex flex-col-reverse lg:flex-col'>
                                 <div className='text-center lg:text-left'>
                                     <div className="text-4xl sm:text-5xl xl:text-7xl font-bold flex-col sm:flex-row lg:flex lg:flex-col inline-flex items-center lg:items-start">
-                                        <div className="mb-2">Contact</div>
+                                        <h1 className="mb-2">Contact</h1>
                                         <div className="hidden sm:block ml-3 lg:ml-0">Leadstor</div>
                                     </div>
                                     <p className="text-lg max-w-[500px] lg:max-w-full inline-flex items-center xl:text-xl mt-2 lg:mt-8">Questions about products, features, or pricing? Need a demo? Our sales experts are ready to help.</p>
                                     <p className="text-xl xl:text-2xl font-semibold mt-4 lg:mt-6">Talk with our team</p>
-                                    <p className="text-gl xl:text-xl font-normal mt-4 lg:mt-6 mb-10"><a className='hover:text-blue-600' target='_blank' href='https://wa.me/918600074862'>+91 (860) 007 4862</a> | <a className='hover:text-blue-600' href='mailto:solutions@leadstor.in'>solutions@leadstor.in</a></p>
+                                    <p className="text-gl xl:text-xl font-normal mt-4 lg:mt-6 mb-10"><a className='hover:text-blue-600' target='_blank' href='https://wa.me/918600074862'>+91 (860) 007 4862</a> | <a className='hover:text-blue-600' href='mailto:hello@leadstor.in'>hello@leadstor.in</a></p>
                                 </div>
                                 <div className='mb-12'>
                                     <Image

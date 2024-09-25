@@ -98,7 +98,8 @@ body {
   @apply bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full py-2.5 px-3.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 outline-2 outline-blue-500/50;
 }
 
-.business-details-form select {
+.business-details-form select,
+.contact-us-form select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -162,6 +163,31 @@ body {
 .people-card:last-child{
   border: none !important;
   margin-bottom: 0 !important;
+}
+
+.foot-brush{
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
+
+.foot-brush::before{
+  content: '';
+  opacity: 1;
+  width: calc(100% + 6px);
+  height: 1rem;
+  z-index: -1;
+  left: -6px;
+  bottom: 0.2rem;
+  position: absolute;
+}
+
+.brush-yellow::before{
+  background-color: #ffeac2;
+}
+
+.brush-green::before{
+  background-color: #adfff8;
 }
 
 @keyframes progress-animation {

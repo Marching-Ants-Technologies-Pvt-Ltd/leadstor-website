@@ -46,7 +46,7 @@ export default function Footer({
                                     priority
                                 />
                             </a>
-                            <a href="#" target="_blank" className="h-8 w-8 mt-4 border border-gray-800 rounded-full flex justify-center align-middle">
+                            <a href="https://www.linkedin.com/company/leadstor-in/" target="_blank" className="h-8 w-8 mt-4 border border-gray-800 rounded-full flex justify-center align-middle">
                                 <Image
                                     placeholder='empty'
                                     src="/icons/footer-icon-2.svg"
