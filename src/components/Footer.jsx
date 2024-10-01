@@ -115,7 +115,7 @@ export default function Footer({
                         </div>
                         <ul className="flex poppins flex-wrap items-center mt-3 text-sm font-normal text-gray-500 dark:text-gray-400 sm:mt-0">
                             <li>
-                                <Link href="/terms" className="hover:underline me-4 md:me-6">Terms Of Use</Link>
+                                <Link href="/terms" className="hover:underline me-4 md:me-6">Terms Of Service</Link>
                             </li>
                             <li>
                                 <Link href="/privacy-policy" className="hover:underline me-4 md:me-6">Privacy Policy</Link>

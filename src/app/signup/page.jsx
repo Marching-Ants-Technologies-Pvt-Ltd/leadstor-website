@@ -244,9 +244,9 @@ export default function SignUp() {
 
                                 <div className="col-span-6">
                                     <p className="text-sm text-gray-500">
-                                        By creating an account, you agree to our
-                                        <a href="/terms" className="text-gray-700 underline"> terms </a>
-                                        &amp;
+                                        By creating an account, you agree to our&nbsp; 
+                                        <a href="/terms" className="text-gray-700 underline">terms</a>
+                                        &nbsp;&amp;&nbsp;
                                         <a href="/privacy-policy" className="text-gray-700 underline">privacy policy</a>.
                                     </p>
                                 </div>
@@ -269,18 +269,19 @@ export default function SignUp() {
                                 <div className="col-span-6">
                                     <div className="w-full mt-6 border-t pt-4 border-gray-300 md:flex md:items-center md:justify-between">
 
-                                        <span className="cursor-default text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2024 <Link href="/" className="hover:underline">Leadstor</Link>. All Rights Reserved.
+                                        <span className="cursor-default text-sm text-gray-600 sm:text-center dark:text-gray-400">Copyright © 2024 <Link href="/" className="hover:underline">Leadstor.in</Link>
                                         </span>
 
-                                        <ul className="flex flex-wrap items-center mt-3 text-sm font-normal text-gray-500 dark:text-gray-400 sm:mt-0">
+                                        <ul className="flex flex-wrap items-center mt-3 text-sm font-normal text-gray-600 dark:text-gray-400 sm:mt-0">
                                             <li>
-                                                <Link href="/" className="hover:underline me-4 md:me-6">Home</Link>
+                                                <Link href="/contact" className="hover:underline me-4">Contact Us</Link>
                                             </li>
                                             <li>
-                                                <Link href="/contact" className="hover:underline me-4 md:me-6">Contact</Link>
+                                                <Link href="/terms" className="hover:underline me-4">Terms Of Service</Link>
                                             </li>
                                             <li>
-                                                <Link href="/about" className="hover:underline me-4 md:me-6">About</Link>
+                                                <Link href="/privacy-policy" className="hover:underline">
+                                                Privacy Policy</Link>
                                             </li>
                                         </ul>
                                     </div>
