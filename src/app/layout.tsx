@@ -3,7 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import "./fonts.google.css";
 import { Providers } from './providers';
-import StructuredData from '@/components/StructuredData'
+import StructuredData from '@/components/StructuredData';
+import { GoogleTagManager } from '@next/third-parties/google';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -38,6 +39,7 @@ export default function RootLayout({
           {children}
         </Providers>
       </body>
+      <GoogleTagManager gtmId="GTM-PWH69TPS" />
     </html>
   );
 }
