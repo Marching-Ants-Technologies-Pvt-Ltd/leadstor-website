@@ -72,7 +72,7 @@ export default function Navbar({
                                         <p className='text-gray-600 font-semibold text-base'>Hi, {user.name}</p>
                                     </li>
                                     <li className='content-center'>
-                                        <img src={user.image} loading='lazy' alt='Leadstor User Image' height={35} width={35} className='rounded-xl' />
+                                        <img src={user.image} loading='lazy' alt='Leadstor User Image' height={35} width={35} className='rounded-xl' referrerPolicy='no-referrer' />
                                     </li>
                                 </ul>
                             </div>

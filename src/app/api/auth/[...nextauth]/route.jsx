@@ -54,17 +54,28 @@ const handler = NextAuth({
     secret: process.env.JWT_SECRET,
     callbacks: {
 
-        async session({ session }) {
-
-            if (Object.keys(currentUser).length > 0) {
-                session.user._id = currentUser.id;
-                session.user.uuid = currentUser.uuid;
-                session.user.name = currentUser.name;
-                session.user.email = currentUser.email;
-                session.user.image = currentUser.image;
-                session.user.cn_token = currentUser.api_token;
-                session.user.auth_provider = currentUser.auth_provider;
+        async jwt({ token, user, account }) {
+            if (user) {
+                token.id = currentUser.id;
+                token.uuid = currentUser.uuid;
+                token.name = currentUser.name;
+                token.email = currentUser.email;
+                token.image = currentUser.image;
+                token.api_token = currentUser.api_token;
+                token.auth_provider = currentUser.auth_provider;
             }
+            return token;
+        },
+
+        async session({ session, token }) {
+            session.user._id = token.id;
+            session.user.uuid = token.uuid;
+            session.user.name = token.name;
+            session.user.email = token.email;
+            session.user.image = token.image;
+            session.user.cn_token = token.api_token;
+            session.user.auth_provider = token.auth_provider;
+
             return session;
         },
 
@@ -130,6 +141,7 @@ const handler = NextAuth({
                 }
 
                 currentUser = response;
+                currentUser.image = profile.picture?.data?.url??'';
                 currentUser.auth_provider = 'Facebook';
                 return true;
             }
