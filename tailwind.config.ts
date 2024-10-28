@@ -26,7 +26,7 @@ const config: Config = {
       }
     },
   },
-  plugins: [],
+  plugins: [require("rippleui")],
   darkMode: 'class',
 };
 export default config;

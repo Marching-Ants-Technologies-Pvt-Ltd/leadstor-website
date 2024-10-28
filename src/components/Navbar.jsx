@@ -43,7 +43,7 @@ export default function Navbar({
 
                         {(!user.name) &&
                             <div className="hidden w-full md:block md:w-auto">
-                                <ul className="navbar poppins">
+                                <ul className="navbar-2 poppins">
                                     <li>
                                         <a href="/#why-leadstor" className="navbar-item mt-2" aria-current="page">Why Leadstor</a>
                                     </li>
