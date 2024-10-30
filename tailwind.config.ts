@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-/* Pankaj1
+/* Pankaj
 */
 const config: Config = {
   content: [
