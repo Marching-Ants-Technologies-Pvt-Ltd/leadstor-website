@@ -1,18 +1,19 @@
 {
-  "name": "leadstore",
+  "name": "leadstor",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "code": "code . && next dev --turbo"
   },
   "dependencies": {
     "@next/third-parties": "^14.2.15",
     "gray-matter": "^4.0.3",
     "next": "^14.2.15",
-    "next-auth": "^3.29.10",
+    "next-auth": "^4.24.7",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
     "react-google-recaptcha-v3": "^1.10.1",
