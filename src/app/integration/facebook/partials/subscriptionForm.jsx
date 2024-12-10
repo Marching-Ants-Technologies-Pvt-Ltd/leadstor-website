@@ -18,7 +18,7 @@ export default function SubscriptionForm({ pages }) {
                     <select className="select rounded-md mt-2">
                         <option value="-1">Choose a page</option>
                         {pages.map((item, index) => (
-                            <option value={index}>{item.name}</option>
+                            <option key={index} value={index}>{item.name}</option>
                         ))}
                     </select>
                 </div>
