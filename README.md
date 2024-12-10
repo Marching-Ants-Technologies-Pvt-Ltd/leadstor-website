@@ -37,9 +37,5 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
-### TODO
-- Send Email & Activate Account
-- Resend Email From Leadstor
-- Session share on dashboard [DONE]
-- SignOut from Leadstor too if user sigOut from dashboard. [DONE]
-- Show Leadstor icon on dashboard if user is coming from leadstor [DONE]
+## TODO
+- Facebook Subscription Form
