@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-export default function Sidebar() {
+export default function Sidebar({ session }) {
 
     const router = useRouter();
 
@@ -144,7 +144,7 @@ export default function Sidebar() {
                             </div>
                             <div className="flex flex-col">
                                 <span className='text-lg font-semibold'>Conceptninjas</span>
-                                <span className="text-sm -mt-0.5 font-normal text-content2">Business &bull; C218 <i className="ri-settings-line relative bg-gray-200 p-0.5 top-[1px] rounded-full cursor-pointer text-gray-400"></i></span>
+                                <span className="text-sm -mt-0.5 font-normal text-content2">Business &bull; C{session.user._id} <i className="ri-settings-line relative bg-gray-200 p-0.5 top-[1px] rounded-full cursor-pointer text-gray-400"></i></span>
                             </div>
                         </div>
                     </label>

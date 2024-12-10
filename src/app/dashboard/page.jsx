@@ -2,13 +2,13 @@ import CounsellorOverview from '@/app/dashboard/partials/CounsellorOverview';
 
 export default function Dashboard() {
 
-    const isAdmin = false;
-
-    if (!isAdmin) return <CounsellorOverview />
+    // const isAdmin = true;
+    // if (!isAdmin) return <CounsellorOverview />
 
     return (
-        <div className="w-full h-full">
-            Admin Overview - ToDo
+        <div>
+            <h3>Hi, Welcome Back!</h3>
+            <p>This page is currently under construction</p>
         </div>
     );
 }

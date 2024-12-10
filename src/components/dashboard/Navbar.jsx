@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-export default function Navbar() {
+export default function Navbar({ session }) {
     return (
         <div className="flex justify-end items-center sticky bg-white py-3 px-4 gap-16">
             <div className='flex gap-3'>
@@ -23,14 +23,14 @@ export default function Navbar() {
             <div className='dropdown z-50 flex h-fit'>
                 <label className='flex gap-2 poppins cursor-pointer' tabIndex="0">
                     <div className='pr-2 pointer-events-none'>
-                        <h3 className='m-0 text-base'>Tanish Raj</h3>
+                        <h3 className='m-0 text-base'>{session.user.name}</h3>
                         <p className='-mt-0.5 p-0 text-xs text-gray-500 text-right'>Manager</p>
                     </div>
                     <div className='flex justify-center items-center pointer-events-none'>
                         <Image
                             className='rounded-md'
                             placeholder='empty'
-                            src="https://api.dicebear.com/5.x/initials/png?seed=T&size=100"
+                            src={session.user.image}
                             width={36}
                             height={36}
                             alt="User Avatar"

@@ -69,6 +69,11 @@ export default function Profile() {
 
             if (result.page === 'DASHBOARD') {
                 setLoadingText('Taking You to Lead Dashboard, Please Wait...');
+                router.push('/dashboard');
+            }
+
+            if (result.page === 'DASHBOARD-OLD') {
+                setLoadingText('Taking You to Lead Dashboard, Please Wait...');
                 
                 const form = document.createElement('form');
                 form.method = 'POST';
