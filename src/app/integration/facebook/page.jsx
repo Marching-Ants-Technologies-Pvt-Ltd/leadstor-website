@@ -12,7 +12,6 @@ export default function FacebookIntegration() {
 
     const [isLoggedIn, setIsLoggedIn] = useState(0);
     const [accessToken, setAccessToken] = useState(null);
-    const [fbPageId, setFbPageId] = useState('');
     const userData = JSON.parse(localStorage.getItem('session_user'));
 
     useEffect(() => {
@@ -60,7 +59,6 @@ export default function FacebookIntegration() {
                 console.log('Extended Token', result.access_token);
                 FB.api(`/me/accounts?access_token=${result.access_token}`, function (response) {
                     console.log('Successfully retrieved pages.', response);
-                    setFbPageId(response.data[0].id);
                     setAccessToken(response);
                     setIsLoggedIn(2);
                 });
@@ -106,7 +104,7 @@ export default function FacebookIntegration() {
                 </div>
                 <div className="h-11 poppins flex justify-center flex-col items-end text-gray-700 text-sm cursor-pointer">
                     <div>v21.0 &bull; Meta SDK</div>
-                    <div>{fbPageId}</div>
+                    <div></div>
                 </div>
             </div>
 
