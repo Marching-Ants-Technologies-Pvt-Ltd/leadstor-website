@@ -103,7 +103,7 @@ export default function FacebookConnect({ token, user }) {
 
         <div>
             <div className="w-full bg-blue-50 relative">
-                <button onClick={() => renderSubscriptionForm(0)} className="absolute right-44 -top-[58px] btn btn-solid-primary rounded-full">
+                <button onClick={() => renderSubscriptionForm(0,0)} className="absolute right-44 -top-[58px] btn btn-solid-primary rounded-full">
                     <i className="ri-add-fill text-xl border-none mr-1.5 -ml-2"></i>
                     <div>Subscribe a Form</div>
                 </button>
