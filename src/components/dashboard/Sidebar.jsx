@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-export default function Sidebar({ session }) {
+export default function Sidebar({ session, goOld }) {
 
     const router = useRouter();
 
@@ -64,11 +64,11 @@ export default function Sidebar({ session }) {
                 <nav className="menu rounded-md" onClick={switchPage}>
                     <section className="menu-section px-4">
                         <ul className="menu-items gap-1 mb-4">
-                            <li className="menu-item poppins gap-3 text-base text-gray-600">
+                            <li onClick={goOld} className="menu-item poppins gap-3 text-base text-gray-600">
                                 <i className="ri-megaphone-line text-xl pointer-events-none"></i>
                                 <span className='mt-0.5 pointer-events-none'>Leads</span>
                             </li>
-                            <li className="menu-item poppins gap-3 text-base text-gray-600">
+                            <li onClick={goOld} className="menu-item poppins gap-3 text-base text-gray-600">
                                 <i className="ri-seedling-fill text-xl pointer-events-none"></i>
                                 <span className='mt-0.5 pointer-events-none'>Conversions</span>
                             </li>

@@ -68,6 +68,7 @@ export default function Profile() {
             }
 
             if (result.page === 'DASHBOARD') {
+                localStorage.setItem('ninja_dashboard_link', result.page_url);
                 setLoadingText('Taking You to Lead Dashboard, Please Wait...');
                 router.push('/dashboard');
             }

@@ -16,6 +16,24 @@ export default function ClientLayout({ children }) {
     const [session, setSession] = useState(null);
     const router = useRouter();
 
+    const takeMeToOldDashboard = () => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = localStorage.getItem('ninja_dashboard_link');
+
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'token';
+        tokenInput.value = session.user.cn_token;
+        form.appendChild(tokenInput);
+
+        document.body.appendChild(form);
+
+        form.submit();
+        form.remove();
+        return;
+    }
+
     useEffect(() => {
         const fetchSession = async () => {
             const sessionData = await getSession();
@@ -23,7 +41,6 @@ export default function ClientLayout({ children }) {
                 router.push('/signin');
             } else {
                 setSession(sessionData);
-                console.log(sessionData);
             }
         };
 
@@ -35,7 +52,7 @@ export default function ClientLayout({ children }) {
     return (
         <SessionProvider>
             <div className="sticky flex h-screen flex-row overflow-y-auto rounded-lg sm:overflow-x-hidden">
-                <Sidebar session={session} />
+                <Sidebar session={session} goOld={takeMeToOldDashboard} />
 
                 <div className="flex w-full flex-col">
                     <Navbar session={session} />

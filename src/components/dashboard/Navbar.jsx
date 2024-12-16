@@ -45,7 +45,7 @@ export default function Navbar({ session }) {
                     <a className="text-gray-600 dropdown-item text-sm">Profile</a>
                     <a className="text-gray-600 dropdown-item text-sm" tabIndex="-1">My Tickets</a>
                     <div className='h-5 border-b w-full'></div>
-                    <a className="text-rose-500 dropdown-item text-sm hover:bg-transparent hover:text-rose-600" tabIndex="-1" >SignOut</a>
+                    <a className="text-rose-500 dropdown-item text-sm hover:bg-transparent hover:text-rose-600" tabIndex="-1" href="/signout" >SignOut</a>
                 </div>
             </div>
         </div>
