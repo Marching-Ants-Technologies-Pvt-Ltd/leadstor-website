@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-export default function Sidebar({ session, goOld }) {
+export default function Sidebar({ session }) {
 
     const router = useRouter();
 
@@ -68,7 +68,7 @@ export default function Sidebar({ session, goOld }) {
                                 <i className="ri-megaphone-line text-xl pointer-events-none"></i>
                                 <span className='mt-0.5 pointer-events-none'>Leads</span>
                             </li>
-                            <li onClick={goOld} className="menu-item poppins gap-3 text-base text-gray-600" link="/conversions">
+                            <li className="menu-item poppins gap-3 text-base text-gray-600" link="/conversions">
                                 <i className="ri-seedling-fill text-xl pointer-events-none"></i>
                                 <span className='mt-0.5 pointer-events-none'>Conversions</span>
                             </li>
