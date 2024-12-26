@@ -1,0 +1,40 @@
+.leadstor-table{
+    @apply w-full text-base text-left rtl:text-right text-gray-500 dark:text-gray-400;
+    
+    >thead {
+        @apply text-gray-700 bg-blue-50 dark:bg-gray-700 dark:text-gray-400;
+
+        >tr th {
+            @apply px-6 py-3 font-medium text-left tracking-wide min-w-28 max-w-80;
+
+            >input[type=checkbox]{
+                @apply checkbox checkbox-md rounded;
+            }
+        }
+    }
+
+    >tbody{
+        @apply divide-y divide-gray-200;
+
+        >tr td {
+            @apply px-6 py-3 whitespace-nowrap tracking-wide min-w-28 max-w-80 truncate;
+
+            >div {
+
+                >input[type=checkbox]{
+                    @apply checkbox checkbox-md rounded relative top-1;
+                }
+    
+                >i {
+                    @apply text-lg cursor-pointer ml-1;
+                }
+            }
+        }
+    }
+}
+
+th:first-child,
+td:first-child{
+    min-width: 0!important;
+    max-width: 60px!important;
+}
