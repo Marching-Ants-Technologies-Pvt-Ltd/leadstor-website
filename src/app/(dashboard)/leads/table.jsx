@@ -1,24 +1,27 @@
 'use client';
 import './table-style.css';
+import LeadContextMenu, { ShowContentMenu } from './contextMenu';
 
 export default function LeadsTable({ search = '' }) {
 
+    const contextMenuCallback = (response) => {
+        console.log(`User clicked`, response);
+    }
+
     const handelRowClick = (event) => {
         if(event.target.tagName !== 'I') return;
-        console.log(`handel row menu click`, event); //ToDo reposition content menu and show
+        ShowContentMenu({event, onClick: contextMenuCallback });
     }
 
     const handelRowContext = (event) => {
         event.preventDefault();
         event.stopPropagation();
-        console.log(`handel row Context`, event); //ToDo reposition content menu and show
+        ShowContentMenu({event, onClick: contextMenuCallback });
     }
 
     return (
         <div className='grow border-t border-b bg-gray-50 overflow-auto'>
-            <div className='absolute w-28 min-h-20 bg-white shadow-lg rounded-md z-30 top-[215px] left-[489px] p-3'>
-                I am content menu!
-            </div>
+            <LeadContextMenu />
             <table className="leadstor-table">
                 <thead>
                     <tr>
@@ -35,7 +38,7 @@ export default function LeadsTable({ search = '' }) {
                     </tr>
                 </thead>
                 <tbody>
-                    <tr onContextMenu={handelRowContext} onClick={handelRowClick}>
+                    <tr onContextMenu={handelRowContext} onClick={handelRowClick}  id='lead-123456'>
                         <td>
                             <div>
                                 <input type="checkbox" />

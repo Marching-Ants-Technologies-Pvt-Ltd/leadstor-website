@@ -1,12 +1,32 @@
 import Image from 'next/image';
 
 export default function Navbar({ session }) {
+
+    const goToLegacyDashboard = () => {
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = localStorage.getItem('ninja_dashboard_link');
+
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = 'token';
+        tokenInput.value = session.user.cn_token;
+
+        form.appendChild(tokenInput);
+        document.body.appendChild(form);
+        form.submit();
+        form.remove();
+        return;
+    }
+
     return (
         <div className="flex justify-end items-center sticky bg-white py-3 px-4 gap-16">
             <div className='flex gap-3'>
-                <span className="tooltip tooltip-bottom" data-tooltip="Change Theme">
-                    <div className='hover:bg-blue-100 hover:text-blue-500 hover:border-blue-100 text-gray-700 border bg-transparent cursor-pointer w-7 h-7 flex justify-center items-center rounded-full'>
-                        <i className="ri-moon-fill pointer-events-none"></i>
+                <span className="tooltip tooltip-bottom" data-tooltip="Goto Conceptninjas Old Dashboard">
+                    <div className='hover:bg-blue-100 hover:text-blue-500 hover:border-blue-100 text-gray-600 border bg-transparent cursor-pointer w-fit px-4 h-7 flex justify-center items-center rounded-full' onClick={goToLegacyDashboard}>
+                        <i className="ri-computer-line pointer-events-none mr-2"></i>
+                        <div>Legacy Dashboard</div>
                     </div>
                 </span>
                 <span className="tooltip tooltip-bottom" data-tooltip="Contact Support">

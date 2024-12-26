@@ -38,3 +38,19 @@ td:first-child{
     min-width: 0!important;
     max-width: 60px!important;
 }
+
+/* Row Context Menu */
+.context-menu{
+    @apply absolute flex flex-col divide-y p-1 w-fit min-w-20 min-h-20 text-gray-600 bg-white shadow-lg rounded-md z-[55];
+    
+    >div.item{
+        @apply flex flex-row p-2 pr-4 gap-2 text-sm cursor-pointer hover:bg-blue-50 items-center justify-start;
+
+        >div{
+            @apply pointer-events-none;
+        }
+        >i{
+            @apply text-lg pointer-events-none;
+        }
+    }
+}
