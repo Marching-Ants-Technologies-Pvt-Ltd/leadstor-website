@@ -36,9 +36,17 @@ export default function ClientLayout({ children }) {
             <div className="sticky flex h-screen flex-row overflow-y-auto rounded-lg sm:overflow-x-hidden">
                 <Sidebar session={session} />
 
-                <div className="flex w-full flex-col">
+                <div
+                    style={{
+                        width: 'calc(100% - 288px)'
+                    }}
+                    className="flex w-full flex-col">
                     <Navbar session={session} />
-                    <div className='p-6 h-full'>
+                    <div 
+                        style={{
+                            height: 'calc(100% - 63px)'
+                        }}
+                        className='p-6'>
                         {children}
                     </div>
                 </div>

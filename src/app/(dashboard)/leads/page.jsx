@@ -39,7 +39,7 @@ export default function Leads() {
                 <div className='grow'></div>
                 <div className='flex font-medium cursor-pointer'>
                     <div className='w-8 h-8 border flex justify-center items-center rounded-s-md'>
-                        <i class="ri-arrow-left-s-line text-xl"></i>
+                        <i className="ri-arrow-left-s-line text-xl"></i>
                     </div>
 
                     <div className='w-10 h-8 bg-blue-500 border-blue-500 text-white border border-l-0 flex justify-center items-center'>1</div>
@@ -51,7 +51,7 @@ export default function Leads() {
                     <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>253</div>
 
                     <div className='w-8 h-8 border border-l-0 flex justify-center items-center rounded-e-md'>
-                        <i class="ri-arrow-right-s-line text-xl"></i>
+                        <i className="ri-arrow-right-s-line text-xl"></i>
                     </div>
                 </div>
             </div>

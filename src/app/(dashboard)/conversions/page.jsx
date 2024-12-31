@@ -11,12 +11,12 @@ export default function Leads() {
                 <div className="grow flex justify-end align-middle poppins gap-1 text-gray-600">
 
                     <div className='flex py-1 border rounded-md gap-2 px-2 justify-center items-center cursor-pointer'>
-                        <i class="ri-user-add-line text-xl"></i>
+                        <i className="ri-user-add-line text-xl"></i>
                         <div className='mr-1'>Conversion</div>
                     </div>
 
                     <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer'>
-                        <i class="ri-file-excel-2-fill text-xl"></i>
+                        <i className="ri-file-excel-2-fill text-xl"></i>
                         <div className='mr-1'>Report</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
                             <div className='text-sm mb-1 font-medium py-1'>Collections</div>
@@ -25,7 +25,7 @@ export default function Leads() {
                             <a className="dropdown-item pl-4 text-sm">November</a>
                             <a className="dropdown-item pl-4 text-sm">December</a>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5 pl-4">
-                                <i class="ri-equalizer-3-line text-lg mt-1"></i>
+                                <i className="ri-equalizer-3-line text-lg mt-1"></i>
                                 <span className='text-sm'>Custom</span>
                             </a>
                             <div className="dropdown-divider my-1" role="separator"></div>
@@ -35,14 +35,14 @@ export default function Leads() {
                             <a className="dropdown-item pl-4 text-sm">November</a>
                             <a className="dropdown-item pl-4 text-sm">December</a>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5 pl-4">
-                                <i class="ri-equalizer-3-line text-lg mt-1"></i>
+                                <i className="ri-equalizer-3-line text-lg mt-1"></i>
                                 <span className='text-sm'>Custom</span>
                             </a>
                             <div className="dropdown-divider my-1" role="separator"></div>
                             <div className='text-sm mb-1 font-medium py-1'>Pending Payments</div>
                             <a className="dropdown-item pl-4 text-sm">Balance</a>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5 pl-4">
-                                <i class="ri-equalizer-3-line text-lg mt-1"></i>
+                                <i className="ri-equalizer-3-line text-lg mt-1"></i>
                                 <span className='text-sm'>Custom</span>
                             </a>
                             <div className="dropdown-divider my-1" role="separator"></div>
@@ -51,50 +51,50 @@ export default function Leads() {
                     </div>
 
                     <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer ml-5'>
-                        <i class="ri-filter-2-line text-xl"></i>
+                        <i className="ri-filter-2-line text-xl"></i>
                         <div className='mr-1'>Filter</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-52">
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                                <i class="ri-square-fill text-green-600 text-lg mt-1"></i>
+                                <i className="ri-square-fill text-green-600 text-lg mt-1"></i>
                                 <span className='text-sm'>Active</span>
                             </a>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                                <i class="ri-square-fill text-yellow-400 text-lg mt-1"></i>
+                                <i className="ri-square-fill text-yellow-400 text-lg mt-1"></i>
                                 <span className='text-sm'>Paused</span>
                             </a>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                                <i class="ri-square-fill text-rose-600  text-lg mt-1"></i>
+                                <i className="ri-square-fill text-rose-600  text-lg mt-1"></i>
                                 <span className='text-sm'>Defaulter</span>
                             </a>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                                <i class="ri-bank-card-line text-lg mt-1"></i>
+                                <i className="ri-bank-card-line text-lg mt-1"></i>
                                 <span className='text-sm'>Pending Payment</span>
                             </a>
-                            <div class="dropdown-divider my-1" role="separator"></div>
+                            <div className="dropdown-divider my-1" role="separator"></div>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                                <i class="ri-equalizer-3-line text-lg mt-1"></i>
+                                <i className="ri-equalizer-3-line text-lg mt-1"></i>
                                 <span className='text-sm'>Advance</span>
                             </a>
                         </div>
                     </div>
 
                     <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer ml-0'>
-                        <i class="ri-shapes-line text-xl"></i>
+                        <i className="ri-shapes-line text-xl"></i>
                         <div className='mr-1'>Actions</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                                <i class="ri-chat-1-line text-lg mt-1"></i>
+                                <i className="ri-chat-1-line text-lg mt-1"></i>
                                 <span className='text-sm'>Send SMS</span>
                             </a>
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                                <i class="ri-mail-ai-line text-lg mt-1"></i>
+                                <i className="ri-mail-ai-line text-lg mt-1"></i>
                                 <span className='text-sm'>Send Email</span>
                             </a>
                         </div>
                     </div>
 
                     <div className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10 ml-5'>
-                        <i class="ri-refresh-line text-xl"></i>
+                        <i className="ri-refresh-line text-xl"></i>
                     </div>
                 </div>
             </div>
@@ -127,7 +127,7 @@ export default function Leads() {
                 <div className='grow'></div>
                 <div className='flex font-medium cursor-pointer'>
                     <div className='w-8 h-8 border flex justify-center items-center rounded-s-md'>
-                        <i class="ri-arrow-left-s-line text-xl"></i>
+                        <i className="ri-arrow-left-s-line text-xl"></i>
                     </div>
 
                     <div className='w-10 h-8 bg-blue-500 border-blue-500 text-white border border-l-0 flex justify-center items-center'>1</div>
@@ -139,7 +139,7 @@ export default function Leads() {
                     <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>253</div>
 
                     <div className='w-8 h-8 border border-l-0 flex justify-center items-center rounded-e-md'>
-                        <i class="ri-arrow-right-s-line text-xl"></i>
+                        <i className="ri-arrow-right-s-line text-xl"></i>
                     </div>
                 </div>
             </div>
