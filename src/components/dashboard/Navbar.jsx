@@ -21,10 +21,10 @@ export default function Navbar({ session }) {
     }
 
     return (
-        <div className="flex justify-end items-center sticky bg-white py-3 px-4 gap-16">
+        <div className="flex justify-end items-center sticky bg-white py-3 px-4 gap-16 z-10">
             <div className='flex gap-3'>
                 <span className="tooltip tooltip-bottom" data-tooltip="Goto Conceptninjas Old Dashboard">
-                    <div className='hover:bg-blue-100 hover:text-blue-500 hover:border-blue-100 text-gray-600 border bg-transparent cursor-pointer w-fit px-4 h-7 flex justify-center items-center rounded-full' onClick={goToLegacyDashboard}>
+                    <div className='hover:bg-blue-100 hover:text-blue-600 hover:border-blue-50 text-gray-600 border bg-transparent cursor-pointer w-fit px-4 h-7 flex justify-center items-center rounded-full' onClick={goToLegacyDashboard}>
                         <i className="ri-computer-line pointer-events-none mr-2"></i>
                         <div>Legacy Dashboard</div>
                     </div>
@@ -40,7 +40,7 @@ export default function Navbar({ session }) {
                     </div>
                 </span>
             </div>
-            <div className='dropdown z-50 flex h-fit'>
+            <div className='dropdown z-10 flex h-fit'>
                 <label className='flex gap-2 poppins cursor-pointer' tabIndex="0">
                     <div className='pr-2 pointer-events-none'>
                         <h3 className='m-0 text-base'>{session.user.name}</h3>

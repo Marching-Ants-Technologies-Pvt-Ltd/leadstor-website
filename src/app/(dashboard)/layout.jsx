@@ -38,6 +38,7 @@ export default function ClientLayout({ children }) {
 
                 <div
                     style={{
+                        zIndex: 0,
                         width: 'calc(100% - 288px)'
                     }}
                     className="flex w-full flex-col">

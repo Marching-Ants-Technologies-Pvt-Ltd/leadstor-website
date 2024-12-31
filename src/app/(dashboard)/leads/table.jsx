@@ -1,30 +1,47 @@
 'use client';
-import './table-style.css';
-import LeadContextMenu, { ShowContentMenu } from './contextMenu';
+import '@/app/style/table-style.css';
+import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
 import { useEffect, useState } from 'react';
 import AppliedFilters, { showAppliedFilter } from './appliedFilters';
+import { xFetch } from '@/utility/xFetch';
+import { CheckUncheckAllRows } from '@/utility/TableControllers';
 
-const token = JSON.parse(localStorage.getItem('session_user'))['cn_token'];
-const myHeaders = new Headers();
-myHeaders.append("Content-Type", "application/json");
-myHeaders.append("Authorization", `Bearer ${token}`);
-
-const requestOptions = { method: "GET", headers: myHeaders, redirect: "follow" };
+const contextMenuItems = [
+    { icon: "ri-edit-2-fill", title: "Edit" },
+    { icon: "ri-star-line", title: "Bookmark" },
+    { icon: "ri-whatsapp-line", title: "Whatsapp message" },
+    { icon: "ri-mail-send-line", title: "Send Email" },
+    { icon: "ri-chat-1-line", title: "Send SMS" },
+    { icon: "ri-user-voice-line", title: "Invite Again" },
+    { icon: "ri-customer-service-2-line", title: "Make a call", badge: "IVR" },
+    { icon: "ri-history-line", title: "View timeline" },
+    { icon: "ri-group-line", title: "View related inquiry" }
+];
 
 let setLeadsFn;
 let columnOrder;
 
 function xLeads() {
 
-    let query = 'testId=2101&testType=S&owner=-1&isTelecaller=0&time=1735208746990&search=&order=asc&offset=0&limit=25';
-    fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/invite/enquiries?${query}`, requestOptions)
-        .then((response) => response.json())
-        .then((result) => {
-            console.log('FOUNDs', result);
-            setLeadsFn(result.rows);
+    let payload = {
+        "testId": "2101",
+        "testType": "S",
+        "owner": "-1",
+        "isTelecaller": "0",
+        "order": "asc",
+        "offset": "0",
+        "limit": "25"
+    }
+
+    xFetch({
+        path: '/services/invite/enquiries',
+        payload
+    })
+        .then(data => {
+            setLeadsFn(data.rows);
         })
-        .catch((error) => {
-            console.log('FUSSs', error);
+        .catch(error => {
+            console.error(`An error occurred while fetching leads`, error);
             setLeadsFn([]);
         });
 }
@@ -60,16 +77,15 @@ export default function LeadsTable({ search = '' }) {
 
     // Get table columns
     useEffect(() => {
-
-        fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/columns`, requestOptions)
-            .then((response) => response.json())
-            .then((result) => {
-                setColumns(result);
-                columnOrder = result.map((item) => { return item.dataField });
+        xFetch({ path: '/services/profile/columns' })
+            .then(data => {
+                setColumns(data);
+                columnOrder = data.map((item) => { return item.dataField });
                 columnOrder = columnOrder.filter(item => item !== 'action');
                 xLeads();
             })
-            .catch((error) => {
+            .catch(error => {
+                console.error(`An error occurred while fetching lead-table-columns`, error);
                 setColumns([]);
             });
     }, []);
@@ -82,19 +98,15 @@ export default function LeadsTable({ search = '' }) {
         }
     }, [leads])
 
-    const handelSelectAll = (event) => {
-        document.querySelectorAll('table.leadstor-table tbody input[type=checkbox]').forEach(box => box.checked = event.target.checked);
-    }
-
     return (
-        <div className='grow border-t border-b bg-gray-50 overflow-auto'>
-            <LeadContextMenu />
+        <div className='grow border-t border-b overflow-auto'>
+            <ContextMenu items={contextMenuItems} />
             <AppliedFilters />
             <table className="leadstor-table">
-                <thead>
+                <thead className='bg-blue-50'>
                     <tr>
                         <th>
-                            <input type="checkbox" onChange={handelSelectAll} />
+                            <input type="checkbox" onChange={ CheckUncheckAllRows } />
                         </th>
                         {columns
                             .filter(item => item.dataField !== 'action')
