@@ -1,17 +1,17 @@
 import Image from 'next/image';
 
-export default function Navbar({ session }) {
+export default function Navbar({ data }) {
 
     const goToLegacyDashboard = () => {
         
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = localStorage.getItem('ninja_dashboard_link');
+        form.action = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor/dashboard`;
 
         const tokenInput = document.createElement('input');
         tokenInput.type = 'hidden';
         tokenInput.name = 'token';
-        tokenInput.value = session.user.cn_token;
+        tokenInput.value = localStorage.getItem('access_token') ?? '';
 
         form.appendChild(tokenInput);
         document.body.appendChild(form);
@@ -43,14 +43,14 @@ export default function Navbar({ session }) {
             <div className='dropdown z-10 flex h-fit'>
                 <label className='flex gap-2 poppins cursor-pointer' tabIndex="0">
                     <div className='pr-2 pointer-events-none'>
-                        <h3 className='m-0 text-base'>{session.user.name}</h3>
-                        <p className='-mt-0.5 p-0 text-xs text-gray-500 text-right'>Manager</p>
+                        <h3 className='m-0 text-base'>{data.user.name}</h3>
+                        <p className='-mt-0.5 p-0 text-xs text-gray-500 text-right'>{data.user.role}</p>
                     </div>
                     <div className='flex justify-center items-center pointer-events-none'>
                         <Image
                             className='rounded-md'
                             placeholder='empty'
-                            src={session.user.image}
+                            src={data.user.image}
                             width={36}
                             height={36}
                             alt="User Avatar"

@@ -1,48 +1,27 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 
-export default function Sidebar({ session }) {
+export default function Sidebar({ data }) {
 
-    const router = useRouter();
-
-    const switchPage = (e) => {
-        let link = e.target.getAttribute('link');
-        if (!link) return; // Skip if non clickable items clicked
-        if (router.pathname === link) return; // Client is on same origin
-        router.push(link);
-        updateActiveMenu(link);
-    }
+    const pathName = usePathname();
 
     const updateActiveMenu = (pathName) => {
+        console.log('Changing Path');
         let activeLink = document.querySelector(`nav .__active`);
         if (activeLink) activeLink.classList.remove('__active');
-        
-        activeLink = document.querySelector(`nav [link="${pathName}"]`);
+
+        activeLink = document.querySelector(`nav ul a[href="${pathName}"]`);
         if (activeLink) activeLink.classList.add('__active');
     }
 
+    // Set menu item to active on path change
     useEffect(() => {
-        // Expend the parent menu
-        let pathName = router.pathname ?? window.location.pathname;
-        if (pathName.includes('integration/')) {
-            const menuIntegration = document.getElementById('menu-integrations');
-            if (menuIntegration) menuIntegration.checked = true;
-        }
-
-        if (pathName.includes('automation/')) {
-            const menuIntegration = document.getElementById('menu-automation');
-            if (menuIntegration) menuIntegration.checked = true;
-        }
-
-        // Set active menu item
         updateActiveMenu(pathName);
-
-        // ToDo: highlight integrated items, the green-dot
-        console.log('Sidebar Updated');
-    }, [router.switchPage]);
+    }, [pathName]);
 
     return (
         <aside className="sidebar-sticky sidebar justify-start bg-white">
@@ -57,25 +36,31 @@ export default function Sidebar({ session }) {
                 />
                 <div className="flex flex-col">
                     <span className="text-xl">Dashboard</span>
-                    <span className="text-sm font-medium text-content2">Leadstor &bull; <strong className='text-green-600 font-medium'>Basic Plan</strong></span>
+                    <span className="text-sm font-medium text-content2">Leadstor &bull; <strong className='text-green-600 font-medium'>v1.0.3</strong></span>
                 </div>
             </section>
             <section className="sidebar-content min-h-[20rem]">
-                <nav className="menu rounded-md" onClick={switchPage}>
+                <nav className="menu rounded-md">
                     <section className="menu-section px-4">
                         <ul className="menu-items gap-1 mb-4">
-                            <li className="menu-item poppins gap-3 text-base text-gray-600" link="/leads">
-                                <i className="ri-megaphone-line text-xl pointer-events-none"></i>
-                                <span className='mt-0.5 pointer-events-none'>Leads</span>
-                            </li>
-                            <li className="menu-item poppins gap-3 text-base text-gray-600" link="/conversions">
-                                <i className="ri-seedling-fill text-xl pointer-events-none"></i>
-                                <span className='mt-0.5 pointer-events-none'>Conversions</span>
-                            </li>
-                            <li className="menu-item poppins gap-3 text-base text-gray-600" link="/dashboard">
-                                <i className="ri-apps-line text-xl pointer-events-none"></i>
-                                <span className='mt-0.5 pointer-events-none'>Dashboard</span>
-                            </li>
+                            <Link href="/leads">
+                                <li className="menu-item poppins gap-3 text-base text-gray-600">
+                                    <i className="ri-megaphone-line text-xl pointer-events-none"></i>
+                                    <span className='mt-0.5 pointer-events-none'>Leads</span>
+                                </li>
+                            </Link>
+                            <Link href="/conversions">
+                                <li className="menu-item poppins gap-3 text-base text-gray-600">
+                                    <i className="ri-seedling-fill text-xl pointer-events-none"></i>
+                                    <span className='mt-0.5 pointer-events-none'>Conversions</span>
+                                </li>
+                            </Link>
+                            <Link href="/dashboard">
+                                <li className="menu-item poppins gap-3 text-base text-gray-600">
+                                    <i className="ri-apps-line text-xl pointer-events-none"></i>
+                                    <span className='mt-0.5 pointer-events-none'>Dashboard</span>
+                                </li>
+                            </Link>
 
                             <li>
                                 <input type="checkbox" id="menu-integrations" className="menu-toggle" />
@@ -94,8 +79,8 @@ export default function Sidebar({ session }) {
                                         <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Email</label>
                                         <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>IVR Services</label>
                                         <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Calendar &amp; Meets</label>
-                                        <label link="/integration/facebook" className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Facebook<span className="badge badge-xs badge-flat-secondary font-normal">Pages</span></label>
-                                        <label link="/integration/whatsapp" className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>WhatsApp</label>
+                                        <Link href="/integration/facebook" className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Facebook<span className="badge badge-xs badge-flat-secondary font-normal">Pages</span></Link>
+                                        <Link href="/integration/whatsapp" className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>WhatsApp</Link>
                                         <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Payment Gateway</label>
                                         <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none dot-success"></span>Leadstor Form<span className="badge badge-xs badge-flat-success font-normal">New</span></label>
                                         <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Plugins<span className="badge badge-xs badge-flat-warning font-normal">Beta</span></label>
@@ -129,32 +114,35 @@ export default function Sidebar({ session }) {
             </section>
             <section className="sidebar-footer">
                 <div className="divider my-0"></div>
-                <div className="dropdown z-50 flex h-fit w-full cursor-pointer -mt-2 hover:bg-gray-4">
-                    <label className="mx-2 flex h-fit w-full cursor-pointer p-0 hover:bg-gray-4" tabIndex="0">
-                        <div className="flex flex-row gap-3 p-4">
-                            <div className="avatar avatar-md mt-1">
+                <div className="flex h-fit w-full cursor-pointer -mt-2">
+                    <div className="mx-2 h-fit w-full cursor-pointer p-0">
+                        <div className="flex flex-row gap-4 p-3">
+                            <div className="avatar w-[38px] h-[38px] avatar-md mt-1">
                                 <Image
                                     placeholder='empty'
-                                    src="https://api.dicebear.com/5.x/initials/png?seed=C&size=50"
+                                    src={data.logo}
                                     width={36}
                                     height={36}
-                                    alt="Company Avatar"
+                                    alt="Company Logo"
                                     priority={false}
                                 />
                             </div>
-                            <div className="flex flex-col">
-                                <span className='text-lg font-semibold'>Conceptninjas</span>
-                                <span className="text-sm -mt-0.5 font-normal text-content2">Business &bull; C{session.user._id} <i className="ri-settings-line relative bg-gray-200 p-0.5 top-[1px] rounded-full cursor-pointer text-gray-400"></i></span>
+                            <div className="flex flex-col flex-auto">
+                                <span className='text-lg font-semibold'>{data.name}</span>
+                                <span className="text-sm -mt-0.5 font-normal text-content2">Business &bull; {data.country_code} </span>
+                            </div>
+                            <div className='flex justify-center items-center flex-none dropdown z-50'>
+                                <label tabIndex="0" className="ri-menu-3-line bg-gray-100 mt-1 rounded-full text-lg h-8 w-8 cursor-pointer flex justify-center items-center text-gray-600"></label>
+                                <div className="dropdown-menu-right-top dropdown-menu ml-2 mb-8 border poppins bg-white max-w-48">
+                                    <a className="dropdown-item text-sm text-gray-600">Manage Team</a>
+                                    <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Account settings</a>
+                                    <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Subscriptions</a>
+                                    <a href={data.website_link} target='_blank' className="dropdown-item text-sm text-gray-600">Visit Website</a>
+                                    <div className='w-full h-6 border-b'></div>
+                                    <a href='/about' target='_blank' className="dropdown-item text-sm text-gray-600">About Leadstor</a>
+                                </div>
                             </div>
                         </div>
-                    </label>
-                    <div className="dropdown-menu-right-top dropdown-menu ml-2 mb-8 border poppins bg-white">
-                        <a className="dropdown-item text-sm text-gray-600">Manage Team</a>
-                        <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Account settings</a>
-                        <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Subscriptions</a>
-                        <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Visit Website</a>
-                        <div className='w-full h-6 border-b'></div>
-                        <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">About Leadstor</a>
                     </div>
                 </div>
             </section>

@@ -15,7 +15,7 @@ export async function xFetch({
     return new Promise((resolve, reject) => {
         
         // Get token
-        const token = JSON.parse(localStorage.getItem('session_user'))['cn_token'];
+        const token = localStorage.getItem('access_token');
 
         // Set headers
         const myHeaders = new Headers();

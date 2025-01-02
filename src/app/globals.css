@@ -203,6 +203,8 @@ body {
   }
 }
 
-.__active{
-  @apply text-blue-500 bg-blue-50;
+.__active,
+.__active li {
+  color: #4583e2 !important;
+  @apply bg-blue-50 rounded-md;
 }

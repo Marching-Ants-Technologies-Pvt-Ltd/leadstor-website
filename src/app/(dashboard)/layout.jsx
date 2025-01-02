@@ -5,6 +5,7 @@ import Sidebar from '@/components/dashboard/Sidebar';
 import Navbar from '@/components/dashboard/Navbar';
 import RaiseTicketFav from '@/components/dashboard/RaiseTicketFav';
 import Loading from '@/components/elements/Loading';
+import { xFetch } from '@/utility/xFetch';
 
 import React from "react";
 import { useRouter } from 'next/navigation';
@@ -21,9 +22,28 @@ export default function ClientLayout({ children }) {
             const sessionData = await getSession();
             if (!sessionData) {
                 router.push('/signin');
-            } else {
-                setSession(sessionData);
+                return;
             }
+
+            // Save access token for all xFetch calls
+            localStorage.setItem('access_token', sessionData.user.cn_token);
+
+            // Get necessary+common details of this corporate 
+            xFetch({ path: '/services/profile/corporate' }).then(data => {
+                data['user']['image'] = sessionData.user.image;
+                data['user']['name'] = sessionData.user.name;
+                data['user']['email'] = sessionData.user.email;
+                data['session'] = {
+                    "provider": sessionData.user.auth_provider,
+                    "uuid": sessionData.user.uuid,
+                };
+
+                localStorage.setItem('corporate', JSON.stringify(data));
+                setSession(data);
+            })
+                .catch(error => {
+                    console.error(`An error occurred while fetching leads`, error);
+                });
         };
 
         fetchSession();
@@ -34,7 +54,7 @@ export default function ClientLayout({ children }) {
     return (
         <SessionProvider>
             <div className="sticky flex h-screen flex-row overflow-y-auto rounded-lg sm:overflow-x-hidden">
-                <Sidebar session={session} />
+                <Sidebar data={session} />
 
                 <div
                     style={{
@@ -42,8 +62,8 @@ export default function ClientLayout({ children }) {
                         width: 'calc(100% - 288px)'
                     }}
                     className="flex w-full flex-col">
-                    <Navbar session={session} />
-                    <div 
+                    <Navbar data={session} />
+                    <div
                         style={{
                             height: 'calc(100% - 63px)'
                         }}
