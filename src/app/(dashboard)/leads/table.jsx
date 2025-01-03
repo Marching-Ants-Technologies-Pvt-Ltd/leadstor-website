@@ -4,6 +4,7 @@ import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
 import { useEffect, useState } from 'react';
 import AppliedFilters, { showAppliedFilter } from './appliedFilters';
 import { xFetch } from '@/utility/xFetch';
+import { getLeadOwnerById, Test, User, LeadsPerPage } from '@/utility/TinyDB';
 import { CheckUncheckAllRows } from '@/utility/TableControllers';
 
 const contextMenuItems = [
@@ -19,18 +20,32 @@ const contextMenuItems = [
 ];
 
 let setLeadsFn;
-let columnOrder;
+
+const dataFormatters = {
+    assignedUserId: (row) => {
+        let _id = parseInt(row['assignedUserId'] ?? "0");
+        return getLeadOwnerById(_id);
+    },
+    leadProbability: (row) => {
+        let _id = parseInt(row['leadProbability']);
+        if (!_id || typeof _id !== 'number') return '';
+        if (_id == 20) return 'Low';
+        if (_id == 55) return 'Medium';
+        return 'High';
+    }
+}
 
 function xLeads() {
 
     let payload = {
-        "testId": "2101",
-        "testType": "S",
-        "owner": "-1",
-        "isTelecaller": "0",
+        "testId": Test._id,
+        "testType": Test.type,
+        "owner": User._id,
+        "isTelecaller": (User.telecaller) ? 1 : 0,
         "order": "asc",
         "offset": "0",
-        "limit": "25"
+        "limit": LeadsPerPage.value(),
+        "search": document.querySelector('div#table-search-bar input')?.value ?? ''
     }
 
     xFetch({
@@ -46,17 +61,10 @@ function xLeads() {
         });
 }
 
-export function searchLead(text) {
-    console.log(`Search It!`, text);
-}
-
-export function leadFilters(options = {}) {
-    // showAppliedFilter({status: "Invited,Cold Lead", name: "tanish"})
-}
-
-export default function LeadsTable({ search = '' }) {
+export default function LeadsTable() {
 
     const [columns, setColumns] = useState([]);
+    const [columnOrder, setColumnOrder] = useState([]);
     const [leads, setLeads] = useState([]);
     setLeadsFn = setLeads;
 
@@ -80,23 +88,21 @@ export default function LeadsTable({ search = '' }) {
         xFetch({ path: '/services/profile/columns' })
             .then(data => {
                 setColumns(data);
-                columnOrder = data.map((item) => { return item.dataField });
-                columnOrder = columnOrder.filter(item => item !== 'action');
+                let _columnOrder = data.map((item) => { return item.dataField });
+                _columnOrder = _columnOrder.filter(item => item !== 'action');
+                setColumnOrder(_columnOrder);
                 xLeads();
             })
             .catch(error => {
                 console.error(`An error occurred while fetching lead-table-columns`, error);
                 setColumns([]);
             });
-    }, []);
 
-    useEffect(() => {
-        if (document.querySelector('table.leadstor-table tbody') && document.querySelector('table.leadstor-table tbody').rows.length > 0) {
-            console.log(`Leads table refreshed with some rows`);
-            // ToDo Apply any column formatter
-            // Always done after post table-data-population
+        window.tableRefresh = () => {
+            xLeads();
         }
-    }, [leads])
+
+    }, []);
 
     return (
         <div className='grow border-t border-b overflow-auto'>
@@ -106,7 +112,7 @@ export default function LeadsTable({ search = '' }) {
                 <thead className='bg-blue-50'>
                     <tr>
                         <th>
-                            <input type="checkbox" onChange={ CheckUncheckAllRows } />
+                            <input type="checkbox" onChange={CheckUncheckAllRows} />
                         </th>
                         {columns
                             .filter(item => item.dataField !== 'action')
@@ -132,7 +138,7 @@ export default function LeadsTable({ search = '' }) {
                                 </div>
                             </td>
                             {columnOrder.map((col, k) => (
-                                <td key={`lead-clm-${k}`}>{row[col] ?? '0'}</td>
+                                <td key={`lead-clm-${k}`}>{(dataFormatters[col]) ? dataFormatters[col](row) : row[col] ?? ''}</td>
                             ))}
                         </tr>
                     ))}

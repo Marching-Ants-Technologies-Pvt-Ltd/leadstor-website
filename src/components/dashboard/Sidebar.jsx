@@ -124,7 +124,7 @@ export default function Sidebar({ data }) {
                             <div className="avatar w-[38px] h-[38px] avatar-md mt-1">
                                 <Image
                                     placeholder='empty'
-                                    src={data.logo}
+                                    src={data.corporate.logo}
                                     width={36}
                                     height={36}
                                     alt="Company Logo"
@@ -132,8 +132,8 @@ export default function Sidebar({ data }) {
                                 />
                             </div>
                             <div className="flex flex-col flex-auto">
-                                <span className='text-lg font-semibold'>{data.name}</span>
-                                <span className="text-sm -mt-0.5 font-normal text-content2">Business &bull; {data.country_code} </span>
+                                <span className='text-lg font-semibold'>{data.corporate.name}</span>
+                                <span className="text-sm -mt-0.5 font-normal text-content2">Business &bull; {data.corporate.country_code} </span>
                             </div>
                             <div className='flex justify-center items-center flex-none dropdown z-50'>
                                 <label tabIndex="0" className="ri-menu-3-line bg-gray-100 mt-1 rounded-full text-lg h-8 w-8 cursor-pointer flex justify-center items-center text-gray-600"></label>
@@ -141,7 +141,7 @@ export default function Sidebar({ data }) {
                                     <a className="dropdown-item text-sm text-gray-600">Manage Team</a>
                                     <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Account settings</a>
                                     <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Subscriptions</a>
-                                    <a href={data.website_link} target='_blank' className="dropdown-item text-sm text-gray-600">Visit Website</a>
+                                    <a href={data.corporate.website_link} target='_blank' className="dropdown-item text-sm text-gray-600">Visit Website</a>
                                     <div className='w-full h-6 border-b'></div>
                                     <a href='/about' target='_blank' className="dropdown-item text-sm text-gray-600">About Leadstor</a>
                                 </div>

@@ -41,7 +41,7 @@ export default function ClientLayout({ children }) {
                     "uuid": sessionData.user.uuid,
                 };
 
-                localStorage.setItem('corporate', JSON.stringify(data));
+                localStorage.setItem('CurrentSessionData', JSON.stringify(data));
                 setSession(data);
             })
                 .catch(error => {
