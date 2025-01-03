@@ -30,6 +30,21 @@
                     @apply text-lg cursor-pointer ml-1;
                 }
             }
+            >span i{
+                @apply w-fit bg-gray-100 not-italic rounded-lg pb-0.5 px-2;
+            }
+            >span i.primary{
+                @apply text-blue-500 bg-blue-50;
+            }
+            >span i.warning{
+                @apply text-orange-500 bg-orange-50;
+            }
+            >span i.success{
+                @apply text-green-500 bg-green-50;  
+            }
+            >span u.ri-mic-ai-line{
+                @apply bg-gray-100 rounded-lg p-1.5 text-lg cursor-pointer hover:text-blue-400 hover:bg-blue-50 no-underline;
+            }
         }
     }
 }

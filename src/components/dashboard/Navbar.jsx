@@ -24,7 +24,7 @@ export default function Navbar({ data }) {
         <div className="flex justify-end items-center sticky bg-white py-3 px-4 gap-16 z-10">
             <div className='flex gap-3'>
                 <span className="tooltip tooltip-bottom" data-tooltip="Goto Conceptninjas Old Dashboard">
-                    <div className='hover:bg-blue-100 hover:text-blue-600 hover:border-blue-50 text-gray-600 border bg-transparent cursor-pointer w-fit px-4 h-7 flex justify-center items-center rounded-full' onClick={goToLegacyDashboard}>
+                    <div className='hover:bg-blue-50 hover:text-blue-600 hover:border-blue-50 text-gray-600 border bg-transparent cursor-pointer w-fit px-4 h-7 flex justify-center items-center rounded-full' onClick={goToLegacyDashboard}>
                         <i className="ri-computer-line pointer-events-none mr-2"></i>
                         <div>Legacy Dashboard</div>
                     </div>

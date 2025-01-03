@@ -29,10 +29,22 @@ const dataFormatters = {
     leadProbability: (row) => {
         let _id = parseInt(row['leadProbability']);
         if (!_id || typeof _id !== 'number') return '';
-        if (_id == 20) return 'Low';
-        if (_id == 55) return 'Medium';
-        return 'High';
+        if (_id == 20) return `<i class="warning">Low</i>`;
+        if (_id == 55) return `<i class="primary">Medium</i>`;
+        return '<i class="success">High</i>';
+    },
+    remarks: (row) => {
+        let content = row['remarks'];
+        if(content.includes('<audio')) {
+            let audioLink = content.match(/src="([^"]+)"/);
+            audioLink = (audioLink.length > 1) ? audioLink[1] : '';
+            return `<u class="ri-mic-ai-line" data-audio="${audioLink}"></u> ${content.split('<audio')[0]}`;
+        }
+
+        return content;
+
     }
+
 }
 
 function xLeads() {
@@ -138,7 +150,20 @@ export default function LeadsTable() {
                                 </div>
                             </td>
                             {columnOrder.map((col, k) => (
-                                <td key={`lead-clm-${k}`}>{(dataFormatters[col]) ? dataFormatters[col](row) : row[col] ?? ''}</td>
+                                <td key={`lead-clm-${k}`} data-column={col}>
+                                    {dataFormatters[col]
+                                        ? ((['leadProbability', 'remarks'].includes(col))
+                                            ? (
+                                                <span
+                                                    dangerouslySetInnerHTML={{ __html: dataFormatters[col](row) }}
+                                                />
+                                            ) : (
+                                                dataFormatters[col](row)
+                                            )
+                                        )
+                                        : (row[col] ?? '')
+                                    }
+                                </td>
                             ))}
                         </tr>
                     ))}

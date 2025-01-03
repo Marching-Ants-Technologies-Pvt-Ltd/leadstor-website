@@ -4,7 +4,7 @@ import { LeadsPerPage } from "@/utility/TinyDB";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-function handelPaging() {
+function handelPaging(data) {
     console.log('Updating paging...');
 }
 

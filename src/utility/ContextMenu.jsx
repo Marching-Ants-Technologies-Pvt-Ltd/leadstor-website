@@ -48,13 +48,16 @@ export function ShowContentMenu({ event, onClick}) {
     }, 10);
 
     callbackFn = onClick;
-    if (event.target.tagName === 'I') {
+    console.log(`Clicked On`, event.target)
+    if (['I', 'U'].includes(event.target.tagName)) {
         currentRowId = event.target.parentElement.parentElement.parentElement.id;
-    } else {
+    } else if (['SPAN'].includes(event.target.tagName)) {
+        currentRowId = event.target.parentElement.parentElement.id;
+    }else {
         currentRowId = event.target.parentElement.id;
     }
 
-    if (document.querySelector(`tr#${currentRowId}`)) document.querySelector(`tr#${currentRowId}`).style.background = '#fffded';
+    if (currentRowId && document.querySelector(`tr#${currentRowId}`)) document.querySelector(`tr#${currentRowId}`).style.background = '#fffded';
 }
 
 export default function ContextMenu({ items = []}) {
@@ -70,7 +73,7 @@ export default function ContextMenu({ items = []}) {
     contextMenuStatus = setMenu;
 
     const hideContextMenu = () => {
-        if (document.querySelector(`tr#${currentRowId}`)) document.querySelector(`tr#${currentRowId}`).style.background = null;
+        if (currentRowId && document.querySelector(`tr#${currentRowId}`)) document.querySelector(`tr#${currentRowId}`).style.background = null;
         setMenu({
             display: 'none',
             top: '0px',
