@@ -7,6 +7,9 @@ import RaiseTicketFav from '@/components/dashboard/RaiseTicketFav';
 import Loading from '@/components/elements/Loading';
 import { xFetch } from '@/utility/xFetch';
 
+import 'react-toastify/ReactToastify.min.css';
+import { Slide, ToastContainer } from 'react-toastify';
+
 import React from "react";
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -43,6 +46,7 @@ export default function ClientLayout({ children }) {
             })
                 .catch(error => {
                     console.error(`An error occurred while fetching leads`, error);
+                    router.push('/signout');
                 });
         };
 
@@ -74,6 +78,19 @@ export default function ClientLayout({ children }) {
 
                 <RaiseTicketFav />
             </div>
+            <ToastContainer
+                position="bottom-right"
+                autoClose={5000}
+                hideProgressBar
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover={false}
+                theme="light"
+                transition={Slide}
+            />
         </SessionProvider>
     )
 }

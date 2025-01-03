@@ -1,3 +1,6 @@
+'use client';
+import { toast } from 'react-toastify';
+
 export default function Dashboard() {
 
     // const isAdmin = true;
@@ -7,6 +10,7 @@ export default function Dashboard() {
         <div>
             <h3>Hi, Welcome Back!</h3>
             <p>This page is currently under construction.</p>
+            <button onClick={(e) => toast.info('Leadstor v1.0.3')}>Toast</button>
         </div>
     );
 }

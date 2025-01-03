@@ -16,6 +16,10 @@ export default function Sidebar({ data }) {
 
         activeLink = document.querySelector(`nav ul a[href="${pathName}"]`);
         if (activeLink) activeLink.classList.add('__active');
+        
+        // Update page title
+        let title = pathName.split('/')[1];
+        document.title = `${title.substring(0,1).toUpperCase()}${title.substring(1)} | Leadstor`;
     }
 
     // Set menu item to active on path change

@@ -11,7 +11,7 @@ const StructuredData = () => {
     "applicationCategory": "BusinessApplication",
     "applicationSubCategory": "WebApplication",
     "operatingSystem": "All",
-    "softwareVersion": "2.0.1",
+    "softwareVersion": "1.0.3",
     "sameAs": [
       "https://www.facebook.com/profile.php?id=61565472072220",
       "https://www.linkedin.com/company/leadstor-in/",
