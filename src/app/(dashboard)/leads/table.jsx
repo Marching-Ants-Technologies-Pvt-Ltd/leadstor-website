@@ -5,7 +5,7 @@ import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
 import { useEffect, useState } from 'react';
 import AppliedFilters, { showAppliedFilter } from './appliedFilters';
 import { xFetch } from '@/utility/xFetch';
-import { getLeadOwnerById, Test, User, LeadsPerPage, TotalLeads } from '@/utility/TinyDB';
+import { getLeadOwnerById, Test, User, LeadsPerPage, TotalLeads, LeadsCurrentPage } from '@/utility/TinyDB';
 import { CheckUncheckAllRows } from '@/utility/TableControllers';
 
 const contextMenuItems = [
@@ -56,18 +56,24 @@ const dataFormatters = {
 }
 
 function xLeads() {
+    // calculate offset
+    let currentPage = LeadsCurrentPage.value();
+    let limit = LeadsPerPage.value();
+    let offset = (currentPage - 1) * limit;
 
+    // compose payload
     let payload = {
         "testId": Test._id,
         "testType": Test.type,
         "owner": User._id,
         "isTelecaller": (User.telecaller) ? 1 : 0,
         "order": "asc",
-        "offset": "0",
-        "limit": LeadsPerPage.value(),
+        "offset": offset,
+        "limit": limit,
         "search": document.querySelector('div#table-search-bar input')?.value ?? ''
     }
 
+    // get leads
     xFetch({
         path: '/services/invite/enquiries',
         payload
@@ -79,7 +85,10 @@ function xLeads() {
         .catch(error => {
             console.error(`An error occurred while fetching leads`, error);
             setLeadsFn([]);
-        });
+            TotalLeads.setValue(0);
+        }).finally(() => {
+            if(typeof window.onTableRefresh == 'function') window.onTableRefresh();
+        })
 }
 
 export default function LeadsTable() {

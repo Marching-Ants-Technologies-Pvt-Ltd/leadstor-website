@@ -34,3 +34,8 @@ export const LeadsCurrentPage = {
     value: () => parseInt(localStorage.getItem('LeadsCurrentPage') ?? '1'),
     setValue: (value) => localStorage.setItem('LeadsCurrentPage', value)
 }
+
+export const LeadsLastPage = {
+    value: () => parseInt(localStorage.getItem('LeadsLastPage') ?? '1'),
+    setValue: (value) => localStorage.setItem('LeadsLastPage', value)
+}

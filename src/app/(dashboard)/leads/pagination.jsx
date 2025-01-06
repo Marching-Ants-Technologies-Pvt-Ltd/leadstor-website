@@ -1,17 +1,48 @@
 'use client';
 
-import { fullScreenSwitch, toggleScrollbar } from "@/utility/TableControllers";
-import { LeadsPerPage, TotalLeads, LeadsCurrentPage } from "@/utility/TinyDB";
+import { fullScreenSwitch, toggleScrollbar, getPageNumbers } from "@/utility/TableControllers";
+import { LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadsLastPage } from "@/utility/TinyDB";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-function handelPaging(data) {
-    console.log('Updating paging...');
+let setPagingX;
+let setSummaryX;
+
+async function handelPaging() {
+    let currentPage = LeadsCurrentPage.value();
+    let maxLeads = TotalLeads.value();
+    let limit = LeadsPerPage.value();
+
+    const totalPages = Math.ceil(maxLeads / limit);
+    const pages = await getPageNumbers(currentPage, totalPages);
+
+    // Update paging section
+    setPagingX(pages);
+    LeadsLastPage.setValue(totalPages);
+
+    // Compose summary
+    let offset = (currentPage - 1) * limit;
+    if (offset < 1) offset = 1;
+
+    let leads = offset + limit - 1;
+    if (leads > maxLeads) leads = maxLeads;
+
+    if(maxLeads < 1){
+        setSummaryX(`No leads found!`);
+        return;
+    }
+
+    setSummaryX(`Viewing ${offset} to ${leads} of ${maxLeads}`);
 }
 
 export default function LeadsTablePagination() {
 
     const [limit, setLimit] = useState(LeadsPerPage.value());
+    const [paging, setPaging] = useState([]);
+    const [summary, setSummary] = useState('Fetching leads...');
+    setPagingX = setPaging;
+    setSummaryX = setSummary;
+
     // Handel leads/page change
     const handelLeadsPerPageChange = (e) => {
         if (e.target.tagName !== 'A') return;
@@ -24,28 +55,38 @@ export default function LeadsTablePagination() {
 
         // Update Limit value
         setLimit(newLimit);
+        LeadsCurrentPage.value(1);
         LeadsPerPage.setValue(newLimit);
+        setSummary('Fetching leads...');
         window.tableRefresh();
     }
 
     const handelPageChange = (event) => {
+        // Ignore if active page clicked
+        if (event.target.classList.value.includes('active')) return;
+
+        // Get page number
         let page = event.target.getAttribute('data-value');
-        let currentPage = LeadsCurrentPage.value();
+        let newPage = LeadsCurrentPage.value();
 
         if (page === 'NEXT') {
-            console.log('Handle next page call');
+            if (newPage < LeadsLastPage.value()) newPage++;
+        } else if (page === 'PREVIOUS') {
+            if (newPage > 1) newPage--;
+        } else {
+            newPage = parseInt(page);
+        }
+
+        // Check change
+        if (newPage == LeadsCurrentPage.value()) {
+            console.log('No page change');
             return;
         }
 
-        if (page === 'PREVIOUS') {
-            if (currentPage > 1) {
-                console.log('Handle previous page call');
-            }
-
-            return;
-        }
-
-        console.log(page, LeadsCurrentPage.value());
+        // Load page
+        LeadsCurrentPage.setValue(newPage);
+        setSummary('Fetching leads...');
+        window.tableRefresh();
     }
 
     useEffect(() => {
@@ -56,7 +97,12 @@ export default function LeadsTablePagination() {
     return (
         <div className="flex px-4 py-3 poppins text-gray-600 text-[14px] cursor-default">
             <div className='border-r pr-4 flex justify-center items-center'>
-                Viewing 1 to 50 of 10348
+                <div
+                    style={{
+                        display: (summary.startsWith('Fetch')) ? 'block' : 'none'
+                    }}
+                    className="spinner-simple w-5 h-5 mr-2 border-[2px]"></div>
+                {summary}
             </div>
             <div className='pl-4 flex justify-center items-center'>
                 <div className="dropdown-container justify-center">
@@ -89,13 +135,9 @@ export default function LeadsTablePagination() {
                     <i className="ri-arrow-left-s-line"></i>
                 </div>
 
-                <div data-value='1' className='page'>1</div>
-                <div data-value='2' className='page active'>2</div>
-                <div data-value='3' className='page'>3</div>
-                <div data-value='4' className='page'>4</div>
-                <div data-value='5' className='page'>5</div>
-                <div data-value='6' className='page'>...</div>
-                <div data-value='253' className='page'>253</div>
+                {paging.map((item, index) => (
+                    <div key={index} data-value={item.pageNum} className={item.style}>{item.name}</div>
+                ))}
 
                 <div data-value='NEXT' className='arrow-btn rounded-e-md'>
                     <i className="ri-arrow-right-s-line"></i>

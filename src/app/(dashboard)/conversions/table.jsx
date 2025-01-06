@@ -1,5 +1,6 @@
 'use client';
 import '@/app/style/table-style.css';
+import { HorizontalScroll } from '@/utility/TableControllers';
 import { xFetch } from '@/utility/xFetch';
 import { useEffect, useState } from 'react';
 import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
@@ -62,6 +63,10 @@ export default function ConversionTable() {
                 console.error(`An error occurred while fetching lead-table-columns`, error);
                 setColumns([]);
             });
+
+        // Horizontal Scroll
+        HorizontalScroll();
+        
     }, []);
 
     const contextMenuCallback = (response) => {

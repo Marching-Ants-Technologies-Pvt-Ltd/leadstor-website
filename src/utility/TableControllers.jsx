@@ -100,8 +100,52 @@ export function HorizontalScroll() {
         let y = 0;
         if (e.deltaY > 0) y = - 500;
         if (e.deltaY < 0) y = 500;
-    
+
         container.scrollBy({ left: y, behavior: 'smooth' });
     });
 
+}
+
+export async function getPageNumbers(currentPage, totalPages) {
+    const result = [];
+    const pages = [];
+
+    // Helper function to add pages to the result
+    const addPage = (page) => {
+        let _page = 'page';
+        let _pageNum = page;
+        let lastPage = result[result.length - 1];
+        if (_pageNum == '...') _pageNum = (lastPage + 1);
+        if (lastPage !== page) {
+            if (page == currentPage) _page += ' active';
+            pages.push({ name: page, style: _page, pageNum: _pageNum });
+            result.push(page);
+            _page = 'page';
+        }
+    };
+
+    // Always show the first page
+    addPage(1);
+
+    // Add ellipsis if needed before the current page range
+    if (currentPage > 2) {
+        addPage('...');
+    }
+
+    // Add the range around the current page
+    for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages, currentPage + 1); i++) {
+        addPage(i);
+    }
+
+    // Add ellipsis if needed after the current page range
+    if (currentPage < totalPages - 3) {
+        addPage('...');
+    }
+
+    // Always show the last page
+    if (totalPages > 1) {
+        addPage(totalPages);
+    }
+
+    return pages;
 }

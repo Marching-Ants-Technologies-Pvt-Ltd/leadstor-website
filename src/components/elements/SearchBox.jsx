@@ -1,5 +1,6 @@
 'use client';
 
+import { LeadsCurrentPage } from "@/utility/TinyDB";
 export default function SearchBox() {
 
     let searchTextChangeTimer;
@@ -12,7 +13,10 @@ export default function SearchBox() {
         if (lastText.length > 0 && e.target.value == lastText) return;
         lastText = e.target.value;
 
-        searchTextChangeTimer = setTimeout(window.tableRefresh, 750);
+        searchTextChangeTimer = setTimeout(() => {
+            LeadsCurrentPage.setValue(1);
+            window.tableRefresh();
+        }, 750);
     }
     return (
         <div id="table-search-bar" className="border rounded-md h-full flex px-3 gap-2 max-w-80">
