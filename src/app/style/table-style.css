@@ -78,6 +78,10 @@ td:first-child{
     max-width: 60px!important;
 }
 
+td[data-column="remarks"] span {
+    cursor: pointer;
+}
+
 /* Pagination */
 .pagination {
     @apply flex font-medium cursor-pointer gap-0;

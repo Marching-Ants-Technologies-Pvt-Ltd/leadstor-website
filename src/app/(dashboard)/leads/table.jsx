@@ -1,5 +1,6 @@
 'use client';
 import '@/app/style/table-style.css';
+import { showFullRemarks, HorizontalScroll } from '@/utility/TableControllers';
 import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
 import { useEffect, useState } from 'react';
 import AppliedFilters, { showAppliedFilter } from './appliedFilters';
@@ -29,18 +30,25 @@ const dataFormatters = {
     leadProbability: (row) => {
         let _id = parseInt(row['leadProbability']);
         if (!_id || typeof _id !== 'number') return '';
+        if (_id < 20) return '';
         if (_id == 20) return `<i class="warning">Low</i>`;
         if (_id == 55) return `<i class="primary">Medium</i>`;
         return '<i class="success">High</i>';
     },
     remarks: (row) => {
         let content = row['remarks'];
-        if(content.includes('<audio')) {
+        if (content.includes('<audio')) {
             let audioLink = content.match(/src="([^"]+)"/);
             audioLink = (audioLink.length > 1) ? audioLink[1] : '';
             return `<u class="ri-mic-ai-line" data-audio="${audioLink}"></u> ${content.split('<audio')[0]}`;
         }
 
+        // Sanitize content to avoid XSS attack
+        const div = document.createElement('div');
+        div.innerText = content;
+        content = div.innerHTML;
+
+        // Final content
         return content;
 
     }
@@ -86,14 +94,35 @@ export default function LeadsTable() {
     }
 
     const handelRowClick = (event) => {
-        if (event.target.tagName !== 'I') return;
-        ShowContentMenu({ event, onClick: contextMenuCallback });
+        if (!['I', 'SPAN'].includes(event.target.tagName)) return;
+
+        // Check for context menu click
+        if (event.target.tagName == 'I' && event.target.classList.value == 'ri-more-2-fill') {
+            ShowContentMenu({ event, onClick: contextMenuCallback });
+            return;
+        }
+
+        // Check tdName
+        let td = event.target.parentElement;
+        if (td.tagName !== 'TD') return;
+        if (td.getAttribute('data-column') == 'remarks') {
+            showFullRemarks(event.target);
+            return;
+        }
+
     }
 
     const handelRowContext = (event) => {
         event.preventDefault();
         event.stopPropagation();
         ShowContentMenu({ event, onClick: contextMenuCallback });
+    }
+
+    // Handle horizontal scroll
+    let hScrollStatus = false;
+    const handelAltKeyPress = (event) => {
+        // hScrollStatus = state;
+        console.log(`Alt pressed`, event);
     }
 
     // Get table columns
@@ -114,6 +143,9 @@ export default function LeadsTable() {
         window.tableRefresh = () => {
             xLeads();
         }
+
+        // Horizontal Scroll
+        HorizontalScroll();
 
     }, []);
 
