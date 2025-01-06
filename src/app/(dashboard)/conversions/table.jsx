@@ -80,7 +80,7 @@ export default function ConversionTable() {
     }
 
     return (
-        <div className='grow border-t border-b overflow-auto'>
+        <div className='table-container'>
             <ContextMenu items={contextMenuItems} />
             <table className="leadstor-table">
                 <thead className='bg-purple-50'>

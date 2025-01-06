@@ -1,3 +1,26 @@
+.table-container{
+    @apply grow border-t border-b overflow-auto;
+   
+    scrollbar-color: #707070 #f3f3f3;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+
+    &::-webkit-scrollbar {
+        @apply w-2;
+    }
+    &::-webkit-scrollbar-track {
+        @apply bg-gray-100;
+    }
+    &::-webkit-scrollbar-thumb {
+        @apply bg-gray-800;
+        border-radius: 25px; 
+    }
+}
+
+.table-container:hover{
+    scrollbar-width: thin;
+}
+
 .leadstor-table{
     zoom: 90%;
     @apply w-full text-base text-left rtl:text-right text-gray-500 dark:text-gray-400;
@@ -53,6 +76,25 @@ th:first-child,
 td:first-child{
     min-width: 0!important;
     max-width: 60px!important;
+}
+
+/* Pagination */
+.pagination {
+    @apply flex font-medium cursor-pointer gap-0;
+
+    >div.arrow-btn{
+        @apply w-8 h-8 border flex justify-center items-center;
+
+        >i{
+            @apply text-xl pointer-events-none;
+        }
+    }
+    >div.page{
+        @apply w-10 h-8 border border-l-0 flex justify-center items-center;
+        &.active{
+            @apply bg-blue-500 border-blue-500 text-white
+        }
+    }
 }
 
 /* Row Context Menu */

@@ -25,3 +25,12 @@ export const LeadsPerPage = {
     value: () => parseInt(localStorage.getItem('LeadsPerPage') ?? '50'),
     setValue: (value) => localStorage.setItem('LeadsPerPage', value)
 }
+export const TotalLeads = {
+    value: () => parseInt(localStorage.getItem('TotalLeads') ?? '0'),
+    setValue: (value) => localStorage.setItem('TotalLeads', value)
+}
+
+export const LeadsCurrentPage = {
+    value: () => parseInt(localStorage.getItem('LeadsCurrentPage') ?? '1'),
+    setValue: (value) => localStorage.setItem('LeadsCurrentPage', value)
+}

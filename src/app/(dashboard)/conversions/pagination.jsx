@@ -27,7 +27,7 @@ export default function ConversionPagination() {
                     <i className="ri-arrow-left-s-line text-xl"></i>
                 </div>
 
-                <div className='w-10 h-8 bg-blue-500 border-blue-500 text-white border border-l-0 flex justify-center items-center'>1</div>
+                <div className='w-10 h-8 bg-purple-500 border-purple-500 text-white border border-l-0 flex justify-center items-center'>1</div>
                 <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>2</div>
                 <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>3</div>
                 <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>4</div>

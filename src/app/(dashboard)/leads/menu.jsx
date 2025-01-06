@@ -1,8 +1,20 @@
 import SearchBox from '@/components/elements/SearchBox';
+import Image from 'next/image';
 
 export default function LeadsMenu() {
     return (
         <div className="flex p-2">
+            <div id='onTableSiteLogo' style={{ display: 'none' }}>
+                <Image
+                    className='mt-0.5 mr-2'
+                    placeholder='empty'
+                    src="/icons/leadstor.png"
+                    width={32}
+                    height={32}
+                    alt="Leadstor Icon"
+                    priority={false}
+                />
+            </div>
             <div className="grow">
                 <SearchBox />
             </div>

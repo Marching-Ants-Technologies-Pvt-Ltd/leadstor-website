@@ -4,7 +4,7 @@ import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
 import { useEffect, useState } from 'react';
 import AppliedFilters, { showAppliedFilter } from './appliedFilters';
 import { xFetch } from '@/utility/xFetch';
-import { getLeadOwnerById, Test, User, LeadsPerPage } from '@/utility/TinyDB';
+import { getLeadOwnerById, Test, User, LeadsPerPage, TotalLeads } from '@/utility/TinyDB';
 import { CheckUncheckAllRows } from '@/utility/TableControllers';
 
 const contextMenuItems = [
@@ -66,6 +66,7 @@ function xLeads() {
     })
         .then(data => {
             setLeadsFn(data.rows);
+            TotalLeads.setValue(parseInt(data.total));
         })
         .catch(error => {
             console.error(`An error occurred while fetching leads`, error);
@@ -117,7 +118,7 @@ export default function LeadsTable() {
     }, []);
 
     return (
-        <div className='grow border-t border-b overflow-auto'>
+        <div className='table-container'>
             <ContextMenu items={contextMenuItems} />
             <AppliedFilters />
             <table className="leadstor-table">

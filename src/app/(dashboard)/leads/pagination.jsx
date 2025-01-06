@@ -1,6 +1,7 @@
 'use client';
 
-import { LeadsPerPage } from "@/utility/TinyDB";
+import { fullScreenSwitch, toggleScrollbar } from "@/utility/TableControllers";
+import { LeadsPerPage, TotalLeads, LeadsCurrentPage } from "@/utility/TinyDB";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -27,10 +28,30 @@ export default function LeadsTablePagination() {
         window.tableRefresh();
     }
 
+    const handelPageChange = (event) => {
+        let page = event.target.getAttribute('data-value');
+        let currentPage = LeadsCurrentPage.value();
+
+        if (page === 'NEXT') {
+            console.log('Handle next page call');
+            return;
+        }
+
+        if (page === 'PREVIOUS') {
+            if (currentPage > 1) {
+                console.log('Handle previous page call');
+            }
+
+            return;
+        }
+
+        console.log(page, LeadsCurrentPage.value());
+    }
+
     useEffect(() => {
         // Handel Paging
         window.onTableRefresh = handelPaging;
-    },[]);
+    }, []);
 
     return (
         <div className="flex px-4 py-3 poppins text-gray-600 text-[14px] cursor-default">
@@ -41,8 +62,8 @@ export default function LeadsTablePagination() {
                 <div className="dropdown-container justify-center">
                     <div className="dropdown">
                         <div>
-                            Enquiries limit per page <span className='border px-3 mx-1 rounded-md py-0.5'>{limit}</span>
-                            <label className="ml-1 ri-settings-line text-base relative top-[1px] cursor-pointer" tabIndex="0"></label>
+                            Enquiries per page <span className='border px-3 mx-1 rounded-md py-0.5'>{limit}</span>
+                            <label className="ml-1 ri-settings-line text-lg relative top-0.5 cursor-pointer" tabIndex="0"></label>
                         </div>
                         <div onClick={handelLeadsPerPageChange} className="dropdown-menu dropdown-menu-top-left bg-white w-16 mb-2">
                             <a className="dropdown-item text-sm">50</a>
@@ -53,23 +74,31 @@ export default function LeadsTablePagination() {
                         </div>
                     </div>
                 </div>
+                <div className="flex items-center text-gray-500 pt-1 justify-center cursor-pointer">
+                    <span className="tooltip tooltip-top ml-6" data-tooltip="Hide Scrollbars">
+                        <button onClick={toggleScrollbar} className="ri-scroll-to-bottom-fill text-xl"></button>
+                    </span>
+                    <span className="tooltip tooltip-top" data-tooltip="View Fullscreen">
+                        <button onClick={fullScreenSwitch} className="ri-fullscreen-line text-lg ml-2"></button>
+                    </span>
+                </div>
             </div>
             <div className='grow'></div>
-            <div className='flex font-medium cursor-pointer'>
-                <div className='w-8 h-8 border flex justify-center items-center rounded-s-md'>
-                    <i className="ri-arrow-left-s-line text-xl"></i>
+            <div className='pagination' onClick={handelPageChange}>
+                <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
+                    <i className="ri-arrow-left-s-line"></i>
                 </div>
 
-                <div className='w-10 h-8 bg-blue-500 border-blue-500 text-white border border-l-0 flex justify-center items-center'>1</div>
-                <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>2</div>
-                <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>3</div>
-                <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>4</div>
-                <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>5</div>
-                <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>...</div>
-                <div className='w-10 h-8 border border-l-0 flex justify-center items-center'>253</div>
+                <div data-value='1' className='page'>1</div>
+                <div data-value='2' className='page active'>2</div>
+                <div data-value='3' className='page'>3</div>
+                <div data-value='4' className='page'>4</div>
+                <div data-value='5' className='page'>5</div>
+                <div data-value='6' className='page'>...</div>
+                <div data-value='253' className='page'>253</div>
 
-                <div className='w-8 h-8 border border-l-0 flex justify-center items-center rounded-e-md'>
-                    <i className="ri-arrow-right-s-line text-xl"></i>
+                <div data-value='NEXT' className='arrow-btn rounded-e-md'>
+                    <i className="ri-arrow-right-s-line"></i>
                 </div>
             </div>
         </div>
