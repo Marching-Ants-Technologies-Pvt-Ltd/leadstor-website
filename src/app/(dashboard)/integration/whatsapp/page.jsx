@@ -4,7 +4,7 @@ import WhatsappService from '@/components/integration/WhatsAppConnect';
 export default function WhatsappIntegration() {
     return (
         <div className="w-full h-full bg-white rounded-md shadow-md">
-            <div className="flex border-b py-4 px-7 gap-4">
+            <div className="flex border-b py-3 px-6 gap-4">
                 <div className='flex-grow-0'>
                     <Image
                         className='rounded-md pointer-events-none'
@@ -25,10 +25,10 @@ export default function WhatsappIntegration() {
                     <button>Automation</button>
                 </div>
             </div>
-            <div className='w-full px-6 py-8'>
+            <div className='w-full px-6 py-6'>
                 <p className="text-sm text-center poppins text-gray-500 mt-0">We offer multiple WhatsApp API aggregators for you to choose from. Alternatively, if you&apos;re registered with an existing WhatsApp service provider, you can integrate that service manually.</p>
             </div>
-            <div className="flex flex-col gap-3 px-6 pb-6">
+            <div className="flex flex-col gap-3 px-6 pb-4">
                 <WhatsappService icon='/icons/leadstor.png' label='Leadstor' summary='Use our default whatsapp API to send out whatsapp messages to your leads.' isConnected={true} />
 
                 <WhatsappService icon='/icons/services/whatsapp/kaleyra.png' label='Kaleyra' summary='Trusted Omni channel Communication Platform & CPaas Solution for Businesses' isConnected={false} />

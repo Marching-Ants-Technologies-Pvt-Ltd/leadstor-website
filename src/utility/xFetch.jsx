@@ -19,7 +19,9 @@ export async function xFetch({
 
         // Set headers
         const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
+        if (!(payload instanceof FormData)) {
+            myHeaders.append("Content-Type", "application/json");
+        }
         myHeaders.append("Authorization", `Bearer ${token}`);
 
         // Compose request options
@@ -28,7 +30,11 @@ export async function xFetch({
         // Handel payload
         if (payload) {
             if (method !== 'GET') {
-                requestOptions['body'] = JSON.stringify(payload);
+                if (payload instanceof FormData) {
+                    requestOptions['body'] = payload;
+                } else {
+                    requestOptions['body'] = JSON.stringify(payload);
+                }
             } else {
                 path = `${path}?${jsonToQueryParams(payload)}`;
             }

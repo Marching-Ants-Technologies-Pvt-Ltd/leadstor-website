@@ -19,9 +19,9 @@ export default function SearchBox() {
         }, 750);
     }
     return (
-        <div id="table-search-bar" className="border rounded-md h-full flex px-3 gap-2 max-w-80">
-            <div className="flex justify-center items-center border-r pr-3">
-                <i className="ri-search-line text-xl text-gray-600"></i>
+        <div id="table-search-bar" className="border rounded-md h-full flex px-2 gap-1.5 max-w-80">
+            <div className="flex justify-center items-center border-r pr-2">
+                <i className="ri-search-line text-lg text-gray-600"></i>
             </div>
             <input
                 onKeyUp={onSearchInput}

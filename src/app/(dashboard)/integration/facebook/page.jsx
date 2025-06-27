@@ -85,7 +85,7 @@ export default function FacebookIntegration() {
 
     return (
         <div className="w-full h-full bg-white rounded-md shadow-md">
-            <div className="flex border-b py-4 px-7 gap-4">
+            <div className="flex border-b py-3 px-6 gap-4">
                 <div className='flex-grow-0'>
                     <Image
                         className='rounded-md pointer-events-none'

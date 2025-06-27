@@ -6,6 +6,7 @@ import Navbar from '@/components/dashboard/Navbar';
 import RaiseTicketFav from '@/components/dashboard/RaiseTicketFav';
 import Loading from '@/components/elements/Loading';
 import { xFetch } from '@/utility/xFetch';
+import Image from 'next/image';
 
 import 'react-toastify/ReactToastify.min.css';
 import { Slide, ToastContainer } from 'react-toastify';
@@ -18,6 +19,7 @@ import { SessionProvider, getSession } from "next-auth/react";
 export default function ClientLayout({ children }) {
 
     const [session, setSession] = useState(null);
+    const [collapsed, setCollapsed] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -57,21 +59,26 @@ export default function ClientLayout({ children }) {
 
     return (
         <SessionProvider>
-            <div className="sticky flex h-screen flex-row overflow-y-auto rounded-lg sm:overflow-x-hidden">
-                <Sidebar data={session} />
+            <div className="dashboard-layout">
+                <Sidebar data={session} collapsed={collapsed} setCollapsed={setCollapsed} />
 
-                <div
-                    style={{
-                        zIndex: 0,
-                        width: 'calc(100% - 288px)'
-                    }}
-                    className="flex w-full flex-col">
-                    <Navbar data={session} />
-                    <div
-                        style={{
-                            height: 'calc(100% - 63px)'
-                        }}
-                        className='p-6'>
+                <div className="dashboard-main-content">
+                    {/* Header bar containing page title and navbar */}
+                    <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-white">
+                        {/* Page Title - aligned with sidebar logo */}
+                        <div className="flex items-center gap-3">
+                            <div className="flex flex-col">
+                                <span className="text-xl">Dashboard</span>
+                                <span className="text-sm font-medium text-content2">Leadstor &bull; <strong className='text-green-600 font-medium'>v1.0.3</strong></span>
+                            </div>
+                        </div>
+
+                        {/* Existing Navbar for user profile, etc. */}
+                        <Navbar data={session} />
+                    </div>
+
+                    {/* Scrollable content area */}
+                    <div className='p-4 flex-1 overflow-y-auto'>
                         {children}
                     </div>
                 </div>
