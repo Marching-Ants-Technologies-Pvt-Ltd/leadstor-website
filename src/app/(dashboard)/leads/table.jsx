@@ -5,7 +5,7 @@ import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
 import { useEffect, useState } from 'react';
 import AppliedFilters, { showAppliedFilter } from './appliedFilters';
 import { xFetch } from '@/utility/xFetch';
-import { getLeadOwnerById, Test, User, LeadsPerPage, TotalLeads, LeadsCurrentPage } from '@/utility/TinyDB';
+import { getLeadOwnerById, Test, User, LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadFilters } from '@/utility/TinyDB';
 import { CheckUncheckAllRows } from '@/utility/TableControllers';
 
 const contextMenuItems = [
@@ -55,11 +55,18 @@ const dataFormatters = {
 
 }
 
-function xLeads() {
+function handelFilterClose(){
+    window.tableState('Removing filters...');
+    LeadFilters.reset();
+    xLeads();
+}
+
+async function xLeads() {
     // calculate offset
     let currentPage = LeadsCurrentPage.value();
     let limit = LeadsPerPage.value();
     let offset = (currentPage - 1) * limit;
+    let filters = LeadFilters.value();
 
     // compose payload
     let payload = {
@@ -71,6 +78,15 @@ function xLeads() {
         "offset": offset,
         "limit": limit,
         "search": document.querySelector('div#table-search-bar input')?.value ?? ''
+    }
+
+    if (filters.length > 0) {
+        await filters.map((item) => {
+            payload[item.query] = item.value;
+        });
+
+        // Show filter section
+        showAppliedFilter(filters, handelFilterClose);
     }
 
     // get leads
@@ -87,7 +103,7 @@ function xLeads() {
             setLeadsFn([]);
             TotalLeads.setValue(0);
         }).finally(() => {
-            if(typeof window.onTableRefresh == 'function') window.onTableRefresh();
+            if (typeof window.onTableRefresh == 'function') window.onTableRefresh();
         })
 }
 
@@ -125,13 +141,6 @@ export default function LeadsTable() {
         event.preventDefault();
         event.stopPropagation();
         ShowContentMenu({ event, onClick: contextMenuCallback });
-    }
-
-    // Handle horizontal scroll
-    let hScrollStatus = false;
-    const handelAltKeyPress = (event) => {
-        // hScrollStatus = state;
-        console.log(`Alt pressed`, event);
     }
 
     // Get table columns

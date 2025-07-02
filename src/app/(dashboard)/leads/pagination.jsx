@@ -92,6 +92,7 @@ export default function LeadsTablePagination() {
     useEffect(() => {
         // Handel Paging
         window.onTableRefresh = handelPaging;
+        window.tableState = setSummaryX;
     }, []);
 
     return (
@@ -99,7 +100,7 @@ export default function LeadsTablePagination() {
             <div className='border-r pr-4 flex justify-center items-center'>
                 <div
                     style={{
-                        display: (summary.startsWith('Fetch')) ? 'block' : 'none'
+                        display: (!summary.startsWith('View')) ? 'block' : 'none'
                     }}
                     className="spinner-simple w-5 h-5 mr-2 border-[2px]"></div>
                 {summary}

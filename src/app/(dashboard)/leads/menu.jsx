@@ -1,7 +1,42 @@
+'use client';
+
+import { LeadFilters, LeadsCurrentPage } from '@/utility/TinyDB';
 import SearchBox from '@/components/elements/SearchBox';
 import Image from 'next/image';
 
 export default function LeadsMenu() {
+
+    const handelFollowUpFilters = () => {
+        let today = new Date().toString().split(' ');
+        if(today.length < 9) return; // Something went wrong
+
+        today = `${today[2]}-${today[1]}-${today[3]}`;
+        LeadFilters.reset();
+        LeadFilters.setValue([{
+            title: 'FollowUps',
+            value: today,
+            query: 'followupDate'
+        }]);
+
+        LeadsCurrentPage.setValue(1);
+        window.tableState('Applying Filer...');
+        window.tableRefresh();
+    }
+
+    const handelBookmarks = () => {
+        LeadFilters.reset();
+        LeadFilters.setValue([{
+            title: 'Bookmarks',
+            value: 1,
+            query: 'bookmarkLeads'
+        }]);
+
+        LeadsCurrentPage.setValue(1);
+        window.tableState('Applying Filer...');
+        window.tableRefresh();
+
+    }
+
     return (
         <div className="flex p-2">
             <div id='onTableSiteLogo' style={{ display: 'none' }}>
@@ -54,11 +89,11 @@ export default function LeadsMenu() {
                     <i className="ri-filter-2-line text-xl"></i>
                     <div className='mr-1'>Filter</div>
                     <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                        <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
+                        <a onClick={handelFollowUpFilters} className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
                             <i className="ri-user-follow-line text-lg mt-1"></i>
                             <span className='text-sm'>Followups</span>
                         </a>
-                        <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
+                        <a onClick={handelBookmarks} className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
                             <i className="ri-bookmark-line text-lg mt-1"></i>
                             <span className='text-sm'>Bookmarks</span>
                         </a>

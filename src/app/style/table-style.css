@@ -29,7 +29,7 @@
         @apply text-gray-700 dark:bg-gray-700 dark:text-gray-400 sticky top-0 z-[1];
 
         >tr th {
-            @apply px-6 py-3 font-medium text-left tracking-wide  whitespace-nowrap min-w-28 max-w-80;
+            @apply px-6 py-3 font-medium text-left tracking-wide whitespace-nowrap min-w-28 max-w-80;
 
             >input[type=checkbox]{
                 @apply checkbox checkbox-md rounded relative z-[11];
@@ -72,13 +72,13 @@
     }
 }
 
-th:first-child,
-td:first-child{
+.leadstor-table th:first-child,
+.leadstor-table td:first-child{
     min-width: 0!important;
     max-width: 60px!important;
 }
 
-td[data-column="remarks"] span {
+.leadstor-table td[data-column="remarks"] span {
     cursor: pointer;
 }
 

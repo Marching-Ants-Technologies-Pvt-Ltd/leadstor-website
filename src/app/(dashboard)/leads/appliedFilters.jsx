@@ -31,9 +31,9 @@ export default function AppliedFilters() {
             </div>
 
             <div className="grow flex justify-start flex-wrap items-center text-sm text-gray-700 px-3 gap-3">
-                {filterOptions && Object.entries(filterOptions).map(([key, value]) => (
-                    <div key={key} className="bg-white border rounded-[4px] py-1 px-3">
-                        <strong className="font-medium">{key}</strong> in ({value})
+                {filterOptions && filterOptions.map((option, index) => (
+                    <div key={index} className="bg-white border rounded-[4px] py-1 px-3">
+                        <strong className="font-medium">{option.title}</strong> in ({option.value})
                     </div>
                 ))}
             </div>

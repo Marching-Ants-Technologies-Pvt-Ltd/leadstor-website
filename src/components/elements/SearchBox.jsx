@@ -15,6 +15,7 @@ export default function SearchBox() {
 
         searchTextChangeTimer = setTimeout(() => {
             LeadsCurrentPage.setValue(1);
+            window.tableState((lastText.length > 0) ? 'Searching...' : 'Fetching leads...');
             window.tableRefresh();
         }, 750);
     }

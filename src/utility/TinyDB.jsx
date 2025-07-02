@@ -39,3 +39,9 @@ export const LeadsLastPage = {
     value: () => parseInt(localStorage.getItem('LeadsLastPage') ?? '1'),
     setValue: (value) => localStorage.setItem('LeadsLastPage', value)
 }
+
+export const LeadFilters = {
+    value: () => JSON.parse(localStorage.getItem('LeadFilters') ?? '[]'),
+    setValue: (value) => localStorage.setItem('LeadFilters', JSON.stringify(value)),
+    reset: () => localStorage.setItem('LeadFilters', '[]'),
+}
