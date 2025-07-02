@@ -107,10 +107,7 @@ async function xLeads() {
         })
 }
 
-export default function LeadsTable() {
-
-    const [columns, setColumns] = useState([]);
-    const [columnOrder, setColumnOrder] = useState([]);
+export default function LeadsTable({ columns, setColumns, columnOrder, setColumnOrder }) {
     const [leads, setLeads] = useState([]);
     setLeadsFn = setLeads;
 

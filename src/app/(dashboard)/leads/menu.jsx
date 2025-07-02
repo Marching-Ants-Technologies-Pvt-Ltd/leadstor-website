@@ -3,8 +3,14 @@
 import { LeadFilters, LeadsCurrentPage } from '@/utility/TinyDB';
 import SearchBox from '@/components/elements/SearchBox';
 import Image from 'next/image';
+import ImportEnquiryDropBox from './ImportEnquiry.jsx';
+import ManualCandidate from './manualCandidate.jsx';
+import React from 'react';
 
 export default function LeadsMenu() {
+
+    const [showImport, setShowImport] = React.useState(false);
+    const [showManual, setShowManual] = React.useState(false);
 
     const handelFollowUpFilters = () => {
         let today = new Date().toString().split(' ');
@@ -38,6 +44,7 @@ export default function LeadsMenu() {
     }
 
     return (
+        <>
         <div className="flex p-2">
             <div id='onTableSiteLogo' style={{ display: 'none' }}>
                 <Image
@@ -59,11 +66,11 @@ export default function LeadsMenu() {
                     <i className="ri-user-add-line text-xl"></i>
                     <div className='mr-1'>Lead</div>
                     <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                        <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
+                        <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={() => setShowManual(true)}>
                             <i className="ri-text-block text-lg mt-1"></i>
                             <span className='text-sm'>Add Manually</span>
                         </a>
-                        <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
+                        <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={() => setShowImport(true)}>
                             <i className="ri-upload-cloud-2-line text-lg mt-1"></i>
                             <span className='text-sm'>Import enquiries</span>
                         </a>
@@ -140,5 +147,12 @@ export default function LeadsMenu() {
                 </button>
             </div>
         </div>
+        {showImport && (
+            <ImportEnquiryDropBox onCancel={() => setShowImport(false)} />
+        )}
+        {showManual && (
+            <ManualCandidate onCancel={() => setShowManual(false)} />
+        )}
+        </>
     );
 }
