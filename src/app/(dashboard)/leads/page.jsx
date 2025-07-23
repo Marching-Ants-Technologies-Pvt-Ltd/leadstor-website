@@ -3,6 +3,7 @@
 import LeadsTable from './table';
 import LeadsMenu from './menu';
 import LeadsTablePagination from './pagination';
+import FilterDrawer from './advanceFilter';
 
 import Spinner from '@/components/elements/Spinner';
 import { xFetch } from '@/utility/xFetch';
@@ -13,27 +14,17 @@ export default function Leads() {
     const [ready, setReady] = useState(false);
     const [columns, setColumns] = useState([]);
     const [columnOrder, setColumnOrder] = useState([]);
+    const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
+    const [isDrawerOpen, setDrawerOpen] = useState(false);
+    const [leads, setLeads] = useState([]);
+    const [selectedLeadIds, setSelectedLeadIds] = useState([]);
 
     // Fetch and apply custom column names and order
     const fetchAndSetColumns = async () => {
         try {
             const data = await xFetch({ path: '/services/profile/columns' });
-            let columnsWithCustomNames = data;
-            try {
-                const sessionData = JSON.parse(localStorage.getItem('CurrentSessionData') || '{}');
-                const corporateId = sessionData?.corporate?._id;
-                if (corporateId) {
-                    const key = `leadTableColumnNames_${corporateId}`;
-                    const customNames = JSON.parse(localStorage.getItem(key) || '{}');
-                    columnsWithCustomNames = data.map(col =>
-                        customNames[col.dataField]
-                            ? { ...col, fieldName: customNames[col.dataField] }
-                            : col
-                    );
-                }
-            } catch {}
-            setColumns(columnsWithCustomNames);
-            let _columnOrder = columnsWithCustomNames.map((item) => item.dataField);
+            setColumns(data);
+            let _columnOrder = data.map((item) => item.dataField);
             _columnOrder = _columnOrder.filter(item => item !== 'action');
             setColumnOrder(_columnOrder);
         } catch (error) {
@@ -66,14 +57,21 @@ export default function Leads() {
         }
     };
 
+    // Handler for applying filters from the drawer
+    const handleApplyFilters = (filters) => {
+        // TODO: Use filters in your leads table logic
+        setDrawerOpen(false);
+    };
+
     return (
         <div className="w-full h-full bg-white rounded-md shadow-md flex flex-col">
             {(!ready)
                 ? <Spinner />
                 : <>
-                    <LeadsMenu />
-                    <LeadsTable columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={setColumnOrder} />
-                    <LeadsTablePagination columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={handleReorder} fetchAndSetColumns={fetchAndSetColumns} />
+                    <LeadsMenu onOpenAdvanceFilter={() => setDrawerOpen(true)} leads={leads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} />
+                    <LeadsTable columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={setColumnOrder} leads={leads} setLeads={setLeads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} />
+                    <LeadsTablePagination columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={handleReorder} fetchAndSetColumns={fetchAndSetColumns} showPerPageDropdown={showPerPageDropdown} setShowPerPageDropdown={setShowPerPageDropdown} />
+                    <FilterDrawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)} onApplyFilters={handleApplyFilters} />
                 </>
             }
         </div>

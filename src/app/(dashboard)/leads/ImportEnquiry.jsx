@@ -1,8 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { xFetch } from '@/utility/xFetch';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { Corporate, User, Test } from '@/utility/TinyDB';
 
-export default function ImportEnquiryDropBox({ onCancel, testId }) {
+export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManual }) {
   // State management
   const [file, setFile] = useState(null);
   const [totalRows, setTotalRows] = useState(0);
@@ -20,7 +23,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
 
   // Get session data (REQUIRED by backend)
   const sessionData = useMemo(() => {
-    return JSON.parse(localStorage.getItem('CurrentSessionData') || '{}');
+    return { corporate: Corporate, user: User, test: Test };
   }, []);
 
   // Dynamic label mapping (EXACTLY matches backend expectations)
@@ -70,7 +73,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
         // Validate against backend-required columns
         const requiredColumns = getRequiredColumns();
         if (!requiredColumns.every(col => fileHeader.includes(col))) {
-          setError(`File must contain these exact columns: ${requiredColumns.join(', ')}`);
+          toast.error(`File must contain these exact columns: ${requiredColumns.join(', ')}`);
           return;
         }
 
@@ -86,7 +89,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
         setFile(file);
         setError('');
       } catch (err) {
-        setError(`Error processing file: ${err.message}`);
+        toast.error(`Error processing file: ${err.message}`);
       }
     };
     reader.readAsArrayBuffer(file);
@@ -109,7 +112,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
       if (!firstName) errors.push('Missing first name');
       if (!lastName && sessionData?.corporate?.type !== 700) errors.push('Missing last name');
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Invalid email');
-      if (!mobile || !/^[6-9]\d{9}$/.test(mobile)) errors.push('Invalid mobile (10 digits starting with 6-9)');
+      if (!mobile || !/^\d{10}$/.test(mobile)) errors.push('Invalid mobile (must be exactly 10 digits)');
       if (!dynamicValue) errors.push(`Missing ${dynamicLabel}`);
 
       if (errors.length > 0) {
@@ -252,10 +255,14 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
 
       setUploadComplete(true);
       setUploadFailed(false);
-      if (typeof window.tableRefresh === 'function') window.tableRefresh();
+      toast.success(`Uploaded ${uniqueRows.length} record${uniqueRows.length === 1 ? '' : 's'} successfully`);
+              if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
+            window.tableRefresh();
+        }
     } catch (err) {
       setError(err.message);
       setUploadFailed(true);
+      toast.error(err.message);
     } finally {
       setUploading(false);
     }
@@ -298,113 +305,115 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
 
   // Render methods with fixed layout structure
   const renderFileSelect = () => (
-    <div className="w-full h-full flex flex-col items-center justify-center px-4">
-      {/* Fixed header section */}
-      <div className="flex flex-col items-center mb-4">
-        <img src="/icons/excel.png" alt="Excel Logo" className="w-16 h-16 mb-3 rounded-xl shadow" />
-        {file && (
-          <div className="text-gray-700 text-sm font-medium bg-gray-50 px-4 py-2 rounded-lg flex items-center gap-2">
-            <span className="truncate max-w-xs">{file.name}</span>
-            <span className="text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
-          </div>
-        )}
-      </div>
-      
-      {/* Fixed drop zone */}
-      <div className="flex-1 flex items-center justify-center w-full max-w-md">
+    <div className="w-full h-full flex flex-col items-center justify-between px-4 py-0">
+      {/* Centered Excel icon */}
+      <div className="flex flex-col items-center justify-center flex-1">
+        <img src="/icons/excel.png" alt="Excel Logo" className="w-20 h-20 mb-8 mt-2 rounded-lg border border-gray-200 bg-white object-contain shadow-none" />
+        {/* Drop zone */}
         <div 
-          className="border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center cursor-pointer transition-all shadow-lg bg-gradient-to-br from-gray-50 to-gray-100 hover:border-blue-500 hover:bg-blue-50 w-full h-40 flex flex-col justify-center"
-          onDrop={handleFile}
-          onDragOver={e => e.preventDefault()}
-          onClick={() => document.querySelector('#import-file-input')?.click()}
+          className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer bg-white w-full max-w-md mb-4" // Added mb-4 for gap below upload area
+          onDrop={e => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleFile(e);
+          }}
+          onDragOver={e => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onClick={e => {
+            // Only trigger file input, not template download
+            e.stopPropagation();
+            if (typeof document !== 'undefined') {
+            document.querySelector('#import-file-input')?.click();
+        }
+          }}
+          style={{ transition: 'none' }}
         >
           <input 
             id="import-file-input"
             type="file"
             accept=".xlsx,.xls"
-            className="hidden"
+            className="hidden text-gray-500 bg-white border border-gray-300 rounded-xl"
             onChange={handleFile}
           />
-          <p className="text-lg text-gray-700 font-medium mb-2">Drag & drop your Excel file here</p>
-          <p className="text-gray-500 mb-3">or click to browse</p>
-          <p className="text-xs text-gray-400">
-            Required columns: {getRequiredColumns().join(', ')}
-          </p>
+          <p className="text-lg font-semibold text-gray-800 mb-1">Select Excel file to import</p>
+          <p className="text-sm text-gray-500 mb-2">or drag and drop your file here</p>
+          <p className="text-xs text-gray-400">Maximum file size: 5MB</p>
         </div>
       </div>
-      
-      {/* Fixed footer section */}
-      <div className="mt-6 flex flex-col items-center">
-        {error && (
-          <div className="text-red-700 bg-red-100 px-4 py-2 rounded-md mb-4 text-sm max-w-md text-center">
-            {error}
-          </div>
-        )}
-        <button 
-          className="text-blue-600 hover:text-blue-800 underline text-sm font-medium"
-          onClick={downloadTemplate}
-        >
-          Download {dynamicLabel} Template
-        </button>
+      {/* Light blue notification bar with bulb icon and links */}
+      <div className="w-full bg-blue-100 flex items-center gap-2 px-4 py-3 rounded-lg border border-blue-200 mt-0 mb-4">
+        {/* Bulb Icon (SVG) - replaced for consistency with ManualCandidate */}
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-500 flex-shrink-0">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 3a7 7 0 00-4.95 11.95c.2.2.32.47.32.75v.3a2.25 2.25 0 002.25 2.25h4.76a2.25 2.25 0 002.25-2.25v-.3c0-.28.12-.55.32-.75A7 7 0 0012 3z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 21h6" />
+        </svg>
+        <span className="text-sm text-blue-800">
+          Don&apos;t have a template?{' '}
+          <button
+            className="text-blue-700 underline font-normal p-0 m-0 bg-transparent border-none outline-none shadow-none cursor-pointer"
+            onClick={downloadTemplate}
+            type="button"
+          >
+            Download here
+          </button>
+          {' '}or{' '}
+          <span className="text-blue-700 underline cursor-pointer font-normal" onClick={onSwitchToManual}>
+            switch to manual
+          </span>
+        </span>
       </div>
     </div>
   );
 
   const renderValidationResults = () => (
-    <div className="w-full h-full flex flex-col items-center px-4">
-      {/* Fixed header section */}
-      <div className="flex flex-col items-center mb-4">
-        <img src="/icons/excel.png" alt="Excel Logo" className="w-16 h-16 mb-3 rounded-xl shadow" />
-        {file && (
-          <div className="text-gray-700 text-sm font-medium bg-gray-50 px-4 py-2 rounded-lg flex items-center gap-2">
-            <span className="truncate max-w-xs">{file.name}</span>
-            <span className="text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
+    <div className="w-full h-full flex flex-col items-center justify-between px-4 py-0">
+      {/* Centered Excel icon and stats */}
+      <div className="flex flex-col items-center justify-center flex-1">
+        <img src="/icons/excel.png" alt="Excel Logo" className="w-20 h-20 mb-8 mt-2 rounded-lg border border-gray-200 bg-white object-contain shadow-none" />
+        {/* Stats section */}
+        <div className="w-[320px] mx-auto mb-6">
+          <div className="flex text-center border border-gray-300 rounded-lg overflow-hidden bg-white w-full">
+            <div className="flex-1 py-3 border-r border-gray-200 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold mb-1">{totalRows}</span>
+              <span className="text-xs text-gray-500">Total</span>
+            </div>
+            <div className="flex-1 py-3 border-r border-gray-200 flex flex-col items-center justify-center">
+              <span className="text-2xl font-bold mb-1">{validRows.length}</span>
+              <span className="text-xs text-gray-500">Valid</span>
+            </div>
+            <button
+              className="flex-1 py-3 flex flex-col items-center justify-center relative group focus:outline-none bg-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none"
+              onClick={downloadInvalid}
+              type="button"
+              disabled={invalidRows.length === 0}
+              style={{ boxShadow: 'none', background: 'none', border: 'none', padding: 0, margin: 0 }}
+            >
+              <span className="absolute top-1 right-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
+                </svg>
+              </span>
+              <span className="text-2xl font-bold mb-1">{invalidRows.length}</span>
+              <span className="text-xs text-gray-500">Invalid</span>
+            </button>
           </div>
-        )}
-      </div>
-      
-      {/* Fixed stats section */}
-      <div className="w-full max-w-md mb-4">
-        <div className="flex text-center border border-gray-400 rounded-lg overflow-hidden bg-white">
-          <div className="flex-1 py-3 border-r border-gray-300 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold mb-1">{totalRows}</span>
-            <span className="text-xs text-gray-500">Total</span>
-          </div>
-          <div className="flex-1 py-3 border-r border-gray-300 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold mb-1">{validRows.length}</span>
-            <span className="text-xs text-gray-500">Valid</span>
-          </div>
+        </div>
+        {/* Description */}
+        <div className="max-w-[320px] mx-auto text-center text-sm text-gray-600 px-2 mb-6">
+          {`Validation complete. ${validRows.length} records are valid${invalidRows.length > 0 ? `, ${invalidRows.length} invalid.` : '.'}`}
+        </div>
+        {/* Button section */}
+        <div className="w-full max-w-md">
           <button
-            className="flex-1 py-3 flex flex-col items-center justify-center relative group focus:outline-none hover:bg-gray-100 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={downloadInvalid}
-            type="button"
-            disabled={invalidRows.length === 0}
+            className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg shadow-md transition border-2 border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+            onClick={handleImport}
+            disabled={validRows.length === 0}
           >
-            <span className="absolute top-1 right-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
-              </svg>
-            </span>
-            <span className="text-2xl font-bold mb-1">{invalidRows.length}</span>
-            <span className="text-xs text-gray-500">Invalid</span>
+            Import
           </button>
         </div>
-      </div>
-      
-      {/* Fixed description */}
-      <div className="w-full text-center text-sm text-gray-600 px-2 mb-4">
-        {`Validation complete. ${validRows.length} records are valid${invalidRows.length > 0 ? `, ${invalidRows.length} invalid.` : '.'}`}
-      </div>
-      
-      {/* Fixed button section */}
-      <div className="flex-1 flex items-center justify-center w-full">
-        <button
-          className="w-full max-w-md py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg shadow-md transition border-2 border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          onClick={handleImport}
-          disabled={validRows.length === 0}
-        >
-          Import
-        </button>
       </div>
     </div>
   );
@@ -424,111 +433,90 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
     if (uploadedCount === 0 && uniqueRows.length > 0 && progress > 0) uploadedCount = 1;
 
     return (
-      <div className="w-full h-full flex flex-col items-center px-4">
-        {/* Fixed header section */}
-        <div className="flex flex-col items-center mb-4">
-          <img src="/icons/excel.png" alt="Excel Logo" className="w-16 h-16 mb-3 rounded-xl shadow" />
-          {file && (
-            <div className="text-gray-700 text-sm font-medium bg-gray-50 px-4 py-2 rounded-lg flex items-center gap-2">
-              <span className="truncate max-w-xs">{file.name}</span>
-              <span className="text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
+      <div className="w-full h-full flex flex-col items-center justify-between px-4 py-0">
+        {/* Centered Excel icon and progress */}
+        <div className="flex flex-col items-center justify-center flex-1">
+          <img src="/icons/excel.png" alt="Excel Logo" className="w-20 h-20 mb-8 mt-2 rounded-lg border border-gray-200 bg-white object-contain shadow-none" />
+          {/* Progress bar */}
+          <div className="w-full max-w-md mb-6">
+            <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-blue-600 transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
             </div>
-          )}
-        </div>
-        
-        {/* Fixed progress bar */}
-        <div className="w-full max-w-md mb-4">
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-blue-600 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
           </div>
-        </div>
-        
-        {/* Fixed stats section */}
-        <div className="w-full max-w-md mb-4">
-          <div className="flex text-center border border-gray-400 rounded-lg overflow-hidden bg-white">
-            <div className="flex-1 py-3 border-r border-gray-300 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold mb-1">{validCount}</span>
-              <span className="text-xs text-gray-500">Valid</span>
+          {/* Stats section */}
+          <div className="w-[320px] mx-auto mb-6">
+            <div className="flex text-center border border-gray-300 rounded-lg overflow-hidden bg-white w-full">
+              <div className="flex-1 py-3 border-r border-gray-200 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold mb-1">{validCount}</span>
+                <span className="text-xs text-gray-500">Valid</span>
+              </div>
+              <div className="flex-1 py-3 border-r border-gray-200 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold mb-1">{uploadedCount}</span>
+                <span className="text-xs text-gray-500">Uploaded</span>
+              </div>
+              <button
+                className="flex-1 py-3 flex flex-col items-center justify-center relative group focus:outline-none bg-white transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border-none"
+                onClick={downloadDuplicatesExcel}
+                type="button"
+                disabled={duplicateCount === 0}
+                style={{ boxShadow: 'none', background: 'none', border: 'none', padding: 0, margin: 0 }}
+              >
+                <span className="absolute top-1 right-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
+                  </svg>
+                </span>
+                <span className="text-2xl font-bold mb-1">{duplicateCount}</span>
+                <span className="text-xs text-gray-500">Duplicate</span>
+              </button>
             </div>
-            <div className="flex-1 py-3 border-r border-gray-300 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold mb-1">{uploadedCount}</span>
-              <span className="text-xs text-gray-500">Uploaded</span>
-            </div>
-            <button
-              className="flex-1 py-3 flex flex-col items-center justify-center relative group focus:outline-none hover:bg-gray-100 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={downloadDuplicatesExcel}
-              type="button"
-              disabled={duplicateCount === 0}
-            >
-              <span className="absolute top-1 right-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v12m0 0l-4-4m4 4l4-4" />
-                </svg>
-              </span>
-              <span className="text-2xl font-bold mb-1">{duplicateCount}</span>
-              <span className="text-xs text-gray-500">Duplicate</span>
-            </button>
           </div>
-        </div>
-        
-        {/* Fixed description */}
-        <div className="w-full text-center text-sm text-gray-600 px-2 mb-4">
-          {uploadComplete
-            ? `Upload complete. ${uniqueRows.length} records uploaded${duplicateCount > 0 ? `, ${duplicateCount} duplicates skipped.` : '.'}`
-            : `Uploading ${uniqueRows.length} records...${duplicateCount > 0 ? ` (${duplicateCount} duplicates will be skipped)` : ''}`
-          }
-        </div>
-        
-        {/* Fixed status section */}
-        <div className="flex-1 flex flex-col items-center justify-center">
-          {uploadComplete && !uploadFailed && (
-            <div className="flex flex-col items-center justify-center mb-4">
-              <span className="inline-flex items-center justify-center rounded-full bg-green-100 w-12 h-12 mb-2">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </span>
-              <span className="text-green-700 font-semibold text-lg">Upload Complete</span>
-            </div>
-          )}
-          
-          {uploadFailed && (
-            <div className="flex flex-col items-center mb-4">
-              <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 mb-2">
-                <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </span>
-              <span className="text-rose-700 font-semibold text-lg">Upload Failed</span>
-              {error && (
-                <div className="text-rose-700 bg-rose-100 px-4 py-2 rounded-md mt-2 text-sm max-w-md text-center">
-                  {error}
-                </div>
+          {/* Description */}
+          <div className="max-w-[320px] mx-auto text-center text-sm text-gray-600 px-2 mb-6">
+            {uploadComplete
+              ? `Upload complete. ${uniqueRows.length} records uploaded${duplicateCount > 0 ? `, ${duplicateCount} duplicates skipped.` : '.'}`
+              : `Uploading ${uniqueRows.length} records...${duplicateCount > 0 ? ` (${duplicateCount} duplicates will be skipped)` : ''}`
+            }
+          </div>
+          {/* Status section */}
+          <div className="w-full max-w-md">
+            {uploadFailed && (
+              <div className="flex flex-col items-center mb-4">
+                <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-rose-100 mb-2">
+                  <svg className="w-6 h-6 text-rose-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </span>
+                <span className="text-rose-700 font-semibold text-lg">Upload Failed</span>
+                {error && (
+                  <div className="text-rose-700 bg-rose-100 px-4 py-2 rounded-md mt-2 text-sm max-w-md text-center">
+                    {error}
+                  </div>
+                )}
+              </div>
+            )}
+            {/* Buttons */}
+            <div className="w-full max-w-md flex flex-col gap-2">
+              {uploading && !uploadComplete && !uploadFailed && (
+                <button
+                  className="w-full py-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold text-lg shadow-md transition border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+                  onClick={onCancel}
+                >
+                  Cancel
+                </button>
+              )}
+              {uploadFailed && (
+                <button
+                  className="w-full py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition text-lg shadow"
+                  onClick={handleImport}
+                >
+                  Retry
+                </button>
               )}
             </div>
-          )}
-          
-          {/* Fixed buttons */}
-          <div className="w-full max-w-md">
-            {uploading && !uploadComplete && !uploadFailed && (
-              <button
-                className="w-full py-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold text-lg shadow-md transition border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-                onClick={onCancel}
-              >
-                Cancel
-              </button>
-            )}
-            {uploadFailed && (
-              <button
-                className="w-full py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition text-lg shadow"
-                onClick={handleImport}
-              >
-                Retry
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -537,22 +525,23 @@ export default function ImportEnquiryDropBox({ onCancel, testId }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl relative w-[520px] h-[460px] flex flex-col">
-        {/* Fixed header */}
-        <div className="flex-shrink-0 relative h-16 flex items-center justify-center border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800">Import Leads</h2>
+      <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <div className="bg-white rounded-xl shadow-2xl relative w-[480px] h-[480px] flex flex-col">
+        {/* Modal header only */}
+        <div className="flex-shrink-0 relative h-16 flex items-center justify-center">
+          <h2 className="text-2xl font-medium text-gray-500 w-full text-center">Import Leads</h2>
           <button
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition focus:outline-none"
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 focus:outline-none border-none bg-transparent"
+            style={{ color: '#9ca3af', background: 'transparent', border: 'none', boxShadow: 'none', outline: 'none', transition: 'none' }}
             onClick={onCancel}
             aria-label="Close"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" style={{ color: '#9ca3af', background: 'transparent', transition: 'none' }}>
               <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
             </svg>
           </button>
         </div>
-        
-        {/* Fixed content area */}
+        {/* Content area: only renderFileSelect for initial state */}
         <div className="flex-1 overflow-hidden">
           {!file ? renderFileSelect() : 
            uploading || uploadComplete || uploadFailed ? renderUploadResult() : 

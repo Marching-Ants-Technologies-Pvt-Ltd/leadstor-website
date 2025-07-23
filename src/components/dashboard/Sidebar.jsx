@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Sidebar({ data, collapsed, setCollapsed }) {
 
@@ -23,8 +23,28 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
         
     
     }
+    // Track if user manually toggled
+    const [userToggled, setUserToggled] = useState(false);
+
+    useEffect(() => {
+        const handleResize = () => {
+            if (!userToggled) {
+                if (window.innerWidth <= 1000) {
+                    setCollapsed(true);
+                } else {
+                    setCollapsed(false);
+                }
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        // Initial check
+        handleResize();
+        return () => window.removeEventListener('resize', handleResize);
+    }, [userToggled, setCollapsed]);
+
     const handleMenuItemClick = () => {
-        if (collapsed) {
+        // Reopen sidebar on menu item click when collapsed and screen width > 1000
+        if (collapsed && window.innerWidth > 1000) {
             setCollapsed(false);
         }
     };
@@ -55,7 +75,10 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
                 <button
                     className="shrink-toggle-btn text-gray-500 hover:text-gray-800"
                     style={{ outline: 'none', border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
-                    onClick={() => setCollapsed((prev) => !prev)}
+                    onClick={() => {
+                        setCollapsed((prev) => !prev);
+                        setUserToggled(true);
+                    }}
                     aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
                     <i className={`ri-arrow-left-s-line${collapsed ? ' rotate-180' : ''}`}></i>
@@ -157,7 +180,7 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
                             {!collapsed && (
                             <div className="flex flex-col flex-auto">
                                 <span className='text-lg font-semibold'>{data.corporate.name}</span>
-                                <span className="text-sm -mt-0.5 font-normal text-content2">Business &bull; {data.corporate.country_code} </span>
+                                <span className="text-sm -mt-0.5 font-normal text-content2">{data.corporate.country_code}</span>
                             </div>
                             )}
                             {!collapsed && (

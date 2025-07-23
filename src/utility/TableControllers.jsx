@@ -81,11 +81,9 @@ export function HorizontalScroll() {
     document.addEventListener('keydown', (e) => {
         isAltPressed = true;
         x = container.scrollHeight;
-        console.log(`Key pressed`, e.key);
     });
 
     document.addEventListener('keyup', (e) => {
-        console.log(`Key released`, e.key);
         e.preventDefault();
         e.stopPropagation();
 

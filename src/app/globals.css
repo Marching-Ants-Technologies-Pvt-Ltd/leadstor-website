@@ -306,3 +306,111 @@ body {
     font-size: 0.95rem;
   }
 }
+
+/* Custom thin scrollbar for dropdowns */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f1f1f1;
+  overflow-x: hidden;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 0px; /* Hide horizontal scrollbar */
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #b0b8c1;
+}
+
+/* Table-style scrollbar for popups */
+.table-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #f3f3f3;
+  scroll-behavior: smooth;
+  padding-right: 28px; /* More space for scrollbar, more rightward */
+}
+.table-scrollbar::-webkit-scrollbar {
+  width: 14px;
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.table-scrollbar::-webkit-scrollbar-track {
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.table-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 25px;
+  min-height: 40px;
+}
+.table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+/* Hide scrollbar arrows/buttons */
+.table-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+.filter-drawer-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #f3f3f3;
+  scroll-behavior: smooth;
+  padding-right: 28px; /* More space for scrollbar, more rightward */
+}
+.filter-drawer-scrollbar::-webkit-scrollbar {
+  width: 14px;
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.filter-drawer-scrollbar::-webkit-scrollbar-track {
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.filter-drawer-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 25px;
+  min-height: 40px;
+}
+.filter-drawer-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+@media (max-width: 1000px) {
+  .sidebar {
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+  }
+  .sidebar .sidebar-title {
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .sidebar .shrink-toggle-btn {
+    display: none !important;
+  }
+  .sidebar .menu-item {
+    justify-content: center;
+  }
+  .sidebar .sidebar-footer .flex-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .menu-btn-group {
+    display: none !important;
+  }
+  .business-label {
+    display: none !important;
+  }
+  .navbar-user-text {
+    display: none !important;
+  }
+}

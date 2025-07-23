@@ -45,6 +45,33 @@ function xConversions() {
         });
 }
 
+// Custom formatter for remarks with audio
+function renderRemarkCell(row) {
+    let content = row['remarks'] || '';
+    let audioLink = '';
+    if (content.includes('<audio')) {
+        let match = content.match(/src="([^"]+)"/);
+        audioLink = match && match[1] ? match[1] : '';
+        content = content.split('<audio')[0];
+    }
+    // Sanitize content
+    const div = document.createElement('div');
+    div.innerText = content;
+    content = div.innerHTML;
+    return (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {audioLink && (
+                <audio
+                    src={audioLink}
+                    controls
+                    style={{ height: 28, minWidth: 120, maxWidth: 200, marginRight: 8, verticalAlign: 'middle' }}
+                />
+            )}
+            <span dangerouslySetInnerHTML={{ __html: content }} />
+        </span>
+    );
+}
+
 export default function ConversionTable() {
 
     const [columns, setColumns] = useState([]);
@@ -111,7 +138,7 @@ export default function ConversionTable() {
                                 </div>
                             </td>
                             {columnOrder && columnOrder.map((col, k) => (
-                                <td key={`conversion-clm-${k}`}>{row[col] ?? ''}</td>
+                                <td key={`conversion-clm-${k}`}>{col === 'remarks' ? renderRemarkCell(row) : (row[col] ?? '')}</td>
                             ))}
                         </tr>
                     ))}

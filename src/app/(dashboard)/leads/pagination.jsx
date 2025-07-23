@@ -1,11 +1,10 @@
 'use client';
 
 import { fullScreenSwitch, toggleScrollbar, getPageNumbers } from "@/utility/TableControllers";
-import { LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadsLastPage } from "@/utility/TinyDB";
+import { LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadsLastPage, User } from "@/utility/TinyDB";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import RenameColumnModal from "./RenameColumnModal";
-import ReorderColumnModal from "./ReorderColumnModal";
+import ColumnReorderPopup from "./ColumnReorderPopup";
 
 let setPagingX;
 let setSummaryX;
@@ -37,25 +36,15 @@ async function handelPaging() {
     setSummaryX(`Viewing ${offset} to ${leads} of ${maxLeads}`);
 }
 
-export default function LeadsTablePagination({ columns, setColumns, columnOrder, setColumnOrder, fetchAndSetColumns }) {
+export default function LeadsTablePagination({ columns, setColumns, columnOrder, setColumnOrder, fetchAndSetColumns, showPerPageDropdown, setShowPerPageDropdown }) {
 
     const [limit, setLimit] = useState(LeadsPerPage.value());
     const [paging, setPaging] = useState([]);
     const [summary, setSummary] = useState('Fetching leads...');
-    const [showRename, setShowRename] = useState(false);
-    const [showReorder, setShowReorder] = useState(false);
-    const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
+    const [showColumnReorderPopup, setShowColumnReorderPopup] = useState(false);
     const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
 
-    // Handler for renaming a column
-    const onRename = (dataField, newName) => {
-        setColumns(prev => prev.map(col => col.dataField === dataField ? { ...col, fieldName: newName } : col));
-        if (typeof fetchAndSetColumns === 'function') {
-            fetchAndSetColumns();
-        }
-    };
-
-    // Handler for reordering columns
+    // Handler for reordering columns (for ColumnReorderPopup)
     const onReorder = (newOrder) => {
         setColumnOrder(newOrder);
         if (typeof fetchAndSetColumns === 'function') {
@@ -118,98 +107,219 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
         window.tableState = setSummaryX;
     }, []);
 
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 1000;
+
     return (
-        <div className="flex px-4 py-3 poppins text-gray-600 text-[14px] cursor-default">
-            <div className='border-r pr-4 flex justify-center items-center'>
-                <div
-                    style={{
-                        display: (!summary.startsWith('View')) ? 'block' : 'none'
-                    }}
-                    className="spinner-simple w-5 h-5 mr-2 border-[2px]">
-                </div>
-                {summary}
-            </div>
-            <div className='pl-4 flex justify-center items-center'>
-                <div className="dropdown-container justify-center">
-                    <div className="dropdown">
-                        <div
-                            className="flex items-center cursor-pointer select-none"
-                            onClick={() => setShowPerPageDropdown(v => !v)}
-                            tabIndex={0}
-                        >
-                            Enquiries per page <span className='border px-3 mx-1 rounded-md py-0.5'>{limit}</span>
-                            <label
-                                className="ml-1 ri-settings-line text-lg relative top-0.5 cursor-pointer"
-                                tabIndex="0"
-                                onClick={e => { e.stopPropagation(); setShowSettingsDropdown(v => !v); }}
-                            ></label>
+        <div className="flex px-4 py-3 poppins text-gray-600 text-[14px] cursor-default pagination-responsive items-center justify-between">
+            {/* Desktop: Show summary, per-page selector, settings on the left; pagination controls on the right */}
+            {!isMobile && (
+                <>
+                    <div className="flex items-center gap-6">
+                        <div className='border-r pr-4 flex justify-center items-center'>
+                            <div
+                                style={{
+                                    display: (!summary.startsWith('View')) ? 'block' : 'none'
+                                }}
+                                className="spinner-simple w-5 h-5 mr-2 border-[2px]">
+                            </div>
+                            {summary}
                         </div>
+                        <div className='pl-4 flex justify-center items-center'>
+                            <div className="dropdown-container justify-center">
+                                <div className="dropdown">
+                                    <div
+                                        className="flex items-center select-none"
+                                        tabIndex={0}
+                                    >
+                                        Enquiries per page
+                                        <div className="relative ml-2">
+                                            <span
+                                                className='group border px-3 rounded-md py-0.5 cursor-pointer bg-white hover:bg-gray-50 transition-colors'
+                                                onClick={() => setShowPerPageDropdown(open => !open)}
+                                                tabIndex={0}
+                                                style={{ display: 'inline-block' }}
+                                            >
+                                                {limit}
+                                                {/* Tooltip on hover - only on number box */}
+                                                <div
+                                                    className="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none"
+                                                    style={{ transform: 'translateX(-60%)' }}
+                                                >
+                                                    <div className="bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg">
+                                                        Change enquiry per page
+                                                    </div>
+                                                    <div className="w-2 h-2 bg-black rotate-45 mx-auto -mt-1"></div>
+                                                </div>
+                                            </span>
+                                            {showPerPageDropdown && (
+                                                <div
+                                                    className="dropdown-menu bg-white w-16"
+                                                    style={{
+                                                        position: 'absolute',
+                                                        left: 0,
+                                                        bottom: '100%',
+                                                        marginBottom: '8px',
+                                                        zIndex: 100,
+                                                    }}
+                                                >
+                                                    {[50, 100, 200, 500, 1000].map(val => (
+                                                        <a
+                                                            key={val}
+                                                            className="dropdown-item text-sm hover:bg-gray-100"
+                                                            onClick={e => {
+                                                                handelLeadsPerPageChange(e);
+                                                                setShowPerPageDropdown(false);
+                                                            }}
+                                                        >
+                                                            {val}
+                                                        </a>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        {/* Settings icon restored */}
+                                        {User?._id === -1 && (
+                                            <label
+                                                className="group ml-2 ri-settings-line text-lg relative top-0.5 cursor-pointer hover:bg-gray-100 rounded px-1 py-0.5"
+                                                tabIndex="0"
+                                                onClick={e => { e.stopPropagation(); setShowColumnReorderPopup(true); }}
+                                                title="Reorder or Rename Columns"
+                                            >
+                                                {/* Tooltip for settings icon - matches number box tooltip */}
+                                                <div
+                                                    className="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none"
+                                                    style={{ transform: 'translateX(-50%)' }}
+                                                >
+                                                    <div
+                                                        className="bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg font-normal poppins"
+                                                    >
+                                                        Reorder or Rename Columns
+                                                    </div>
+                                                    <div className="w-2 h-2 bg-black rotate-45 mx-auto -mt-1"></div>
+                                                </div>
+                                            </label>
+                                        )}
+                                        <ColumnReorderPopup
+                                            isOpen={showColumnReorderPopup}
+                                            setIsOpen={setShowColumnReorderPopup}
+                                            columns={columns}
+                                            setColumns={setColumns}
+                                            setColumnOrder={setColumnOrder}
+                                            fetchAndSetColumns={fetchAndSetColumns}
+                                            refreshTable={window.tableRefresh}
+                                            onReorder={onReorder}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            {/* Scrollbars and fullscreen buttons only on desktop */}
+                            <div className="flex items-center text-gray-500 pt-1 justify-center cursor-pointer">
+                                <span className="tooltip tooltip-top ml-6" data-tooltip="Hide Scrollbars">
+                                    <button onClick={toggleScrollbar} className="ri-scroll-to-bottom-fill text-xl"></button>
+                                </span>
+                                <span className="tooltip tooltip-top" data-tooltip="View Fullscreen">
+                                    <button onClick={fullScreenSwitch} className="ri-fullscreen-line text-lg ml-2"></button>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className='pagination ml-6' onClick={handelPageChange}>
+                        <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
+                            <i className="ri-arrow-left-s-line"></i>
+                        </div>
+                        {paging.map((item, index) => (
+                            <div key={index} data-value={item.pageNum} className={item.style}>{item.name}</div>
+                        ))}
+                        <div data-value='NEXT' className='arrow-btn rounded-e-md'>
+                            <i className="ri-arrow-right-s-line"></i>
+                        </div>
+                    </div>
+                </>
+            )}
+            {/* Mobile: Only per-page selector and pagination controls */}
+            {isMobile && (
+                <div className="flex w-full justify-between items-center">
+                    <div className="flex items-center">
+                        <span className="text-gray-600 mr-2">Enquiries per page</span>
+                        <span
+                            className='group border px-3 rounded-md py-0.5 cursor-pointer bg-white hover:bg-gray-50 transition-colors'
+                            onClick={() => setShowPerPageDropdown(open => !open)}
+                            tabIndex={0}
+                            style={{ display: 'inline-block' }}
+                        >
+                            {limit}
+                        </span>
                         {showPerPageDropdown && (
-                            <div onClick={handelLeadsPerPageChange} className="dropdown-menu dropdown-menu-top-left bg-white w-16 mb-2">
-                                <a className="dropdown-item text-sm">50</a>
-                                <a className="dropdown-item text-sm">100</a>
-                                <a className="dropdown-item text-sm">200</a>
-                                <a className="dropdown-item text-sm">500</a>
-                                <a className="dropdown-item text-sm">1000</a>
+                            <div
+                                className="dropdown-menu bg-white w-16"
+                                style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    bottom: '100%',
+                                    marginBottom: '8px',
+                                    zIndex: 100,
+                                }}
+                            >
+                                {[50, 100, 200, 500, 1000].map(val => (
+                                    <a
+                                        key={val}
+                                        className="dropdown-item text-sm hover:bg-gray-100"
+                                        onClick={e => {
+                                            handelLeadsPerPageChange(e);
+                                            setShowPerPageDropdown(false);
+                                        }}
+                                    >
+                                        {val}
+                                    </a>
+                                ))}
                             </div>
                         )}
-                        {showSettingsDropdown && (
-                            <div className="dropdown-menu  dropdown-menu-right-top right-0 bg-white w-48 rounded border border-gray-200 shadow-sm p-0"
-                                 style={{ position: 'absolute', bottom: '100%', right: 0, zIndex: 100 }}>
-                                <button 
-                                    className="dropdown-item text-xs flex items-center py-2 px-2 hover:bg-gray-50 rounded cursor-pointer w-full" 
-                                    tabIndex={-1} 
-                                    onClick={() => { setShowRename(true); setShowSettingsDropdown(false); }}
+                        {/* Settings icon always visible on mobile */}
+                        {User?._id === -1 && (
+                            <label
+                                className="group ml-2 ri-settings-line text-lg relative top-0.5 cursor-pointer hover:bg-gray-100 rounded px-1 py-0.5"
+                                tabIndex="0"
+                                onClick={e => { e.stopPropagation(); setShowColumnReorderPopup(true); }}
+                                title="Reorder or Rename Columns"
+                            >
+                                {/* Tooltip for settings icon - matches number box tooltip */}
+                                <div
+                                    className="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none"
+                                    style={{ transform: 'translateX(-50%)' }}
                                 >
-                                    <i className="ri-edit-2-line text-base flex-shrink-0" style={{marginRight: '1px'}}></i>
-                                    <span>Rename</span>
-                                </button>
-                                <button 
-                                    className="dropdown-item text-xs flex items-center py-2 px-2 hover:bg-gray-50 rounded cursor-pointer w-full" 
-                                    tabIndex={-1} 
-                                    onClick={() => { setShowReorder(true); setShowSettingsDropdown(false); }}
-                                >
-                                    <i className="ri-drag-move-2-line text-base flex-shrink-0" style={{marginRight: '1px'}}></i>
-                                    <span>Reorder</span>
-                                </button>
-                            </div>
+                                    <div
+                                        className="bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg font-normal poppins"
+                                    >
+                                        Reorder or Rename Columns
+                                    </div>
+                                    <div className="w-2 h-2 bg-black rotate-45 mx-auto -mt-1"></div>
+                                </div>
+                            </label>
                         )}
+                        <ColumnReorderPopup
+                            isOpen={showColumnReorderPopup}
+                            setIsOpen={setShowColumnReorderPopup}
+                            columns={columns}
+                            setColumns={setColumns}
+                            setColumnOrder={setColumnOrder}
+                            fetchAndSetColumns={fetchAndSetColumns}
+                            refreshTable={window.tableRefresh}
+                            onReorder={onReorder}
+                        />
+                    </div>
+                    <div className='pagination ml-4' onClick={handelPageChange}>
+                        <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
+                            <i className="ri-arrow-left-s-line"></i>
+                        </div>
+                        {paging.map((item, index) => (
+                            <div key={index} data-value={item.pageNum} className={item.style}>{item.name}</div>
+                        ))}
+                        <div data-value='NEXT' className='arrow-btn rounded-e-md'>
+                            <i className="ri-arrow-right-s-line"></i>
+                        </div>
                     </div>
                 </div>
-                <div className="flex items-center text-gray-500 pt-1 justify-center cursor-pointer">
-                    <span className="tooltip tooltip-top ml-6" data-tooltip="Hide Scrollbars">
-                        <button onClick={toggleScrollbar} className="ri-scroll-to-bottom-fill text-xl"></button>
-                    </span>
-                    <span className="tooltip tooltip-top" data-tooltip="View Fullscreen">
-                        <button onClick={fullScreenSwitch} className="ri-fullscreen-line text-lg ml-2"></button>
-                    </span>
-                </div>
-            </div>
-            <div className='grow'></div>
-            <div className='pagination' onClick={handelPageChange}>
-                <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
-                    <i className="ri-arrow-left-s-line"></i>
-                </div>
-                {paging.map((item, index) => (
-                    <div key={index} data-value={item.pageNum} className={item.style}>{item.name}</div>
-                ))}
-                <div data-value='NEXT' className='arrow-btn rounded-e-md'>
-                    <i className="ri-arrow-right-s-line"></i>
-                </div>
-            </div>
-            <RenameColumnModal
-                isOpen={showRename}
-                onClose={() => setShowRename(false)}
-                onRename={onRename}
-                columns={columns}
-            />
-            <ReorderColumnModal
-                isOpen={showReorder}
-                onClose={() => setShowReorder(false)}
-                onReorder={onReorder}
-                columns={columns}
-                columnOrder={columnOrder}
-            />
+            )}
         </div>
     );
 }

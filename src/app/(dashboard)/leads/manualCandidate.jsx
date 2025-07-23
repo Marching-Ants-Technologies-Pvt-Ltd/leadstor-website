@@ -1,11 +1,14 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import { xFetch } from '@/utility/xFetch';
-import { Test, User } from '@/utility/TinyDB';
+import { Corporate, User, Test } from '@/utility/TinyDB';
+import CustomSelect from '@/components/CustomSelect';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const initialRow = { firstName: "", lastName: "", email: "", mobile: "", course: "", location: "", source: "", remarks: "" };
 
-export default function ManualCandidate({ onCancel }) {
+export default function ManualCandidate({ onCancel, onSwitchToImport }) {
   const [rows, setRows] = useState([{ ...initialRow }]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
@@ -13,11 +16,43 @@ export default function ManualCandidate({ onCancel }) {
   const [duplicates, setDuplicates] = useState([]);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [courseOptions, setCourseOptions] = useState([]);
+  const [sourceOptions, setSourceOptions] = useState([]);
 
-  // Session data (matches ImportEnquiryDropBox)
-  const sessionData = useMemo(() => {
-    return JSON.parse(localStorage.getItem('CurrentSessionData') || '{}');
+  // Session data - fixed to handle SSR and localStorage access
+  const [sessionData, setSessionData] = useState({});
+  
+  useEffect(() => {
+    // Only access localStorage on client side
+    if (typeof window !== 'undefined') {
+      const data = { corporate: Corporate, user: User, test: Test };
+      setSessionData(data);
+    }
   }, []);
+
+  // Fetch source options from backend per corporateId
+  useEffect(() => {
+    const fetchSourceOptions = async () => {
+      const corporateId = sessionData?.corporate?._id;
+      if (corporateId) {
+        try {
+          const response = await xFetch({
+            method: 'GET',
+            path: `/services/profile/getSources?corporateId=${corporateId}`
+          });
+          if (Array.isArray(response)) {
+            setSourceOptions(response.map(src => src.source));
+          } else {
+            setSourceOptions([]);
+          }
+        } catch (error) {
+          setSourceOptions([]);
+        }
+      }
+    };
+    if (sessionData?.corporate?._id) {
+      fetchSourceOptions();
+    }
+  }, [sessionData]);
 
   // Dynamic label (matches ImportEnquiryDropBox)
   const dynamicLabel = useMemo(() => {
@@ -54,8 +89,12 @@ export default function ManualCandidate({ onCancel }) {
         }
       }
     };
-    fetchDropdownValues();
-  }, [sessionData]);
+    
+    // Only fetch if sessionData is loaded
+    if (Object.keys(sessionData).length > 0) {
+      fetchDropdownValues();
+    }
+  }, [sessionData, dynamicLabel]);
 
   // Backend-required columns
   const getRequiredColumns = () => [
@@ -84,11 +123,16 @@ export default function ManualCandidate({ onCancel }) {
   // Validate row (matches ImportEnquiryDropBox)
   const validateRow = (row) => {
     const errors = [];
-    if (!row.firstName) errors.push('Missing first name');
-    if (!row.lastName && sessionData?.corporate?.type !== 700) errors.push('Missing last name');
-    if (!row.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) errors.push('Invalid email');
-    if (!row.mobile || !/^[6-9]\d{9}$/.test(row.mobile)) errors.push('Invalid mobile (10 digits starting with 6-9)');
-    if (!row.course) errors.push(`Missing ${dynamicLabel}`);
+    if (!row.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) {
+      errors.push('Invalid email');
+    }
+    if (!row.mobile || !/^\+?[0-9\s-]{7,15}$/.test(row.mobile)) {
+      errors.push('Invalid mobile (should be 7-15 digits, may start with +, spaces/dashes allowed)');
+    }
+    // Check for required fields
+    if (!row.firstName.trim()) {
+      errors.push('First name is required');
+    }
     return errors;
   };
 
@@ -106,6 +150,7 @@ export default function ManualCandidate({ onCancel }) {
       });
       return response.items || [];
     } catch (err) {
+      console.error("Error checking duplicates:", err);
       return [];
     }
   };
@@ -117,11 +162,20 @@ export default function ManualCandidate({ onCancel }) {
     setUploadComplete(false);
     setStat({ total: 0, valid: 0, duplicate: 0, uploaded: 0 });
     setDuplicates([]);
+    
     try {
+      // Check if we have valid session data
+      if (!sessionData?.test?._id) {
+        toast.error('Session data not available. Please refresh the page.');
+        setLoading(false);
+        return;
+      }
+
       // 1. Validate rows
       const mappedRows = rows.map(mapRowToBackend);
       const validRows = [];
       const invalidRows = [];
+      
       mappedRows.forEach((row, idx) => {
         const errors = validateRow({
           firstName: row['First Name'],
@@ -130,24 +184,36 @@ export default function ManualCandidate({ onCancel }) {
           mobile: row['Mobile'],
           course: row[dynamicLabel],
         });
-        if (errors.length === 0) validRows.push(row);
-        else invalidRows.push({ row, errors, idx });
+        if (errors.length === 0) {
+          validRows.push(row);
+        } else {
+          invalidRows.push({ row, errors, idx });
+        }
       });
+
       if (invalidRows.length > 0) {
-        setMessage({ type: 'error', text: `There are ${invalidRows.length} invalid entr${invalidRows.length === 1 ? 'y' : 'ies'} in the form. Please correct them before submitting.` });
+        const errorMessage = invalidRows.map(item => 
+          `Lead #${item.idx + 1}: ${item.errors.join(', ')}`
+        ).join('\n');
+        
+        toast.error(`Please fix the following errors:\n${errorMessage}`);
         setLoading(false);
         return;
       }
+
       // 2. Check duplicates
-      const emails = validRows.map(r => r['Email']);
-      const mobiles = validRows.map(r => r['Mobile']?.toString().replace(/\D/g, ''));
+      const emails = validRows.map(r => r['Email']).filter(Boolean);
+      const mobiles = validRows.map(r => r['Mobile']?.toString().replace(/\D/g, '')).filter(Boolean);
+      
       const duplicatesFromBackend = await checkDuplicates(emails, mobiles);
       setDuplicates(duplicatesFromBackend);
+      
       if (duplicatesFromBackend.length > 0) {
-        setMessage({ type: 'error', text: `There are ${duplicatesFromBackend.length} duplicate entr${duplicatesFromBackend.length === 1 ? 'y' : 'ies'} found in the database. Please remove or update them before submitting.` });
+        toast.error(`There are ${duplicatesFromBackend.length} duplicate entr${duplicatesFromBackend.length === 1 ? 'y' : 'ies'} found in the database. Please remove or update them before submitting.`);
         setLoading(false);
         return;
       }
+
       // 3. Prepare payload
       const payload = {
         contacts: validRows,
@@ -159,12 +225,14 @@ export default function ManualCandidate({ onCancel }) {
         owner: sessionData?.user?._id,
         roleName: sessionData?.user?.role
       };
+
       // 4. Upload in chunks
       const chunkSize = 50;
       const chunks = [];
       for (let i = 0; i < validRows.length; i += chunkSize) {
         chunks.push(validRows.slice(i, i + chunkSize));
       }
+
       let uploaded = 0;
       for (let i = 0; i < chunks.length; i++) {
         const response = await xFetch({
@@ -175,159 +243,228 @@ export default function ManualCandidate({ onCancel }) {
             contacts: chunks[i]
           }
         });
+        
         if (response.status !== 'OK') {
           throw new Error(response.errors?.join(', ') || 'Upload failed');
         }
         uploaded += chunks[i].length;
       }
-      setMessage({ type: 'success', text: 'Candidate(s) added successfully!' });
+
+      toast.success(`Successfully uploaded ${uploaded} record${uploaded === 1 ? '' : 's'}`);
       setRows([{ ...initialRow }]);
       setUploadComplete(true);
-      if (typeof window.tableRefresh === 'function') window.tableRefresh();
+      
+      // Refresh table if function exists
+      if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
+        window.tableRefresh();
+      }
+      
     } catch (error) {
-      setMessage({ type: 'error', text: error.message || 'Failed to add candidate.' });
+      console.error("Error adding enquiry:", error);
+      toast.error(error.message || 'Failed to add candidate.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    handleAddEnquiry();
+  };
+
+  // Prevent Enter key from submitting the form
+  const handleFormKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+    }
+  };
+
+  // Handle input changes with proper validation
+  const handleInputChange = (idx, field, value) => {
+    setRows(rows.map((r, i) => i === idx ? { ...r, [field]: value } : r));
+  };
+
+  // Handle row removal
+  const handleRemoveRow = (idx) => {
+    if (rows.length > 1) {
+      setRows(rows.filter((_, i) => i !== idx));
+    }
+  };
+
+  // Handle add new row
+  const handleAddRow = () => {
+    setRows([...rows, { ...initialRow }]);
+  };
+
+  // Handle close modal
+  const handleClose = () => {
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
+  // Handle switch to import
+  const handleSwitchToImport = (e) => {
+    e.preventDefault();
+    if (onCancel) onCancel();
+    if (onSwitchToImport) onSwitchToImport();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="relative w-full max-w-lg mx-auto bg-white rounded-2xl shadow-xl p-0 overflow-hidden animate-fadeIn pt-10">
-        <button
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition focus:outline-none z-30"
-          onClick={onCancel}
-          aria-label="Close"
-          type="button"
-          style={{ fontSize: '1.5rem', lineHeight: 1 }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-            <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
-          </svg>
-        </button>
-        {/* Title */}
-        <div className="absolute top-6 left-6">
-          <h2 className="text-xl font-semibold text-gray-800">Add Leads</h2>
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+      <ToastContainer 
+        position="bottom-right" 
+        autoClose={3000} 
+        hideProgressBar={false} 
+        newestOnTop 
+        closeOnClick 
+        rtl={false} 
+        pauseOnFocusLoss 
+        draggable 
+        pauseOnHover 
+      />
+      <div className="w-full max-w-lg bg-white rounded-xl shadow-xl border border-gray-200 relative">
+        {/* Title and Close Button */}
+        <div className="px-8 pt-8 pb-3 flex items-center justify-between">
+          <h2 className="text-2xl font-medium text-gray-500">Add Lead(s)</h2>
+          <button
+            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 focus:outline-none border-none bg-transparent -mr-2"
+            style={{ marginRight: '-0.7rem' }}
+            onClick={handleClose}
+            aria-label="Close"
+            type="button"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
-        {/* Info Note */}
-        <div className="px-4 pt-4 pb-1">
-          {message && (
-            <div className={`mb-3 p-1.5 rounded text-center text-xs ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-rose-100 text-rose-700'}`}>{message.text}</div>
-          )}
-        </div>
+        
         {/* Form */}
         <form
-          className="px-4 pb-5 pt-2 max-h-[74vh] overflow-y-auto"
-          onSubmit={e => { e.preventDefault(); handleAddEnquiry(); }}
+          className="px-8 pb-6 pt-2 max-h-[74vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+          onSubmit={handleSubmit}
+          onKeyDown={handleFormKeyDown}
         >
           <div className="space-y-6">
             {rows.map((row, idx) => (
-              <div key={idx} className="relative bg-white border border-gray-100 rounded-2xl shadow-sm p-5 group transition-all">
+              <div key={idx} className="mb-2">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-semibold text-base text-blue-800">Leads #{idx + 1}</h3>
+                  <h3 className="text-2xl font-medium text-gray-500">Lead #{idx + 1}</h3>
                   {rows.length > 1 && (
                     <button
-                      onClick={() => setRows(rows.filter((_, i) => i !== idx))}
-                      className="text-gray-300 hover:text-red-500 transition-colors text-xl font-bold rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-red-200"
-                      title="Remove Candidate"
+                      onClick={() => handleRemoveRow(idx)}
+                      className="text-gray-400 text-sm font-bold rounded-md w-6 h-6 flex items-center justify-center focus:outline-none border border-gray-200 bg-white hover:bg-gray-50"
+                      title="Remove Lead"
                       type="button"
                     >
                       &times;
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">First Name</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                      className="w-full h-9 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
                       value={row.firstName}
-                      onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, firstName: e.target.value } : r))}
+                      onChange={e => handleInputChange(idx, 'firstName', e.target.value)}
                       placeholder="e.g. John"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">Last Name</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                      className="w-full h-9 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
                       value={row.lastName}
-                      onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, lastName: e.target.value } : r))}
+                      onChange={e => handleInputChange(idx, 'lastName', e.target.value)}
                       placeholder="e.g. Doe"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">Email <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Email <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                      className="w-full h-9 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
                       value={row.email}
-                      onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, email: e.target.value } : r))}
+                      onChange={e => handleInputChange(idx, 'email', e.target.value)}
                       placeholder="e.g. john.doe@example.com"
                       type="email"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">Mobile <span className="text-red-500">*</span></label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Mobile <span className="text-red-500">*</span>
+                    </label>
                     <input
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                      className="w-full h-9 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
                       value={row.mobile}
-                      onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, mobile: e.target.value } : r))}
+                      onChange={e => handleInputChange(idx, 'mobile', e.target.value)}
                       placeholder="e.g. 9876543210"
                       type="tel"
+                      required
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">{dynamicLabel}</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">{dynamicLabel}</label>
                     {courseOptions.length > 0 ? (
-                      <select
-                        className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                      <CustomSelect
+                        options={courseOptions}
                         value={row.course}
-                        onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, course: e.target.value } : r))}
-                      >
-                        <option value="">Select {dynamicLabel}</option>
-                        {courseOptions.map(option => (
-                          <option key={option} value={option}>{option}</option>
-                        ))}
-                      </select>
+                        onChange={(value) => handleInputChange(idx, 'course', value)}
+                        placeholder={`Select ${dynamicLabel}`}
+                      />
                     ) : (
                       <input
-                        className="w-full px-3 py-1.5 border border-ray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                        className="w-full h-9 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
                         value={row.course}
-                        onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, course: e.target.value } : r))}
+                        onChange={e => handleInputChange(idx, 'course', e.target.value)}
                         placeholder={`e.g. ${dynamicLabel}`}
                       />
                     )}
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">Source</label>
-                    <select
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
-                      value={row.source}
-                      onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, source: e.target.value } : r))}
-                    >
-                      <option value="">Select Source</option>
-                      <option value="Manual">Manual</option>
-                      <option value="WebSync">WebSync</option>
-                      <option value="Facebook">Facebook</option>
-                      <option value="IndiaMart">IndiaMart</option>
-                      <option value="Justdial">Justdial</option>
-                    </select>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Source</label>
+                    {sourceOptions.length > 0 ? (
+                      <CustomSelect
+                        options={sourceOptions}
+                        value={row.source}
+                        onChange={(value) => handleInputChange(idx, 'source', value)}
+                        placeholder="Select Source"
+                      />
+                    ) : (
+                      <input
+                        className="w-full h-9 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
+                        value={row.source}
+                        onChange={e => handleInputChange(idx, 'source', e.target.value)}
+                        placeholder="e.g. Source"
+                      />
+                    )}
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">Location</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
                     <input
-                      className="w-full px-3 py-1.5 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 bg-blue-50"
+                      className="w-full h-9 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
                       value={row.location}
-                      onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, location: e.target.value } : r))}
+                      onChange={e => handleInputChange(idx, 'location', e.target.value)}
                       placeholder="e.g. New York"
                     />
                   </div>
-                  
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-0.5">Remarks</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Remarks</label>
                     <textarea
-                      className="w-full px-3 py-2 border border-gray-300 rounded text-xs focus:outline-none"
+                      className="w-full h-20 px-3 py-2 border border-gray-300 rounded text-sm outline-none bg-white text-gray-700 resize-none focus:outline-none focus:border-gray-400"
                       value={row.remarks}
-                      onChange={e => setRows(rows.map((r, i) => i === idx ? { ...r, remarks: e.target.value } : r))}
+                      onChange={e => handleInputChange(idx, 'remarks', e.target.value)}
                       placeholder="Any additional notes..."
                     />
                   </div>
@@ -335,25 +472,40 @@ export default function ManualCandidate({ onCancel }) {
               </div>
             ))}
           </div>
-          {/* Add Row Button */}
-          <div className="mt-1 flex items-center gap-4">
-            <button
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-1.5 rounded flex items-center transition-all duration-200 text-xs font-medium shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-              onClick={() => setRows([...rows, { ...initialRow }])}
-              type="button"
-            >
-              <span className="text-lg mr-1 font-light">+</span>Add Another Lead
-            </button>
-            <button
-              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-1.5 rounded flex items-center transition-all duration-200 text-sm font-semibold shadow-md hover:shadow-lg disabled:opacity-60"
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? 'Adding...' : 'Add Enquiry'}
-            </button>
+          
+          {/* Info Box for Excel Import */}
+          <div className="w-full flex items-center gap-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-md px-4 py-3 mb-6 mt-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-500 flex-shrink-0">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+            </svg>
+            <span className="text-sm">
+              If you have data available on Excel,{' '}
+              <a href="#" className="font-semibold underline hover:text-blue-900" onClick={handleSwitchToImport}>
+                Click here to import.
+              </a>
+            </span>
+          </div>
+          
+          <div className="mt-0">
+            <div className="flex flex-col sm:flex-row items-center gap-3 justify-start">
+              <button
+                className="border border-gray-300 text-gray-700 bg-white px-4 py-2 rounded-md text-sm font-medium focus:outline-none hover:bg-gray-50 transition-colors"
+                onClick={handleAddRow}
+                type="button"
+              >
+                + Add Another Lead
+              </button>
+              <button
+                className="bg-green-600 text-white px-6 py-2 rounded-md text-sm font-semibold focus:outline-none hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Adding...' : 'Add Enquiry'}
+              </button>
+            </div>
           </div>
         </form>
       </div>
     </div>
   );
-} 
+}

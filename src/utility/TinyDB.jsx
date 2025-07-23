@@ -21,6 +21,18 @@ export function getLeadOwnerById(id){
     return LeadOwnersById[id];
 }
 
+export function getCurrentUserNameIfAdmin() {
+    try {
+        const session = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
+        if (session?.user && session.user._id === -1) {
+            return session.user.name || '';
+        }
+    } catch (e) {
+        // ignore
+    }
+    return '';
+}
+
 export const LeadsPerPage = {
     value: () => parseInt(localStorage.getItem('LeadsPerPage') ?? '50'),
     setValue: (value) => localStorage.setItem('LeadsPerPage', value)

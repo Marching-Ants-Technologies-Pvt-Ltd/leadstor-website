@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import styles from './Navbar.module.css';
 
 export default function Navbar({ data }) {
 
@@ -42,7 +43,7 @@ export default function Navbar({ data }) {
             </div>
             <div className='dropdown z-10 flex h-fit'>
                 <label className='flex gap-2 poppins cursor-pointer' tabIndex="0">
-                    <div className='pr-2 pointer-events-none'>
+                    <div className={`pr-2 pointer-events-none ${styles['hide-on-small']}`}>
                         <h3 className='m-0 text-base'>{data.user.name}</h3>
                         <p className='-mt-0.5 p-0 text-xs text-gray-500 text-right'>{data.user.role}</p>
                     </div>

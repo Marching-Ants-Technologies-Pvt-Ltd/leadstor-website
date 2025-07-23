@@ -1,0 +1,8 @@
+.hide-on-small {
+  display: block;
+}
+@media (max-width: 1000px) {
+  .hide-on-small {
+    display: none !important;
+  }
+} 
