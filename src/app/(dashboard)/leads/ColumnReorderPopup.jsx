@@ -68,10 +68,6 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
     }
   }, [isOpen, columns]);
 
-  // Smoother auto-scroll with RAF
-  // Remove all auto-scroll logic (delete handleAutoScroll and related refs/effects)
-  // Add state: const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
-    
   // Add a mousemove event listener when isDragging is true
   useEffect(() => {
     if (!isDragging) return;
@@ -96,9 +92,7 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
     preview.style.transform = `translate(${x}px, ${y}px)`;
     preview.style.zIndex = '9999';
     
-    // Handle auto-scroll
-    // handleAutoScroll(clientY); // Removed auto-scroll
-  }, [dragOffset]); // Removed handleAutoScroll from dependencies
+  }, [dragOffset]);
 
   // Global mouse move handler for smooth preview
   useEffect(() => {
@@ -227,12 +221,6 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
     setIsDragging(false);
     setDraggedItem(null);
     setDraggedOver(null);
-    
-    // Cleanup
-    // if (autoScrollRef.current) { // Removed auto-scroll cleanup
-    //   cancelAnimationFrame(autoScrollRef.current);
-    //   autoScrollRef.current = null;
-    // }
     
     if (dragPreviewRef.current) {
       // Smooth fade out
@@ -389,6 +377,8 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
       if (onReorder) {
         onReorder(tempColumns.map(col => col.dataField));
       }
+      // fetchAndSetColumns is likely responsible for refreshing the main table data.
+      // Calling it after a successful update is correct.
       if (fetchAndSetColumns) {
         try {
           await fetchAndSetColumns();
@@ -398,7 +388,7 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
       toast.success('Columns updated!');
       setIsOpen(false);
     } catch (error) {
-      toast.error('Failed to apply changes. Please try again.');
+      toast.error(`Failed to apply changes: ${error.message || 'Please try again.'}`);
     } finally {
       setIsApplying(false);
     }
@@ -462,9 +452,6 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // if (autoScrollRef.current) { // Removed auto-scroll cleanup
-      //   cancelAnimationFrame(autoScrollRef.current);
-      // }
       if (dragOverTimeoutRef.current) {
         clearTimeout(dragOverTimeoutRef.current);
       }
@@ -474,7 +461,7 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
     };
   }, []);
 
-  // 2. Add auto-scroll logic for drag
+  // Auto-scroll logic for drag
   useEffect(() => {
     if (!isDragging) return;
     const handleAutoScroll = (e) => {
@@ -546,7 +533,7 @@ const ColumnReorderPopup = ({ isOpen, setIsOpen, columns, setColumns, setColumnO
                   >
                     {draggedOver === 0 && (
                       <span className="text-gray-700 text-xs font-medium px-3 py-1 bg-gray-100 rounded-full shadow-sm">
-                        Drop "{getDraggedColumnName()}" here
+                        Drop &quot;{getDraggedColumnName()}&quot; here
                       </span>
                     )}
                   </div>
