@@ -204,26 +204,68 @@ const FilterDrawer = ({ isOpen, onClose }) => {
     return { corporate: Corporate, user: User, test: Test };
   }, []);
 
+  // Transform options to consistent {label, value} format
+  const transformOptions = (options) => {
+    if (!options) return [];
+    
+    // Handle object responses by converting to array
+    let optionsArray;
+    if (Array.isArray(options)) {
+      optionsArray = options;
+    } else if (typeof options === 'object' && options !== null) {
+      optionsArray = Object.values(options);
+    } else {
+      return [];
+    }
+    
+    return optionsArray.map(option => {
+      if (typeof option === 'string') {
+        return { label: option, value: option };
+      }
+      if (option && typeof option === 'object') {
+        return {
+          label: option.label || option.name || option.title || option.status || option.value || String(option),
+          value: option.value || option.id || option.name || option.title || option.status || String(option)
+        };
+      }
+      return { label: String(option), value: String(option) };
+    });
+  };
+
   // Fetch filter options from backend
   useEffect(() => {
     const fetchOptions = async () => {
       if (!sessionData?.test?._id) return;
       setLoading(true);
       try {
+        // Add corporateType and isManager parameters like the original implementation
+        const params = new URLSearchParams({
+          testId: sessionData.test._id,
+          corporateType: sessionData.corporate?.type ?? '',
+          isManager: sessionData.user?.isManager ?? ''
+        }).toString();
+
         const response = await (await import('@/utility/xFetch')).xFetch({
           method: 'GET',
-          path: `/services/invite/api.php?x=getFilterParameters&testId=${sessionData.test._id}`
+          path: `/services/invite/api.php?x=getFilterParameters&${params}`
         });
+        
+        // Check if response is valid and has expected structure
+        if (!response || typeof response !== 'object') {
+          throw new Error('Invalid response format');
+        }
+        
         setFilterOptions({
-          status: response.statuses || [],
-          course: response.courses || [],
-          source: response.sources || [],
-          location: response.locations || [],
-          owner: response.owners || [],
-          courseMode: response.courseModes || [],
-          probability: response.probabilities || []
+          status: transformOptions(response.statuses),
+          course: transformOptions(response.courses),
+          source: transformOptions(response.sources),
+          location: transformOptions(response.locations),
+          owner: transformOptions(response.owners),
+          courseMode: transformOptions(response.courseModes),
+          probability: transformOptions(response.probabilities)
         });
       } catch (e) {
+        console.error('Error fetching filter options:', e);
         setFilterOptions({
           status: [], course: [], source: [], location: [], owner: [], courseMode: [], probability: []
         });
@@ -488,19 +530,23 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                   </svg>
                 </div>
                 <div className={`multi-select-dropdown ${activeDropdown === type ? 'active' : ''}`} style={{position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: 200, overflowY: 'auto', zIndex: 10, display: activeDropdown === type ? 'block' : 'none'}}>
-                  {filterOptions[type] && filterOptions[type].length > 0 ? filterOptions[type].map(option => (
-                    <div 
-                      key={option}
-                      className={`multi-select-option ${selectedFilters[type].includes(option) ? 'selected' : ''}`}
-                      style={{padding: '8px 12px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, background: selectedFilters[type].includes(option) ? '#e3f2fd' : 'white', color: selectedFilters[type].includes(option) ? '#1976d2' : '#333'}}
-                      onClick={() => selectMultiOption(type, option)}
-                    >
-                      <div className={`checkbox ${selectedFilters[type].includes(option) ? 'checked' : ''}`} style={{width: 16, height: 16, border: '1px solid #ddd', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white', background: selectedFilters[type].includes(option) ? '#007bff' : 'white', marginRight: 8}}>
-                        {selectedFilters[type].includes(option) ? '✓' : ''}
+                  {filterOptions[type] && filterOptions[type].length > 0 ? filterOptions[type].map(option => {
+                    const optionValue = option.value;
+                    const optionLabel = option.label;
+                    return (
+                      <div 
+                        key={optionValue}
+                        className={`multi-select-option ${selectedFilters[type].includes(optionValue) ? 'selected' : ''}`}
+                        style={{padding: '8px 12px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, background: selectedFilters[type].includes(optionValue) ? '#e3f2fd' : 'white', color: selectedFilters[type].includes(optionValue) ? '#1976d2' : '#333'}}
+                        onClick={() => selectMultiOption(type, optionValue)}
+                      >
+                        <div className={`checkbox ${selectedFilters[type].includes(optionValue) ? 'checked' : ''}`} style={{width: 16, height: 16, border: '1px solid #ddd', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white', background: selectedFilters[type].includes(optionValue) ? '#007bff' : 'white', marginRight: 8}}>
+                          {selectedFilters[type].includes(optionValue) ? '✓' : ''}
+                        </div>
+                        <span>{optionLabel}</span>
                       </div>
-                      <span>{option}</span>
-                    </div>
-                  )) : <div style={{padding: '8px 12px', color: '#aaa'}}>No options</div>}
+                    );
+                  }) : <div style={{padding: '8px 12px', color: '#aaa'}}>No options</div>}
                 </div>
               </div>
             </div>
@@ -509,43 +555,39 @@ const FilterDrawer = ({ isOpen, onClose }) => {
           {/* Single-select filters */}
           <div style={{marginBottom: 24}}>
             <label style={{display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14}}>Owner</label>
-            <select 
-              style={{width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, background: 'white', color: '#333'}} 
+            <CustomSelect
+              options={filterOptions.owner}
               value={selectedFilters.owner}
-              onChange={(e) => updateSingleFilter('owner', e.target.value)}
-            >
-              <option value="">Select Owner</option>
-              {filterOptions.owner && filterOptions.owner.length > 0 ? filterOptions.owner.map(option => (
-                <option key={option} value={option}>{option}</option>
-              )) : <option disabled>No options</option>}
-            </select>
+              onChange={value => updateSingleFilter('owner', value)}
+              placeholder="Select Owner"
+            />
           </div>
 
           <div style={{marginBottom: 24}}>
             <label style={{display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14}}>Course Mode</label>
-            <select 
-              style={{width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, background: 'white', color: '#333'}} 
+            <CustomSelect
+              options={[
+                { label: 'Online', value: 'Online' },
+                { label: 'Offline', value: 'Offline' }
+              ]}
               value={selectedFilters.courseMode}
-              onChange={(e) => updateSingleFilter('courseMode', e.target.value)}
-            >
-              <option value="">Select Course Mode</option>
-                <option value="Online">Online</option>
-                <option value="Offline">Offline</option>
-            </select>
+              onChange={value => updateSingleFilter('courseMode', value)}
+              placeholder="Select Course Mode"
+            />
           </div>
 
           <div style={{marginBottom: 24}}>
             <label style={{display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14}}>Probability</label>
-            <select 
-              style={{width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, background: 'white', color: '#333'}} 
+            <CustomSelect
+              options={[
+                { label: 'Low', value: '20' },
+                { label: 'Medium', value: '55' },
+                { label: 'High', value: '85' }
+              ]}
               value={selectedFilters.probability}
-              onChange={(e) => updateSingleFilter('probability', e.target.value)}
-            >
-              <option value="">Select Probability</option>
-                <option value="20">Low</option>
-                <option value="55">Medium</option>
-                <option value="85">High</option>
-            </select>
+              onChange={value => updateSingleFilter('probability', value)}
+              placeholder="Select Probability"
+            />
           </div>
 
             {/* Modern Calendar for Enquiry Date */}

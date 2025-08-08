@@ -20,38 +20,73 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
   const [uploadFailed, setUploadFailed] = useState(false);
   const [uniqueRows, setUniqueRows] = useState([]);
   const [duplicateCount, setDuplicateCount] = useState(0);
+  const [columnConfig, setColumnConfig] = useState(null);
+  const [dynamicLabel, setDynamicLabel] = useState('Course');
 
-  // Get session data (REQUIRED by backend)
-  const sessionData = useMemo(() => {
-    return { corporate: Corporate, user: User, test: Test };
+  // Session data - fixed to handle SSR and localStorage access
+  const [sessionData, setSessionData] = useState({});
+  
+  useEffect(() => {
+    // Only access localStorage on client side
+    if (typeof window !== 'undefined') {
+      const data = { corporate: Corporate, user: User, test: Test };
+      setSessionData(data);
+    }
   }, []);
 
-  // Dynamic label mapping (EXACTLY matches backend expectations)
-  const dynamicLabel = useMemo(() => {
-    const corporateType = sessionData?.corporate?.type;
-    const corporateId = sessionData?.corporate?._id;
-    
-    // Backend expects these specific mappings:
-    const serviceIds = [64, 1084, 1114, 1115, 1280, 1153]; // Matches backend logic
-    const emvyGroups = 1152; // Matches backend constant
-    
-    if (corporateType === 800) return 'Country';
-    if (corporateType === 100 && serviceIds.includes(corporateId)) return 'Service';
-    if (corporateType === 100 && corporateId === emvyGroups) return 'Project';
-    return 'Course'; // Default as expected by backend
+  // Fetch column configuration from backend
+  useEffect(() => {
+    const fetchColumnConfig = async () => {
+      if (sessionData?.corporate?._id) {
+        try {
+          const response = await xFetch({
+            method: 'GET',
+            path: '/services/joinees/columns'
+          });
+          if (response && typeof response === 'object') {
+            setColumnConfig(response);
+            // Extract the dynamic label from the response
+            setDynamicLabel(response.label || 'Course');
+          }
+        } catch (error) {
+          console.error('Failed to fetch column config:', error);
+          // Fallback to default
+          setDynamicLabel('Course');
+        }
+      }
+    };
+    if (sessionData?.corporate?._id) {
+      fetchColumnConfig();
+    }
   }, [sessionData]);
 
-  // Backend-required columns (MUST match PHP script expectations)
-  const getRequiredColumns = () => [
-    'First Name',
-    'Last Name',
-    'Email',
-    'Mobile',
-    dynamicLabel, // Dynamic field based on corporate type
-    'Location',
-    'Source',
-    'Remarks'
-  ];
+  // Backend-required columns
+  const getRequiredColumns = () => {
+    if (columnConfig) {
+      // Use backend column configuration
+      return [
+        'First Name',
+        'Last Name',
+        columnConfig.email || 'Email',
+        columnConfig.mobile || 'Mobile',
+        columnConfig.label || dynamicLabel,
+        'Location',
+        columnConfig.source || 'Source',
+        columnConfig.remarks || 'Remarks'
+      ];
+    }
+    // Fallback to default columns
+    return [
+      'First Name',
+      'Last Name',
+      'Email',
+      'Mobile',
+      dynamicLabel,
+      'Location',
+      'Source',
+      'Remarks'
+    ];
+  };
 
   // Process uploaded file (validates against backend requirements)
   const handleFile = (e) => {
@@ -104,16 +139,16 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
       const errors = [];
       const firstName = row['First Name']?.toString().trim();
       const lastName = row['Last Name']?.toString().trim();
-      const email = row['Email']?.toString().trim();
-      const mobile = (row['Mobile']?.toString().trim() || '').replace(/\D/g, '');
-      const dynamicValue = row[dynamicLabel]?.toString().trim();
+      const email = row[columnConfig?.email || 'Email']?.toString().trim();
+      const mobile = (row[columnConfig?.mobile || 'Mobile']?.toString().trim() || '').replace(/\D/g, '');
+      const dynamicValue = row[columnConfig?.label || dynamicLabel]?.toString().trim();
 
       // Validation rules (must match backend validation)
       if (!firstName) errors.push('Missing first name');
       if (!lastName && sessionData?.corporate?.type !== 700) errors.push('Missing last name');
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Invalid email');
       if (!mobile || !/^\d{10}$/.test(mobile)) errors.push('Invalid mobile (must be exactly 10 digits)');
-      if (!dynamicValue) errors.push(`Missing ${dynamicLabel}`);
+      if (!dynamicValue) errors.push(`Missing ${columnConfig?.label || dynamicLabel}`);
 
       if (errors.length > 0) {
         invalid.push({ row, errors, lineNumber: idx + 2 });
@@ -132,7 +167,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
     const ws = XLSX.utils.aoa_to_sheet([columns]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
-    XLSX.writeFile(wb, `Import_Template_${dynamicLabel}.xlsx`);
+    XLSX.writeFile(wb, `Import_Template_${columnConfig?.label || dynamicLabel}.xlsx`);
   };
 
   // Check duplicates (matches backend API)
@@ -147,9 +182,21 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
           testId: testId || sessionData?.test?._id
         }
       });
-      return response.items || [];
+      
+      // Handle different response formats
+      if (Array.isArray(response)) {
+        return response;
+      } else if (response && Array.isArray(response.items)) {
+        return response.items;
+      } else if (response && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.warn('Unexpected duplicate check response format:', response);
+        return [];
+      }
     } catch (err) {
       console.error('Duplicate check failed:', err);
+      // Don't throw error, just return empty array to allow upload to continue
       return [];
     }
   };
@@ -161,9 +208,16 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
     setError('');
     setUploadFailed(false);
     try {
+      // Check if we have valid session data
+      if (!sessionData?.test?._id) {
+        toast.error('Session data not available. Please refresh the page.');
+        setUploading(false);
+        return;
+      }
+
       // 1. Check duplicates (REQUIRED by backend)
-      const emails = validRows.map(row => row['Email']);
-      const mobiles = validRows.map(row => String(row['Mobile'] || '').replace(/\D/g, ''));
+      const emails = validRows.map(row => row[columnConfig?.email || 'Email']);
+      const mobiles = validRows.map(row => String(row[columnConfig?.mobile || 'Mobile'] || '').replace(/\D/g, ''));
       const duplicates = await checkDuplicates(emails, mobiles);
       setDuplicates(duplicates);
 
@@ -196,8 +250,8 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
       }
 
       const uniqueRowsFiltered = validRows.filter(row => {
-        const email = (row['Email'] || '').toLowerCase();
-        const mobile = String(row['Mobile'] || '').replace(/\D/g, '');
+        const email = (row[columnConfig?.email || 'Email'] || '').toLowerCase();
+        const mobile = String(row[columnConfig?.mobile || 'Mobile'] || '').replace(/\D/g, '');
 
         if (duplicateEmails.has(email)) {
           return false;
@@ -214,6 +268,14 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
       console.log('Duplicates from backend:', duplicates);
       console.log('Rows before filtering:', validRows);
       console.log('Rows after filtering:', uniqueRowsFiltered);
+
+      // Stop if no unique rows to upload
+      if (uniqueRowsFiltered.length === 0) {
+        toast.warning('No records to upload after filtering duplicates.');
+        setUploadComplete(true);
+        setUploadFailed(false);
+        return;
+      }
 
       // 3. Prepare payload (MUST match backend structure)
       const payload = {
@@ -235,34 +297,82 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
       }
 
       for (let i = 0; i < chunks.length; i++) {
-        const response = await xFetch({
-          method: 'POST',
-          path: '/services/invite/api.php?x=sendTestInvitations', // Updated backend endpoint
-          payload: {
-            ...payload,
-            contacts: chunks[i] // Send current chunk
+        try {
+          const formData = new FormData();
+          // Append contacts as multi-dimensional array, legacy style
+          chunks[i].forEach((contact, idx) => {
+            const contactArr = [
+              contact['First Name'] || '',
+              contact['Last Name'] || '',
+              contact[columnConfig?.email || 'Email'] || '',
+              contact[columnConfig?.mobile || 'Mobile'] || '',
+              contact[columnConfig?.label || dynamicLabel] || '',
+              contact['Location'] || '',
+              contact[columnConfig?.source || 'Source'] || '',
+              contact[columnConfig?.remarks || 'Remarks'] || ''
+            ];
+            contactArr.forEach((val, j) => {
+              formData.append(`contacts[${idx}][${j}]`, val);
+            });
+          });
+          formData.append('testId', payload.testId);
+          formData.append('corporateType', payload.corporateType);
+          formData.append('recruiterId', payload.recruiterId);
+          formData.append('manual', payload.manual);
+          formData.append('toDefer', payload.toDefer);
+          formData.append('owner', payload.owner);
+          formData.append('roleName', payload.roleName);
+
+          const token = localStorage.getItem('access_token');
+          const fetchResponse = await fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/leadstorredirect/sendTestInvitationEmail`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+              // DO NOT set Content-Type, browser will set it for FormData
+            },
+            body: formData,
+            redirect: 'follow'
+          });
+          let response;
+          try {
+            response = await fetchResponse.json();
+          } catch (e) {
+            throw new Error('Invalid server response');
           }
-        });
+          if (response && (response.status === 'OK' || response.success === true || response.message === 'Success')) {
+            // Success case
+          } else if (response && response.errors && Array.isArray(response.errors)) {
+            throw new Error(response.errors.join(', '));
+          } else if (response && response.error) {
+            throw new Error(response.error);
+          } else if (response && response.message && response.status !== 'OK') {
+            throw new Error(response.message);
+          } else if (!response) {
+            throw new Error('No response from server');
+          }
+          // If we reach here, assume success
 
-        // Handle backend response
-        if (response.status !== 'OK') {
-          throw new Error(response.errors?.join(', ') || 'Upload failed');
+          // Update progress
+          setProgress(Math.round(((i + 1) / chunks.length) * 100));
+        } catch (chunkError) {
+          console.error(`Error uploading chunk ${i + 1}:`, chunkError);
+          throw new Error(`Failed to upload chunk ${i + 1}: ${chunkError.message}`);
         }
-
-        // Update progress
-        setProgress(Math.round(((i + 1) / chunks.length) * 100));
       }
 
       setUploadComplete(true);
       setUploadFailed(false);
-      toast.success(`Uploaded ${uniqueRows.length} record${uniqueRows.length === 1 ? '' : 's'} successfully`);
-              if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
-            window.tableRefresh();
-        }
+      toast.success(`Uploaded ${uniqueRowsFiltered.length} record${uniqueRowsFiltered.length === 1 ? '' : 's'} successfully`);
+      
+      // Refresh table if function exists
+      if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
+        window.tableRefresh();
+      }
     } catch (err) {
-      setError(err.message);
+      console.error('Import error:', err);
+      setError(err.message || 'Upload failed');
       setUploadFailed(true);
-      toast.error(err.message);
+      toast.error(err.message || 'Upload failed');
     } finally {
       setUploading(false);
     }
@@ -290,11 +400,11 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
     const data = Array.isArray(duplicates[0]) || typeof duplicates[0] === 'object'
       ? duplicates.map(d => columns.map(col => d[col] || ''))
       : validRows.filter(row => {
-          const email = (row['Email'] || '').toLowerCase();
-          const mobile = String(row['Mobile'] || '').replace(/\D/g, '');
+          const email = (row[columnConfig?.email || 'Email'] || '').toLowerCase();
+          const mobile = String(row[columnConfig?.mobile || 'Mobile'] || '').replace(/\D/g, '');
           // This logic is complex; a simpler way is to check against `uniqueRows`
           // but that's not available here. Re-filtering is okay for now.
-          const isDuplicate = !uniqueRows.find(uniqueRow => uniqueRow['Email'] === row['Email'] && uniqueRow['Mobile'] === row['Mobile']);
+          const isDuplicate = !uniqueRows.find(uniqueRow => uniqueRow[columnConfig?.email || 'Email'] === row[columnConfig?.email || 'Email'] && uniqueRow[columnConfig?.mobile || 'Mobile'] === row[columnConfig?.mobile || 'Mobile']);
           return isDuplicate;
         }).map(row => header.map(h => row[h] || ''));
     const ws = XLSX.utils.aoa_to_sheet([columns, ...data]);
@@ -308,7 +418,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
     <div className="w-full h-full flex flex-col items-center justify-between px-4 py-0">
       {/* Centered Excel icon */}
       <div className="flex flex-col items-center justify-center flex-1">
-        <img src="/icons/excel.png" alt="Excel Logo" className="w-20 h-20 mb-8 mt-2 rounded-lg border border-gray-200 bg-white object-contain shadow-none" />
+        <img src="icons/excel.png" alt="Excel Logo" className="w-20 h-20 mb-8 mt-2 rounded-lg border border-gray-200 bg-white object-contain shadow-none" />
         {/* Drop zone */}
         <div 
           className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer bg-white w-full max-w-md mb-4" // Added mb-4 for gap below upload area

@@ -7,7 +7,7 @@ import ImportEnquiryDropBox from './ImportEnquiry.jsx';
 import ManualCandidate from './manualCandidate.jsx';
 import React, { useEffect, useRef } from 'react';
 import ColumnReorderPopup from './ColumnReorderPopup.jsx';
-import SendSmsModal from './SendSmsModal.jsx';
+// import SendSmsModal from './SendSmsModal.jsx';
 import SendEmailModal from './SendEmailModal.jsx';
 import BulkUpdateDrawer from './BulkUpdateDrawer';
 import { toast } from 'react-toastify';
@@ -218,8 +218,6 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
         setShowManual(false);
         setShowPerPageDropdown(false);
     };
-
-    console.log('User object:', User);
 
     // Add a helper to get current values for a lead by invitationId
     function getLeadById(invitationId) {
@@ -488,13 +486,13 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                 // ...other props
                 />
             )}
-            {showSendSms && (
+            {/* {showSendSms && (
                 <SendSmsModal
                     isOpen={showSendSms}
                     onClose={() => setShowSendSms(false)}
                     mobiles={selectedLeadMobiles}
                 />
-            )}
+            )} */}
             {showSendEmail && (
                 <SendEmailModal
                     isOpen={showSendEmail}

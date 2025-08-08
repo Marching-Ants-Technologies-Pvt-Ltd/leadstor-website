@@ -11,7 +11,6 @@ import { xFetch } from '@/utility/xFetch';
 import { useEffect, useState } from 'react';
 
 export default function Leads() {
-    const [ready, setReady] = useState(false);
     const [columns, setColumns] = useState([]);
     const [columnOrder, setColumnOrder] = useState([]);
     const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
@@ -32,7 +31,7 @@ export default function Leads() {
         }
     };
 
-    // Get filter params and columns
+    // Get filter params and columns - but don't block UI rendering
     useEffect(() => {
         xFetch({
             path: '/services/profile/getUsers',
@@ -40,12 +39,11 @@ export default function Leads() {
         })
             .then(data => {
                 localStorage.setItem('LeadOwnersById', JSON.stringify(data));
-                setReady(true);
                 fetchAndSetColumns();
             })
             .catch(error => {
                 console.error(`An error occurred while fetching leads`, error);
-                toast.error(`Something went wrong! Please refresh the tab!`);
+                // Don't show toast error on initial load, let components handle their own loading states
             });
     }, []);
 
@@ -65,15 +63,10 @@ export default function Leads() {
 
     return (
         <div className="w-full h-full bg-white rounded-md shadow-md flex flex-col">
-            {(!ready)
-                ? <Spinner />
-                : <>
-                    <LeadsMenu onOpenAdvanceFilter={() => setDrawerOpen(true)} leads={leads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} />
-                    <LeadsTable columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={setColumnOrder} leads={leads} setLeads={setLeads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} />
-                    <LeadsTablePagination columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={handleReorder} fetchAndSetColumns={fetchAndSetColumns} showPerPageDropdown={showPerPageDropdown} setShowPerPageDropdown={setShowPerPageDropdown} />
-                    <FilterDrawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)} onApplyFilters={handleApplyFilters} />
-                </>
-            }
+            <LeadsMenu onOpenAdvanceFilter={() => setDrawerOpen(true)} leads={leads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} />
+            <LeadsTable columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={setColumnOrder} leads={leads} setLeads={setLeads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} />
+            <LeadsTablePagination columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={handleReorder} fetchAndSetColumns={fetchAndSetColumns} showPerPageDropdown={showPerPageDropdown} setShowPerPageDropdown={setShowPerPageDropdown} />
+            <FilterDrawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)} onApplyFilters={handleApplyFilters} />
         </div>
     );
 }

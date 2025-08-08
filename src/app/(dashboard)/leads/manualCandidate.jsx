@@ -8,15 +8,18 @@ import 'react-toastify/dist/ReactToastify.css';
 
 const initialRow = { firstName: "", lastName: "", email: "", mobile: "", course: "", location: "", source: "", remarks: "" };
 
-export default function ManualCandidate({ onCancel, onSwitchToImport }) {
+export default function ManualCandidate({ onCancel, onSwitchToImport, onRefreshTable }) {
   const [rows, setRows] = useState([{ ...initialRow }]);
   const [loading, setLoading] = useState(false);
+  const [dropdownLoading, setDropdownLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [stat, setStat] = useState({ total: 0, valid: 0, duplicate: 0, uploaded: 0 });
   const [duplicates, setDuplicates] = useState([]);
   const [uploadComplete, setUploadComplete] = useState(false);
   const [courseOptions, setCourseOptions] = useState([]);
   const [sourceOptions, setSourceOptions] = useState([]);
+  const [columnConfig, setColumnConfig] = useState(null);
+  const [dynamicLabel, setDynamicLabel] = useState('Course');
 
   // Session data - fixed to handle SSR and localStorage access
   const [sessionData, setSessionData] = useState({});
@@ -54,71 +57,99 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
     }
   }, [sessionData]);
 
-  // Dynamic label (matches ImportEnquiryDropBox)
-  const dynamicLabel = useMemo(() => {
-    const corporateType = sessionData?.corporate?.type;
-    const corporateId = sessionData?.corporate?._id;
-    const serviceIds = [64, 1084, 1114, 1115, 1280, 1153];
-    const emvyGroups = 1152;
-    if (corporateType === 800) return 'Country';
-    if (corporateType === 100 && serviceIds.includes(corporateId)) return 'Service';
-    if (corporateType === 100 && corporateId === emvyGroups) return 'Project';
-    return 'Course';
-  }, [sessionData]);
-
+  // Fetch column configuration from backend
   useEffect(() => {
-    const fetchDropdownValues = async () => {
-      if (sessionData?.test?._id) {
+    const fetchColumnConfig = async () => {
+      if (sessionData?.corporate?._id) {
         try {
           const response = await xFetch({
             method: 'GET',
-            path: `/services/invite/api.php?x=getFilterParameters&testId=${sessionData.test._id}`,
+            path: '/services/joinees/columns'
           });
-          
-          const optionsKey = `${dynamicLabel.toLowerCase()}s`;
-          
-          if (response && response[optionsKey]) {
-            setCourseOptions(response[optionsKey]);
-          } else if (response && response.courses) {
-            // Fallback for default 'Course' type
-            setCourseOptions(response.courses);
+          if (response && typeof response === 'object') {
+            setColumnConfig(response);
+            // Extract the dynamic label from the response
+            setDynamicLabel(response.label || 'Course');
           }
-
         } catch (error) {
-          console.error("Failed to fetch dropdown values:", error);
+          console.error('Failed to fetch column config:', error);
+          // Fallback to default
+          setDynamicLabel('Course');
         }
       }
     };
-    
-    // Only fetch if sessionData is loaded
-    if (Object.keys(sessionData).length > 0) {
-      fetchDropdownValues();
+    if (sessionData?.corporate?._id) {
+      fetchColumnConfig();
     }
-  }, [sessionData, dynamicLabel]);
+  }, [sessionData]);
+
+  // Fetch course options from backend per corporateId
+  useEffect(() => {
+    const fetchCourseOptions = async () => {
+      const corporateId = sessionData?.corporate?._id;
+      if (corporateId) {
+        try {
+          const response = await xFetch({
+            method: 'GET',
+            path: `/services/profile/getCourses?corporateId=${corporateId}`
+          });
+          if (Array.isArray(response)) {
+            setCourseOptions(response.map(course => course.course || course.name || course));
+          } else {
+            setCourseOptions([]);
+          }
+        } catch (error) {
+          setCourseOptions([]);
+        }
+      }
+    };
+    if (sessionData?.corporate?._id) {
+      fetchCourseOptions();
+    }
+  }, [sessionData]);
 
   // Backend-required columns
-  const getRequiredColumns = () => [
-    'First Name',
-    'Last Name',
-    'Email',
-    'Mobile',
-    dynamicLabel,
-    'Location',
-    'Source',
-    'Remarks'
-  ];
+  const getRequiredColumns = () => {
+    if (columnConfig) {
+      // Use backend column configuration
+      return [
+        'First Name',
+        'Last Name',
+        columnConfig.email || 'Email',
+        columnConfig.mobile || 'Mobile',
+        columnConfig.label || dynamicLabel,
+        'Location',
+        columnConfig.source || 'Source',
+        columnConfig.remarks || 'Remarks'
+      ];
+    }
+    // Fallback to default columns
+    return [
+      'First Name',
+      'Last Name',
+      'Email',
+      'Mobile',
+      dynamicLabel,
+      'Location',
+      'Source',
+      'Remarks'
+    ];
+  };
 
   // Map UI row to backend object
-  const mapRowToBackend = (row) => ({
-    'First Name': row.firstName,
-    'Last Name': row.lastName,
-    'Email': row.email,
-    'Mobile': row.mobile,
-    [dynamicLabel]: row.course,
-    'Location': row.location,
-    'Source': row.source,
-    'Remarks': row.remarks
-  });
+  const mapRowToBackend = (row) => {
+    const labelKey = columnConfig?.label || dynamicLabel;
+    return {
+      'First Name': row.firstName,
+      'Last Name': row.lastName,
+      'Email': row.email,
+      'Mobile': row.mobile,
+      [labelKey]: row.course,
+      'Location': row.location,
+      'Source': row.source,
+      'Remarks': row.remarks
+    };
+  };
 
   // Validate row (matches ImportEnquiryDropBox)
   const validateRow = (row) => {
@@ -155,6 +186,46 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
     }
   };
 
+  // Function to refresh table
+  const refreshTable = () => {
+    // Try multiple methods to refresh the table
+    try {
+      // Method 1: Call onRefreshTable prop if provided
+      if (onRefreshTable && typeof onRefreshTable === 'function') {
+        onRefreshTable();
+        return;
+      }
+
+      // Method 2: Call window.tableRefresh if it exists
+      if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
+        window.tableRefresh();
+        return;
+      }
+
+      // Method 3: Dispatch custom event for table refresh
+      if (typeof window !== 'undefined') {
+        const refreshEvent = new CustomEvent('refreshTable', {
+          detail: { source: 'ManualCandidate' }
+        });
+        window.dispatchEvent(refreshEvent);
+      }
+
+      // Method 4: Try to find and call any table refresh methods in the global scope
+      if (typeof window !== 'undefined') {
+        // Look for common table refresh function names
+        const refreshMethods = ['refreshTable', 'reloadTable', 'updateTable', 'fetchTableData'];
+        for (const method of refreshMethods) {
+          if (typeof window[method] === 'function') {
+            window[method]();
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to refresh table:', error);
+    }
+  };
+
   // Main submit handler
   const handleAddEnquiry = async () => {
     setLoading(true);
@@ -182,7 +253,7 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
           lastName: row['Last Name'],
           email: row['Email'],
           mobile: row['Mobile'],
-          course: row[dynamicLabel],
+          course: row[columnConfig?.label || dynamicLabel],
         });
         if (errors.length === 0) {
           validRows.push(row);
@@ -235,13 +306,37 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
 
       let uploaded = 0;
       for (let i = 0; i < chunks.length; i++) {
+        const formData = new FormData();
+        // Append contacts as multi-dimensional array, legacy style
+        chunks[i].forEach((contact, idx) => {
+          // contact is an object, convert to array in legacy order
+          const contactArr = [
+            contact['First Name'] || '',
+            contact['Last Name'] || '',
+            contact['Email'] || '',
+            contact['Mobile'] || '',
+            contact[columnConfig?.label || dynamicLabel] || '',
+            contact['Location'] || '',
+            contact['Source'] || '',
+            contact['Remarks'] || ''
+          ];
+          contactArr.forEach((val, j) => {
+            formData.append(`contacts[${idx}][${j}]`, val);
+          });
+        });
+        formData.append('testId', payload.testId);
+        formData.append('corporateType', payload.corporateType);
+        formData.append('recruiterId', payload.recruiterId);
+        formData.append('manual', payload.manual);
+        formData.append('toDefer', payload.toDefer);
+        formData.append('owner', payload.owner);
+        formData.append('roleName', payload.roleName);
+
         const response = await xFetch({
           method: 'POST',
-          path: '/services/invite/api.php?x=sendTestInvitations',
-          payload: {
-            ...payload,
-            contacts: chunks[i]
-          }
+          path: '/leadstorredirect/sendTestInvitationEmail',
+          payload: formData,
+          isFormData: true
         });
         
         if (response.status !== 'OK') {
@@ -254,10 +349,8 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
       setRows([{ ...initialRow }]);
       setUploadComplete(true);
       
-      // Refresh table if function exists
-      if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
-        window.tableRefresh();
-      }
+      // Refresh table using improved method
+      refreshTable();
       
     } catch (error) {
       console.error("Error adding enquiry:", error);
@@ -336,7 +429,7 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
             type="button"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
+              <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 015.05 3.636L10 8.586z" clipRule="evenodd" />
             </svg>
           </button>
         </div>
@@ -422,6 +515,7 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
                         value={row.course}
                         onChange={(value) => handleInputChange(idx, 'course', value)}
                         placeholder={`Select ${dynamicLabel}`}
+                        required
                       />
                     ) : (
                       <input
@@ -429,6 +523,7 @@ export default function ManualCandidate({ onCancel, onSwitchToImport }) {
                         value={row.course}
                         onChange={e => handleInputChange(idx, 'course', e.target.value)}
                         placeholder={`e.g. ${dynamicLabel}`}
+                        required
                       />
                     )}
                   </div>

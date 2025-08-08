@@ -94,34 +94,49 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
 
   if (!isOpen) return null;
 
-  const allFieldsFilled = subject.trim() && message.trim();
+  // Compute if any candidates are selected
+  const hasCandidates = (Array.isArray(ids) && ids.length > 0) || (Array.isArray(emails) && emails.length > 0);
+  const allFieldsFilled = subject.trim() && message.trim() && hasCandidates;
 
   // Send email logic (matches legacy API)
   const handleSend = async () => {
     if (!allFieldsFilled) return;
     setIsSending(true);
     try {
+      // Always use FormData for this endpoint, but use xFetch with isFormData like manualCandidate
       const formData = new FormData();
-      // Always send ids as comma-separated string
       formData.append('ids', Array.isArray(ids) ? ids.join(',') : ids);
       formData.append('type', 'Email');
-      
       formData.append('ccEmail', cc);
       formData.append('content', message);
       formData.append('subject', subject);
       formData.append('corporateId', Corporate?._id || '');
       formData.append('userId', User?._id || '');
-      
       if (attachment) formData.append('attachment', attachment);
-      const response = await xFetch({
-        method: 'POST',
-        path: '/dashboard/php/services/leadstor/api.php?x=sendInviteNotification',
-        payload: formData,
-        isFormData: true
-      });
+      let response;
+      try {
+        response = await xFetch({
+          method: 'POST',
+          path: '/leadstorredirect/sendInviteNotification',
+          payload: formData,
+          isFormData: true
+        });
+      } catch (error) {
+        // Defensive handling for invalid JSON or HTML error pages
+        if (error instanceof SyntaxError || (typeof error.message === 'string' && error.message.includes('Unexpected token'))) {
+          toast.error('Server error: Invalid response. Please contact support.');
+          return;
+        } else if (error.response && error.response.data) {
+          toast.error(error.response.data.message || 'Failed to send Email');
+          return;
+        } else {
+          toast.error(error.message || 'Failed to send Email');
+          return;
+        }
+      }
       if (response && response.status === 'Failed') {
         toast.error(response.message || 'Failed to send Email');
-      } else {
+      } else if (response && (response.status === 'OK' || response.sent > 0)) {
         toast.success('Email sent successfully to selected leads');
         setCc('');
         setSubject('');
@@ -129,9 +144,15 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
         setAttachment(null);
         setTemplateId('');
         onClose();
+      } else {
+        toast.error('Failed to send Email');
       }
     } catch (error) {
-      toast.error(error?.message || 'Failed to send Email');
+      if (error.response && error.response.data) {
+        toast.error(error.response.data.message || 'Failed to send Email');
+      } else {
+        toast.error(error.message || 'Failed to send Email');
+      }
     } finally {
       setIsSending(false);
     }
@@ -172,6 +193,25 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
         <div style={{ padding: 20, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa' }}>
           <h2 style={{ fontSize: 18, fontWeight: 600, color: '#333', margin: 0 }}>Send Email to selected Candidates</h2>
           <button style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#666', padding: 0, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }} onClick={onClose} disabled={isSending}>×</button>
+        </div>
+        {/* Selected emails summary and warning */}
+        <div style={{ padding: '16px 20px 0 20px' }}>
+          {hasCandidates ? (
+            <div style={{ marginBottom: 12, fontSize: 14, color: '#444' }}>
+              <strong>Sending to:</strong>
+              <div style={{ marginTop: 4, maxHeight: 60, overflowY: 'auto', wordBreak: 'break-all' }}>
+                {emails && emails.length > 0 ? (
+                  emails.map((email, i) => <span key={email} style={{ display: 'inline-block', marginRight: 8 }}>{email}{i < emails.length-1 ? ',' : ''}</span>)
+                ) : (
+                  <span style={{ color: '#888' }}>[IDs selected: {Array.isArray(ids) ? ids.length : 0}]</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 12, fontSize: 14, color: '#b71c1c', background: '#fff3f3', padding: 8, borderRadius: 4, border: '1px solid #f7caca' }}>
+              <strong>No candidates selected.</strong> Please select at least one candidate to send an email.
+            </div>
+          )}
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 20, marginRight: 3 }}>
           <div style={{ marginBottom: 24 }}>
@@ -249,6 +289,7 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
             onClick={handleSend}
             style={{ padding: '10px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: isSending || !allFieldsFilled ? 'not-allowed' : 'pointer', background: '#007bff', color: 'white', flex: 1, opacity: isSending || !allFieldsFilled ? 0.6 : 1 }}
             disabled={isSending || !allFieldsFilled}
+            title={!hasCandidates ? 'No candidates selected' : (!allFieldsFilled ? 'Fill all fields' : '')}
           >
             {isSending ? 'Sending...' : 'Email'}
           </button>

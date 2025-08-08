@@ -61,7 +61,7 @@ export default function SendSmsDrawer({ isOpen, onClose = () => {}, mobiles = []
     try {
       const response = await xFetch({
         method: 'POST',
-        path: '/services/leadstor/api.php?x=sendInviteNotification',
+        path: '/leadstorredirect/sendInviteNotification',
         payload: {
           api_token,
           ids,

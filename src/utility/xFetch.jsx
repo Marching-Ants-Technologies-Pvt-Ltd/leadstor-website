@@ -10,6 +10,7 @@ export async function xFetch({
     method = 'GET',
     path = '',
     payload = null,
+    isFormData = false,
 }) {
 
     return new Promise((resolve, reject) => {
@@ -19,16 +20,23 @@ export async function xFetch({
 
         // Set headers
         const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "application/json");
+        if (!isFormData) {
+            myHeaders.append("Content-Type", "application/json");
+        }
         myHeaders.append("Authorization", `Bearer ${token}`);
 
         // Compose request options
         const requestOptions = { method, headers: myHeaders, redirect: "follow" };
 
-        // Handel payload
+        // Handle payload
         if (payload) {
             if (method !== 'GET') {
-                requestOptions['body'] = JSON.stringify(payload);
+                if (isFormData) {
+                    requestOptions['body'] = payload; // Send as FormData
+                    // Do NOT set Content-Type header for FormData!
+                } else {
+                    requestOptions['body'] = JSON.stringify(payload);
+                }
             } else {
                 path = `${path}?${jsonToQueryParams(payload)}`;
             }
