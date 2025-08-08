@@ -418,7 +418,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
     <div className="w-full h-full flex flex-col items-center justify-between px-4 py-0">
       {/* Centered Excel icon */}
       <div className="flex flex-col items-center justify-center flex-1">
-        <img src="icons/excel.png" alt="Excel Logo" className="w-20 h-20 mb-8 mt-2 rounded-lg border border-gray-200 bg-white object-contain shadow-none" />
+        <img src="icons/excel.webp" alt="Excel Logo" className="w-20 h-20 mb-8 mt-2 rounded-lg border border-gray-200 bg-white object-contain shadow-none" />
         {/* Drop zone */}
         <div 
           className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer bg-white w-full max-w-md mb-4" // Added mb-4 for gap below upload area
