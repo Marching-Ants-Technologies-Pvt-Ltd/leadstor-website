@@ -1,0 +1,125 @@
+.table-container{
+    @apply grow border-t border-b overflow-auto;
+   
+    scrollbar-color: #707070 #f3f3f3;
+    scrollbar-width: thin;
+    scroll-behavior: smooth;
+
+    &::-webkit-scrollbar {
+        @apply w-2;
+    }
+    &::-webkit-scrollbar-track {
+        @apply bg-gray-100;
+    }
+    &::-webkit-scrollbar-thumb {
+        @apply bg-gray-800;
+        border-radius: 25px; 
+    }
+}
+
+.table-container:hover{
+    scrollbar-width: thin;
+}
+
+.leadstor-table{
+    zoom: 90%;
+    @apply w-full text-base text-left rtl:text-right text-gray-500 dark:text-gray-400;
+    
+    >thead {
+        @apply text-gray-700 dark:bg-gray-700 dark:text-gray-400 sticky top-0 z-[1];
+
+        >tr th {
+            @apply px-6 py-3 font-medium text-left tracking-wide whitespace-nowrap min-w-28 max-w-80;
+
+            >input[type=checkbox]{
+                @apply checkbox checkbox-md rounded relative z-[11];
+            }
+        }
+    }
+
+    >tbody{
+        @apply divide-y divide-gray-200;
+
+        >tr td {
+            @apply px-6 py-3 whitespace-nowrap tracking-wide min-w-28 max-w-80 truncate;
+
+            >div {
+
+                >input[type=checkbox]{
+                    @apply checkbox checkbox-md rounded relative top-1 z-0;
+                }
+    
+                >i {
+                    @apply text-lg cursor-pointer ml-1;
+                }
+            }
+            >span i{
+                @apply w-fit bg-gray-100 not-italic rounded-lg pb-0.5 px-2;
+            }
+            >span i.primary{
+                @apply text-blue-500 bg-blue-50;
+            }
+            >span i.warning{
+                @apply text-orange-500 bg-orange-50;
+            }
+            >span i.success{
+                @apply text-green-500 bg-green-50;  
+            }
+            >span u.ri-mic-ai-line{
+                @apply bg-gray-100 rounded-lg p-1.5 text-lg cursor-pointer hover:text-blue-400 hover:bg-blue-50 no-underline;
+            }
+        }
+    }
+}
+
+.leadstor-table th:first-child,
+.leadstor-table td:first-child{
+    min-width: 0!important;
+    max-width: 60px!important;
+}
+
+.leadstor-table td[data-column="remarks"] span {
+    cursor: pointer;
+}
+
+/* Pagination */
+.pagination {
+    @apply flex font-medium cursor-pointer gap-0;
+
+    >div.arrow-btn{
+        @apply w-8 h-8 border flex justify-center items-center;
+
+        >i{
+            @apply text-xl pointer-events-none;
+        }
+    }
+    >div.page{
+        @apply w-10 h-8 border border-l-0 flex justify-center items-center;
+        &.active{
+            @apply bg-blue-500 border-blue-500 text-white
+        }
+    }
+}
+
+/* Row Context Menu */
+.context-menu{
+    @apply absolute border flex flex-col divide-y divide-gray-100 p-1 w-fit min-w-20 min-h-20 text-gray-600 bg-white shadow-2xl rounded-md z-[55];
+    
+    >div.item{
+        @apply flex flex-row p-2 pr-4 gap-2 text-sm cursor-pointer hover:bg-blue-50 items-center justify-start;
+
+        >div{
+            @apply pointer-events-none;
+            >span{
+                @apply badge badge-flat-primary font-normal ml-2;
+            }
+        }
+        >i{
+            @apply text-lg pointer-events-none;
+        }
+        
+    }
+    >div.delete-option{
+        @apply text-rose-500 hover:bg-rose-50;
+    }
+}

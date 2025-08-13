@@ -203,6 +203,214 @@ body {
   }
 }
 
-.__active{
-  @apply text-blue-500 bg-blue-50;
+.__active,
+.__active li {
+  color: #4583e2 !important;
+  @apply bg-blue-50 rounded-md;
+}
+/* Dashboard Layout and Sidebar Shrink/Expand */
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+}
+
+/* Reduce card body padding for more compact dashboard */
+.card-body {
+  padding: 1rem !important;
+}
+
+.sidebar {
+  width: 260px;
+  min-width: 60px;
+  max-width: 260px;
+  transition: width 0.2s cubic-bezier(0.4,0,0.2,1);
+  overflow-x: hidden;
+  box-shadow: 0 0 0.5rem 0 rgba(0,0,0,0.03);
+  z-index: 10;
+}
+
+.sidebar.sidebar-collapsed {
+  width: 70px;
+  min-width: 70px;
+  max-width: 70px;
+}
+
+.sidebar.sidebar-collapsed .sidebar-title {
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.sidebar-collapsed .sidebar-title .shrink-toggle-btn {
+  display: none;
+}
+
+.sidebar.sidebar-collapsed .menu-item {
+  justify-content: center;
+}
+
+.sidebar.sidebar-collapsed .menu-item i {
+  font-size: 1.5rem; /* Maintain icon size */
+}
+
+.sidebar.sidebar-collapsed .sidebar-footer .flex-row {
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.dashboard-main-content {
+  flex: 1;
+  min-width: 0;
+  transition: margin 0.2s cubic-bezier(0.4,0,0.2,1);
+  background: #fafbfc;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hide text in sidebar when collapsed (for extra safety) */
+.sidebar.sidebar-collapsed span,
+.sidebar.sidebar-collapsed .badge,
+.sidebar.sidebar-collapsed .menu-icon,
+.sidebar.sidebar-collapsed .dropdown-menu,
+.sidebar.sidebar-collapsed .flex-col,
+.sidebar.sidebar-collapsed .menu-item-collapse {
+  display: none !important;
+}
+
+.sidebar .shrink-toggle-btn {
+  transition: transform 0.2s;
+}
+
+.sidebar.sidebar-collapsed .shrink-toggle-btn i {
+  transform: rotate(180deg);
+}
+
+.dashboard-header-title {
+  height: 72px;
+  align-self: flex-start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  /* Optional: add a subtle border or background if you want to visually separate it */
+}
+
+@media (max-width: 900px) {
+  .dashboard-header-title {
+    min-width: 120px;
+    max-width: 140px;
+    font-size: 0.95rem;
+  }
+}
+
+/* Custom thin scrollbar for dropdowns */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f1f1f1;
+  overflow-x: hidden;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 0px; /* Hide horizontal scrollbar */
+  background: #f1f1f1;
+  border-radius: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 8px;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #b0b8c1;
+}
+
+/* Table-style scrollbar for popups */
+.table-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #f3f3f3;
+  scroll-behavior: smooth;
+  padding-right: 28px; /* More space for scrollbar, more rightward */
+}
+.table-scrollbar::-webkit-scrollbar {
+  width: 14px;
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.table-scrollbar::-webkit-scrollbar-track {
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.table-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 25px;
+  min-height: 40px;
+}
+.table-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+/* Hide scrollbar arrows/buttons */
+.table-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+.filter-drawer-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #f3f3f3;
+  scroll-behavior: smooth;
+  padding-right: 28px; /* More space for scrollbar, more rightward */
+}
+.filter-drawer-scrollbar::-webkit-scrollbar {
+  width: 14px;
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.filter-drawer-scrollbar::-webkit-scrollbar-track {
+  background: #f3f3f3;
+  border-radius: 25px;
+}
+.filter-drawer-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 25px;
+  min-height: 40px;
+}
+.filter-drawer-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+@media (max-width: 1000px) {
+  .sidebar {
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+  }
+  .sidebar .sidebar-title {
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.9rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .sidebar .shrink-toggle-btn {
+    display: none !important;
+  }
+  .sidebar .menu-item {
+    justify-content: center;
+  }
+  .sidebar .sidebar-footer .flex-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+  }
+  .menu-btn-group {
+    display: none !important;
+  }
+  .business-label {
+    display: none !important;
+  }
+  .navbar-user-text {
+    display: none !important;
+  }
 }

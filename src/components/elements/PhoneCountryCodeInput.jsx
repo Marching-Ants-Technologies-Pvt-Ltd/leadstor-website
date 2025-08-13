@@ -56,7 +56,7 @@ export default function PhoneCountryCode({
             li.setAttribute('data-code', item.code);
             li.setAttribute('data-country', item.country);
             li.setAttribute('data-iso', item.iso);
-            li.innerHTML = `<button type="button" class="inline-flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem"><img src='https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.iso}.svg' alt='${item.country} - National Flag' class='h-3 mt-1 mr-2 pointer-events-none'/><span class="inline-flex items-center pointer-events-none">${item.country} (+${item.code})</span></button>`;
+            li.innerHTML = `<button type="button" className="inline-flex w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-600 dark:hover:text-white" role="menuitem"><img src='https://purecatamphetamine.github.io/country-flag-icons/3x2/${item.iso}.svg' alt='${item.country} - National Flag' className='h-3 mt-1 mr-2 pointer-events-none'/><span className="inline-flex items-center pointer-events-none">${item.country} (+${item.code})</span></button>`;
             codeList.current.appendChild(li);
         });
     }
