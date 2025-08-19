@@ -247,7 +247,7 @@ const FilterDrawer = ({ isOpen, onClose }) => {
 
         const response = await (await import('@/utility/xFetch')).xFetch({
           method: 'GET',
-          path: `/services/invite/api.php?x=getFilterParameters&${params}`
+          path: `/services/invite/getFilterParameters&${params}`
         });
         
         // Check if response is valid and has expected structure
