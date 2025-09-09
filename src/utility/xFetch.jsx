@@ -48,7 +48,24 @@ export async function xFetch({
                 if (!response.ok) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                return response.json();
+                
+                // Check if response has content
+                const contentLength = response.headers.get('content-length');
+                if (contentLength === '0') {
+                    return {}; // Return empty object for empty responses
+                }
+                
+                return response.text().then(text => {
+                    if (!text) {
+                        return {}; // Return empty object for empty text
+                    }
+                    try {
+                        return JSON.parse(text);
+                    } catch (jsonError) {
+                        console.error('Failed to parse JSON response:', text);
+                        throw new Error(`Invalid JSON response: ${jsonError.message}`);
+                    }
+                });
             })
             .then(result => resolve(result))
             .catch(error => reject(error));

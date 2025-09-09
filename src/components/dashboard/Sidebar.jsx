@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 
 export default function Sidebar({ data, collapsed, setCollapsed }) {
 
@@ -20,32 +20,12 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
         // Update page title
         let title = pathName.split('/')[1];
         document.title = `${title.substring(0,1).toUpperCase()}${title.substring(1)} | Leadstor`;
-        
-    
     }
-    // Track if user manually toggled
-    const [userToggled, setUserToggled] = useState(false);
-
-    useEffect(() => {
-        const handleResize = () => {
-            if (!userToggled) {
-                if (window.innerWidth <= 1000) {
-                    setCollapsed(true);
-                } else {
-                    setCollapsed(false);
-                }
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        // Initial check
-        handleResize();
-        return () => window.removeEventListener('resize', handleResize);
-    }, [userToggled, setCollapsed]);
 
     const handleMenuItemClick = () => {
-        // Reopen sidebar on menu item click when collapsed and screen width > 1000
-        if (collapsed && window.innerWidth > 1000) {
-            setCollapsed(false);
+        // Auto-close sidebar on menu item click for mobile screens
+        if (collapsed && window.innerWidth <= 768) {
+            setCollapsed(true);
         }
     };
 
@@ -56,7 +36,7 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
 
     return (
         <aside className={`sidebar-sticky sidebar justify-start bg-white${collapsed ? ' sidebar-collapsed' : ''}`}>
-            <section className="sidebar-title items-center px-7 py-4 gap-3 flex justify-between">
+            <section className="sidebar-title items-center px-7 py-4 gap-3 flex">
                 {/* Logo - always visible */}
                 <div className="flex items-center gap-3">
                     <Image
@@ -72,17 +52,6 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
                         <span className="text-lg font-semibold text-gray-800">Leadstor</span>
                     )}
                 </div>
-                <button
-                    className="shrink-toggle-btn text-gray-500 hover:text-gray-800"
-                    style={{ outline: 'none', border: 'none', background: 'none', fontSize: '1.5rem', cursor: 'pointer' }}
-                    onClick={() => {
-                        setCollapsed((prev) => !prev);
-                        setUserToggled(true);
-                    }}
-                    aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                >
-                    <i className={`ri-arrow-left-s-line${collapsed ? ' rotate-180' : ''}`}></i>
-                </button>
             </section>
 
             <section className="sidebar-content min-h-[20rem]">

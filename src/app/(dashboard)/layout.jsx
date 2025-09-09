@@ -12,7 +12,7 @@ import 'react-toastify/ReactToastify.min.css';
 import { Slide, ToastContainer } from 'react-toastify';
 
 import React from "react";
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
 
@@ -20,7 +20,27 @@ export default function ClientLayout({ children }) {
 
     const [session, setSession] = useState(null);
     const router = useRouter();
+    const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
+    const [windowWidth, setWindowWidth] = useState(0);
+
+    // Handle initial collapsed state based on screen size
+    useEffect(() => {
+        const handleResize = () => {
+            const width = window.innerWidth;
+            setWindowWidth(width);
+            if (width < 1000) {
+                setCollapsed(true);
+            }
+        };
+        
+        // Set initial state
+        handleResize();
+        
+        // Add resize listener
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         const fetchSession = async () => {
@@ -55,6 +75,75 @@ export default function ClientLayout({ children }) {
         fetchSession();
     }, [router]);
 
+    // Map route to friendly page name and description
+    function getPageInfo(path) {
+        if (!path) return { title: 'Dashboard Overview', description: 'Overview of your business metrics and performance' };
+        const parts = path.split('/').filter(Boolean);
+        
+        if (parts.length >= 1) {
+            switch (parts[0]) {
+                case 'leads': 
+                    return { 
+                        title: 'Lead Management', 
+                        description: 'Track, manage and convert your leads effectively' 
+                    };
+                case 'conversions': 
+                    return { 
+                        title: 'Conversion Tracking', 
+                        description: 'Monitor conversion rates and optimize your funnel' 
+                    };
+                case 'dashboard': 
+                    return { 
+                        title: 'Dashboard Overview', 
+                        description: 'Overview of your business metrics and performance' 
+                    };
+                case 'integrations': 
+                    return { 
+                        title: 'Integration Center', 
+                        description: 'Connect and manage your third-party integrations' 
+                    };
+                case 'automation': 
+                    return { 
+                        title: 'Automation Hub', 
+                        description: 'Set up and manage automated workflows' 
+                    };
+                case 'reports': 
+                    return { 
+                        title: 'Analytics & Reports', 
+                        description: 'Detailed insights and performance analytics' 
+                    };
+                case 'campaigns': 
+                    return { 
+                        title: 'Campaign Manager', 
+                        description: 'Create and manage your marketing campaigns' 
+                    };
+                case 'contacts': 
+                    return { 
+                        title: 'Contact Directory', 
+                        description: 'Organize and manage your customer contacts' 
+                    };
+                case 'settings': 
+                    return { 
+                        title: 'System Settings', 
+                        description: 'Configure your application preferences' 
+                    };
+                case 'profile': 
+                    return { 
+                        title: 'Profile Settings', 
+                        description: 'Manage your account and personal information' 
+                    };
+                default:
+                    const capitalized = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+                    return { 
+                        title: `${capitalized} Management`, 
+                        description: `Manage and organize your ${parts[0]} efficiently` 
+                    };
+            }
+        }
+        return { title: 'Dashboard Overview', description: 'Overview of your business metrics and performance' };
+    }
+    const pageInfo = getPageInfo(pathname);
+
     if (!session) return <Loading />;
 
     return (
@@ -64,12 +153,23 @@ export default function ClientLayout({ children }) {
 
                 <div className="dashboard-main-content">
                     {/* Header bar containing page title and navbar */}
-                    <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 bg-white">
-                        {/* Page Title - aligned with sidebar logo */}
-                        <div className="flex items-center gap-3">
+                    <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
+                        {/* Page Title with collapse button */}
+                        <div className="flex items-center gap-4">
+                            {/* Collapse/Expand button - only show on screens >= 1000px */}
+                            {windowWidth >= 1000 && (
+                                <button
+                                    className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200 ease-in-out"
+                                    onClick={() => setCollapsed(prev => !prev)}
+                                    aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                                >
+                                    <i className={`text-lg ${collapsed ? 'ri-arrow-right-s-line' : 'ri-arrow-left-s-line'}`}></i>
+                                </button>
+                            )}
+                            
                             <div className="flex flex-col">
-                                <span className="text-xl">Dashboard</span>
-                                <span className="text-sm font-medium text-content2">Leadstor &bull; <strong className='text-green-600 font-medium'>v1.0.3</strong></span>
+                                <h1 className="text-2xl font-semibold text-gray-700 tracking-tight">{pageInfo.title}</h1>
+                                <p className="text-sm text-gray-500 font-medium mt-0.5">{pageInfo.description}</p>
                             </div>
                         </div>
 

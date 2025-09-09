@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CustomSelect from '@/components/CustomSelect';
+import { toast } from 'react-toastify';
 
 export default function BulkUpdateDrawer({ 
   open, 
@@ -34,17 +35,31 @@ export default function BulkUpdateDrawer({
   
   const handleUpdate = async () => {
     const hasSelection = selectedSource || selectedOwner || selectedCourse || selectedStatus;
-    if (!hasSelection) return;
+    if (!hasSelection) {
+      toast.warn('Please select at least one field to update');
+      return;
+    }
+
+    if (selectedIds.length === 0) {
+      toast.warn('No leads selected for update');
+      return;
+    }
 
     setLoading(true);
     try {
-      await onUpdate({
+      const result = await onUpdate({
         source: selectedSource,
         owner: selectedOwner,
         course: selectedCourse,
         status: selectedStatus
       }, selectedIds);
+      
+      // The parent function now handles all toast notifications and table refresh
+      // Just close the drawer on completion
       onClose();
+    } catch (error) {
+      console.error('Bulk update error:', error);
+      toast.error('An error occurred while updating leads');
     } finally {
       setLoading(false);
     }

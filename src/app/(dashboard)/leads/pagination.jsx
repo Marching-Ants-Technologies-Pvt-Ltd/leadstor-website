@@ -36,7 +36,7 @@ async function handelPaging() {
     setSummaryX(`Viewing ${offset} to ${leads} of ${maxLeads}`);
 }
 
-export default function LeadsTablePagination({ columns, setColumns, columnOrder, setColumnOrder, fetchAndSetColumns, showPerPageDropdown, setShowPerPageDropdown }) {
+export default function LeadsTablePagination({ columns, setColumns, columnOrder, setColumnOrder, fetchAndSetColumns, showPerPageDropdown, setShowPerPageDropdown, downloadNotification, toggleDownloadCard, onDownloadCancel }) {
 
     const [limit, setLimit] = useState(LeadsPerPage.value());
     const [paging, setPaging] = useState([]);
@@ -223,7 +223,50 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                             </div>
                         </div>
                     </div>
-                    <div className='pagination ml-6' onClick={handelPageChange}>
+                    <div className='pagination ml-6 flex items-center gap-x-2' onClick={handelPageChange}>
+                        {downloadNotification?.hasActiveDownload && (
+                            <button
+                                onClick={e => { 
+                                    e.stopPropagation(); 
+                                    onDownloadCancel?.();
+                                }}
+                                className="group bg-blue-600 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-all duration-300 flex items-center gap-2"
+                                title="Cancel download"
+                                style={{ marginRight: 8 }}
+                            >
+                                <div className="relative w-6 h-6 flex items-center justify-center">
+                                    {/* Download icon - hidden on hover */}
+                                    <i className="ri-download-line text-lg group-hover:opacity-0 transition-opacity duration-200 z-10"></i>
+                                    {/* Cancel icon - visible on hover */}
+                                    <i className="ri-close-line text-lg absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"></i>
+                                    {/* Progress ring - perfectly centered */}
+                                    <svg className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" width="36" height="36" viewBox="0 0 36 36">
+                                        <circle
+                                            cx="18"
+                                            cy="18"
+                                            r="15"
+                                            fill="none"
+                                            stroke="rgba(255,255,255,0.3)"
+                                            strokeWidth="2"
+                                        />
+                                        <circle
+                                            cx="18"
+                                            cy="18"
+                                            r="15"
+                                            fill="none"
+                                            stroke="white"
+                                            strokeWidth="2"
+                                            strokeDasharray={`${2 * Math.PI * 15}`}
+                                            strokeDashoffset={`${2 * Math.PI * 15 * (1 - downloadNotification.progress / 100)}`}
+                                            strokeLinecap="round"
+                                            transform="rotate(-90 18 18)"
+                                            className="transition-all duration-300"
+                                        />
+                                    </svg>
+                                </div>
+                                <span className="text-sm font-medium">{downloadNotification.progress}%</span>
+                            </button>
+                        )}
                         <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
                             <i className="ri-arrow-left-s-line"></i>
                         </div>
@@ -308,6 +351,50 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                         />
                     </div>
                     <div className='pagination ml-4' onClick={handelPageChange}>
+                        {downloadNotification?.hasActiveDownload && (
+                            <button
+                                onClick={e => { 
+                                    e.stopPropagation(); 
+                                    onDownloadCancel?.();
+                                }}
+                                className="group bg-blue-600 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-all duration-300 flex items-center gap-2"
+                                title="Cancel download"
+                                style={{ marginRight: 8 }}
+                            >
+                                <div className="relative w-6 h-6 flex items-center justify-center">
+                                    {/* Download icon - hidden on hover */}
+                                    <i className="ri-download-line text-lg group-hover:opacity-0 transition-opacity duration-200 z-10"></i>
+                                    {/* Cancel icon - visible on hover */}
+                                    <i className="ri-close-line text-lg absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"></i>
+                                    {/* Progress ring - perfectly centered */}
+                                    <svg className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none" width="36" height="36" viewBox="0 0 36 36">
+                                        <circle
+                                            cx="18"
+                                            cy="18"
+                                            r="15"
+                                            fill="none"
+                                            stroke="rgba(255,255,255,0.3)"
+                                            strokeWidth="2"
+                                        />
+                                        <circle
+                                            cx="18"
+                                            cy="18"
+                                            r="15"
+                                            fill="none"
+                                            stroke="white"
+                                            strokeWidth="2"
+                                            strokeDasharray={`${2 * Math.PI * 15}`}
+                                            strokeDashoffset={`${2 * Math.PI * 15 * (1 - downloadNotification.progress / 100)}`}
+                                            strokeLinecap="round"
+                                            transform="rotate(-90 18 18)"
+                                            className="transition-all duration-300"
+                                        />
+                                    </svg>
+                                </div>
+                                {/* Show percentage only on desktop */}
+                                {!isMobile && <span className="text-sm font-medium">{downloadNotification.progress}%</span>}
+                            </button>
+                        )}
                         <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
                             <i className="ri-arrow-left-s-line"></i>
                         </div>

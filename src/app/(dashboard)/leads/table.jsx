@@ -8,6 +8,7 @@ import { xFetch } from '@/utility/xFetch';
 import { getLeadOwnerById, getCurrentUserNameIfAdmin, Test, User, LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadFilters } from '@/utility/TinyDB';
 import { CheckUncheckAllRows } from '@/utility/TableControllers';
 import UpdateCandidate from './UpdateCandidate';
+import CallerDeskIVR from './CallerDeskIVR'; // Import CallerDeskIVR
 
 const contextMenuItems = [
     { icon: "ri-edit-2-fill", title: "Edit" },
@@ -99,8 +100,15 @@ async function xLeads() {
         payload
     })
         .then(data => {
-            setLeadsFn(data.rows);
-            TotalLeads.setValue(parseInt(data.total));
+            // Ensure data is valid
+            if (data && typeof data === 'object') {
+                setLeadsFn(data.rows || []);
+                TotalLeads.setValue(parseInt(data.total || 0));
+            } else {
+                console.warn('Invalid data received from server:', data);
+                setLeadsFn([]);
+                TotalLeads.setValue(0);
+            }
         })
         .catch(error => {
             console.error(`An error occurred while fetching leads`, error);
@@ -114,6 +122,7 @@ async function xLeads() {
 // Custom audio player for remarks
 function AudioPlayer({ src, remarkText }) {
     const audioRef = useRef(null);
+    const playerRef = useRef(null);
     const [playing, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -130,6 +139,26 @@ function AudioPlayer({ src, remarkText }) {
             audio.removeEventListener('timeupdate', update);
         };
     }, []);
+
+    // Handle clicks outside the audio player to reset UI
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (playerRef.current && !playerRef.current.contains(event.target) && showBar) {
+                // Stop the audio and reset UI
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+                setPlaying(false);
+                setShowBar(false);
+                setProgress(0);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showBar]);
 
     const togglePlay = (e) => {
         e.stopPropagation();
@@ -160,7 +189,7 @@ function AudioPlayer({ src, remarkText }) {
     };
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, maxWidth: 320 }}>
+        <div ref={playerRef} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, maxWidth: 320 }}>
             <button
                 onClick={togglePlay}
                 style={{
@@ -227,6 +256,10 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
     const [showUpdatePopup, setShowUpdatePopup] = useState(false);
     const [selectedCandidate, setSelectedCandidate] = useState(null);
 
+    // State for CallerDeskIVR popup
+    const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
+    const [callerCandidate, setCallerCandidate] = useState(null);
+
     useEffect(() => {
         if (selectAllRef.current) {
             selectAllRef.current.indeterminate = isIndeterminate;
@@ -239,11 +272,18 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
         if (rowId && rowId.startsWith('lead-')) {
             rowId = rowId.replace('lead-', '');
         }
+        
+        const candidate = leads.find(lead => String(lead.invitationId) === String(rowId));
+        
         if (response.item === 'edit') {
-            const candidate = leads.find(lead => String(lead.invitationId) === String(rowId));
             if (candidate) {
                 setSelectedCandidate(candidate);
                 setShowUpdatePopup(true);
+            }
+        } else if (response.item === 'make-a-callivr') {
+            if (candidate) {
+                setCallerCandidate(candidate);
+                setShowCallerDeskIVR(true);
             }
         }
         console.log(`User clicked`, response);
@@ -390,6 +430,12 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                         setShowUpdatePopup(false);
                         xLeads(); // refresh table after update
                     }}
+                />
+            )}
+            {showCallerDeskIVR && (
+                <CallerDeskIVR
+                    candidate={callerCandidate}
+                    onClose={() => setShowCallerDeskIVR(false)}
                 />
             )}
         </>
