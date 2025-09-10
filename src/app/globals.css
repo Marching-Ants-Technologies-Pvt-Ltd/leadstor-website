@@ -112,6 +112,9 @@ body {
   cursor: pointer;
 }
 
+.modal-input {
+  @apply bg-white text-gray-800 border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none hover:border-gray-400 transition;
+}
 
 .business-details-form input {
   position: relative;

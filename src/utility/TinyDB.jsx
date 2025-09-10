@@ -13,6 +13,8 @@ try{
 export const Corporate = CurrentSessionData?.corporate;
 export const Test = CurrentSessionData?.test;
 export const User = CurrentSessionData?.user;
+export const Owners = LeadOwnersById;
+
 export function getLeadOwnerById(id){
 
     if(!id || typeof id !== 'number') return '';

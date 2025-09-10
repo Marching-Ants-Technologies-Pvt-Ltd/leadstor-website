@@ -10,6 +10,7 @@ import ColumnReorderPopup from './ColumnReorderPopup.jsx';
 // import SendSmsModal from './SendSmsModal.jsx';
 import SendEmailModal from './SendEmailModal.jsx';
 import BulkUpdateDrawer from './BulkUpdateDrawer';
+import DailyReportModal from './DailyReportModal.jsx';
 import { toast } from 'react-toastify';
 
 export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLeadIds = [], setSelectedLeadIds }) {
@@ -31,6 +32,7 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
     const [ownerOptions, setOwnerOptions] = React.useState([]);
     const [courseOptions, setCourseOptions] = React.useState([]);
     const [statusOptions, setStatusOptions] = React.useState([]);
+    const [dailyReport, setDailyReport] = React.useState(false);
 
     // Fetch source options from backend (like manualCandidate.jsx)
     React.useEffect(() => {
@@ -223,6 +225,13 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
     function getLeadById(invitationId) {
         return leads.find(lead => String(lead.invitationId) === String(invitationId)) || {};
     }
+    
+    // Utility to ensure current value is in options
+    const ensureOption = (options, value) => {
+        if (!value) return options;
+        if (options.includes(value)) return options;
+        return [value, ...options];
+    };
 
     return (
         <>
@@ -263,7 +272,8 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                         <i className="ri-file-excel-2-fill text-xl"></i>
                         <div className='mr-1'>Report</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
+                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5"
+                                onClick={() => setDailyReport(true) } >
                                 <i className="ri-calendar-event-line text-lg mt-1"></i>
                                 <span className='text-sm'>Daily report</span>
                             </a>
@@ -549,23 +559,28 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                     }}
                 />
             )}
+            {dailyReport && (
+                <DailyReportModal
+                    isOpen={dailyReport}
+                    onClose={() => setDailyReport(false)}
+                />
+            )}
             <style jsx global>{`
-          @media (max-width: 1000px) {
-  .responsive-hide-1000 {
-    display: none !important;
-  }
-  .burger-menu-1000 {
-    display: block !important;
-  }
-}
-@media (min-width: 1001px) {
-  .burger-menu-1000 {
-    display: none !important;
-  }
-}
-         
-          }
-        `}</style>
+                @media (max-width: 1000px) {
+                    .responsive-hide-1000 {
+                        display: none !important;
+                    }
+                    .burger-menu-1000 {
+                        display: block !important;
+                    }
+                }
+                @media (min-width: 1001px) {
+                        .burger-menu-1000 {
+                            display: none !important;
+                        }
+                    }
+                }
+            `}</style>
         </>
     );
 }

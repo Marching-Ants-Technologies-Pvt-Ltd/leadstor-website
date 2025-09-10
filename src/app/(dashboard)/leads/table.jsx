@@ -7,7 +7,7 @@ import AppliedFilters, { showAppliedFilter } from './appliedFilters';
 import { xFetch } from '@/utility/xFetch';
 import { getLeadOwnerById, getCurrentUserNameIfAdmin, Test, User, LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadFilters } from '@/utility/TinyDB';
 import { CheckUncheckAllRows } from '@/utility/TableControllers';
-import UpdateCandidate from './UpdateCandidate';
+import UpdateLead from './UpdateLead';
 
 const contextMenuItems = [
     { icon: "ri-edit-2-fill", title: "Edit" },
@@ -383,8 +383,8 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
             </table>
         </div>
             {showUpdatePopup && (
-                <UpdateCandidate
-                    candidate={selectedCandidate}
+                <UpdateLead
+                    selectedLead={selectedCandidate}
                     onCancel={() => setShowUpdatePopup(false)}
                     onSuccess={() => {
                         setShowUpdatePopup(false);
