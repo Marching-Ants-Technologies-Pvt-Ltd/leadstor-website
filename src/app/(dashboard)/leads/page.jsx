@@ -45,14 +45,16 @@ export default function Leads() {
             path: '/services/profile/getUsers',
             payload: { basic: 1 }
         })
-            .then(data => {
-                localStorage.setItem('LeadOwnersById', JSON.stringify(data));
-                fetchAndSetColumns();
-            })
-            .catch(error => {
-                console.error(`An error occurred while fetching leads`, error);
-                // Don't show toast error on initial load, let components handle their own loading states
-            });
+        .then(data => {
+            if (typeof window !== "undefined") {
+                localStorage.setItem("LeadOwnersById", JSON.stringify(data));
+            }
+            fetchAndSetColumns();
+        })
+        .catch(error => {
+            console.error(`An error occurred while fetching leads`, error);
+            // Don't show toast error on initial load, let components handle their own loading states
+        });
     }, []);
 
     // Handler for reordering columns (optimistic update)
