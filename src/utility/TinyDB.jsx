@@ -23,6 +23,16 @@ export function getLeadOwnerById(id){
     return LeadOwnersById[id];
 }
 
+export function getCurrentUserMobile() {
+    try {
+        const session = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
+        return session?.user?.mobile || '';
+    } catch (e) {
+        // ignore
+    }
+    return '';
+}
+
 export function getCurrentUserNameIfAdmin() {
     try {
         const session = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
