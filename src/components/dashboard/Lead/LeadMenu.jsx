@@ -1,18 +1,22 @@
 'use client';
 
-import { LeadFilters, LeadsCurrentPage, User, Corporate } from '@/utility/TinyDB';
-import SearchBox from '@/components/elements/SearchBox';
+import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import ImportEnquiryDropBox from './ImportEnquiry.jsx';
-import ManualCandidate from './manualCandidate.jsx';
-import React, { useEffect, useRef } from 'react';
-import ColumnReorderPopup from './ColumnReorderPopup.jsx';
-// import SendSmsModal from './SendSmsModal.jsx';
-import SendEmailModal from './SendEmailModal.jsx';
-import BulkUpdateDrawer from './BulkUpdateDrawer';
 import { toast } from 'react-toastify';
+import { LeadFilters, LeadsCurrentPage, User, Corporate, TotalLeads } from '@/utility/TinyDB';
+import SearchBox from '@/components/elements/SearchBox';
+import ImportEnquiryDropBox from '@/components/dashboard/Lead/ImportEnquiry.jsx';
+import ManualCandidate from '@/components/dashboard/Lead/ManualCandidate.jsx';
+import ColumnReorderPopup from '@/components/dashboard/Lead/ColumnReorderPopup.jsx';
+//import SendSmsModal from './SendSmsModal.jsx';
+import SendEmailModal from '@/components/dashboard/Lead/SendEmailModal.jsx';
+import BulkUpdateDrawer from '@/components/dashboard/Lead/BulkUpdateDrawer';
+import DailyReportModal from '@/components/dashboard/Lead/DailyReportModal.jsx';
+import ExportEnquiriesModal from '@/components/dashboard/Lead/ExportEnquiriesModal.jsx';
+import LeadsTable from '@/components/dashboard/Lead/LeadTable.jsx';
 
-export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLeadIds = [], setSelectedLeadIds }) {
+export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLeadIds = [], setSelectedLeadIds, onDownloadStart, onDownloadProgress, onDownloadEnd, onDownloadCancel, setCancelExportFunction}) {
 
     const [showImport, setShowImport] = React.useState(false);
     const [showManual, setShowManual] = React.useState(false);
@@ -27,10 +31,13 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
     const [showBurgerReport, setShowBurgerReport] = React.useState(false);
     const [showBurgerFilter, setShowBurgerFilter] = React.useState(false);
     const [showBulkUpdateDrawer, setShowBulkUpdateDrawer] = React.useState(false);
+    const [showExportModal, setShowExportModal] = React.useState(false);
     const [sourceOptions, setSourceOptions] = React.useState([]);
     const [ownerOptions, setOwnerOptions] = React.useState([]);
     const [courseOptions, setCourseOptions] = React.useState([]);
     const [statusOptions, setStatusOptions] = React.useState([]);
+    const [dailyReport, setDailyReport] = React.useState(false);
+    const router = useRouter();
 
     // Fetch source options from backend (like manualCandidate.jsx)
     React.useEffect(() => {
@@ -223,11 +230,18 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
     function getLeadById(invitationId) {
         return leads.find(lead => String(lead.invitationId) === String(invitationId)) || {};
     }
+    
+    // Utility to ensure current value is in options
+    const ensureOption = (options, value) => {
+        if (!value) return options;
+        if (options.includes(value)) return options;
+        return [value, ...options];
+    };
 
     return (
         <>
-            <div className="flex p-2 items-center">
-                <div id='onTableSiteLogo' style={{ display: 'none' }}>
+            <div className="flex px-2 pb-2 items-center">
+                <div id='onTableSiteLogo' className='hidden' >
                     <Image
                         className='mt-0.5 mr-2'
                         placeholder='empty'
@@ -263,11 +277,12 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                         <i className="ri-file-excel-2-fill text-xl"></i>
                         <div className='mr-1'>Report</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
+                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5"
+                                onClick={() => setDailyReport(true) } >
                                 <i className="ri-calendar-event-line text-lg mt-1"></i>
                                 <span className='text-sm'>Daily report</span>
                             </a>
-                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
+                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={() => setShowExportModal(true)}>
                                 <i className="ri-download-cloud-2-line text-lg mt-1"></i>
                                 <span className='text-sm'>Export enquiries</span>
                             </a>
@@ -335,6 +350,11 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                     <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10 ml-5'>
                         <i className="ri-pie-chart-line text-xl"></i>
                     </button>
+
+                    <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10' onClick={() => router.push('/leads/settings')} >
+                        <i className="ri-settings-line text-xl"></i>
+                    </button>
+                    
                     <button
                         onClick={() => window.tableRefresh()}
                         className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10'
@@ -378,7 +398,7 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                                         <i className="ri-calendar-event-line text-lg"></i>
                                         <span className='text-sm'>Daily report</span>
                                     </button>
-                                    <button className='flex items-center py-1.5 px-2 rounded-md cursor-pointer gap-2 text-gray-500 hover:bg-blue-50 focus:bg-blue-100 transition w-full text-left' tabIndex={0} role="menuitem">
+                                    <button onClick={() => setShowExportModal(true)} className='flex items-center py-1.5 px-2 rounded-md cursor-pointer gap-2 text-gray-500 hover:bg-blue-50 focus:bg-blue-100 transition w-full text-left' tabIndex={0} role="menuitem">
                                         <i className="ri-download-cloud-2-line text-lg"></i>
                                         <span className='text-sm'>Export enquiries</span>
                                     </button>
@@ -512,22 +532,42 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                     statusOptions={statusOptions}
                     selectedIds={selectedLeadIds}
                     onUpdate={async (fields, selectedIds) => {
-                        if (!fields || !selectedIds || selectedIds.length === 0) return;
+                        if (!fields || !selectedIds || selectedIds.length === 0) {
+                            return { success: false, message: 'No fields or leads selected' };
+                        }
+                        
                         let successCount = 0;
                         let failCount = 0;
+                        
                         for (const invitationId of selectedIds) {
                             try {
                                 const lead = getLeadById(invitationId);
-                                const payload = { invitationId, updatedBy: User?.userId || User?._id || undefined };
+                                // Create payload with essential existing data to preserve fields
+                                const payload = { 
+                                    invitationId, 
+                                    updatedBy: User?.userId || User?._id || undefined,
+                                    // Preserve essential existing lead data (only the most critical fields)
+                                    name: lead.firstName || lead.name || '',
+                                    email: lead.emailId || lead.email || '',
+                                    mobile: lead.mobile || '',
+                                    altMobile: lead.altMobile || '',
+                                    remarks: lead.remarks || '',
+                                    location: lead.location || '',
+                                    testId: lead.testId || lead.test_id || ''
+                                };
+                                
+                                // Override with bulk update fields if provided
                                 if (fields.source) payload.source = fields.source;
                                 if (fields.owner) payload.assignedTo = typeof fields.owner === 'object' ? fields.owner.value : fields.owner;
                                 if (fields.course) payload.course = typeof fields.course === 'object' ? fields.course.value : fields.course;
                                 if (fields.status) payload.status = typeof fields.status === 'object' ? fields.status.value : fields.status;
-                                // Fill in missing required fields from lead if not being updated
+                                
+                                // Ensure required fields have fallback values
                                 if (!payload.assignedTo) payload.assignedTo = lead.assignedTo || lead.owner || lead.assignedUserId || User?._id || undefined;
                                 if (!payload.course) payload.course = lead.course || lead.courseName || lead.course_id || undefined;
                                 if (!payload.status) payload.status = lead.status || undefined;
                                 if (!payload.source) payload.source = lead.source || lead.sourceName || lead.source_id || undefined;
+                                
                                 await (await import('@/utility/xFetch')).xFetch({
                                     method: 'POST',
                                     path: '/services/invite/updateInviteDetails',
@@ -535,37 +575,55 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                                 });
                                 successCount++;
                             } catch (e) {
+                                console.error('Bulk update error for invitation:', invitationId, e);
                                 failCount++;
                             }
                         }
+                        
+                        // Show feedback messages
                         if (successCount > 0) {
                             toast.success(`Updated ${successCount} lead(s)`);
-                            if (typeof window !== 'undefined' && window.tableRefresh) window.tableRefresh();
                         }
                         if (failCount > 0) {
                             toast.error(`Failed to update ${failCount} lead(s)`);
                         }
-                        setShowBulkUpdateDrawer(false);
+                        
+                        // Refresh table if any updates were successful
+                        if (successCount > 0) {
+                            setTimeout(() => {
+                                if (typeof window !== 'undefined' && window.tableRefresh) {
+                                    window.tableRefresh();
+                                }
+                            }, 500);
+                        }
+                        
+                        return { 
+                            success: successCount > 0, 
+                            successCount, 
+                            failCount,
+                            message: successCount > 0 ? `Updated ${successCount} lead(s)` : 'No leads were updated'
+                        };
                     }}
                 />
             )}
-            <style jsx global>{`
-          @media (max-width: 1000px) {
-  .responsive-hide-1000 {
-    display: none !important;
-  }
-  .burger-menu-1000 {
-    display: block !important;
-  }
-}
-@media (min-width: 1001px) {
-  .burger-menu-1000 {
-    display: none !important;
-  }
-}
-         
-          }
-        `}</style>
+            {dailyReport && (
+                <DailyReportModal
+                    isOpen={dailyReport}
+                    onClose={() => setDailyReport(false)}
+                />
+            )}
+
+        {/* Export Modal */}
+        <ExportEnquiriesModal 
+            isOpen={showExportModal} 
+            onClose={() => setShowExportModal(false)} 
+            totalLeads={TotalLeads.value()}
+            onDownloadStart={onDownloadStart}
+            onDownloadProgress={onDownloadProgress}
+            onDownloadEnd={onDownloadEnd}
+            onDownloadCancel={onDownloadCancel}
+            setCancelExportFunction={setCancelExportFunction}
+        />
         </>
     );
 }

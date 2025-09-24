@@ -1,13 +1,15 @@
 'use client';
 import '@/app/style/table-style.css';
-import { showFullRemarks, HorizontalScroll } from '@/utility/TableControllers';
+import { showFullRemarks, HorizontalScroll, CheckUncheckAllRows } from '@/utility/TableControllers';
 import ContextMenu, { ShowContentMenu } from '@/utility/ContextMenu';
 import { useEffect, useState, useRef } from 'react';
-import AppliedFilters, { showAppliedFilter } from './appliedFilters';
+import AppliedFilters, { showAppliedFilter } from '@/components/dashboard/Lead/AppliedFilters';
 import { xFetch } from '@/utility/xFetch';
 import { getLeadOwnerById, getCurrentUserNameIfAdmin, Test, User, LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadFilters } from '@/utility/TinyDB';
-import { CheckUncheckAllRows } from '@/utility/TableControllers';
-import UpdateCandidate from './UpdateCandidate';
+import UpdateLead from '@/components/dashboard/Lead/UpdateLead';
+import CallerDeskIVR from '@/components/dashboard/Lead/CallerDeskIVR';
+import { MdTimeline } from 'react-icons/md';
+import Timeline from '@/components/dashboard/Lead/ViewTimeline';
 
 const contextMenuItems = [
     { icon: "ri-edit-2-fill", title: "Edit" },
@@ -54,66 +56,25 @@ const dataFormatters = {
 
         // Final content
         return content;
-
+    },
+    status: (row,handleShowTimeline) => {
+        const content = row['status'];
+        return (
+            <div className="flex items-center space-x-2">
+                <span>{content}</span>
+                <button onClick={ () => handleShowTimeline(row)} className="text-blue-500 hover:text-blue-700 focus:outline-none">
+                    <MdTimeline size={20} />
+                </button>
+            </div>
+        );
     }
 
-}
-
-function handelFilterClose(){
-    window.tableState('Removing filters...');
-    LeadFilters.reset();
-    xLeads();
-}
-
-async function xLeads() {
-    // calculate offset
-    let currentPage = LeadsCurrentPage.value();
-    let limit = LeadsPerPage.value();
-    let offset = (currentPage - 1) * limit;
-    let filters = LeadFilters.value();
-
-    // compose payload
-    let payload = {
-        "testId": Test._id,
-        "testType": Test.type,
-        "owner": User._id,
-        "isTelecaller": (User.telecaller) ? 1 : 0,
-        "order": "asc",
-        "offset": offset,
-        "limit": limit,
-        "search": document.querySelector('div#table-search-bar input')?.value ?? ''
-    }
-
-    if (filters.length > 0) {
-        await filters.map((item) => {
-            payload[item.query] = item.value;
-        });
-
-        // Show filter section
-        showAppliedFilter(filters, handelFilterClose);
-    }
-
-    // get leads
-    xFetch({
-        path: '/services/invite/enquiries',
-        payload
-    })
-        .then(data => {
-            setLeadsFn(data.rows);
-            TotalLeads.setValue(parseInt(data.total));
-        })
-        .catch(error => {
-            console.error(`An error occurred while fetching leads`, error);
-            setLeadsFn([]);
-            TotalLeads.setValue(0);
-        }).finally(() => {
-            if (typeof window.onTableRefresh == 'function') window.onTableRefresh();
-        })
 }
 
 // Custom audio player for remarks
-function AudioPlayer({ src, remarkText }) {
+const AudioPlayer = ({ src, remarkText }) => {
     const audioRef = useRef(null);
+    const playerRef = useRef(null);
     const [playing, setPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -130,6 +91,26 @@ function AudioPlayer({ src, remarkText }) {
             audio.removeEventListener('timeupdate', update);
         };
     }, []);
+
+    // Handle clicks outside the audio player to reset UI
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (playerRef.current && !playerRef.current.contains(event.target) && showBar) {
+                // Stop the audio and reset UI
+                if (audioRef.current) {
+                    audioRef.current.pause();
+                }
+                setPlaying(false);
+                setShowBar(false);
+                setProgress(0);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showBar]);
 
     const togglePlay = (e) => {
         e.stopPropagation();
@@ -160,7 +141,7 @@ function AudioPlayer({ src, remarkText }) {
     };
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, maxWidth: 320 }}>
+        <div ref={playerRef} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 160, maxWidth: 320 }}>
             <button
                 onClick={togglePlay}
                 style={{
@@ -185,34 +166,6 @@ function AudioPlayer({ src, remarkText }) {
     );
 }
 
-function formatTime(sec) {
-    if (!sec || isNaN(sec)) return '0:00';
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-// Custom formatter for remarks with audio
-function renderRemarkCell(row) {
-    let content = row['remarks'] || '';
-    let audioLink = '';
-    if (content.includes('<audio')) {
-        let match = content.match(/src="([^"]+)"/);
-        audioLink = match && match[1] ? match[1] : '';
-        content = content.split('<audio')[0];
-    }
-    // Sanitize content
-    const div = document.createElement('div');
-    div.innerText = content;
-    content = div.innerHTML;
-    return (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {audioLink && <AudioPlayer src={audioLink} remarkText={content} />}
-            {!audioLink && <span dangerouslySetInnerHTML={{ __html: content }} />}
-        </span>
-    );
-}
-
 export default function LeadsTable({ columns, setColumns, columnOrder, setColumnOrder, leads, setLeads, selectedLeadIds, setSelectedLeadIds }) {
     setLeadsFn = setLeads;
 
@@ -226,6 +179,12 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
     // State for UpdateCandidate popup
     const [showUpdatePopup, setShowUpdatePopup] = useState(false);
     const [selectedCandidate, setSelectedCandidate] = useState(null);
+    const [showTimeline, setShowTimeline] = useState(false);
+    const [selectedLead, setSelectedLead] = useState({});
+
+    // State for CallerDeskIVR popup
+    const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
+    const [callerCandidate, setCallerCandidate] = useState(null);
 
     useEffect(() => {
         if (selectAllRef.current) {
@@ -233,17 +192,111 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
         }
     }, [isIndeterminate]);
 
+    const handelFilterClose = () => {
+        window.tableState('Removing filters...');
+        LeadFilters.reset();
+        xLeads();
+    }
+
+    async function xLeads() {
+        // calculate offset
+        let currentPage = LeadsCurrentPage.value();
+        let limit = LeadsPerPage.value();
+        let offset = (currentPage - 1) * limit;
+        let filters = LeadFilters.value();
+
+        // compose payload
+        let payload = {
+            "testId": Test._id,
+            "testType": Test.type,
+            "owner": User._id,
+            "isTelecaller": (User.telecaller) ? 1 : 0,
+            "order": "asc",
+            "offset": offset,
+            "limit": limit,
+            "search": document.querySelector('div#table-search-bar input')?.value ?? ''
+        }
+
+        if (filters.length > 0) {
+            await filters.map((item) => {
+                payload[item.query] = item.value;
+            });
+
+            // Show filter section
+            showAppliedFilter(filters, handelFilterClose);
+        }
+
+        // get leads
+        xFetch({
+            path: '/services/invite/enquiries',
+            payload
+        })
+        .then(data => {
+            // Ensure data is valid
+            if (data && typeof data === 'object') {
+                setLeadsFn(data.rows || []);
+                TotalLeads.setValue(parseInt(data.total || 0));
+            } else {
+                console.warn('Invalid data received from server:', data);
+                setLeadsFn([]);
+                TotalLeads.setValue(0);
+            }
+        })
+        .catch(error => {
+            console.error(`An error occurred while fetching leads`, error);
+            setLeadsFn([]);
+            TotalLeads.setValue(0);
+        }).finally(() => {
+            if (typeof window.onTableRefresh == 'function') window.onTableRefresh();
+        })
+    }
+
+    const formatTime = (sec) => {
+        if (!sec || isNaN(sec)) return '0:00';
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    // Custom formatter for remarks with audio
+    const renderRemarkCell = (row) => {
+        let content = row['remarks'] || '';
+        let audioLink = '';
+        if (content.includes('<audio')) {
+            let match = content.match(/src="([^"]+)"/);
+            audioLink = match && match[1] ? match[1] : '';
+            content = content.split('<audio')[0];
+        }
+        // Sanitize content
+        const div = document.createElement('div');
+        div.innerText = content;
+        content = div.innerHTML;
+        return (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {audioLink && <AudioPlayer src={audioLink} remarkText={content} />}
+                {!audioLink && <span dangerouslySetInnerHTML={{ __html: content }} />}
+            </span>
+        );
+    }
+
     const contextMenuCallback = (response) => {
         // Remove 'lead-' prefix if present
         let rowId = response.currentRowId;
         if (rowId && rowId.startsWith('lead-')) {
             rowId = rowId.replace('lead-', '');
         }
+        
+        const candidate = leads.find(lead => String(lead.invitationId) === String(rowId));
+        
         if (response.item === 'edit') {
-            const candidate = leads.find(lead => String(lead.invitationId) === String(rowId));
             if (candidate) {
                 setSelectedCandidate(candidate);
                 setShowUpdatePopup(true);
+            }
+        } else if (response.item === 'make-a-callivr') {
+            if (candidate) {
+                setCallerCandidate(candidate);
+                setShowCallerDeskIVR(true);
             }
         }
         console.log(`User clicked`, response);
@@ -265,8 +318,12 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
             showFullRemarks(event.target);
             return;
         }
-
     }
+
+    const handleShowTimeline = (selectedLead) => {
+        setShowTimeline(true);
+        setSelectedLead(selectedLead);
+    };
 
     const handelRowContext = (event) => {
         event.preventDefault();
@@ -282,6 +339,7 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
             setSelectedLeadIds(selectedLeadIds.filter(id => id !== invitationId));
         }
     };
+
     // Handler for header (select all) checkbox
     const handleSelectAll = (checked) => {
         if (checked) {
@@ -363,6 +421,8 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                                 <td key={`lead-clm-${k}`} data-column={col}>
                                     {col === 'remarks'
                                         ? renderRemarkCell(row)
+                                        : col === 'status'
+                                        ? dataFormatters.status(row, handleShowTimeline)
                                         : dataFormatters[col]
                                             ? ((['leadProbability'].includes(col))
                                                 ? (
@@ -383,13 +443,28 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
             </table>
         </div>
             {showUpdatePopup && (
-                <UpdateCandidate
-                    candidate={selectedCandidate}
+                <UpdateLead
+                    selectedLead={selectedCandidate}
                     onCancel={() => setShowUpdatePopup(false)}
                     onSuccess={() => {
                         setShowUpdatePopup(false);
                         xLeads(); // refresh table after update
                     }}
+                />
+            )}
+            {showCallerDeskIVR && (
+                <CallerDeskIVR
+                    candidate={callerCandidate}
+                    onClose={() => setShowCallerDeskIVR(false)}
+                />
+            )}
+
+            {/* Render the Timeline modal when needed */}
+            {showTimeline && (
+                <Timeline
+                    leadDetails={selectedLead}
+                    isOpen={true}
+                    onClose={() => setShowTimeline(false)}
                 />
             )}
         </>

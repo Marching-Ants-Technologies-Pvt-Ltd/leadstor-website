@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
 import { xFetch } from '@/utility/xFetch';
 import { Corporate, User, Test } from '@/utility/TinyDB';
 

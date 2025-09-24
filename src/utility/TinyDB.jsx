@@ -13,12 +13,24 @@ try{
 export const Corporate = CurrentSessionData?.corporate;
 export const Test = CurrentSessionData?.test;
 export const User = CurrentSessionData?.user;
+export const Owners = LeadOwnersById;
+
 export function getLeadOwnerById(id){
 
     if(!id || typeof id !== 'number') return '';
     if(!LeadOwnersById[id]) return '';
     
     return LeadOwnersById[id];
+}
+
+export function getCurrentUserMobile() {
+    try {
+        const session = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
+        return session?.user?.mobile || '';
+    } catch (e) {
+        // ignore
+    }
+    return '';
 }
 
 export function getCurrentUserNameIfAdmin() {

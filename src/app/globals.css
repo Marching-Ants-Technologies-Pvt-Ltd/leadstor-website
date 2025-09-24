@@ -112,6 +112,9 @@ body {
   cursor: pointer;
 }
 
+.modal-input {
+  @apply bg-white text-gray-800 border border-gray-300 rounded-md px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none hover:border-gray-400 transition;
+}
 
 .business-details-form input {
   position: relative;
@@ -380,6 +383,30 @@ body {
   background: #666;
 }
 
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 80%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    outline: none;
+}
+
+
 @media (max-width: 1000px) {
   .sidebar {
     width: 70px !important;
@@ -413,4 +440,19 @@ body {
   .navbar-user-text {
     display: none !important;
   }
+}
+
+
+@media (max-width: 1000px) {
+    .responsive-hide-1000 {
+        display: none !important;
+    }
+    .burger-menu-1000 {
+        display: block !important;
+    }
+}
+@media (min-width: 1001px) {
+    .burger-menu-1000 {
+        display: none !important;
+    }
 }
