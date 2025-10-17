@@ -55,6 +55,11 @@ export default function Leads() {
             console.error(`An error occurred while fetching leads`, error);
             // Don't show toast error on initial load, let components handle their own loading states
         });
+        const filters = JSON.parse(localStorage.getItem('LeadFilters') || '[]');
+        const needsCleanup = filters.some(f => typeof f.value === 'object');
+        if (needsCleanup) {
+            localStorage.removeItem('LeadFilters');
+        }
     }, []);
 
     // Handler for reordering columns (optimistic update)
