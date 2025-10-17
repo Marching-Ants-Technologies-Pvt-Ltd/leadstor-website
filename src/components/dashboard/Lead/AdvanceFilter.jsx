@@ -403,7 +403,7 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                 { label: 'Offline', value: 'Offline' }
               ]}
               value={selectedFilters.courseMode}
-              onChange={value => updateSingleFilter('courseMode', value?.value || '')}
+              onChange={value => updateSingleFilter('courseMode', value)}
               placeholder="Select Course Mode"
             />
           </div>
