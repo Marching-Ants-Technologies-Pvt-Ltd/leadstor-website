@@ -154,9 +154,7 @@ export default function ClientLayout({ children }) {
                 <div className="dashboard-main-content">
                     {/* Header bar containing page title and navbar */}
                     <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
-                        {/* Page Title with collapse button */}
                         <div className="flex items-center gap-4">
-                            {/* Collapse/Expand button - only show on screens >= 1000px */}
                             {windowWidth >= 1000 && (
                                 <button
                                     className="flex items-center justify-center w-8 h-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200 ease-in-out"
@@ -173,7 +171,6 @@ export default function ClientLayout({ children }) {
                             </div>
                         </div>
 
-                        {/* Existing Navbar for user profile, etc. */}
                         <Navbar data={session} />
                     </div>
 

@@ -261,11 +261,11 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 										: [];
 
 									if (item.dataField === 'assignedUserId') {
-										const { options } = renderOwnerSelect(item.displayName);
+										const { options } = renderOwnerSelect(item.displayName ? item.displayName : item.fieldName);
 
 										return (
 											<div key={index}>
-												<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName}</label>
+												<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
 												<select
 													value={fields.assignedUserId}
 													onChange={(e) => handleChange(item.dataField, e.target.value)}
@@ -290,7 +290,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 									if (item.fieldType === 'dropdown') {
 										return (
 										<div key={index}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName}</label>
+											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
 											<select
 											value={value}
 											onChange={(e) => handleChange(item.dataField, e.target.value)}
@@ -312,7 +312,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 										if (item.dataField === 'mobile' || item.dataField === 'altmobile') {
 										return (
 											<div key={index}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName}</label>
+											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
 											<input
 												type="tel"
 												value={value}
@@ -340,7 +340,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 										} else {
 										return (
 											<div key={index}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName}</label>
+											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
 											<input
 												type={item.dataField == "emailId" ? "email" : "text"}
 												value={value}
@@ -385,7 +385,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 										return (
 											<div key={index}>
 												<label className="block text-sm font-semibold text-gray-700 mb-2">
-													{item.displayName}
+													{item.displayName ? item.displayName : item.fieldName}
 													{isRemarks ? <span className="text-red-500"> * </span> : null}
 												</label>
 												<textarea
@@ -393,7 +393,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 													disabled={fetching}
 													className="modal-input w-full"
 													rows="4"
-													placeholder={`Enter ${item.displayName}`}
+													placeholder={`Enter ${item.displayName ? item.displayName : item.fieldName}`}
 												/>
 											</div>
 										);

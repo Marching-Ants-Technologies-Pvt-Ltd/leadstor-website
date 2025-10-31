@@ -199,67 +199,56 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
     }
 
     async function xLeads() {
-        try {
-            // calculate offset
-            const currentPage = LeadsCurrentPage.value();
-            const limit = LeadsPerPage.value();
-            const offset = (currentPage - 1) * limit;
-            const filters = LeadFilters.value() || [];
+        // calculate offset
+        let currentPage = LeadsCurrentPage.value();
+        let limit = LeadsPerPage.value();
+        let offset = (currentPage - 1) * limit;
+        let filters = LeadFilters.value();
 
-            // compose base payload
-            const payload = {
-            testId: Test._id,
-            testType: Test.type,
-            owner: User._id,
-            isTelecaller: User.telecaller ? 1 : 0,
-            order: "asc",
-            offset,
-            limit,
-            search: document.querySelector("div#table-search-bar input")?.value ?? ""
-            };
-
-            // apply filters only if user has actually applied them
-            const validFilters = filters.filter(f => 
-            f.value !== undefined && f.value !== null && f.value !== ""
-            );
-
-            if (validFilters.length > 0) {
-            validFilters.forEach(item => {
-                // handle object filters like { label: "Online", value: "Online" }
-                if (typeof item.value === "object" && item.value.value) {
-                payload[item.query] = item.value.value;
-                } else {
-                payload[item.query] = item.value;
-                }
-            });
-
-            // show active filters
-            showAppliedFilter(validFilters, handelFilterClose);
-            }
-
-            // get leads
-            const data = await xFetch({
-            path: "/services/invite/enquiries",
-            payload
-            });
-
-            if (data && typeof data === "object") {
-            setLeadsFn(data.rows || []);
-            TotalLeads.setValue(parseInt(data.total || 0));
-            } else {
-            console.warn("Invalid data received from server:", data);
-            setLeadsFn([]);
-            TotalLeads.setValue(0);
-            }
-        } catch (error) {
-            console.error("An error occurred while fetching leads", error);
-            setLeadsFn([]);
-            TotalLeads.setValue(0);
-        } finally {
-            if (typeof window.onTableRefresh === "function") {
-            window.onTableRefresh();
-            }
+        // compose payload
+        let payload = {
+            "testId": Test._id,
+            "testType": Test.type,
+            "owner": User._id,
+            "isTelecaller": (User.telecaller) ? 1 : 0,
+            "order": "asc",
+            "offset": offset,
+            "limit": limit,
+            "search": document.querySelector('div#table-search-bar input')?.value ?? ''
         }
+
+        if (filters.length > 0) {
+            await filters.map((item) => {
+                payload[item.query] = item.value;
+            });
+
+            // Show filter section
+            showAppliedFilter(filters, handelFilterClose);
+        }
+
+        // get leads
+        xFetch({
+            path: '/services/invite/enquiries',
+            payload
+        })
+        .then(data => {
+            // Ensure data is valid
+            if (data && typeof data === 'object') {
+                setLeadsFn(data.rows || []);
+                TotalLeads.setValue(parseInt(data.total || 0));
+            } else {
+                console.warn('Invalid data received from server:', data);
+                setLeadsFn([]);
+                TotalLeads.setValue(0);
+            }
+        })
+        .catch(error => {
+            console.error(`An error occurred while fetching leads`, error);
+            setLeadsFn([]);
+            TotalLeads.setValue(0);
+        }).finally(() => {
+            if (typeof window.onTableRefresh == 'function') window.onTableRefresh();
+        })
     }
 
     const formatTime = (sec) => {
