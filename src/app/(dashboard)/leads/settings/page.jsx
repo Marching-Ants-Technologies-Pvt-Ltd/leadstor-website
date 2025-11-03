@@ -13,7 +13,7 @@ export default function Settings() {
     { key: "courses", label: "Courses and Fee" },
     { key: "sources", label: "Sources" },
     { key: "statuses", label: "Statuses" },
-    { key: "admission", label: "Admission Status" },
+    { key: "team", label: "My Team" },
     { key: "currency", label: "Currency" },
     { key: "reorder", label: "Table Reorder" },
     { key: "mapping", label: "Field Mapping" },
