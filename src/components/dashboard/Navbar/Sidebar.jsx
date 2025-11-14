@@ -135,7 +135,13 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
                                                 <div className="min-h-0">
                                                     <Link href="/templates/welcomeEmail" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Welcome Template</Link>
 
-                                                    <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Acknowldgement Template</label>
+                                                    <Link href="/templates/receiptTemplate" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
+                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Receipt Template</label>
+                                                    </Link>
+                                                    
+                                                    <Link href="/templates/certificateTemplate" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
+                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Certificate Template</label>
+                                                    </Link>
                                                 </div>
                                             </div>
                                         </li>
