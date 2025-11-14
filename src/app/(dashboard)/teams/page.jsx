@@ -1,10 +1,11 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
+import { Corporate } from '@/utility/TinyDB';
 import { xFetch } from "@/utility/xFetch";
 import { Dialog } from '@headlessui/react';
 import 'remixicon/fonts/remixicon.css';
 
-export default function Teams({ corporateId = 64 }) {
+export default function Teams() {
   const [members, setMembers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [query, setQuery] = useState('');
@@ -21,7 +22,7 @@ export default function Teams({ corporateId = 64 }) {
   const fetchRoles = () => {
   
       xFetch({
-        path: `/services/authentication/getRoles?corporateId=${corporateId}&time=${new Date().getMilliseconds()}`,
+        path: `/services/authentication/getRoles?corporateId=${Corporate?._id}&time=${new Date().getMilliseconds()}`,
         method: 'GET'
       })
       .then((res) => {
@@ -43,6 +44,7 @@ export default function Teams({ corporateId = 64 }) {
   // Fetch team users
   const fetchTeam = () => {
     setLoading(true);
+    let corporateId = Corporate?._id;
     xFetch({
       path: `/services/profile/getUsers`,
       payload: { corporateId },
@@ -64,9 +66,10 @@ export default function Teams({ corporateId = 64 }) {
 
   // ✅ Fetch managers list
   const fetchManagers = () => {
+    let  corporateId = Corporate?._id;
     xFetch({
       path: `/services/profile/getUserManagers`,
-      payload: { corporateId },
+      payload: { corporateId},
     })
       .then((res) => setManagers(res || []))
       .catch((err) => {
@@ -79,7 +82,7 @@ export default function Teams({ corporateId = 64 }) {
     fetchTeam();
     fetchManagers();
     fetchRoles();
-  }, [corporateId]);
+  }, [Corporate?._id]);
 
   // ✅ Search filter
   const filtered = useMemo(() => {
@@ -121,6 +124,7 @@ export default function Teams({ corporateId = 64 }) {
 
   // Save or update user
   const saveMember = async (newMember) => {
+    let corporateId = Corporate?._id;
     const payload = {
       corporateId,
       name: newMember.name,
