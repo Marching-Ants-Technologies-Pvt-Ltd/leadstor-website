@@ -121,7 +121,30 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
                                 <div className="menu-item-collapse poppins text-base">
                                     <div className="min-h-0">
                                         <label className="menu-item text-gray-600 ml-6">Triggers<span className="badge badge-xs badge-flat-success font-normal pointer-events-none">New</span></label>
-                                        <label className="menu-item text-gray-600 ml-6">Templates</label>
+                                        <li>
+                                            <input type="checkbox" id="menu-templates" className="menu-toggle" />
+                                            <label className="menu-item justify-between" htmlFor="menu-templates" onClick={handleMenuItemClick}>
+                                                <div className="flex poppins gap-3 text-base text-gray-600">
+                                                    {!collapsed && <span className='mt-0.5 pointer-events-none'>Templates</span>}
+                                                </div>
+
+                                                {!collapsed && <span className="menu-icon ri-arrow-down-s-fill text-lg"></span>}
+                                            </label>
+
+                                            <div className="menu-item-collapse poppins text-base">
+                                                <div className="min-h-0">
+                                                    <Link href="/templates/welcomeEmail" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Welcome Template</Link>
+
+                                                    <Link href="/templates/receiptTemplate" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
+                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Receipt Template</label>
+                                                    </Link>
+                                                    
+                                                    <Link href="/templates/certificateTemplate" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
+                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Certificate Template</label>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </li>
                                     </div>
                                 </div>
                                 )}
