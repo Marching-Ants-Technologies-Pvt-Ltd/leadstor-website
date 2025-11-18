@@ -44,7 +44,7 @@ export default function ReceiptTemplate() {
         { key: "$parentAddress", label: "Parent Address" }
     ];
 
-    // ✅ Fetch the existing template on mount
+    // Fetch the existing template on mount
     useEffect(() => {
         const fetchTemplate = async () => {
         try {
@@ -212,7 +212,7 @@ export default function ReceiptTemplate() {
                     Close
                     </Button>
                 </Box>
-                </Modal>
+            </Modal>
 
         </Box>
     );
