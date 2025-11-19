@@ -9,7 +9,6 @@ import {
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/ReactToastify.min.css';
 import { xFetch } from "@/utility/xFetch";
-import { Corporate } from "@/utility/TinyDB";
 
 export default function BusinessProfile() {
   const [form, setForm] = useState({
@@ -42,7 +41,6 @@ export default function BusinessProfile() {
             mobile: res.mobile || "",
             companyName: res.corporateName || "",
             email: res.corporateEmail || "",
-            corporateId: Corporate?._id,
         });
     })
     .catch((error) => {

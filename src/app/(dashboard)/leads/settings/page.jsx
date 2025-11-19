@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import CourseAndFee from '@/components/dashboard/Lead/Settings/CourseAndFee';
 import Sources from '@/components/dashboard/Lead/Settings/Sources';
 import Statuses from '@/components/dashboard/Lead/Settings/Statuses';
+import Preferences from '@/components/dashboard/Lead/Settings/Preferences';
+import FieldMapping from '@/components/dashboard/Lead/Settings/FieldMapping';
 
 export default function Settings() {
   const router = useRouter();
@@ -13,9 +15,7 @@ export default function Settings() {
     { key: "courses", label: "Courses and Fee" },
     { key: "sources", label: "Sources" },
     { key: "statuses", label: "Statuses" },
-    { key: "team", label: "My Team" },
-    { key: "currency", label: "Currency" },
-    { key: "reorder", label: "Table Reorder" },
+    { key: "preferences", label: "Preferences" },
     { key: "mapping", label: "Field Mapping" },
   ];
 
@@ -27,6 +27,10 @@ export default function Settings() {
         return <Sources />;
       case "statuses":
         return <Statuses />;
+      case "preferences":
+        return <Preferences />;
+      case "mapping":
+        return <FieldMapping />;
       // Add other cases later...
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;
