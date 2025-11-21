@@ -6,6 +6,9 @@ import Sources from '@/components/dashboard/Lead/Settings/Sources';
 import Statuses from '@/components/dashboard/Lead/Settings/Statuses';
 import Preferences from '@/components/dashboard/Lead/Settings/Preferences';
 import FieldMapping from '@/components/dashboard/Lead/Settings/FieldMapping';
+import TableReorder from '@/components/dashboard/Lead/Settings/TableReorder'; 
+import CurrencySettings from '@/components/dashboard/Lead/Settings/CurrencySettings';
+import LeadAllocation from '@/components/dashboard/Lead/Settings/LeadAllocation';
 
 export default function Settings() {
   const router = useRouter();
@@ -17,6 +20,9 @@ export default function Settings() {
     { key: "statuses", label: "Statuses" },
     { key: "preferences", label: "Preferences" },
     { key: "mapping", label: "Field Mapping" },
+    { key: "tableReorder", label: "Table Reorder" },
+    { key: "currencySettings", label: "Currency Settings" },
+    { key: "leadAllocation", label: "Lead Allocation" },
   ];
 
   const renderContent = () => {
@@ -31,7 +37,12 @@ export default function Settings() {
         return <Preferences />;
       case "mapping":
         return <FieldMapping />;
-      // Add other cases later...
+      case "tableReorder":
+        return <TableReorder />;
+      case "currencySettings":
+        return <CurrencySettings />;
+      case "leadAllocation":
+        return <LeadAllocation />;
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;
     }

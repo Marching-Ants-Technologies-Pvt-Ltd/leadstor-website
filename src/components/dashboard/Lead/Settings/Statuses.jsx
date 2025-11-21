@@ -1,9 +1,9 @@
 "use client";
 import { xFetch } from "@/utility/xFetch";
 import { useEffect, useState } from "react";
-import { Search, Trash2, Edit3, Plus } from "lucide-react";
+import { Search, Trash2, X, Edit3, Plus, Check , ChevronLeft, ChevronRight  } from "lucide-react";
 
-export default function Statuses({ corporateId = 64 }) {
+export default function Statuses() {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -22,7 +22,6 @@ export default function Statuses({ corporateId = 64 }) {
     setLoading(true);
     xFetch({
       path: `/services/profile/getStatuses`,
-      payload: { corporateId },
     })
       .then((res) => {
         setData(res);
@@ -38,7 +37,7 @@ export default function Statuses({ corporateId = 64 }) {
 
   useEffect(() => {
     fetchData();
-  }, [corporateId]);
+  },[]);
 
   // Search
   useEffect(() => {
@@ -122,7 +121,7 @@ export default function Statuses({ corporateId = 64 }) {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold">Statuses</h2>
+        <h2 className="text-xl">Statuses</h2>
 
         <div className="flex space-x-2">
           <input
@@ -132,24 +131,26 @@ export default function Statuses({ corporateId = 64 }) {
             onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded px-3 py-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {selectedIds.length > 0 && (
-            <button
-              onClick={handleBulkDelete}
-              className="bg-red-600 text-white px-3 py-1 rounded text-sm"
-            >
-              Delete Selected
-            </button>
-          )}
+          
           <button
             onClick={() => {
               setEditing(false);
               setForm({ id: null, status: "", isFollowup: 0 });
               setShowModal(true);
             }}
-            className="bg-green-600 text-white px-3 py-1 rounded text-sm"
-          >
-            + Add
+            className="bg-green-600 text-white px-3 py-1 rounded text-sm" title="Add New Status"
+          > 
+           <Plus size={16} />
           </button>
+
+          {selectedIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              className="bg-red-600 text-white px-3 py-1 rounded text-sm" title="Delete Selected"
+            >
+            <Trash2 size={16} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -159,7 +160,7 @@ export default function Statuses({ corporateId = 64 }) {
         <div className="overflow-x-auto bg-white shadow rounded-lg">
           <table className="w-full text-sm border-collapse">
             <thead className="bg-gray-100 text-gray-700">
-              <tr>
+              <tr className="text-left">
                 <th className="p-2 text-left">
                   <input
                     type="checkbox"
@@ -187,7 +188,7 @@ export default function Statuses({ corporateId = 64 }) {
                 >
                   <td className="p-2">
                     <input
-                      type="checkbox"
+                      type="checkbox" className="h-4 w-4 accent-blue-600 bg-white"
                       checked={selectedIds.includes(row.id)}
                       onChange={() => handleCheckboxChange(row.id)}
                     />
@@ -234,7 +235,7 @@ export default function Statuses({ corporateId = 64 }) {
                 disabled={currentPage === 1}
                 className="px-2 py-1 border rounded disabled:opacity-50"
               >
-                Prev
+                <ChevronLeft size={20} />
               </button>
               <span>
                 Page {currentPage} of {totalPages}
@@ -246,7 +247,7 @@ export default function Statuses({ corporateId = 64 }) {
                 disabled={currentPage === totalPages}
                 className="px-2 py-1 border rounded disabled:opacity-50"
               >
-                Next
+                <ChevronRight size={20} />
               </button>
             </div>
           )}
@@ -287,15 +288,15 @@ export default function Statuses({ corporateId = 64 }) {
             <div className="flex justify-end space-x-2 mt-4">
               <button
                 onClick={() => setShowModal(false)}
-                className="bg-gray-400 text-white px-4 py-2 rounded"
+                className="bg-gray-400 text-white px-4 py-2 rounded" title="Cancel"
               >
-                Cancel
+                <X size={15} />
               </button>
               <button
                 onClick={handleSave}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-blue-600 text-white px-4 py-2 rounded" title={editing ? "Update" : "Add"}
               >
-                {editing ? "Update" : "Add"}
+                {editing ? <Check  size={15} /> : <Plus  size={15} />}
               </button>
             </div>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Mail, ToggleLeft, ToggleRight } from "lucide-react";
+import { Mail, ToggleLeft, ToggleRight, Check } from "lucide-react";
 import { xFetch } from "@/utility/xFetch";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/ReactToastify.min.css';
@@ -64,7 +64,7 @@ export default function Preferences({ corporateId = 64 }) {
     return (
         <div className="w-full bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
 
-            <h2 className="text-lg font-bold mb-6 text-gray-800">
+            <h2 className="text-xl mb-6 text-gray-800">
             Preferences
             </h2>
 
@@ -144,8 +144,9 @@ export default function Preferences({ corporateId = 64 }) {
             <button
                 onClick={handleSave}
                 className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">
-                {loading ? "Saving..." : "Save Preferences"}
+                Update
             </button>
+            
             </div>
         </div>
     );

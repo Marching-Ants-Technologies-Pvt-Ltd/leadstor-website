@@ -15,8 +15,7 @@ export default function FieldMapping() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 10; // Same as screenshot (showing 1 to 32)
-
+  const recordsPerPage = 10;
   const fetchMapping = () => {
         setLoading(true);
         xFetch({
@@ -78,7 +77,7 @@ export default function FieldMapping() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold">Field Mapping</h2>
+        <h2 className="text-xl">Field Mapping</h2>
 
         <div className="flex items-center gap-2">
           <div className="flex items-center px-2 border rounded bg-white">
@@ -97,7 +96,7 @@ export default function FieldMapping() {
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="w-full border-collapse text-sm">
           <thead className="bg-gray-100 border-b">
-            <tr>
+            <tr className="text-left">
               <th className="p-2 text-left">
                 <input
                   type="checkbox"
