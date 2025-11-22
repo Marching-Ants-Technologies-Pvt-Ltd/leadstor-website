@@ -82,7 +82,7 @@ export default function CurrencySettings() {
     const toggleStatus = async (id, newStatus) => {
         try {
             await xFetch({
-            path: "/services/admin/updateCurrencyStatus",
+            path: "/services/admin/updateCurrencyStatusForSettings",
             method: "POST",
             payload: { 
                 ID: id,
@@ -106,7 +106,7 @@ export default function CurrencySettings() {
     const toggleDefault = async (id) => {
         try {
             await xFetch({
-            path: "/services/admin/updateCurrencyStatus",
+            path: "/services/admin/updateCurrencyStatusForSettings",
             method: "POST",
             payload: { 
                 ID: id,
