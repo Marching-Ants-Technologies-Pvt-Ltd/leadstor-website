@@ -101,7 +101,7 @@ export default function WebSync() {
         <li>
           Enter this shortcode{" "}
           <span className="bg-gray-200 px-1 rounded font-mono">
-            [hidden cnwebsync "1"]
+             [hidden cnwebsync &#34;1&#34;]
           </span>
           . This shortcode triggers the sync event when a form is submitted to sync leads in real-time.
         </li>

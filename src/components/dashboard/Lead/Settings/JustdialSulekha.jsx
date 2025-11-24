@@ -43,41 +43,41 @@ export default function JustdialSulekha() {
   // cURL Render Block (Reusable)
   // ------------------------------
   const CurlBlock = ({ fullURL }) => (
-    <div className="bg-white p-3 text-m border rounded leading-6 font-mono whitespace-pre-wrap">
-      <div>
-        <span className="text-black">curl --location </span>
-        <span className="text-blue-600">'{fullURL}'</span> <span>\</span>
-      </div>
-
-      <div>
-        <span className="text-black">--header </span>
-        <span className="text-orange-700">
-          'Content-Type: application/x-www-form-urlencoded'
-        </span>{" "}
-        <span>\</span>
-      </div>
-
-      <div>
-        <span className="text-black">--data-urlencode </span>
-        <span className="text-green-700">'leadid</span>
-        <span className="text-black">=JD123456</span>&
-        <span className="text-green-700">leadtype</span>=category&
-        <span className="text-green-700">prefix</span>=Mr&
-        <span className="text-green-700">name</span>=Test&
-        <span className="text-green-700">mobile</span>=9876543210&
-        <span className="text-green-700">phone</span>=022123456&
-        <span className="text-green-700">email</span>=test@example.com&
-        <span className="text-green-700">date</span>=2025-11-01&
-        <span className="text-green-700">category</span>=Taxi&
-        <span className="text-green-700">area</span>=Andheri&
-        <span className="text-green-700">city</span>=Mumbai&
-        <span className="text-green-700">brancharea</span>=East&
-        <span className="text-green-700">dncmobile</span>=1&
-        <span className="text-green-700">dncphone</span>=0&
-        <span className="text-green-700">company</span>=ConceptNinjas'
-      </div>
+  <div className="bg-white p-3 text-m border rounded leading-6 font-mono whitespace-pre-wrap">
+    <div>
+      <span className="text-black">curl --location </span>
+      <span className="text-blue-600">&#39;{fullURL}&#39;</span> <span>\</span>
     </div>
-  );
+
+    <div>
+      <span className="text-black">--header </span>
+      <span className="text-orange-700">
+        &#39;Content-Type: application/x-www-form-urlencoded&#39;
+      </span>{" "}
+      <span>\</span>
+    </div>
+
+    <div>
+      <span className="text-black">--data-urlencode </span>
+      <span className="text-green-700">&#39;leadid</span>
+      <span className="text-black">=JD123456</span>&
+      <span className="text-green-700">leadtype</span>=category&
+      <span className="text-green-700">prefix</span>=Mr&
+      <span className="text-green-700">name</span>=Test&
+      <span className="text-green-700">mobile</span>=9876543210&
+      <span className="text-green-700">phone</span>=022123456&
+      <span className="text-green-700">email</span>=test@example.com&
+      <span className="text-green-700">date</span>=2025-11-01&
+      <span className="text-green-700">category</span>=Taxi&
+      <span className="text-green-700">area</span>=Andheri&
+      <span className="text-green-700">city</span>=Mumbai&
+      <span className="text-green-700">brancharea</span>=East&
+      <span className="text-green-700">dncmobile</span>=1&
+      <span className="text-green-700">dncphone</span>=0&
+      <span className="text-green-700">company</span>=ConceptNinjas&#39;
+    </div>
+  </div>
+);
 
   return (
     <div className="p-5 space-y-12">
