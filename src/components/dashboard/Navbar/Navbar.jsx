@@ -69,15 +69,17 @@ export default function Navbar({ data }) {
                 {/* Dropdown Menu */}
                 <div className="dropdown-menu absolute right-0 top-[110%] bg-white/95 backdrop-blur-md rounded-xl shadow-2xl shadow-gray-300/40 border border-gray-200/70 p-3 flex flex-col items-center gap-2 w-14 transition-all duration-200 origin-top">
                     {/* Profile */}
-                    <div className="relative group w-full flex justify-center">
-                    <button className="p-2 hover:bg-blue-50 rounded-lg transition">
-                        <i className="ri-user-3-line text-blue-500 text-xl"></i>
-                    </button>
-                    <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap">
-                        Profile
-                    </span>
-                    </div>
-
+                    <Link href="/businessProfile" >
+                        <div className="relative group w-full flex justify-center">
+                            <button className="p-2 hover:bg-blue-50 rounded-lg transition">
+                                <i className="ri-user-3-line text-blue-500 text-xl"></i>
+                            </button>
+                            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap">
+                                Profile
+                            </span>
+                        </div>
+                    </Link>
+                    
                     {/* Team */}
                     <Link href="/teams" >
                         <div className="relative group w-full flex justify-center">

@@ -1,9 +1,9 @@
 "use client";
 import { xFetch } from "@/utility/xFetch";
 import { useEffect, useState } from "react";
-import { Search, Trash2, Edit3, Plus } from "lucide-react";
+import { Search, Trash2, X, Edit3, Plus, Check , ChevronLeft, ChevronRight  } from "lucide-react";
 
-export default function CoursesAndFee({ corporateId = 64 }) {
+export default function CoursesAndFee() {
   const [data, setData] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
@@ -19,10 +19,8 @@ export default function CoursesAndFee({ corporateId = 64 }) {
 
   const fetchData = () => {
     setLoading(true);
-    let payload = { corporateId };
     xFetch({
-      path: `/services/profile/getCourseAndFee`,
-      payload,
+      path: `/services/profile/getCourseAndFee`
     })
       .then((data) => {
         setData(data);
@@ -37,7 +35,7 @@ export default function CoursesAndFee({ corporateId = 64 }) {
 
   useEffect(() => {
     fetchData();
-  }, [corporateId]);
+  },[]);
 
   useEffect(() => {
     const result = data.filter((item) =>
@@ -135,7 +133,7 @@ export default function CoursesAndFee({ corporateId = 64 }) {
   return (
     <div className="p-4">
       <div className="flex flex-wrap justify-between items-center mb-4">
-        <h2 className="text-lg font-bold">Courses & Fees</h2>
+        <h2 className="text-xl">Courses & Fees</h2>
 
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -148,21 +146,21 @@ export default function CoursesAndFee({ corporateId = 64 }) {
               className="pl-8 pr-3 py-2 border rounded-lg bg-white text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <button
-            onClick={handleBulkDelete}
-            className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
-          >
-            <Trash2 size={16} /> Delete Selected
-          </button>
+          
           <button
             onClick={() => {
               setEditing(false);
               setForm({ id: null, course: "", standardFee: "", maximumDiscount: "" });
               setShowModal(true);
-            }}
+            }} title="Add Course & Fee"
             className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"
           >
-            <Plus size={16} /> Add
+            <Plus size={16} />
+          </button>
+          <button
+            onClick={handleBulkDelete} title="Delete Selected"
+            className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+          ><Trash2 size={16} />
           </button>
         </div>
       </div>
@@ -174,7 +172,7 @@ export default function CoursesAndFee({ corporateId = 64 }) {
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-gray-700">
-              <tr>
+              <tr className="text-left">
                 <th className="p-2 text-left">
                   <input
                     type="checkbox" className="bg-white"
@@ -254,7 +252,7 @@ export default function CoursesAndFee({ corporateId = 64 }) {
               : "bg-blue-500 text-white hover:bg-blue-600"
           }`}
         >
-          Prev
+          <ChevronLeft size={20} />
         </button>
         <span className="text-gray-700">
           Page {page} of {totalPages || 1}
@@ -268,7 +266,7 @@ export default function CoursesAndFee({ corporateId = 64 }) {
               : "bg-blue-500 text-white hover:bg-blue-600"
           }`}
         >
-          Next
+          <ChevronRight size={20} />
         </button>
       </div>
 
@@ -276,7 +274,7 @@ export default function CoursesAndFee({ corporateId = 64 }) {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
-            <h3 className="text-lg font-bold mb-4">
+            <h3 className="text-lg mb-4">
               {editing ? "Update" : "Add"} Course & Fee
             </h3>
 
@@ -320,16 +318,17 @@ export default function CoursesAndFee({ corporateId = 64 }) {
                   setShowModal(false);
                   setErrors({});
                   setMaxDiscountAmount(null);
-                }}
+                }} title="Cancel"
                 className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-              >
-                Cancel
+              > 
+                <X size={15} />
               </button>
               <button
                 onClick={handleSave}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                {editing ? "Update" : "Add"}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" title={editing ? "Update" : "Add"}
+              > 
+              {editing ? <Check  size={15} /> : <Plus  size={15} />}
+              
               </button>
             </div>
           </div>

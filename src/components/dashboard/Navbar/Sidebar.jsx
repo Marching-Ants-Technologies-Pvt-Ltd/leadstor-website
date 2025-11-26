@@ -142,6 +142,10 @@ export default function Sidebar({ data, collapsed, setCollapsed }) {
                                                     <Link href="/templates/certificateTemplate" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
                                                         <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Certificate Template</label>
                                                     </Link>
+
+                                                    <Link href="/templates/emailTemplateManager" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
+                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Email Template Manager</label>
+                                                    </Link>
                                                 </div>
                                             </div>
                                         </li>
