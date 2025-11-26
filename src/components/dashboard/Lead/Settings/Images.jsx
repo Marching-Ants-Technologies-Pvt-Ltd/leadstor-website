@@ -54,8 +54,10 @@ export default function MyImagesSection() {
         })
         .then((res) => {
             if (res === true) {
-            toast.success("Image uploaded successfully 🎉");
-            fetchImages();
+                toast.success("Image uploaded successfully 🎉");
+                fetchImages();
+            }else if(res?.status === "size error"){
+                toast.error(res.message);
             }
         })
         .catch(() => {
