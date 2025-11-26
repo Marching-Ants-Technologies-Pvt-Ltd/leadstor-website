@@ -17,6 +17,8 @@ import StatusTemplateMapping from '@/components/dashboard/Lead/Settings/StatusTe
 import CourseTemplateMapping from '@/components/dashboard/Lead/Settings/CourseTemplateMapping';
 import JustdialSulekha from '@/components/dashboard/Lead/Settings/JustdialSulekha';
 import WebSync from '@/components/dashboard/Lead/Settings/WebSync';
+import WhatsAppConfig from '@/components/dashboard/Lead/Settings/WhatsAppConfig';
+import WhatsAppAutomation from '@/components/dashboard/Lead/Settings/WhatsAppAutomation';
 
 // ICONS
 import { RiArrowDownSLine, RiArrowRightSLine } from "react-icons/ri";
@@ -122,7 +124,10 @@ export default function Settings() {
       case "templateCourseWise": return <CourseTemplateMapping />;
       case "justdial": return <JustdialSulekha />;
       case "webSync": return <WebSync />;
+      case "whatsAppConfig": return <WhatsAppConfig />;
+      case "whatsAppAutomation": return <WhatsAppAutomation />;
 
+      
       
       
       default:
@@ -152,7 +157,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="flex h-full border rounded-md overflow-hidden shadow-sm">
+    <div className="flex h-full border rounded-md shadow-sm">
 
       {/* Sidebar */}
       <aside className="w-64 bg-gray-100 p-4 flex flex-col justify-between">

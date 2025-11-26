@@ -85,7 +85,7 @@ export default function CurrencySettings() {
             path: "/services/admin/updateCurrencyStatusForSettings",
             method: "POST",
             payload: { 
-                ID: id,
+                id: id,
                 status: String(newStatus) 
             },
             });
@@ -109,7 +109,7 @@ export default function CurrencySettings() {
             path: "/services/admin/updateCurrencyStatusForSettings",
             method: "POST",
             payload: { 
-                ID: id,
+                id: id,
                 status: 1,    // Default currency must ALWAYS be active
                 default: 1 
             },
