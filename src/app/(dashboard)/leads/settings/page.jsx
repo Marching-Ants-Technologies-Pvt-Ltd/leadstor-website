@@ -19,6 +19,8 @@ import JustdialSulekha from '@/components/dashboard/Lead/Settings/JustdialSulekh
 import WebSync from '@/components/dashboard/Lead/Settings/WebSync';
 import WhatsAppConfig from '@/components/dashboard/Lead/Settings/WhatsAppConfig';
 import WhatsAppAutomation from '@/components/dashboard/Lead/Settings/WhatsAppAutomation';
+import Calendly from '@/components/dashboard/Lead/Settings/Calendly';
+import GoogleDrive from '@/components/dashboard/Lead/Settings/GoogleDrive';
 
 // ICONS
 import { RiArrowDownSLine, RiArrowRightSLine } from "react-icons/ri";
@@ -126,9 +128,8 @@ export default function Settings() {
       case "webSync": return <WebSync />;
       case "whatsAppConfig": return <WhatsAppConfig />;
       case "whatsAppAutomation": return <WhatsAppAutomation />;
-
-      
-      
+      case "calendly": return <Calendly />;
+      case "googleDrive": return <GoogleDrive />;
       
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;

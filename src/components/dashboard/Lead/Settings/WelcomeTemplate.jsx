@@ -22,7 +22,7 @@ import 'react-toastify/ReactToastify.min.css';
 import dynamic from "next/dynamic";
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
-export default function WelcomeTemplate() {
+export default function WelcomeEmail() {
     const editor = useRef(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);

@@ -2,6 +2,7 @@
 import { xFetch } from "@/utility/xFetch";
 import { useEffect, useState } from "react";
 import { Search, Trash2, X, Edit3, Plus, Check , ChevronLeft, ChevronRight  } from "lucide-react";
+import { Corporate } from "@/utility/TinyDB";
 
 export default function CoursesAndFee() {
   const [data, setData] = useState([]);
@@ -15,7 +16,7 @@ export default function CoursesAndFee() {
   const [errors, setErrors] = useState({});
   const [selected, setSelected] = useState([]);
   const [page, setPage] = useState(1);
-  const limit = 5;
+  const limit = 10;
 
   const fetchData = () => {
     setLoading(true);
@@ -80,7 +81,6 @@ export default function CoursesAndFee() {
 
     const payload = {
       ...form,
-      corporateId,
       standardFee: Number(form.standardFee),
       maximumDiscount: Number(form.maximumDiscount),
     };

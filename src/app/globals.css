@@ -43,6 +43,10 @@ body {
   background: rgb(var(--background-start-rgb));
 }
 
+html {
+  zoom: 0.9; /* 90% size */
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
