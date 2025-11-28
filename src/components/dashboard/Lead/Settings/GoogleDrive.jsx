@@ -66,7 +66,7 @@ export default function GoogleDriveConnect() {
         {/* Illustration */}
         <div className="mb-5">
           <Image
-            src="/img/cn-drive.jpg"
+            src="/banners/cn-drive.jpg"
             width={500}
             height={300}
             alt="Google Drive Banner"

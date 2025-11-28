@@ -198,3 +198,5 @@ export default function ClientLayout({ children }) {
         </SessionProvider>
     )
 }
+
+export const experimental_ppr = true;

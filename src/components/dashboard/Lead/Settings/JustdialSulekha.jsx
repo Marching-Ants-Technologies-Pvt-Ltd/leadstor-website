@@ -80,7 +80,7 @@ export default function JustdialSulekha() {
 );
 
   return (
-    <div className="p-5 space-y-12">
+    <div className="p-4 space-y-12">
       {/* -------------------------------- */}
       {/*           JUSTDIAL               */}
       {/* -------------------------------- */}

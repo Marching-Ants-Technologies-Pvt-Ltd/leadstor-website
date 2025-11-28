@@ -351,7 +351,7 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                         <i className="ri-pie-chart-line text-xl"></i>
                     </button>
 
-                    <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10' onClick={() => router.push('/leads/settings')} >
+                    <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10' onClick={() => router.push('/leads/settings')}  title="Lead Settings">
                         <i className="ri-settings-line text-xl"></i>
                     </button>
                     

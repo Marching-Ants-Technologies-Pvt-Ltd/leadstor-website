@@ -2,50 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 247, 247, 247;
-  --background-end-rgb: 255, 255, 255;
+html, body, #__next {
+  height: 100%;
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --foreground-rgb: 0, 0, 0;
-    --background-start-rgb: 214, 219, 220;
-    --background-end-rgb: 255, 255, 255;
-  }
-}
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-} */
-
-html {
+html, body {
   scroll-behavior: smooth;
-  color-scheme: light;
-}
-
-body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html {
-  zoom: 0.9; /* 90% size */
+  zoom: 0.8; /* 90% size */
 }
+/* prefer transform for animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* minimal default input style */
+input, textarea, select {
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+/* avoid very large shadows globally */
+.shadow-heavy { box-shadow: none; }
 
 @layer utilities {
   .text-balance {
