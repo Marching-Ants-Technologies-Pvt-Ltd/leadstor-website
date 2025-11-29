@@ -10,11 +10,18 @@ html, body {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden !important;
+  font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+
 }
 
 html {
   zoom: 0.8; /* 90% size */
 }
+:root {
+    --sidebar-width: 80px;   /* FIXED WIDTH */
+}
+
 /* prefer transform for animations */
 .will-change-transform {
   will-change: transform;

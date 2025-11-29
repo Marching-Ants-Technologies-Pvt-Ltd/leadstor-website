@@ -1,13 +1,11 @@
 'use client';
 import React from 'react';
 import Image from 'next/image';
-import styles from './Navbar.module.css';
 import Link from 'next/link';
 
 export default function Navbar({ data }) {
 
     const goToLegacyDashboard = () => {
-        
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor/dashboard`;
@@ -21,91 +19,153 @@ export default function Navbar({ data }) {
         document.body.appendChild(form);
         form.submit();
         form.remove();
-        return;
     }
 
     return (
-        <div className="flex justify-end items-center sticky bg-white py-3 px-4 gap-16 z-10">
-            <div className='flex gap-3'>
-                <span className="tooltip tooltip-bottom" data-tooltip="Goto Conceptninjas Old Dashboard">
-                    <div className='hover:bg-blue-50 hover:text-blue-600 hover:border-blue-50 text-gray-600 border bg-transparent cursor-pointer w-fit px-4 h-7 flex justify-center items-center rounded-full' onClick={goToLegacyDashboard}>
-                        <i className="ri-computer-line pointer-events-none mr-0 lg:mr-2"></i>
-                        <div className="hidden lg:block">Legacy Dashboard</div>
-                    </div>
-                </span>
-                <span className="tooltip tooltip-bottom" data-tooltip="Contact Support">
-                    <div className='hover:bg-blue-100 hover:text-blue-500 hover:border-blue-100 text-gray-700 border bg-transparent  cursor-pointer w-7 h-7 flex justify-center items-center rounded-full'>
-                        <i className="ri-customer-service-2-fill pointer-events-none"></i>
-                    </div>
-                </span>
-                <span className="tooltip tooltip-bottom" data-tooltip="Check Notification">
-                    <div className='hover:bg-blue-100 hover:text-blue-500 hover:border-blue-100 text-gray-700 border bg-transparent  cursor-pointer w-7 h-7 flex justify-center items-center rounded-full'>
-                        <i className="ri-notification-line pointer-events-none"></i>
-                    </div>
-                </span>
-            </div>
-            <div className="dropdown z-10 flex h-fit relative">
-                <label className="flex gap-2 poppins cursor-pointer items-center" tabIndex="0">
-                    <div className={`pr-2 pointer-events-none ${styles['hide-on-small']}`}>
-                    <h3 className="m-0 text-base">{data.user.name}</h3>
-                    <p className="-mt-0.5 p-0 text-xs text-gray-500 text-right">{data.user.role}</p>
-                    </div>
-                    <div className="flex justify-center items-center pointer-events-none">
-                    <Image
-                        className="rounded-md"
-                        placeholder="empty"
-                        src={data.user.image}
-                        width={36}
-                        height={36}
-                        alt="User Avatar"
-                        priority={false}
-                    />
-                    </div>
-                    <div className="flex justify-center items-center pointer-events-none">
-                    <i className="ri-arrow-down-s-fill text-xl"></i>
-                    </div>
-                </label>
+        <div className="flex items-center gap-4">
 
-                {/* Dropdown Menu */}
-                <div className="dropdown-menu absolute right-0 top-[110%] bg-white/95 backdrop-blur-md rounded-xl shadow-2xl shadow-gray-300/40 border border-gray-200/70 p-3 flex flex-col items-center gap-2 w-14 transition-all duration-200 origin-top">
-                    {/* Profile */}
-                    <Link href="/businessProfile" >
-                        <div className="relative group w-full flex justify-center">
-                            <button className="p-2 hover:bg-blue-50 rounded-lg transition">
-                                <i className="ri-user-3-line text-blue-500 text-xl"></i>
-                            </button>
-                            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap">
-                                Profile
-                            </span>
+            {/* Right Controls */}
+            <div className="flex items-center gap-4">
+
+                {/* Legacy Dashboard */}
+                <div
+                    className="icon-btn tooltip"
+                    data-tooltip="Old Dashboard"
+                    onClick={goToLegacyDashboard}
+                >
+                    <i className="ri-computer-line"></i>
+                </div>
+
+                {/* Support */}
+                <div className="icon-btn tooltip" data-tooltip="Support">
+                    <i className="ri-customer-service-2-fill"></i>
+                </div>
+
+                {/* Notifications */}
+                <div className="icon-btn tooltip" data-tooltip="Notifications">
+                    <i className="ri-notification-line"></i>
+                </div>
+
+                {/* User Dropdown */}
+                <div className="relative dropdown">
+                    <label tabIndex="0" className="flex items-center gap-2 cursor-pointer">
+                        <div className="text-right leading-tight hidden md:block">
+                            <h3 className="text-sm font-medium">{data.user.name}</h3>
+                            <p className="text-[11px] text-gray-500">{data.user.role}</p>
                         </div>
-                    </Link>
-                    
-                    {/* Team */}
-                    <Link href="/teams" >
-                        <div className="relative group w-full flex justify-center">
-                            <button className="p-2 hover:bg-teal-50 rounded-lg transition">
-                                <i className="ri-team-line text-teal-500 text-xl"></i>
-                            </button>
-                            <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap">
-                                Teams
-                            </span>
+
+                        <Image
+                            className="rounded-md pointer-events-none"
+                            src={data.user.image}
+                            width={34}
+                            height={34}
+                            alt="User Avatar"
+                        />
+
+                        <i className="ri-arrow-down-s-fill text-lg pointer-events-none"></i>
+                    </label>
+
+                    {/* Dropdown Menu */}
+                    <div className="
+                        dropdown-menu 
+                        absolute right-0 top-[115%] 
+                        bg-white/95 backdrop-blur 
+                        border shadow-xl 
+                        rounded-xl p-3
+                        flex flex-col gap-2 
+                        w-12
+                    ">
+                        {/* Profile */}
+                        <Link href="/businessProfile">
+                            <div className="dropdown-icon">
+                                <i className="ri-user-3-line text-blue-500"></i>
+                                <span className="dropdown-tooltip">Profile</span>
+                            </div>
+                        </Link>
+
+                        {/* Team */}
+                        <Link href="/teams">
+                            <div className="dropdown-icon">
+                                <i className="ri-team-line text-teal-500"></i>
+                                <span className="dropdown-tooltip">Teams</span>
+                            </div>
+                        </Link>
+
+                        <div className="h-px bg-gray-200 w-8 mx-auto"></div>
+
+                        {/* Signout */}
+                        <div className="dropdown-icon">
+                            <i className="ri-logout-box-r-line text-rose-500"></i>
+                            <span className="dropdown-tooltip">Sign Out</span>
                         </div>
-                    </Link>
-                    
-
-                    <div className="h-px bg-gray-200 w-8 my-1"></div>
-
-                    {/* Sign Out */}
-                    <div className="relative group w-full flex justify-center">
-                    <button className="p-2 hover:bg-rose-50 rounded-lg transition">
-                        <i className="ri-logout-box-r-line text-rose-500 text-xl"></i>
-                    </button>
-                    <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all duration-200 whitespace-nowrap">
-                        Sign Out
-                    </span>
                     </div>
                 </div>
             </div>
+
+            {/* Styles */}
+            <style jsx>{`
+                .icon-btn {
+                    width: 34px;
+                    height: 34px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    color: #4b5563;
+                    transition: 0.2s ease;
+                    position: relative;
+                }
+                .icon-btn:hover {
+                    background: #e8f3ff;
+                    color: #2563eb;
+                }
+
+                /* Tooltip */
+                .icon-btn .tooltip-text,
+                .dropdown-tooltip {
+                    position: absolute;
+                    white-space: nowrap;
+                    background: #111827;
+                    color: white;
+                    font-size: 11px;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    opacity: 0;
+                    transform: translateX(-10px);
+                    pointer-events: none;
+                    transition: all .18s ease;
+                }
+                .icon-btn:hover .tooltip-text {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+
+                /* Dropdown Items */
+                .dropdown-icon {
+                    position: relative;
+                    width: 100%;
+                    display: flex;
+                    justify-content: center;
+                    padding: 6px 0;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: 0.2s ease;
+                }
+                .dropdown-icon:hover {
+                    background: #f1f5f9;
+                }
+
+                .dropdown-tooltip {
+                    right: 110%;
+                    top: 50%;
+                    transform: translateY(-50%) translateX(-8px);
+                }
+                .dropdown-icon:hover .dropdown-tooltip {
+                    opacity: 1;
+                    transform: translateY(-50%) translateX(0);
+                }
+            `}</style>
         </div>
-    )
+    );
 }

@@ -17,7 +17,9 @@ const FilterDrawer = ({ isOpen, onClose }) => {
     enquiryDateFrom: '',
     enquiryDateTo: '',
     updatedDateFrom: '',
-    updatedDateTo: ''
+    updatedDateTo: '',
+    followupDate: '',
+    followupDate_end: '',
   });
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [filterOptions, setFilterOptions] = useState({
@@ -155,7 +157,9 @@ const FilterDrawer = ({ isOpen, onClose }) => {
       enquiryDateFrom: '',
       enquiryDateTo: '',
       updatedDateFrom: '',
-      updatedDateTo: ''
+      updatedDateTo: '',
+      followupDate: '',
+      followupDate_end: ''
     });
   };
 
@@ -174,7 +178,13 @@ const FilterDrawer = ({ isOpen, onClose }) => {
   
   const buildLeadFilters = () => {
     const filters = [];
-    
+      
+      filters.push({
+        title: 'Button',
+        value: "LeadFilters",
+        query: 'button'
+      });
+
     // Multi-select filters - these should be arrays in the API call
     if (selectedFilters.status.length > 0) {
         filters.push({
@@ -268,6 +278,23 @@ const FilterDrawer = ({ isOpen, onClose }) => {
           query: 'updatedToDate'
       });
     }
+    }
+
+    if (selectedFilters.followupDate || selectedFilters.followupDate) {
+        if (selectedFilters.followupDate) {
+          filters.push({
+            title: 'Pending Followup From',
+            value: convertDateFormat(selectedFilters.followupDate),
+            query: 'followupDate'
+          });
+        }
+        if (selectedFilters.followupDate_end) {
+          filters.push({
+            title: 'Pending Followup To',
+            value: convertDateFormat(selectedFilters.followupDate_end),
+            query: 'followupDate_end'
+        });
+      }
     }
     
     return filters;
@@ -459,8 +486,28 @@ const FilterDrawer = ({ isOpen, onClose }) => {
                   placeholder="To"
                   isTimeInterval={false}
               />
+              </div>
             </div>
-          </div>
+
+            {/* Modern Calendar for Pending Followup */}
+            <div style={{ marginBottom: 24 }}>
+              <label style={{ display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14 }}>Pending Followup Date</label>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <DateInputPicker
+                  value={selectedFilters.followupDate}
+                  onChange={date => updateSingleFilter('followupDate', date)}
+                  placeholder="From"
+                  isTimeInterval={false}
+              />
+                <span style={{ color: '#666', fontSize: 14, whiteSpace: 'nowrap' }}>to</span>
+                <DateInputPicker
+                  value={selectedFilters.followupDate_end}
+                  onChange={date => updateSingleFilter('followupDate_end', date)}
+                  placeholder="To"
+                  isTimeInterval={false}
+              />
+              </div>
+            </div>
           </>}
         </div>
         <div style={{ padding: 20, borderTop: '1px solid #eee', display: 'flex', gap: 12, background: '#fafafa' }}>
