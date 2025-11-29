@@ -260,7 +260,6 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
 
                     <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer'>
                         <i className="ri-user-add-line text-xl"></i>
-                        <div className='mr-1'>Lead</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={openManual}>
                                 <i className="ri-text-block text-lg mt-1"></i>
@@ -275,7 +274,6 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
 
                     <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer'>
                         <i className="ri-file-excel-2-fill text-xl"></i>
-                        <div className='mr-1'>Report</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5"
                                 onClick={() => setDailyReport(true) } >
@@ -289,9 +287,8 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                         </div>
                     </div>
 
-                    <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer ml-5'>
+                    <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer'>
                         <i className="ri-filter-2-line text-xl"></i>
-                        <div className='mr-1'>Filter</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
                             <a onClick={handelFollowUpFilters} className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
                                 <i className="ri-user-follow-line text-lg mt-1"></i>
@@ -311,7 +308,6 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
 
                     <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer ml-0'>
                         <i className="ri-shapes-line text-xl"></i>
-                        <div className='mr-1'>Actions</div>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
                             <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={() => setShowSendSms(true)}>
                                 <i className="ri-chat-1-line text-lg mt-1"></i>
@@ -347,11 +343,11 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                         </div>
                     </div>
 
-                    <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10 ml-5'>
+                    <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10'>
                         <i className="ri-pie-chart-line text-xl"></i>
                     </button>
 
-                    <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10' onClick={() => router.push('/leads/settings')} >
+                    <button className='flex border rounded-md gap-2 px-2 justify-center items-center cursor-pointer w-10' onClick={() => router.push('/leads/settings')}  title="Lead Settings">
                         <i className="ri-settings-line text-xl"></i>
                     </button>
                     

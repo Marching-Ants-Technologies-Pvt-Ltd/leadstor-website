@@ -230,198 +230,216 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 		}
 	}, []);
 
-	return (
-		<>
-			<div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-				<ToastContainer position="bottom-right" autoClose={3000} />
-				<div className="w-full max-w-lg bg-white rounded-xl shadow-xl border border-gray-200 relative">
-					<div className="px-8 pt-8 pb-3 flex items-center justify-between">
-						<h2 className="text-2xl font-medium text-gray-500">Update Lead</h2>
-						<button
-							className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 focus:outline-none border-none bg-transparent -mr-2"
-							style={{ marginRight: '-0.7rem' }}
-							onClick={handleClose}
-							aria-label="Close"
-							type="button"
+  return (
+    <>
+      <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+        <ToastContainer position="bottom-right" autoClose={3000} />
+
+        {/* MAIN POPUP */}
+        <div className="bg-white rounded-xl shadow-xl w-[850px] max-h-[120vh] flex flex-col overflow-hidden">
+
+          {/* PAGE HEADER */}
+          <div
+            className="px-6 py-4 flex justify-between items-center"
+            style={{ backgroundColor: "#EA4C89", color: "white" }}
+          >
+            <h2 className="text-2xl font-semibold flex items-center gap-2">
+  
+              Update Lead
+            </h2>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="transition p-1 rounded-full"
+              style={{ color: "white" }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* FORM */}
+			<form
+			className="px-6 pt-4 pb-5 overflow-y-auto flex-1 custom-scroll"
+			onSubmit={handleSubmit}
+			>
+			{/* CHANGED TO 3 COLUMNS */}
+			<div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+				{columns
+				.filter(
+					(c) => c.dataField !== "action" && c.dataField !== "createdDate"
+				)
+				.map((item, index) => {
+					const value = fields?.[item.dataField] || "";
+					const options = dynamicFields[item.dataField] || [];
+
+					// OWNER SELECT
+					if (item.dataField === "assignedUserId") {
+					const { options } = renderOwnerSelect(item.displayName);
+					return (
+						<div key={index}>
+						<label className="label-pink">{item.displayName}</label>
+						<select
+							value={fields.assignedUserId}
+							onChange={(e) =>
+							handleChange(item.dataField, e.target.value)
+							}
+							className="input-pink"
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-							<path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
-							</svg>
-						</button>
-					</div>
-					<form className="px-8 pb-6 pt-2 max-h-[74vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" onSubmit={handleSubmit}>
-						<div className="space-y-6">
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								{columns
-									.filter(item => item.dataField !== 'action' && item.dataField !== 'createdDate')
-									.map((item, index) => {
-									const value = fields?.[item.dataField] || "";
-									const options = Array.isArray(dynamicFields?.[item.dataField])
-										? dynamicFields[item.dataField]
-										: [];
+							{options?.map((o, i) => (
+							<option key={i} value={o.key} disabled={o.disabled}>
+								{o.value}
+							</option>
+							))}
+						</select>
+						</div>
+					);
+					}
 
-									if (item.dataField === 'assignedUserId') {
-										const { options } = renderOwnerSelect(item.displayName ? item.displayName : item.fieldName);
+					if (item.fieldType === "dropdown" || item.fieldType === "datetime") {
 
-										return (
-											<div key={index}>
-												<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
-												<select
-													value={fields.assignedUserId}
-													onChange={(e) => handleChange(item.dataField, e.target.value)}
-													disabled={fetching}
-													className="modal-input w-full"
-												>
-													{options.map((opt, idx) => (
-														<option
-															key={idx}
-															value={opt.key}
-															disabled={opt.disabled || false}
-														>
-															{opt.value}
-														</option>
-													))}
-												</select>
-											</div>
-										);
+						return (
+							<>
+							{/* DROPDOWN FIELD */}
+							<div key={index}>
+								<label className="label-pink">{item.displayName}</label>
+								<select
+									value={value}
+									onChange={(e) =>
+									handleChange(item.dataField, e.target.value)
 									}
-
-
-									if (item.fieldType === 'dropdown') {
-										return (
-										<div key={index}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
-											<select
-											value={value}
-											onChange={(e) => handleChange(item.dataField, e.target.value)}
-											disabled={fetching}
-											className="modal-input w-full"
-											>
-											<option value="">-- Select --</option>
-											{options.map((opt, idx) => (
-												<option key={opt.key} value={opt.key}>
-												{opt.value}
-												</option>
-											))}
-											</select>
-										</div>
-										);
-									}
-
-									if (item.fieldType === 'text') {
-										if (item.dataField === 'mobile' || item.dataField === 'altmobile') {
-										return (
-											<div key={index}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
-											<input
-												type="tel"
-												value={value}
-												onChange={(e) => handleChange(item.dataField, e.target.value)}
-												disabled={fetching}
-												required
-												pattern={
-												Corporate?.country_code !== "IN"
-													? "^(\\+\\d{1,3}|0|91|653\\d{1,3})?\\d{7,15}$"
-													: "^(\\+\\d{1,3}|(0)|(91)|(00)\\d{1,3})?\\d{10}$"
-												}
-												onInvalid={(e) => {
-												e.target.setCustomValidity("");
-												e.target.setCustomValidity(
-													Corporate?.country_code !== "IN"
-													? "Please enter a valid mobile number."
-													: "Please enter a valid mobile number. Expected Format: +91XXX or 0091XXX or 0XXX or XXX."
-												);
-												}}
-												onInput={(e) => e.target.setCustomValidity("")}
-												className="modal-input w-full"
-											/>
-											</div>
-										);
-										} else {
-										return (
-											<div key={index}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">{item.displayName ? item.displayName : item.fieldName}</label>
-											<input
-												type={item.dataField == "emailId" ? "email" : "text"}
-												value={value}
-												onChange={(e) => handleChange(item.dataField, e.target.value)}
-												disabled={fetching}
-												className="modal-input w-full"
-											/>
-											</div>
-										);
-										}
-									}
-
-									if (item.fieldType === 'datetime') {
-										if (!showDatePicker) return null;
-										return (
-										<div key={index}>
-											<label className="block text-sm font-semibold text-gray-700 mb-2">Followup Date</label>
-											<DateInputPicker
-												value={fields?.followupDate|| ""}
-												onChange={(date) => handleChange('followupDate', date)}
-												placeholder="Select followup date"
-												isTimeInterval={true}
-											/>
-										</div>
-										);
-									}
-
-									if (item.fieldType === 'textarea') {
-										const isRemarks = item.dataField === 'remarks';
-										const textareaProps = {
-											value: value,
-											required: isRemarks ? true : undefined,
-											onKeyDown: isRemarks ? (e) => e.target.setCustomValidity('') : undefined,
-											onChange: (e) => {
-												if (isRemarks) {
-													e.target.setCustomValidity('');
-												}
-												handleChange(item.dataField, e.target.value);
-											}
-										};
-
-										return (
-											<div key={index}>
-												<label className="block text-sm font-semibold text-gray-700 mb-2">
-													{item.displayName ? item.displayName : item.fieldName}
-													{isRemarks ? <span className="text-red-500"> * </span> : null}
-												</label>
-												<textarea
-													{...textareaProps}
-													disabled={fetching}
-													className="modal-input w-full"
-													rows="4"
-													placeholder={`Enter ${item.displayName ? item.displayName : item.fieldName}`}
-												/>
-											</div>
-										);
-									}
-									return null;
-									})}
+									className="input-pink"
+								>
+									<option value="">-- Select --</option>
+									{options.map((opt) => (
+									<option key={opt.key} value={opt.key}>
+										{opt.value}
+									</option>
+									))}
+								</select>
 							</div>
+
+							{/* FOLLOWUP FIELD ONLY WHEN STATUS */}
+							{item.dataField == "status" && showDatePicker && (
+								<div key={`followup-${index}`}>
+								<label className="label-pink">Followup Date</label>
+								<DateInputPicker
+									value={fields.followupDate}
+									onChange={(date) => handleChange("followupDate", date)}
+									isTimeInterval
+								/>
+								</div>
+							)}
+							</>
+						);
+					}
+
+					// TEXT FIELD
+					if (item.fieldType === "text") {
+					return (
+						<div key={index}>
+						<label className="label-pink">{item.displayName}</label>
+						<input
+							type={item.dataField === "emailId" ? "email" : "text"}
+							value={value}
+							onChange={(e) =>
+							handleChange(item.dataField, e.target.value)
+							}
+							className="input-pink"
+						/>
 						</div>
-						<div className="mt-6 flex flex-row items-center gap-3 justify-end">
-							<button
-							className="border border-gray-300 text-gray-700 bg-white px-4 py-2 rounded-md text-sm font-medium focus:outline-none hover:bg-gray-50 transition-colors"
-							onClick={handleClose}
-							type="button"
-							disabled={loading || fetching}
-							>
-							Cancel
-							</button>
-							<button
-							className="bg-green-600 text-white px-6 py-2 rounded-md text-sm font-semibold focus:outline-none hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-							type="submit"
-							disabled={loading || fetching}
-							>
-							{loading ? 'Updating...' : 'Update'}
-							</button>
+					);
+					}
+
+					// TEXTAREA — FULL WIDTH ACROSS ALL 3 COLUMNS
+					if (item.fieldType === "textarea") {
+					return (
+						<div key={index} className="md:col-span-1">
+						<label className="label-pink">{item.displayName}</label>
+						<textarea
+							rows="2"
+							value={value}
+							onChange={(e) =>
+							handleChange(item.dataField, e.target.value)
+							}
+							className="input-pink resize-none"
+						></textarea>
 						</div>
-					</form>
-				</div>
+					);
+					}
+
+					return null;
+				})}
 			</div>
-		</>
-	)
+
+			{/* ACTION BUTTONS */}
+			<div className="mt-6 flex justify-end gap-3">
+				<button
+				type="button"
+				onClick={handleClose}
+				className="btn-secondary-pink"
+				>
+				Cancel
+				</button>
+				<button
+				type="submit"
+				disabled={loading}
+				className="btn-primary-pink"
+				>
+				{loading ? "Updating..." : "Update"}
+				</button>
+			</div>
+			</form>
+
+        </div>
+      </div>
+
+      {/* Extra Tailwind Styles */}
+      <style>{`
+        .custom-scroll::-webkit-scrollbar { width: 6px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #f5b6d1; border-radius: 10px; }
+
+        .label-pink { 
+          display:block; 
+          margin-bottom:4px; 
+          font-weight:600; 
+          color:#EA4C89;
+        }
+        .input-pink {
+          width:100%;
+          padding:8px 10px;
+          border:1px solid #F9C2DD;
+          border-radius:8px;
+          outline:none;
+          transition:0.2s;
+        }
+        .input-pink:focus {
+          border-color:#EA4C89;
+          box-shadow:0 0 0 2px #F9C2DD;
+        }
+
+        .btn-primary-pink {
+          background:#EA4C89;
+          color:white;
+          padding:8px 18px;
+          border-radius:8px;
+          font-weight:600;
+          transition:0.2s;
+        }
+        .btn-primary-pink:hover {
+          background:#d53f77;
+        }
+        .btn-secondary-pink {
+          background:white;
+          border:1px solid #EA4C89;
+          color:#EA4C89;
+          padding:8px 18px;
+          border-radius:8px;
+          transition:0.2s;
+        }
+        .btn-secondary-pink:hover {
+          background:#ffe0ef;
+        }
+      `}</style>
+    </>
+  );
 }

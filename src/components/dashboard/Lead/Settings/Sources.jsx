@@ -14,7 +14,7 @@ export default function Sources() {
   const [errors, setErrors] = useState({});
   const [selected, setSelected] = useState([]);
   const [page, setPage] = useState(1);
-  const limit = 5;
+  const limit = 10;
 
   const fetchData = () => {
     setLoading(true);
@@ -62,7 +62,7 @@ export default function Sources() {
       ? "/services/profile/updateSourceSettings"
       : "/services/profile/addSourceSettings";
 
-    const payload = { ...form, corporateId };
+    const payload = { ...form };
 
     xFetch({
       path: url,
@@ -81,7 +81,6 @@ export default function Sources() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this source?")) return;
     let payload = { sourceId: id };
     xFetch({
       path: "/services/profile/deleteSource",

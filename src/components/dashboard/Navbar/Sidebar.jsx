@@ -5,197 +5,153 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
-export default function Sidebar({ data, collapsed, setCollapsed }) {
+export default function Sidebar() {
 
     const pathName = usePathname();
 
-    const updateActiveMenu = (pathName) => {
-        console.log('Changing Path');
-        let activeLink = document.querySelector(`nav .__active`);
-        if (activeLink) activeLink.classList.remove('__active');
-
-        activeLink = document.querySelector(`nav ul a[href="${pathName}"]`);
-        if (activeLink) activeLink.classList.add('__active');
-        
-        // Update page title
-        let title = pathName.split('/')[1];
-        document.title = `${title.substring(0,1).toUpperCase()}${title.substring(1)} | Leadstor`;
-    }
-
-    const handleMenuItemClick = () => {
-        // Auto-close sidebar on menu item click for mobile screens
-        if (collapsed && window.innerWidth <= 768) {
-            setCollapsed(true);
-        }
-    };
-
-    // Set menu item to active on path change
     useEffect(() => {
-        updateActiveMenu(pathName);
+        let active = document.querySelector("nav .__active");
+        if (active) active.classList.remove("__active");
+
+        let newActive = document.querySelector(`nav ul a[href="${pathName}"] li`);
+        if (newActive) newActive.classList.add("__active");
     }, [pathName]);
 
     return (
-        <aside className={`sidebar-sticky sidebar justify-start bg-white${collapsed ? ' sidebar-collapsed' : ''}`}>
-            <section className="sidebar-title items-center px-7 py-4 gap-3 flex">
-                {/* Logo - always visible */}
-                <div className="flex items-center gap-3">
-                    <Image
-                        placeholder='empty'
-                        src="/icons/leadstor.png"
-                        width={36}
-                        height={36}
-                        alt="Leadstor Icon"
-                        priority={false}
-                    />
-                    {/* Only show text when not collapsed */}
-                    {!collapsed && (
-                        <span className="text-lg font-semibold text-gray-800">Leadstor</span>
-                    )}
-                </div>
-            </section>
+        <aside
+            className="
+                bg-white border-r
+                h-screen 
+                flex flex-col 
+                items-center
+                py-5
+                fixed
+                left-0 top-0
+            "
+            style={{ "--sidebar-width": "64px", width: "var(--sidebar-width)" }}
+        >
 
-            <section className="sidebar-content min-h-[20rem]">
-                <nav className="menu rounded-md">
-                    <section className="menu-section px-4">
-                        <ul className="menu-items gap-1 mb-4">
-                            
-                            <Link href="/leads" onClick={handleMenuItemClick}>
-                                <li className="menu-item poppins gap-3 text-base text-gray-600">
-                                    <i className="ri-megaphone-line text-xl pointer-events-none"></i>
-                                    {!collapsed && <span className='mt-0.5 pointer-events-none'>Leads</span>}
-                                </li>
-                            </Link>
-                            
-                            <Link href="/conversions" onClick={handleMenuItemClick}>
-                                <li className="menu-item poppins gap-3 text-base text-gray-600">
-                                    <i className="ri-seedling-fill text-xl pointer-events-none"></i>
-                                    {!collapsed && <span className='mt-0.5 pointer-events-none'>Conversions</span>}
-                                </li>
-                            </Link>
-                            <Link href="/dashboard" onClick={handleMenuItemClick}>
-                                <li className="menu-item poppins gap-3 text-base text-gray-600">
-                                    <i className="ri-apps-line text-xl pointer-events-none"></i>
-                                    {!collapsed && <span className='mt-0.5 pointer-events-none'>Dashboard</span>}
-                                </li>
-                            </Link>
+            {/* Logo */}
+            <div className="mb-6">
+                <Image
+                    src="/icons/leadstor.png"
+                    width={36}
+                    height={36}
+                    alt="Leadstor Icon"
+                />
+            </div>
 
-                            <li>
-                                <input type="checkbox" id="menu-integrations" className="menu-toggle" />
-                                <label className="menu-item justify-between" htmlFor="menu-integrations" onClick={handleMenuItemClick}>
-                                    <div className="flex poppins gap-3 text-base text-gray-600">
-                                        <i className="ri-box-2-line text-xl pointer-events-none"></i>
-                                        {!collapsed && <span className='mt-0.5 pointer-events-none'>Integrations</span>}
-                                    </div>
+            {/* Menu Icons */}
+            <nav className="flex flex-col gap-2 mt-4 w-full px-1">
+                <ul className="flex flex-col gap-2 w-full items-center">
 
-                                    {!collapsed && <span className="menu-icon ri-arrow-down-s-fill text-lg"></span>}
-                                </label>
+                    <Link href="/leads">
+                        <li className="menu-icon-item">
+                            <i className="ri-contacts-book-2-line text-2xl"></i>
+                            <span className="tooltip">Lead Management</span>
+                        </li>
+                    </Link>
 
-                                <div className="menu-item-collapse poppins text-base">
-                                    <div className="min-h-0">
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>SMS</label>
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Email</label>
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>IVR Services</label>
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Calendar &amp; Meets</label>
-                                        <Link href="/integration/facebook" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Facebook<span className="badge badge-xs badge-flat-secondary font-normal">Pages</span></Link>
-                                        <Link href="/integration/whatsapp" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>WhatsApp</Link>
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Payment Gateway</label>
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none dot-success"></span>Leadstor Form<span className="badge badge-xs badge-flat-success font-normal">New</span></label>
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Plugins<span className="badge badge-xs badge-flat-warning font-normal">Beta</span></label>
-                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Webhook <span className="badge badge-xs badge-flat-primary font-normal">Suggested</span></label>
-                                    </div>
-                                </div>
-                            </li>
+                    <Link href="/conversions">
+                        <li className="menu-icon-item">
+                            <i className="ri-wallet-3-line text-2xl"></i>
+                            <span className="tooltip">Payment Management</span>
+                        </li>
+                    </Link>
 
-                            <li>
-                                <input type="checkbox" id="menu-automation" className="menu-toggle" />
-                                <label className="menu-item justify-between" htmlFor="menu-automation" onClick={handleMenuItemClick}>
-                                    <div className="flex poppins gap-3 text-base text-gray-600">
-                                        <i className="ri-robot-3-line text-xl pointer-events-none"></i>
-                                        {!collapsed && <span className='mt-0.5 pointer-events-none'>Automation</span>}
-                                    </div>
+                    <Link href="/placements">
+                        <li className="menu-icon-item">
+                            <i className="ri-briefcase-line text-2xl"></i>
+                            <span className="tooltip">Placement Management</span>
+                        </li>
+                    </Link>
 
-                                    {!collapsed && <span className="menu-icon ri-arrow-down-s-fill text-lg"></span>}
-                                </label>
+                    <Link href="/batches">
+                        <li className="menu-icon-item">
+                            <i className="ri-group-line text-2xl"></i>
+                            <span className="tooltip">Batch Management</span>
+                        </li>
+                    </Link>
 
-                                {!collapsed && (
-                                <div className="menu-item-collapse poppins text-base">
-                                    <div className="min-h-0">
-                                        <label className="menu-item text-gray-600 ml-6">Triggers<span className="badge badge-xs badge-flat-success font-normal pointer-events-none">New</span></label>
-                                        <li>
-                                            <input type="checkbox" id="menu-templates" className="menu-toggle" />
-                                            <label className="menu-item justify-between" htmlFor="menu-templates" onClick={handleMenuItemClick}>
-                                                <div className="flex poppins gap-3 text-base text-gray-600">
-                                                    {!collapsed && <span className='mt-0.5 pointer-events-none'>Templates</span>}
-                                                </div>
+                    <Link href="/invoices">
+                        <li className="menu-icon-item">
+                            <i className="ri-file-list-3-line text-2xl"></i>
+                            <span className="tooltip">Invoices</span>
+                        </li>
+                    </Link>
 
-                                                {!collapsed && <span className="menu-icon ri-arrow-down-s-fill text-lg"></span>}
-                                            </label>
+                    <Link href="/branches">
+                        <li className="menu-icon-item">
+                            <i className="ri-node-tree text-2xl"></i>
+                            <span className="tooltip">Branch Management</span>
+                        </li>
+                    </Link>
 
-                                            <div className="menu-item-collapse poppins text-base">
-                                                <div className="min-h-0">
-                                                    <Link href="/templates/welcomeEmail" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Welcome Template</Link>
+                    <Link href="/expenses">
+                        <li className="menu-icon-item">
+                            <i className="ri-money-dollar-circle-line text-2xl"></i>
+                            <span className="tooltip">Expense Management</span>
+                        </li>
+                    </Link>
 
-                                                    <Link href="/templates/receiptTemplate" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
-                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Receipt Template</label>
-                                                    </Link>
-                                                    
-                                                    <Link href="/templates/certificateTemplate" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
-                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Certificate Template</label>
-                                                    </Link>
+                </ul>
+            </nav>
 
-                                                    <Link href="/templates/emailTemplateManager" onClick={handleMenuItemClick} className="menu-item text-gray-600 ml-6">
-                                                        <label className="menu-item text-gray-600 ml-6"><span className="dot pointer-events-none"></span>Email Template Manager</label>
-                                                    </Link>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    </div>
-                                </div>
-                                )}
-                            </li>
-                        </ul>
+            {/* 🔥 Hover Animations */}
+            <style jsx>{`
 
-                    </section>
-                </nav>
-            </section>
-            <section className="sidebar-footer">
-                <div className="divider my-0"></div>
-                <div className="flex h-fit w-full cursor-pointer -mt-2">
-                    <div className="mx-2 h-fit w-full cursor-pointer p-0">
-                        <div className="flex flex-row gap-4 p-3">
-                            <div className="avatar w-[38px] h-[38px] avatar-md mt-1">
-                                <Image
-                                    placeholder='empty'
-                                    src={data.corporate.logo}
-                                    width={36}
-                                    height={36}
-                                    alt="Company Logo"
-                                    priority={false}
-                                />
-                            </div>
-                            {!collapsed && (
-                            <div className="flex flex-col flex-auto">
-                                <span className='text-lg font-semibold'>{data.corporate.name}</span>
-                                <span className="text-sm -mt-0.5 font-normal text-content2">{data.corporate.country_code}</span>
-                            </div>
-                            )}
-                            {!collapsed && (
-                            <div className='flex justify-center items-center flex-none dropdown z-50'>
-                                <label tabIndex="0" className="ri-menu-3-line bg-gray-100 mt-1 rounded-full text-lg h-8 w-8 cursor-pointer flex justify-center items-center text-gray-600"></label>
-                                <div className="dropdown-menu-right-top dropdown-menu ml-2 mb-8 border poppins bg-white max-w-48">
-                                    <a className="dropdown-item text-sm text-gray-600">Manage Team</a>
-                                    <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Account settings</a>
-                                    <a tabIndex="-1" className="dropdown-item text-sm text-gray-600">Subscriptions</a>
-                                    <a href={data.corporate.website_link} target='_blank' className="dropdown-item text-sm text-gray-600">Visit Website</a>
-                                    <div className='w-full h-6 border-b'></div>
-                                    <a href='/about' target='_blank' className="dropdown-item text-sm text-gray-600">About Leadstor</a>
-                                </div>
-                            </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </section>
+            /* Sidebar Icon Button */
+            .menu-icon-item {
+                position: relative;
+                width: 42px;
+                height: 42px;
+                border-radius: 8px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+                color: #7E7E7E;
+                transition: background 0.2s ease, color 0.2s ease;
+            }
+
+            /* Hover — very subtle */
+            .menu-icon-item:hover {
+                background: #f4e8ef;      /* LIGHT PINK LIKE SCREENSHOT */
+                color: #560fe6ff;           /* Darker pink */
+            }
+
+            /* Active */
+            .menu-icon-item.__active {
+                background: #f4e8ef;
+                color: #7e46f0;
+            }
+
+            /* Tooltip — EXACT MATCH */
+            .tooltip {
+                position: absolute;
+                left: 50px;                      /* Closer distance */
+                top: 50%;
+                transform: translateY(-50%);
+                padding: 6px 12px;
+                background: #ffffff;
+                color: #333;
+                font-size: 13px;
+                border-radius: 6px;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+                white-space: nowrap;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease, transform 0.2s ease;
+            }
+
+            .menu-icon-item:hover .tooltip {
+                opacity: 1;
+                transform: translateY(-50%) translateX(4px);
+            }
+
+        `}</style>
+
+
         </aside>
-    )
+    );
 }

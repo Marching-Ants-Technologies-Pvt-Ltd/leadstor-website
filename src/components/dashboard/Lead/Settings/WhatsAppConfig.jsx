@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { Loader2, Link, Phone, Briefcase, Cloud, Send, ClipboardCopy } from "lucide-react";
 import {Corporate} from "@/utility/TinyDB";
 
-export default function WhatsappConfig({ corporateId }) {
+export default function WhatsappConfig() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -112,7 +112,7 @@ export default function WhatsappConfig({ corporateId }) {
         .catch((err) => {
             console.error(err);
             e.target.innerText = oldValue;
-            toast.error("Something went wrong!", "E");
+            toast.error("Something went wrong!");
         })
         .finally(() => {
             setSaving(false);
@@ -139,6 +139,7 @@ export default function WhatsappConfig({ corporateId }) {
             path: "/services/widget/testWpCloudAPI/",
             method: "POST",
             payload: fd,
+            isFormData: true
             });
 
             if (res.message_id) {
@@ -154,7 +155,6 @@ export default function WhatsappConfig({ corporateId }) {
         setTesting(false);
     }
 
-
     async function fetchLogs() {
         setViewLogs(true);
 
@@ -166,6 +166,7 @@ export default function WhatsappConfig({ corporateId }) {
             path: "/services/widget/logsWpCloudAPI/",
             method: "POST",
             payload: fd,
+            isFormData: true
             });
 
             if (res.status) {

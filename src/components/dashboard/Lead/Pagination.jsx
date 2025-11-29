@@ -177,28 +177,7 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                                                 </div>
                                             )}
                                         </div>
-                                        {/* Settings icon restored */}
-                                        {User?._id === -1 && (
-                                            <label
-                                                className="group ml-2 ri-settings-line text-lg relative top-0.5 cursor-pointer hover:bg-gray-100 rounded px-1 py-0.5"
-                                                tabIndex="0"
-                                                onClick={e => { e.stopPropagation(); setShowColumnReorderPopup(true); }}
-                                                title="Reorder or Rename Columns"
-                                            >
-                                                {/* Tooltip for settings icon - matches number box tooltip */}
-                                                <div
-                                                    className="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none"
-                                                    style={{ transform: 'translateX(-50%)' }}
-                                                >
-                                                    <div
-                                                        className="bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg font-normal poppins"
-                                                    >
-                                                        Reorder or Rename Columns
-                                                    </div>
-                                                    <div className="w-2 h-2 bg-black rotate-45 mx-auto -mt-1"></div>
-                                                </div>
-                                            </label>
-                                        )}
+    
                                         <ColumnReorderPopup
                                             isOpen={showColumnReorderPopup}
                                             setIsOpen={setShowColumnReorderPopup}
