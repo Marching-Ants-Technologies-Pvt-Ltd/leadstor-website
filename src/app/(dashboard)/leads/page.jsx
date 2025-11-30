@@ -6,6 +6,7 @@ import LeadsMenu from '@/components/dashboard/Lead/LeadMenu';
 import LeadsTablePagination from '@/components/dashboard/Lead/Pagination';
 import FilterDrawer from '@/components/dashboard/Lead/AdvanceFilter';
 import { xFetch } from '@/utility/xFetch';
+import AddLead from '@/components/dashboard/Lead/AddLead';
 
 export default function Leads() {
     const [columns, setColumns] = useState([]);
@@ -14,7 +15,7 @@ export default function Leads() {
     const [isDrawerOpen, setDrawerOpen] = useState(false);
     const [leads, setLeads] = useState([]);
     const [selectedLeadIds, setSelectedLeadIds] = useState([]);
-    
+
     // Download notification state
     const [downloadNotification, setDownloadNotification] = useState({
         hasActiveDownload: false,
@@ -25,6 +26,9 @@ export default function Leads() {
 
     // Store reference to the cancel function from ExportEnquiriesModal
     const [cancelExportFunction, setCancelExportFunction] = useState(null);
+
+    // ⭐ NEW STATE: WILL CONTROL ADD LEAD PANEL
+    const [openAddLead, setOpenAddLead] = useState(false);
 
     // Fetch and apply custom column names and order
     const fetchAndSetColumns = async () => {
@@ -39,7 +43,7 @@ export default function Leads() {
         }
     };
 
-    // Get filter params and columns - but don't block UI rendering
+    // Initial Load
     useEffect(() => {
         xFetch({
             path: '/services/profile/getUsers',
@@ -53,8 +57,8 @@ export default function Leads() {
         })
         .catch(error => {
             console.error(`An error occurred while fetching leads`, error);
-            // Don't show toast error on initial load, let components handle their own loading states
         });
+
         const filters = JSON.parse(localStorage.getItem('LeadFilters') || '[]');
         const needsCleanup = filters.some(f => typeof f.value === 'object');
         if (needsCleanup) {
@@ -62,21 +66,18 @@ export default function Leads() {
         }
     }, []);
 
-    // Handler for reordering columns (optimistic update)
+    // Handler for reordering columns
     const handleReorder = (newOrder) => {
-        setColumnOrder(newOrder); // Optimistically update UI
-        if (typeof fetchAndSetColumns === 'function') {
-            fetchAndSetColumns();
-        }
+        setColumnOrder(newOrder);
+        fetchAndSetColumns();
     };
 
-    // Handler for applying filters from the drawer
+    // APPLY FILTER FROM DRAWER
     const handleApplyFilters = (filters) => {
-        // TODO: Use filters in your leads table logic
         setDrawerOpen(false);
     };
 
-    // Download notification handlers
+    // DOWNLOAD EVENTS
     const handleDownloadStart = (message) => {
         setDownloadNotification({
             hasActiveDownload: true,
@@ -89,7 +90,7 @@ export default function Leads() {
     const handleDownloadProgress = (progress, processed, total) => {
         setDownloadNotification(prev => ({
             ...prev,
-            progress: progress,
+            progress,
             message: `Processing ${processed?.toLocaleString()} of ${total?.toLocaleString()} records...`
         }));
     };
@@ -104,11 +105,9 @@ export default function Leads() {
     };
 
     const handleDownloadCancel = () => {
-        // Call the actual cancel function from ExportEnquiriesModal if available
         if (cancelExportFunction) {
             cancelExportFunction();
         } else {
-            // Fallback: just reset the notification state
             setDownloadNotification({
                 hasActiveDownload: false,
                 progress: 0,
@@ -127,31 +126,65 @@ export default function Leads() {
 
     return (
         <div className="w-full h-full bg-white rounded-md shadow-md flex flex-col">
-            <LeadsMenu 
-                onOpenAdvanceFilter={() => setDrawerOpen(true)} 
-                leads={leads} 
-                selectedLeadIds={selectedLeadIds} 
+
+            {/* TOP MENU */}
+            <LeadsMenu
+                onOpenAdvanceFilter={() => setDrawerOpen(true)}
+                leads={leads}
+                selectedLeadIds={selectedLeadIds}
                 setSelectedLeadIds={setSelectedLeadIds}
                 onDownloadStart={handleDownloadStart}
                 onDownloadProgress={handleDownloadProgress}
                 onDownloadEnd={handleDownloadEnd}
                 onDownloadCancel={handleDownloadCancel}
                 setCancelExportFunction={setCancelExportFunction}
+                setOpenAddLead={setOpenAddLead}
             />
-            <LeadsTable columns={columns} setColumns={setColumns} columnOrder={columnOrder} setColumnOrder={setColumnOrder} leads={leads} setLeads={setLeads} selectedLeadIds={selectedLeadIds} setSelectedLeadIds={setSelectedLeadIds} />
-            <LeadsTablePagination
-                columns={columns}
-                setColumns={setColumns}
-                columnOrder={columnOrder}
-                setColumnOrder={handleReorder}
-                fetchAndSetColumns={fetchAndSetColumns}
-                showPerPageDropdown={showPerPageDropdown}
-                setShowPerPageDropdown={setShowPerPageDropdown}
-                downloadNotification={downloadNotification}
-                toggleDownloadCard={toggleDownloadCard}
-                onDownloadCancel={handleDownloadCancel}
+
+            {/* ⭐ CONDITIONAL RENDERING */}
+            {openAddLead ? (
+                
+                // SHOW ADD LEAD INLINE REPLACING TABLE
+                <AddLead
+                    onClose={() => setOpenAddLead(false)}
+                />
+
+            ) : (
+                <>
+                    {/* NORMAL LEADS TABLE */}
+                    <LeadsTable
+                        columns={columns}
+                        setColumns={setColumns}
+                        columnOrder={columnOrder}
+                        setColumnOrder={setColumnOrder}
+                        leads={leads}
+                        setLeads={setLeads}
+                        selectedLeadIds={selectedLeadIds}
+                        setSelectedLeadIds={setSelectedLeadIds}
+                    />
+
+                    {/* PAGINATION */}
+                    <LeadsTablePagination
+                        columns={columns}
+                        setColumns={setColumns}
+                        columnOrder={columnOrder}
+                        setColumnOrder={handleReorder}
+                        fetchAndSetColumns={fetchAndSetColumns}
+                        showPerPageDropdown={showPerPageDropdown}
+                        setShowPerPageDropdown={setShowPerPageDropdown}
+                        downloadNotification={downloadNotification}
+                        toggleDownloadCard={toggleDownloadCard}
+                        onDownloadCancel={handleDownloadCancel}
+                    />
+                </>
+            )}
+
+            {/* ADVANCE FILTER */}
+            <FilterDrawer
+                isOpen={isDrawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                onApplyFilters={handleApplyFilters}
             />
-            <FilterDrawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)} onApplyFilters={handleApplyFilters} />
         </div>
     );
 }

@@ -8,6 +8,7 @@ import { LeadFilters, LeadsCurrentPage, User, Corporate, TotalLeads } from '@/ut
 import SearchBox from '@/components/elements/SearchBox';
 import ImportEnquiryDropBox from '@/components/dashboard/Lead/ImportEnquiry.jsx';
 import ManualCandidate from '@/components/dashboard/Lead/ManualCandidate.jsx';
+import AddLead from '@/components/dashboard/Lead/AddLead.jsx';
 import ColumnReorderPopup from '@/components/dashboard/Lead/ColumnReorderPopup.jsx';
 //import SendSmsModal from './SendSmsModal.jsx';
 import SendEmailModal from '@/components/dashboard/Lead/SendEmailModal.jsx';
@@ -16,7 +17,7 @@ import DailyReportModal from '@/components/dashboard/Lead/DailyReportModal.jsx';
 import ExportEnquiriesModal from '@/components/dashboard/Lead/ExportEnquiriesModal.jsx';
 import LeadsTable from '@/components/dashboard/Lead/LeadTable.jsx';
 
-export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLeadIds = [], setSelectedLeadIds, onDownloadStart, onDownloadProgress, onDownloadEnd, onDownloadCancel, setCancelExportFunction}) {
+export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLeadIds = [], setSelectedLeadIds, onDownloadStart, onDownloadProgress, onDownloadEnd, onDownloadCancel, setCancelExportFunction,setOpenAddLead}) {
 
     const [showImport, setShowImport] = React.useState(false);
     const [showManual, setShowManual] = React.useState(false);
@@ -127,6 +128,9 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
         }
     }, [Corporate?._id]);
 
+    const handleAddLead = () => {
+        setOpenAddLead(true);
+    };
     // Add ref for actions dropdown and esc/click-away close
     const actionsBtnRef = useRef();
     const actionsDropdownRef = useRef();
@@ -261,7 +265,7 @@ export default function LeadsMenu({ onOpenAdvanceFilter, leads = [], selectedLea
                     <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer'>
                         <i className="ri-user-add-line text-xl"></i>
                         <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={openManual}>
+                            <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={handleAddLead}>
                                 <i className="ri-text-block text-lg mt-1"></i>
                                 <span className='text-sm'>Add Manually</span>
                             </a>
