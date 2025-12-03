@@ -125,22 +125,12 @@ export default function Leads() {
     };
 
     return (
-        <div className="w-full h-full bg-white rounded-md shadow-md flex flex-col">
-
-            {/* TOP MENU */}
-            <LeadsMenu
-                onOpenAdvanceFilter={() => setDrawerOpen(true)}
-                leads={leads}
-                selectedLeadIds={selectedLeadIds}
-                setSelectedLeadIds={setSelectedLeadIds}
-                onDownloadStart={handleDownloadStart}
-                onDownloadProgress={handleDownloadProgress}
-                onDownloadEnd={handleDownloadEnd}
-                onDownloadCancel={handleDownloadCancel}
-                setCancelExportFunction={setCancelExportFunction}
-                setOpenAddLead={setOpenAddLead}
-            />
-
+        <div className="w-full bg-white rounded-md shadow-md flex flex-col"
+            style={{
+                height: "calc(100vh - var(--header-height))",
+                overflow: "hidden",
+            }}
+        >
             {/* ⭐ CONDITIONAL RENDERING */}
             {openAddLead ? (
                 
@@ -151,6 +141,21 @@ export default function Leads() {
 
             ) : (
                 <>
+                <div className="bg-white py-2 pt-1 rounded-b-xl shadow-sm">
+                    {/* TOP MENU */}
+                    <LeadsMenu
+                        onOpenAdvanceFilter={() => setDrawerOpen(true)}
+                        leads={leads}
+                        selectedLeadIds={selectedLeadIds}
+                        setSelectedLeadIds={setSelectedLeadIds}
+                        onDownloadStart={handleDownloadStart}
+                        onDownloadProgress={handleDownloadProgress}
+                        onDownloadEnd={handleDownloadEnd}
+                        onDownloadCancel={handleDownloadCancel}
+                        setCancelExportFunction={setCancelExportFunction}
+                        setOpenAddLead={setOpenAddLead}
+                    />
+                </div>
                     {/* NORMAL LEADS TABLE */}
                     <LeadsTable
                         columns={columns}
@@ -176,15 +181,15 @@ export default function Leads() {
                         toggleDownloadCard={toggleDownloadCard}
                         onDownloadCancel={handleDownloadCancel}
                     />
+
+                    {/* ADVANCE FILTER */}
+                    <FilterDrawer
+                        isOpen={isDrawerOpen}
+                        onClose={() => setDrawerOpen(false)}
+                        onApplyFilters={handleApplyFilters}
+                    />
                 </>
             )}
-
-            {/* ADVANCE FILTER */}
-            <FilterDrawer
-                isOpen={isDrawerOpen}
-                onClose={() => setDrawerOpen(false)}
-                onApplyFilters={handleApplyFilters}
-            />
         </div>
     );
 }

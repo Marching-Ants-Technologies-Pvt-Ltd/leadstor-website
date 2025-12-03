@@ -1,171 +1,158 @@
 'use client';
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function Navbar({ data }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
 
-    const goToLegacyDashboard = () => {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor/dashboard`;
-
-        const tokenInput = document.createElement('input');
-        tokenInput.type = 'hidden';
-        tokenInput.name = 'token';
-        tokenInput.value = localStorage.getItem('access_token') ?? '';
-
-        form.appendChild(tokenInput);
-        document.body.appendChild(form);
-        form.submit();
-        form.remove();
+  useEffect(() => {
+    function onDoc(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+      }
     }
+    document.addEventListener('click', onDoc);
+    return () => document.removeEventListener('click', onDoc);
+  }, []);
 
-    return (
-        <div className="flex items-center gap-4">
+  const goToLegacyDashboard = () => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor/dashboard`;
 
-            {/* Right Controls */}
-            <div className="flex items-center gap-4">
+    const tokenInput = document.createElement('input');
+    tokenInput.type = 'hidden';
+    tokenInput.name = 'token';
+    tokenInput.value = localStorage.getItem('access_token') ?? '';
 
-                {/* Legacy Dashboard */}
-                <div
-                    className="icon-btn tooltip"
-                    data-tooltip="Old Dashboard"
-                    onClick={goToLegacyDashboard}
-                >
-                    <i className="ri-computer-line"></i>
+    form.appendChild(tokenInput);
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
+  };
+
+  return (
+    <div className="flex items-center gap-4" ref={menuRef}>
+
+      {/* icon buttons */}
+      <div className="flex items-center gap-3">
+        <button onClick={goToLegacyDashboard} className="nav-icon" title="Old Dashboard">
+          <i className="ri-computer-line"></i>
+        </button>
+
+        <button className="nav-icon" title="Support">
+          <i className="ri-customer-service-2-line"></i>
+        </button>
+
+        <button className="nav-icon" title="Notifications">
+          <i className="ri-notification-2-line"></i>
+        </button>
+      </div>
+
+      {/* user area */}
+      <div className="relative">
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center gap-3 px-2 py-1 rounded hover:bg-gray-50"
+          aria-haspopup="true"
+          aria-expanded={open}
+        >
+          <div className="hidden md:block text-right leading-tight">
+            <div className="text-sm font-medium text-gray-700">{data.user.name}</div>
+            <div className="text-xs text-gray-400">{data.user.role}</div>
+          </div>
+
+          <Image src={data.user.image} alt="avatar" width={28} height={28} className="rounded-full" />
+          <i className="ri-arrow-down-s-line text-gray-400"></i>
+        </button>
+
+        {open && (
+            <div
+                className="dropdown-panel"
+                role="menu"
+            >
+                <Link href="/businessProfile">
+                <div className="dropdown-row">
+                    <i className="ri-user-3-line text-blue-500 text-lg"></i>
+                    <span>Profile</span>
                 </div>
+                </Link>
 
-                {/* Support */}
-                <div className="icon-btn tooltip" data-tooltip="Support">
-                    <i className="ri-customer-service-2-fill"></i>
+                <Link href="/teams">
+                <div className="dropdown-row">
+                    <i className="ri-team-line text-emerald-500 text-lg"></i>
+                    <span>Teams</span>
                 </div>
+                </Link>
 
-                {/* Notifications */}
-                <div className="icon-btn tooltip" data-tooltip="Notifications">
-                    <i className="ri-notification-line"></i>
+                <div className="dropdown-divider" />
+
+                <Link href="/signout">
+                <div className="dropdown-row">
+                    <i className="ri-logout-box-r-line text-rose-500 text-lg"></i>
+                    <span>Sign out</span>
                 </div>
-
-                {/* User Dropdown */}
-                <div className="relative dropdown">
-                    <label tabIndex="0" className="flex items-center gap-2 cursor-pointer">
-                        <div className="text-right leading-tight hidden md:block">
-                            <h3 className="text-sm font-medium">{data.user.name}</h3>
-                            <p className="text-[11px] text-gray-500">{data.user.role}</p>
-                        </div>
-
-                        <Image
-                            className="rounded-md pointer-events-none"
-                            src={data.user.image}
-                            width={34}
-                            height={34}
-                            alt="User Avatar"
-                        />
-
-                        <i className="ri-arrow-down-s-fill text-lg pointer-events-none"></i>
-                    </label>
-
-                    {/* Dropdown Menu */}
-                    <div className="
-                        dropdown-menu 
-                        absolute right-0 top-[115%] 
-                        bg-white/95 backdrop-blur 
-                        border shadow-xl 
-                        rounded-xl p-3
-                        flex flex-col gap-2 
-                        w-12
-                    ">
-                        {/* Profile */}
-                        <Link href="/businessProfile">
-                            <div className="dropdown-icon">
-                                <i className="ri-user-3-line text-blue-500"></i>
-                                <span className="dropdown-tooltip">Profile</span>
-                            </div>
-                        </Link>
-
-                        {/* Team */}
-                        <Link href="/teams">
-                            <div className="dropdown-icon">
-                                <i className="ri-team-line text-teal-500"></i>
-                                <span className="dropdown-tooltip">Teams</span>
-                            </div>
-                        </Link>
-
-                        <div className="h-px bg-gray-200 w-8 mx-auto"></div>
-
-                        {/* Signout */}
-                        <div className="dropdown-icon">
-                            <i className="ri-logout-box-r-line text-rose-500"></i>
-                            <span className="dropdown-tooltip">Sign Out</span>
-                        </div>
-                    </div>
-                </div>
+                </Link>
             </div>
+        )}
 
-            {/* Styles */}
-            <style jsx>{`
-                .icon-btn {
-                    width: 34px;
-                    height: 34px;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    border-radius: 10px;
-                    cursor: pointer;
-                    color: #4b5563;
-                    transition: 0.2s ease;
-                    position: relative;
-                }
-                .icon-btn:hover {
-                    background: #e8f3ff;
-                    color: #2563eb;
-                }
+      </div>
 
-                /* Tooltip */
-                .icon-btn .tooltip-text,
-                .dropdown-tooltip {
-                    position: absolute;
-                    white-space: nowrap;
-                    background: #111827;
-                    color: white;
-                    font-size: 11px;
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                    opacity: 0;
-                    transform: translateX(-10px);
-                    pointer-events: none;
-                    transition: all .18s ease;
-                }
-                .icon-btn:hover .tooltip-text {
-                    opacity: 1;
-                    transform: translateX(0);
-                }
+      <style jsx>{`
+        .nav-icon {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            color: #4b5563;
+            transition: 0.15s ease;
+        }
+        .nav-icon:hover {
+            background: #eef6ff;
+            color: #2563eb;
+        }
 
-                /* Dropdown Items */
-                .dropdown-icon {
-                    position: relative;
-                    width: 100%;
-                    display: flex;
-                    justify-content: center;
-                    padding: 6px 0;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: 0.2s ease;
-                }
-                .dropdown-icon:hover {
-                    background: #f1f5f9;
-                }
+        /* Dropdown Container */
+        .dropdown-panel {
+            position: absolute;
+            right: 0;
+            margin-top: 8px;
+            width: 160px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            padding: 6px 0;
+            z-index: 50;
+        }
 
-                .dropdown-tooltip {
-                    right: 110%;
-                    top: 50%;
-                    transform: translateY(-50%) translateX(-8px);
-                }
-                .dropdown-icon:hover .dropdown-tooltip {
-                    opacity: 1;
-                    transform: translateY(-50%) translateX(0);
-                }
-            `}</style>
-        </div>
-    );
+        /* Dropdown Item */
+        .dropdown-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            font-size: 14px;
+            color: #374151;
+            cursor: pointer;
+            transition: 0.15s ease;
+        }
+
+        .dropdown-row:hover {
+            background: #f8fafc;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 4px 0;
+        }
+        `}</style>
+
+    </div>
+  );
 }

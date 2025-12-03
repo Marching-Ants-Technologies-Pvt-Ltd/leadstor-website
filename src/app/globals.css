@@ -14,10 +14,10 @@ html, body {
   font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
 
 }
-
+/* 
 html {
-  zoom: 0.8; /* 90% size */
-}
+  zoom: 0.8;
+} */
 :root {
     --sidebar-width: 80px;   /* FIXED WIDTH */
 }

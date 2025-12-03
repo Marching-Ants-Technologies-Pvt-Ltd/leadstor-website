@@ -67,10 +67,10 @@ export default function Profile() {
 
             }
 
-            if (result.page === 'DASHBOARD') {
-                localStorage.setItem('ninja_dashboard_link', result.page_url);
-                setLoadingText('Taking You to Lead Dashboard, Please Wait...');
-                router.push('/dashboard');
+            if (result.page === 'LEAD') {
+                localStorage.setItem('ninja_lead_link', result.page_url);
+                setLoadingText('Taking You to Lead Management Page, Please Wait...');
+                router.push('/leads');
             }
 
             if (result.page === 'DASHBOARD-OLD') {

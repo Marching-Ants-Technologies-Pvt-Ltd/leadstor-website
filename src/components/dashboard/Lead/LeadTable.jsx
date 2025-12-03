@@ -166,87 +166,6 @@ const AudioPlayer = ({ src, remarkText }) => {
     );
 }
 
-const formatters = {
-    // -----------------------------------------
-    // 1️⃣ REMARKS FORMATTER (supports old logic)
-    // -----------------------------------------
-    remarksFormatter: (value, row) => {
-        if (!value) return "-";
-
-        // prepend date
-        if (row.latestRemarksDate) {
-            value = `${row.latestRemarksDate}: ${value}`;
-        }
-
-        // Extract audio (old logic)
-        const parts = value.split("<audio");
-        let text = parts[0];
-        let audio = parts.length > 1 ? `<audio ${parts[1]}` : "";
-
-        // If >120 chars, trim (old logic)
-        if (text.length > 120) {
-            text =
-                text.substring(0, 120) +
-                ` <span style="cursor:pointer;color:blue;" onclick="viewExpended(event)">...(view)</span>`;
-        }
-
-        // append additional info (old PHP)
-        if (row.additionalInfo && row.additionalInfo.length > 0) {
-            text += `<br/><font color="green"><i class="ri-user-fill"></i> - ${row.additionalInfo}</font>`;
-        }
-
-        if (!text) return "-";
-
-        return (
-            <span
-                dangerouslySetInnerHTML={{
-                    __html: text + audio,
-                }}
-            />
-        );
-    },
-
-    // 2️⃣ STATUS TIMELINE FORMATTER
-    statusTimeline: (value, row) => {
-        let followup = row.followupDate || "Specify Followup Date";
-        let trainer = row.trainerName ? ` Trainer: ${row.trainerName}` : "";
-
-        if (row.isFollowupType === 1) {
-            return `${value} [${followup}]${trainer}`;
-        }
-        return `${value}${trainer}`;
-    },
-
-    // 3️⃣ APPEARED
-    appearedFormatter: (value) => (value == 1 ? "Yes" : "No"),
-
-    // 4️⃣ TEST LINK
-    testLinkFormatter: (value) => (
-        <a href={value} target="_blank" className="text-blue-600 underline">
-            {value}
-        </a>
-    ),
-
-    // 5️⃣ LEAD PROBABILITY
-    leadProbabilityFormatter: (value) => {
-        if (value == 20) return "Low";
-        if (value == 55) return "Medium";
-        if (value == 85) return "High";
-        return "-";
-    },
-
-    // 6️⃣ BLANK
-    blankFormatter: (value) => value,
-
-    // 7️⃣ COURSE
-    courserFormatter: (v) => v,
-
-    // 8️⃣ NAME | First + Last
-    nameFormatter: (value, row) =>
-        `${row.firstName || ""} ${row.lastName || ""}`.trim(),
-};
-
-
 export default function LeadsTable({ columns, setColumns, columnOrder, setColumnOrder, leads, setLeads, selectedLeadIds, setSelectedLeadIds }) {
     setLeadsFn = setLeads;
 
@@ -339,67 +258,154 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
         return `${m}:${s.toString().padStart(2, '0')}`;
     }
 
-    // Custom formatter for remarks with audio
+    const renderNameCell = (row) => {
+        return (
+            <div className="flex items-center gap-2">
+                
+                {/* 3-dot menu icon */}
+                <i
+                    className="ri-more-2-fill text-gray-500 cursor-pointer hover:text-gray-700 text-[15px]"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        ShowContentMenu({ event: e, onClick: contextMenuCallback });
+                    }}
+                ></i>
+
+                {/* Name text */}
+                <span className="text-[14px] font-medium text-gray-800">
+                    {row.firstName}
+                </span>
+
+                {/* EDIT pen icon */}
+                <i
+                    className="ri-pencil-fill text-blue-500 cursor-pointer hover:text-blue-600 text-[14px]"
+                    title="Edit Lead"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCandidate(row);
+                        setShowUpdatePopup(true);
+                    }}
+                ></i>
+            </div>
+        );
+    };
+
+    // Custom formatter for remarks with audio + expand logic like PHP
     const renderRemarkCell = (row) => {
         let content = row.remarks || "";
         let audioLink = "";
 
+        // ---------------------------
+        // Extract audio (same as PHP)
+        // ---------------------------
         if (content.includes("<audio")) {
             const match = content.match(/src="([^"]+)"/);
             audioLink = match?.[1] || "";
             content = content.split("<audio")[0];
         }
 
-        // Sanitize
+        // ---------------------------
+        // Sanitize text
+        // ---------------------------
         const div = document.createElement("div");
         div.innerText = content;
         let safeText = div.innerHTML;
 
+        // ---------------------------
+        // Prepend latestRemarksDate
+        // ---------------------------
         if (row.latestRemarksDate) {
             safeText = `${row.latestRemarksDate}: ${safeText}`;
         }
 
-        if (row.additionalInfo) {
-            safeText += `
+        // ---------------------------
+        // Expand / Collapse Logic
+        // ---------------------------
+        let finalText = "";
+
+        if (safeText.length > 120) {
+            const shortText = safeText.substring(0, 120);
+
+            finalText = `
+                <div style="min-width:155px;">
+                    <div>
+                        ${shortText}
+                        <span style="cursor:pointer;color:#1976d2;" 
+                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
+                                    this.parentElement.style.display='none';">
+                            ...(view)
+                        </span>
+                    </div>
+
+                    <div class="full-text" style="display:none;">
+                        ${safeText}
+                        <span style="cursor:pointer;color:red;margin-left:6px;"
+                            onclick="this.parentElement.style.display='none';
+                                    this.parentElement.parentElement.querySelector('div').style.display='block';">
+                            (hide)
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            finalText = safeText;
+        }
+
+        // ---------------------------
+        // Append additionalInfo (PHP logic)
+        // ---------------------------
+        if (row.additionalInfo?.length > 0) {
+            finalText += `
                 <br/>
-                <span style="color: green;">
+                <span style="color:green;">
                     <i class="ri-user-fill"></i> ${row.additionalInfo}
                 </span>
             `;
         }
 
-        // **NEW WRAP SETTINGS**
+        // ---------------------------
+        // When everything is empty
+        // ---------------------------
+        if (!finalText || finalText === "null") {
+            return "-";
+        }
+
+        // ---------------------------
+        // Return JSX version (same structure as your original code)
+        // ---------------------------
         const textStyles = {
             whiteSpace: "normal",
             wordBreak: "normal",
             overflowWrap: "break-word",
-            maxWidth: "480px",   // wider column
+            maxWidth: "480px",
             lineHeight: "20px",
         };
 
-        // With audio
         if (audioLink) {
             return (
                 <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <AudioPlayer src={audioLink} remarkText={safeText} />
+                    <audio controls style={{ width: "140px" }}>
+                        <source src={audioLink} />
+                    </audio>
+
                     <span
                         style={textStyles}
-                        dangerouslySetInnerHTML={{ __html: safeText }}
+                        dangerouslySetInnerHTML={{ __html: finalText }}
                     />
                 </div>
             );
         }
 
-        // Without audio
         return (
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                 <span
                     style={textStyles}
-                    dangerouslySetInnerHTML={{ __html: safeText }}
+                    dangerouslySetInnerHTML={{ __html: finalText }}
                 />
             </div>
         );
     };
+
 
     const renderStatusTimelineCell = (row, handleShowTimeline) => {
         const value = row.status || "-";
@@ -412,20 +418,18 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                 : `${value}${trainer}`;
 
         return (
-            <div className="flex items-start gap-2">
-                {/* WRAPPED TEXT */}
-                <span className="whitespace-normal break-words text-left max-w-[180px]">
+            <div className="flex items-end gap-1">
+                <span className="whitespace-normal break-words text-left max-w-[100px] ">
                     {text}
+                    <button
+                        onClick={() => handleShowTimeline(row)}
+                        className="inline-flex items-center align-baseline ml-1 text-blue-500 hover:text-blue-700 focus:outline-none"
+                        title="View Timeline"
+                        style={{ padding: 0 }}
+                    >
+                        <i className="ri-history-line text-[15px] leading-none"></i>
+                    </button>
                 </span>
-
-                {/* TIMELINE BUTTON */}
-                <button
-                    onClick={() => handleShowTimeline(row)}
-                    className="text-blue-500 hover:text-blue-700 focus:outline-none"
-                    title="View Timeline"
-                >
-                    <i className="ri-history-line"></i>
-                </button>
             </div>
         );
     };
@@ -477,12 +481,6 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
         setSelectedLead(selectedLead);
     };
 
-    const handelRowContext = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        ShowContentMenu({ event, onClick: contextMenuCallback });
-    }
-
     // Handler for row checkbox
     const handleRowCheckbox = (invitationId, checked) => {
         if (checked) {
@@ -528,7 +526,7 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
 
     return (
         <>
-        <div className='table-container'>
+        <div className="table-container" style={{ width: "100%",overflow: "auto", }} >
             <ContextMenu items={contextMenuItems} />
             <AppliedFilters />
             <table className="leadstor-table">
@@ -560,7 +558,6 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                     {leads.map((row, j) => (
                         <tr
                         key={`lead-count-${j}`}
-                        onContextMenu={handelRowContext}
                         onClick={handelRowClick}
                         id={`lead-${row.invitationId}`}
                         >
@@ -571,13 +568,13 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                                 checked={selectedLeadIds.includes(row.invitationId)}
                                 onChange={e => handleRowCheckbox(row.invitationId, e.target.checked)}
                             />
-                            <i className="ri-more-2-fill"></i>
                             </div>
                         </td>
 
                         {columnOrder.map((col, k) => (
                             <td key={`lead-clm-${k}`} data-column={col}>
                             {(() => {
+                                if (col === "firstName") return renderNameCell(row);
                                 if (col === "remarks") return renderRemarkCell(row);
 
                                 // Status → always use React component with handleShowTimeline
@@ -599,7 +596,6 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                         </tr>
                     ))}
                 </tbody>
-
             </table>
         </div>
             {showUpdatePopup && (
@@ -627,6 +623,62 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                     onClose={() => setShowTimeline(false)}
                 />
             )}
+            <style jsx>{`
+                /* Classic Leadstor Table */
+
+                .table-container {
+                    width: 100%;
+                    max-height: calc(100vh - 145px);
+                    overflow: auto;
+                    background: #ffffff;
+                    text-color: #374151;
+                }
+
+                /* Dark header like old UI */
+                .leadstor-table thead th {
+                    background: #f1bbeaff;
+                    padding: 6px 10px !important;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #475569;
+                    border-bottom: 1px solid #e2e8f0;
+                    white-space: nowrap;
+                }
+
+                /* Dense row height */
+                .leadstor-table tbody td {
+                    padding: 5px 8px !important;
+                    font-size: 13px;
+                    border-bottom: 1px solid #e2e8f0;
+                    border-right: 1px solid #f1f5f9;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                    color: #000000 !important;  /* near-black, perfect readability */
+                }
+
+                /* Remove row hover highlight */
+                .leadstor-table tbody tr:hover {
+                    background: #f8fafc;
+                }
+
+                /* Compact column widths */
+                .leadstor-table td[data-column="email"] {
+                    max-width: 180px;
+                }
+                .leadstor-table td[data-column="remarks"] {
+                    max-width: 260px;
+                    color: #111827 !important;
+                }
+                .leadstor-table td[data-column="status"] {
+                    width: 150px;
+                    color: #111827 !important;
+                }
+                .leadstor-table td[data-column="mobile"] {
+                    width: 100px;
+                }
+
+            `}</style>
         </>
     );
 }

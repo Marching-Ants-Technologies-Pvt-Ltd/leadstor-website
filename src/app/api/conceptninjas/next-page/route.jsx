@@ -18,7 +18,7 @@ export async function POST(req) {
         const response = await fetch(`${process.env.CONCEPTNINJAS_URL}/nextPage`, requestOptions);
         const result = await response.json();
 
-        if (result.page && result.page === 'DASHBOARD') result.page_url = `${process.env.CONCEPTNINJAS_URL}/dashboard`;
+        if (result.page && result.page === 'LEAD') result.page_url = `${process.env.CONCEPTNINJAS_URL}/leads`;
 
         return NextResponse.json(result, { status: response.status });
 
