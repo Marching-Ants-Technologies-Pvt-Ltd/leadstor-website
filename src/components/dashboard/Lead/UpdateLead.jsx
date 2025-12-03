@@ -241,10 +241,9 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           {/* PAGE HEADER */}
           <div
             className="px-6 py-4 flex justify-between items-center"
-            style={{ backgroundColor: "#EA4C89", color: "white" }}
+            style={{ backgroundColor: "#f0a2e5ff", color: "#475569" }}
           >
-            <h2 className="text-2xl font-semibold flex items-center gap-2">
-  
+            <h2 className="text-xl font-semibold flex items-center gap-2">
               Update Lead
             </h2>
             <button
@@ -401,43 +400,41 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         .label-pink { 
           display:block; 
           margin-bottom:4px; 
-          font-weight:600; 
-          color:#EA4C89;
+          color: #da1dc0ff;
         }
         .input-pink {
           width:100%;
           padding:8px 10px;
-          border:1px solid #F9C2DD;
+          border:1px solid #f1bbeaff;
           border-radius:8px;
           outline:none;
           transition:0.2s;
         }
         .input-pink:focus {
-          border-color:#EA4C89;
-          box-shadow:0 0 0 2px #F9C2DD;
+          border-color: #f1bbeaff;
+          box-shadow:0 0 0 2px #f1bbeaff;
         }
 
         .btn-primary-pink {
-          background:#EA4C89;
-          color:white;
+          background: #f87fe8ff;
+          color: #000000;
           padding:8px 18px;
           border-radius:8px;
-          font-weight:600;
           transition:0.2s;
         }
         .btn-primary-pink:hover {
-          background:#d53f77;
+          background: #f163deff;
         }
         .btn-secondary-pink {
           background:white;
-          border:1px solid #EA4C89;
-          color:#EA4C89;
+          border:1px solid #f1bbeaff;
+          color: #475569;
           padding:8px 18px;
           border-radius:8px;
           transition:0.2s;
         }
         .btn-secondary-pink:hover {
-          background:#ffe0ef;
+          background: #f1bbeaff;
         }
       `}</style>
     </>

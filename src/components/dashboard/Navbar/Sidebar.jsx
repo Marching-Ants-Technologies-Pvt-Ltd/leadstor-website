@@ -116,14 +116,14 @@ export default function Sidebar() {
 
         /* Hover – pastel theme */
         .menu-icon-item:hover {
-          background: rgba(241, 187, 234, 0.22);
-          color: #b14aa0;
+          background: #f1bbeaff;
+          color: #475569;
         }
 
         /* Active */
         .menu-icon-item.__active {
-          background: rgba(241, 187, 234, 0.35);
-          color: #b14aa0;
+          background: #f1bbeaff;
+          color: #475569!important;
           font-weight: 600;
         }
 

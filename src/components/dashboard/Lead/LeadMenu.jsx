@@ -241,7 +241,7 @@ export default function LeadsMenu({
                 <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
                     <a onClick={handelFollowUpFilters} className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
                         <i className="ri-user-follow-line text-lg mt-1"></i>
-                        <span className='text-sm'>Followups</span>
+                        <span className='text-sm'>Pending Followup</span>
                     </a>
                     <a onClick={handelBookmarks} className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
                         <i className="ri-bookmark-line text-lg mt-1"></i>
