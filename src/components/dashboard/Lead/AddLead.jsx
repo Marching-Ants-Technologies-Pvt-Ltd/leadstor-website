@@ -579,7 +579,6 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         const chunk = chunks[idx];
         totalSent += chunk.length;
         const toDefer = totalSent > 600;
-        console.log(contact);
         const formData = new FormData();
         chunk.forEach((contact, i) => {
           contact.forEach((val, j) => {
