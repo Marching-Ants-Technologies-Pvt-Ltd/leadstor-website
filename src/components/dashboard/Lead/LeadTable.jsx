@@ -271,14 +271,9 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                     }}
                 ></i>
 
-                {/* Name text */}
-                <span className="text-[14px] font-medium text-gray-800">
-                    {row.firstName}
-                </span>
-
                 {/* EDIT pen icon */}
                 <i
-                    className="ri-pencil-fill text-blue-500 cursor-pointer hover:text-blue-600 text-[14px]"
+                    className="ri-pencil-fill cursor-pointer hover:text-pink-600 text-[14px] default-clr"
                     title="Edit Lead"
                     onClick={(e) => {
                         e.stopPropagation();
@@ -286,6 +281,11 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                         setShowUpdatePopup(true);
                     }}
                 ></i>
+
+                {/* Name text */}
+                <span className="text-[14px] font-medium text-gray-800">
+                    {row.firstName}
+                </span>
             </div>
         );
     };
@@ -678,6 +678,9 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
                     width: 100px;
                 }
 
+                .default-clr{
+                    color: #f1bbeaff;
+                }
             `}</style>
         </>
     );

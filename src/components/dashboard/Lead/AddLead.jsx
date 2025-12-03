@@ -579,7 +579,6 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         const chunk = chunks[idx];
         totalSent += chunk.length;
         const toDefer = totalSent > 600;
-
         const formData = new FormData();
         chunk.forEach((contact, i) => {
           contact.forEach((val, j) => {
@@ -747,7 +746,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       <div className="flex justify-between items-center mb-3">
         <div className="flex gap-3">
           <button onClick={onClose} className="px-5 py-2.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-700 hover:bg-gray-100 transition-all duration-200">⬅ Back</button>
-          <label className="px-5 py-2.5 text-white rounded-xl cursor-pointer shadow-sm bg-pink-600 hover:bg-pink-400 transition-all duration-200">
+          <label className="px-5 py-2.5 rounded-xl cursor-pointer shadow-sm hover:bg-pink-400 transition-all duration-200 color-cls">
             Import Excel
             <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportExcel} />
           </label>
@@ -758,7 +757,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         </div>
       </div>
 
-      <div className="w-full bg-[#EA4C89] text-white text-center py-1 font-semibold cursor-pointer rounded mb-3" onClick={addRow}>
+      <div className="w-full text-center py-1 cursor-pointer rounded mb-3 color-cls" onClick={addRow}>
           + Add Row
       </div>
 
@@ -801,8 +800,8 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
         .custom-hot .ht_clone_top th,
         .custom-hot th {
-          background: #ff4fa3 !important;
-          color: white !important;
+          background: #f1bbeaff !important;
+          color: #475569 !important;
           font-weight: 600;
         }
 
@@ -812,6 +811,10 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         .htInvalidCell {
           background: #ffdddd !important;
           border: 2px solid #ff4d4d !important;
+        }
+        .color-cls{
+          background: #f1bbeaff !important;
+          color: #121213ff !important;
         }
       `}</style>
     </div>
