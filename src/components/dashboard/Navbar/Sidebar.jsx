@@ -5,153 +5,151 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 
+import {
+  Contact,
+  Wallet,
+  BriefcaseBusiness,
+  Users,
+  FileText,
+  Network,
+  IndianRupee
+} from "lucide-react";
+
 export default function Sidebar() {
+  const pathName = usePathname();
 
-    const pathName = usePathname();
+  useEffect(() => {
+    const prev = document.querySelector('nav .__active');
+    if (prev) prev.classList.remove('__active');
+    const newActive = document.querySelector(`nav a[href="${pathName}"] li`);
+    if (newActive) newActive.classList.add('__active');
+  }, [pathName]);
 
-    useEffect(() => {
-        let active = document.querySelector("nav .__active");
-        if (active) active.classList.remove("__active");
+  return (
+    <aside
+      style={{
+        width: '70px',
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: 40,
+      }}
+      className="bg-white border-r flex flex-col items-center py-6"
+    >
+      {/* Logo */}
+      <div className="mb-8">
+        <Image src="/icons/leadstor.png" alt="logo" width={38} height={38} />
+      </div>
 
-        let newActive = document.querySelector(`nav ul a[href="${pathName}"] li`);
-        if (newActive) newActive.classList.add("__active");
-    }, [pathName]);
+      {/* Navigation */}
+      <nav className="flex-1 w-full">
+        <ul className="flex flex-col gap-4 w-full items-center m-0 p-0">
 
-    return (
-        <aside
-            className="
-                bg-white border-r
-                h-screen 
-                flex flex-col 
-                items-center
-                py-5
-                fixed
-                left-0 top-0
-            "
-            style={{ "--sidebar-width": "64px", width: "var(--sidebar-width)" }}
-        >
+          <Link href="/leads">
+            <li className="menu-icon-item">
+              <Contact className="w-5 h-5 stroke-[1.8]" />
+              <span className="tooltip">Lead Management</span>
+            </li>
+          </Link>
 
-            {/* Logo */}
-            <div className="mb-6">
-                <Image
-                    src="/icons/leadstor.png"
-                    width={36}
-                    height={36}
-                    alt="Leadstor Icon"
-                />
-            </div>
+          <Link href="/payments">
+            <li className="menu-icon-item">
+              <Wallet className="w-5 h-5 stroke-[1.8]" />
+              <span className="tooltip">Payments</span>
+            </li>
+          </Link>
 
-            {/* Menu Icons */}
-            <nav className="flex flex-col gap-2 mt-4 w-full px-1">
-                <ul className="flex flex-col gap-2 w-full items-center">
+          <Link href="/placements">
+            <li className="menu-icon-item">
+              <BriefcaseBusiness className="w-5 h-5 stroke-[1.8]" />
+              <span className="tooltip">Placement</span>
+            </li>
+          </Link>
 
-                    <Link href="/leads">
-                        <li className="menu-icon-item">
-                            <i className="ri-contacts-book-2-line text-2xl"></i>
-                            <span className="tooltip">Lead Management</span>
-                        </li>
-                    </Link>
+          <Link href="/batches">
+            <li className="menu-icon-item">
+              <Users className="w-5 h-5 stroke-[1.8]" />
+              <span className="tooltip">Batches</span>
+            </li>
+          </Link>
 
-                    <Link href="/conversions">
-                        <li className="menu-icon-item">
-                            <i className="ri-wallet-3-line text-2xl"></i>
-                            <span className="tooltip">Payment Management</span>
-                        </li>
-                    </Link>
+          <Link href="/invoices">
+            <li className="menu-icon-item">
+              <FileText className="w-5 h-5 stroke-[1.8]" />
+              <span className="tooltip">Invoices</span>
+            </li>
+          </Link>
 
-                    <Link href="/placements">
-                        <li className="menu-icon-item">
-                            <i className="ri-briefcase-line text-2xl"></i>
-                            <span className="tooltip">Placement Management</span>
-                        </li>
-                    </Link>
+          <Link href="/branches">
+            <li className="menu-icon-item">
+              <Network className="w-5 h-5 stroke-[1.8]" />
+              <span className="tooltip">Branches</span>
+            </li>
+          </Link>
 
-                    <Link href="/batches">
-                        <li className="menu-icon-item">
-                            <i className="ri-group-line text-2xl"></i>
-                            <span className="tooltip">Batch Management</span>
-                        </li>
-                    </Link>
+          <Link href="/expenses">
+            <li className="menu-icon-item">
+              <IndianRupee className="w-5 h-5 stroke-[1.8]" />
+              <span className="tooltip">Expenses</span>
+            </li>
+          </Link>
 
-                    <Link href="/invoices">
-                        <li className="menu-icon-item">
-                            <i className="ri-file-list-3-line text-2xl"></i>
-                            <span className="tooltip">Invoices</span>
-                        </li>
-                    </Link>
+        </ul>
+      </nav>
 
-                    <Link href="/branches">
-                        <li className="menu-icon-item">
-                            <i className="ri-node-tree text-2xl"></i>
-                            <span className="tooltip">Branch Management</span>
-                        </li>
-                    </Link>
+      {/* Styles */}
+      <style jsx>{`
+        .menu-icon-item {
+          list-style: none;
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          cursor: pointer;
+          color: #444;
+          position: relative;
+          transition: all 0.22s ease;
+        }
 
-                    <Link href="/expenses">
-                        <li className="menu-icon-item">
-                            <i className="ri-money-dollar-circle-line text-2xl"></i>
-                            <span className="tooltip">Expense Management</span>
-                        </li>
-                    </Link>
+        /* Hover – pastel theme */
+        .menu-icon-item:hover {
+          background: rgba(241, 187, 234, 0.22);
+          color: #b14aa0;
+        }
 
-                </ul>
-            </nav>
+        /* Active */
+        .menu-icon-item.__active {
+          background: rgba(241, 187, 234, 0.35);
+          color: #b14aa0;
+          font-weight: 600;
+        }
 
-            {/* 🔥 Hover Animations */}
-            <style jsx>{`
+        /* Tooltip – much closer */
+        .tooltip {
+          position: absolute;
+          left: 60px; /* only 10px away */
+          top: 50%;
+          transform: translateY(-50%);
+          padding: 6px 12px;
+          background: white;
+          color: #111;
+          font-size: 13px;
+          border-radius: 6px;
+          white-space: nowrap;
+          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.16s ease, transform 0.16s ease;
+        }
 
-            /* Sidebar Icon Button */
-            .menu-icon-item {
-                position: relative;
-                width: 42px;
-                height: 42px;
-                border-radius: 8px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                cursor: pointer;
-                color: #7E7E7E;
-                transition: background 0.2s ease, color 0.2s ease;
-            }
-
-            /* Hover — very subtle */
-            .menu-icon-item:hover {
-                background: #f4e8ef;      /* LIGHT PINK LIKE SCREENSHOT */
-                color: #560fe6ff;           /* Darker pink */
-            }
-
-            /* Active */
-            .menu-icon-item.__active {
-                background: #f4e8ef;
-                color: #7e46f0;
-            }
-
-            /* Tooltip — EXACT MATCH */
-            .tooltip {
-                position: absolute;
-                left: 50px;                      /* Closer distance */
-                top: 50%;
-                transform: translateY(-50%);
-                padding: 6px 12px;
-                background: #ffffff;
-                color: #333;
-                font-size: 13px;
-                border-radius: 6px;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-                white-space: nowrap;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.2s ease, transform 0.2s ease;
-            }
-
-            .menu-icon-item:hover .tooltip {
-                opacity: 1;
-                transform: translateY(-50%) translateX(4px);
-            }
-
-        `}</style>
-
-
-        </aside>
-    );
+        .menu-icon-item:hover .tooltip {
+          opacity: 1;
+          transform: translateY(-50%) translateX(2px);
+        }
+      `}</style>
+    </aside>
+  );
 }

@@ -50,54 +50,38 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   async function loadFields() {
     try {
-        const res = await xFetch({ path: "/services/profile/columns" });
+      const res = await xFetch({ path: "/services/profile/columns" });
 
-        if (res && Array.isArray(res)) {
+      if (res && Array.isArray(res)) {
+        // Remove unwanted items
+        let filtered = res.filter(
+          (f) => !["action", "updateTime", "leadProbability"].includes(f.dataField)
+        );
 
-            // Remove unwanted items
-            let filtered = res.filter(
-                (f) => !["action", "updateTime", "leadProbability"].includes(f.dataField)
-            );
+        // Ensure lastName exists; inject if missing (as requested earlier)
+        const hasLastName = filtered.some((f) => String(f.dataField).toLowerCase() === "lastname");
+        if (!hasLastName) {
+          const lastNameField = {
+            fieldId: "randornum",
+            fieldName: "Last Name",
+            displayName: "Last Name",
+            dataField: "lastName",
+            dataFormatter: "blankFormatter",
+            fieldType: "text",
+          };
+          filtered.splice(1, 0, lastNameField); // insert at 2nd position
+        }
 
-            // -----------------------------
-            // Check if lastName exists
-            // -----------------------------
-            const hasLastName = filtered.some(
-                (f) => f.dataField.toLowerCase() === "lastName".toLowerCase()
-            );
+        setFields(filtered);
 
-            // -----------------------------
-            // Inject lastName if missing
-            // -----------------------------
-            if (!hasLastName) {
-                const lastNameField = {
-                fieldId: "randornum",
-                fieldName: "Last Name",
-                displayName: "Last Name",
-                dataField: "lastName",
-                dataFormatter: "blankFormatter",
-                fieldType: "text",
-                };
+        // create empty row mapped to filtered fields
+        const empty = {};
+        filtered.forEach((f) => {
+          empty[f.dataField] = "";
+        });
 
-                // Insert into 2nd position
-                filtered.splice(1, 0, lastNameField);
-            }
-
-            // -----------------------------
-            // Set final fields
-            // -----------------------------
-            setFields(filtered);
-
-            // -----------------------------
-            // Create empty row mapped to fields
-            // -----------------------------
-            const empty = {};
-            filtered.forEach((f) => {
-                empty[f.dataField] = "";
-            });
-
-            setData([empty]);
-        } else {
+        setData([empty]);
+      } else {
         toast.error("Unable to load fields. Using fallback.");
         const fallback = [
           { dataField: "firstName", displayName: "First Name" },
@@ -132,6 +116,49 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     }
   }
 
+  // ---------- ADD ROW (fixed) ----------
+  // Append an empty row to the `data` state and load into HOT.
+  const addRow = () => {
+    // Build empty row shape from fields
+    const emptyRow = {};
+    if (!fields || fields.length === 0) {
+      // if fields not loaded, insert a generic row
+      emptyRow["firstName"] = "";
+      emptyRow["lastName"] = "";
+      emptyRow["email"] = "";
+      emptyRow["mobile"] = "";
+    } else {
+      fields.forEach((f) => {
+        emptyRow[f.dataField] = "";
+      });
+    }
+
+    setData((prev) => {
+      const next = [...prev, emptyRow];
+      // Immediately reflect in HOT instance
+      const hot = tableRef.current?.hotInstance;
+      try {
+        if (hot) {
+          hot.loadData(next);
+          // focus/select the first cell of the new row (last row)
+          const lastRowIndex = next.length - 1;
+          // select first visible column (0)
+          setTimeout(() => {
+            try {
+              hot.selectCell(lastRowIndex, 0);
+              hot.render();
+            } catch (e) {
+              // ignore selection errors
+            }
+          }, 50);
+        }
+      } catch (e) {
+        console.warn("Failed to loadData/selectCell after addRow:", e);
+      }
+      return next;
+    });
+  };
+
   /* ------------------------
      HANDSONTABLE COLUMNS
   ------------------------ */
@@ -142,7 +169,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         return {
           data: field.dataField,
           type: "autocomplete",
-          source: sources.map(s => s.source),
+          source: sources.map((s) => s.source),
           strict: false,
           allowInvalid: true,
         };
@@ -151,7 +178,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         return {
           data: field.dataField,
           type: "autocomplete",
-          source: courses.map(c => c.course),
+          source: courses.map((c) => c.course),
           strict: false,
         };
 
@@ -159,7 +186,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         return {
           data: field.dataField,
           type: "autocomplete",
-          source: statuses.map(s => s.status),
+          source: statuses.map((s) => s.status),
           strict: false,
         };
 
@@ -167,7 +194,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         return {
           data: field.dataField,
           type: "autocomplete",
-          source: users.map(u => u.name),
+          source: users.map((u) => u.name),
           strict: false,
         };
 
@@ -199,7 +226,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     return fld;
   });
 
-  const columns = fields.map(f => ({
+  const columns = fields.map((f) => ({
     width: 150,
     ...getColumnDefinition(f),
   }));
@@ -262,9 +289,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         return;
       }
 
-      const sheetHeaders = Object.keys(rows[0]).map(h => h.trim().toLowerCase());
-      const hasEmail = sheetHeaders.some(h => h.includes("mail"));
-      const hasMobile = sheetHeaders.some(h => h.includes("mobile") || h.includes("phone"));
+      const sheetHeaders = Object.keys(rows[0]).map((h) => h.trim().toLowerCase());
+      const hasEmail = sheetHeaders.some((h) => h.includes("mail"));
+      const hasMobile = sheetHeaders.some((h) => h.includes("mobile") || h.includes("phone"));
 
       if (!hasEmail && !hasMobile) {
         toast.error('Excel must contain an "Email" or "Mobile" column.');
@@ -278,12 +305,12 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           const df = f.dataField;
           const candidates = [f.displayName, f.fieldName, f.dataField]
             .filter(Boolean)
-            .map(s => String(s).toLowerCase());
+            .map((s) => String(s).toLowerCase());
 
           let matchedHeader = null;
           for (const hdr of Object.keys(row)) {
             const lower = hdr.toLowerCase();
-            if (candidates.some(c => lower.includes(c))) {
+            if (candidates.some((c) => lower.includes(c))) {
               matchedHeader = hdr;
               break;
             }
@@ -301,10 +328,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       }
 
       // Sync React state (important for submit)
-      setData(newRows.length ? newRows : [fields.reduce((a,f)=>((a[f.dataField] = ""), a), {})]);
+      setData(newRows.length ? newRows : [fields.reduce((a, f) => ((a[f.dataField] = ""), a), {})]);
 
       toast.success("Excel imported! Please review before submitting.");
-
     } catch (err) {
       console.error(err);
       toast.error("Failed to import Excel.");
@@ -314,197 +340,178 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   };
 
   // Normalize mobile: remove whitespace, parentheses, dashes, dots; keep leading + if present
-    const normalizeMobile = (raw) => {
-        if (!raw) return "";
-        return String(raw).replace(/[\s\-\.\(\)]/g, "").trim();
-    };
+  const normalizeMobile = (raw) => {
+    if (!raw) return "";
+    return String(raw).replace(/[\s\-\.\(\)]/g, "").trim();
+  };
 
-    const isValidMobile = (raw, countryCode = "IN") => {
-        const v = normalizeMobile(raw);
-        if (v === "") return true; // empty allowed
+  const isValidMobile = (raw, countryCode = "IN") => {
+    const v = normalizeMobile(raw);
+    if (v === "") return true; // empty allowed
 
-        // Handle + prefix
-        let digits = v.startsWith("+") ? v.slice(1) : v;
+    // Handle + prefix
+    let digits = v.startsWith("+") ? v.slice(1) : v;
 
-        // Must be digits only
-        if (!/^\d+$/.test(digits)) return false;
+    // Must be digits only
+    if (!/^\d+$/.test(digits)) return false;
 
-        if (countryCode === "IN") {
-            // Case: +91XXXXXXXXXX → digits = "91XXXXXXXXXX"
-            if (digits.startsWith("91") && digits.length === 12) {
-            const local = digits.slice(2);
-            return local.length === 10;
-            }
-
-            // Case: 91XXXXXXXXXX
-            if (digits.startsWith("91") && digits.length === 12) {
-            const local = digits.slice(2);
-            return local.length === 10;
-            }
-
-            // Case: 0XXXXXXXXXX
-            if (digits.startsWith("0") && digits.length === 11) {
-            const local = digits.slice(1);
-            return local.length === 10;
-            }
-
-            // Case: XXXXXXXXXX
-            if (digits.length === 10) return true;
-
-            // Everything else: invalid
-            return false;
-        }
-
-        // Fallback for other countries: 7–15 digits
-        return digits.length >= 7 && digits.length <= 15;
-    };
+    if (countryCode === "IN") {
+      if (digits.startsWith("91") && digits.length === 12) {
+        const local = digits.slice(2);
+        return local.length === 10;
+      }
+      if (digits.startsWith("0") && digits.length === 11) {
+        const local = digits.slice(1);
+        return local.length === 10;
+      }
+      if (digits.length === 10) return true;
+      return false;
+    }
+    return digits.length >= 7 && digits.length <= 15;
+  };
 
   /* ---------- Validation + Duplicate check + Upload ---------- */
 
-    const validateHotData = async () => {
-        const hot = tableRef.current?.hotInstance;
-        if (!hot) return { ok: false, message: "Table not ready" };
+  const validateHotData = async () => {
+    const hot = tableRef.current?.hotInstance;
+    if (!hot) return { ok: false, message: "Table not ready" };
 
-        const headerNames = getHeaderNames();
+    const headerNames = getHeaderNames();
 
-        const emailCol  = findIndexForHeader(headerNames, (t) => t.includes("mail"));
-        const mobileCol = findIndexForHeader(headerNames, (t) => t.includes("mobile"));
-        const courseCol = findIndexForHeader(headerNames, (t) =>
-            t.includes("course") || t.includes("service") || t.includes("preferred course")
-        );
-        const sourceCol = findIndexForHeader(headerNames, (t) => t.includes("source"));
-        const ownerCol  = findIndexForHeader(headerNames, (t) => t.includes("owner"));
-        const statusCol = findIndexForHeader(headerNames, (t) => t.includes("status"));
-        const firstNameCol = findIndexForHeader(headerNames, (t) => t.includes("first"));
+    const emailCol = findIndexForHeader(headerNames, (t) => t.includes("mail"));
+    const mobileCol = findIndexForHeader(headerNames, (t) => t.includes("mobile"));
+    const courseCol = findIndexForHeader(headerNames, (t) => t.includes("course") || t.includes("service") || t.includes("preferred course"));
+    const sourceCol = findIndexForHeader(headerNames, (t) => t.includes("source"));
+    const ownerCol = findIndexForHeader(headerNames, (t) => t.includes("owner"));
+    const statusCol = findIndexForHeader(headerNames, (t) => t.includes("status"));
+    const firstNameCol = findIndexForHeader(headerNames, (t) => t.includes("first"));
 
-        const raw = hot.getSourceData();
+    const raw = hot.getSourceData();
 
-        const getCellValue = (rowData, colIndex) => {
-            const key = fields[colIndex]?.dataField;
-            return String(rowData?.[key] ?? "").trim();
-        };
-
-        // CLEAR OLD HIGHLIGHTS
-        for (let r = 0; r < raw.length; r++) {
-            for (let c = 0; c < headerNames.length; c++) {
-            hot.setCellMeta(r, c, "className", "");
-            }
-        }
-
-        hot.render();
-
-        let emails = [];
-        let phones = [];
-
-        for (let r = 0; r < raw.length; r++) {
-            const row = raw[r];
-
-            // SKIP completely empty row
-            if (Object.values(row).every(v => !String(v).trim())) continue;
-
-            // FIRST NAME REQUIRED
-            if (firstNameCol >= 0) {
-            const firstName = getCellValue(row, firstNameCol);
-            if (!firstName) {
-                hot.setCellMeta(r, firstNameCol, "className", "htInvalid");
-                hot.render();
-                return {
-                ok: false,
-                message: `First Name is required in row ${r + 1}`,
-                };
-            }
-            }
-
-            // EMAIL VALIDATION
-            if (emailCol >= 0) {
-            const email = getCellValue(row, emailCol);
-            if (!isValidEmail(email)) {
-                hot.setCellMeta(r, emailCol, "className", "htInvalid");
-                hot.render();
-                return {
-                ok: false,
-                message: `Invalid Email '${email}' in row ${r + 1}`,
-                };
-            }
-            if (email) emails.push(email);
-            }
-
-            // MOBILE VALIDATION
-            if (mobileCol >= 0) {console.log('mobile', mobileCol);
-                const rawMobile = getCellValue(row, mobileCol);            // original cell value (string)
-                const cleanedMobile = normalizeMobile(rawMobile);          // normalized (keeps leading + if present)
-                const cc = (corporate?.country_code || "IN").toUpperCase(); // use your corporate country code
-
-                if (!isValidMobile(cleanedMobile, cc)) {
-                    hot.setCellMeta(r, mobileCol, "className", "htInvalid");
-                    hot.render();
-                    return {
-                    ok: false,
-                    message: `Invalid Mobile '${rawMobile}' in row ${r + 1}`,
-                    };
-                }
-
-                if (cleanedMobile) {
-                    // store digits-only version in phones array for duplicate-checks (remove leading + and non-digits)
-                    phones.push(cleanedMobile.replace(/^\+/, "").replace(/\D/g, ""));
-                }
-            }
-
-            // SOURCE VALIDATION
-            if (sourceCol >= 0) {
-            const val = getCellValue(row, sourceCol);
-            if (val && !sources.some(s => s.source?.toLowerCase() === val.toLowerCase())) {
-                hot.setCellMeta(r, sourceCol, "className", "htInvalid");
-                hot.render();
-                return {
-                ok: false,
-                message: `Invalid Source '${val}' in row ${r + 1}`,
-                };
-            }
-            }
-
-            // COURSE VALIDATION
-            if (courseCol >= 0) {
-            const val = getCellValue(row, courseCol);
-            if (val && !courses.some(c => c.course?.toLowerCase() === val.toLowerCase())) {
-                hot.setCellMeta(r, courseCol, "className", "htInvalid");
-                hot.render();
-                return {
-                ok: false,
-                message: `Invalid Course '${val}' in row ${r + 1}`,
-                };
-            }
-            }
-
-            // OWNER VALIDATION
-            if (ownerCol >= 0) {
-            const val = getCellValue(row, ownerCol);
-            if (val && !users.some(u => u.name?.toLowerCase() === val.toLowerCase())) {
-                hot.setCellMeta(r, ownerCol, "className", "htInvalid");
-                hot.render();
-                return {
-                ok: false,
-                message: `Invalid Owner '${val}' in row ${r + 1}`,
-                };
-            }
-            }
-
-            // STATUS VALIDATION
-            if (statusCol >= 0) {
-            const val = getCellValue(row, statusCol);
-            if (val && !statuses.some(s => s.status?.toLowerCase() === val.toLowerCase())) {
-                hot.setCellMeta(r, statusCol, "className", "htInvalid");
-                hot.render();
-                return {
-                ok: false,
-                message: `Invalid Status '${val}' in row ${r + 1}`,
-                };
-            }
-            }
-        }
-
-        return { ok: true, emails, phones, raw };
+    const getCellValue = (rowData, colIndex) => {
+      const key = fields[colIndex]?.dataField;
+      return String(rowData?.[key] ?? "").trim();
     };
+
+    // CLEAR OLD HIGHLIGHTS
+    for (let r = 0; r < raw.length; r++) {
+      for (let c = 0; c < headerNames.length; c++) {
+        hot.setCellMeta(r, c, "className", "");
+      }
+    }
+    hot.render();
+
+    let emails = [];
+    let phones = [];
+
+    for (let r = 0; r < raw.length; r++) {
+      const row = raw[r];
+
+      // SKIP completely empty row
+      if (Object.values(row).every((v) => !String(v).trim())) continue;
+
+      // FIRST NAME REQUIRED
+      if (firstNameCol >= 0) {
+        const firstName = getCellValue(row, firstNameCol);
+        if (!firstName) {
+          hot.setCellMeta(r, firstNameCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `First Name is required in row ${r + 1}`,
+          };
+        }
+      }
+
+      // EMAIL VALIDATION
+      if (emailCol >= 0) {
+        const email = getCellValue(row, emailCol);
+        if (!isValidEmail(email)) {
+          hot.setCellMeta(r, emailCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `Invalid Email '${email}' in row ${r + 1}`,
+          };
+        }
+        if (email) emails.push(email);
+      }
+
+      // MOBILE VALIDATION
+      if (mobileCol >= 0) {
+        const rawMobile = getCellValue(row, mobileCol);
+        const cleanedMobile = normalizeMobile(rawMobile);
+        const cc = (corporate?.country_code || "IN").toUpperCase();
+
+        if (!isValidMobile(cleanedMobile, cc)) {
+          hot.setCellMeta(r, mobileCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `Invalid Mobile '${rawMobile}' in row ${r + 1}`,
+          };
+        }
+
+        if (cleanedMobile) {
+          phones.push(cleanedMobile.replace(/^\+/, "").replace(/\D/g, ""));
+        }
+      }
+
+      // SOURCE VALIDATION
+      if (sourceCol >= 0) {
+        const val = getCellValue(row, sourceCol);
+        if (val && !sources.some((s) => s.source?.toLowerCase() === val.toLowerCase())) {
+          hot.setCellMeta(r, sourceCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `Invalid Source '${val}' in row ${r + 1}`,
+          };
+        }
+      }
+
+      // COURSE VALIDATION
+      if (courseCol >= 0) {
+        const val = getCellValue(row, courseCol);
+        if (val && !courses.some((c) => c.course?.toLowerCase() === val.toLowerCase())) {
+          hot.setCellMeta(r, courseCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `Invalid Course '${val}' in row ${r + 1}`,
+          };
+        }
+      }
+
+      // OWNER VALIDATION
+      if (ownerCol >= 0) {
+        const val = getCellValue(row, ownerCol);
+        if (val && !users.some((u) => u.name?.toLowerCase() === val.toLowerCase())) {
+          hot.setCellMeta(r, ownerCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `Invalid Owner '${val}' in row ${r + 1}`,
+          };
+        }
+      }
+
+      // STATUS VALIDATION
+      if (statusCol >= 0) {
+        const val = getCellValue(row, statusCol);
+        if (val && !statuses.some((s) => s.status?.toLowerCase() === val.toLowerCase())) {
+          hot.setCellMeta(r, statusCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `Invalid Status '${val}' in row ${r + 1}`,
+          };
+        }
+      }
+    }
+
+    return { ok: true, emails, phones, raw };
+  };
 
   async function checkDuplicatesBackend(emails = [], phones = []) {
     if ((!emails || emails.length === 0) && (!phones || phones.length === 0)) {
@@ -531,8 +538,8 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
     for (let r = 0; r < raw.length; r++) {
       const row = raw[r];
-      const email = emailColIndex >= 0 ? (typeof row === 'object' && !Array.isArray(row) ? String(row[fields[emailColIndex]?.dataField] ?? "").trim() : String(row[emailColIndex] ?? "").trim()) : "";
-      const phone = phoneColIndex >= 0 ? (typeof row === 'object' && !Array.isArray(row) ? String(row[fields[phoneColIndex]?.dataField] ?? "").replace(/\D/g, "") : String(row[phoneColIndex] ?? "").replace(/\D/g, "")) : "";
+      const email = emailColIndex >= 0 ? (typeof row === "object" && !Array.isArray(row) ? String(row[fields[emailColIndex]?.dataField] ?? "").trim() : String(row[emailColIndex] ?? "").trim()) : "";
+      const phone = phoneColIndex >= 0 ? (typeof row === "object" && !Array.isArray(row) ? String(row[fields[phoneColIndex]?.dataField] ?? "").replace(/\D/g, "") : String(row[phoneColIndex] ?? "").replace(/\D/g, "")) : "";
       if (email && duplicates.includes(email)) {
         matched++;
         if (emailColIndex >= 0) hot.setCellMeta(r, emailColIndex, "className", "htInvalid");
@@ -553,7 +560,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     // convert objects to arrays according to field order if needed
     const order = getFieldOrder();
     const filtered = rawData
-      .map((row) => Array.isArray(row) ? row : order.map((k) => row[k] ?? ""))
+      .map((row) => (Array.isArray(row) ? row : order.map((k) => row[k] ?? "")))
       .filter((rowArr) => !rowArr.every((c) => c === null || c === undefined || String(c).trim() === ""));
 
     for (let i = 0; i < filtered.length; i += chunkSize) {
@@ -681,7 +688,11 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   useEffect(() => {
     const hot = tableRef.current?.hotInstance;
     if (hot && Array.isArray(data)) {
-      hot.loadData(data);
+      try {
+        hot.loadData(data);
+      } catch (e) {
+        console.warn("hot.loadData failed in useEffect:", e);
+      }
     }
   }, [data, fields]);
 
@@ -693,7 +704,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         path: "/services/invite/exportTemplate",
         method: "POST",
         payload: {
-          columns: colHeaders
+          columns: colHeaders,
         },
         responseType: "blob",
       });
@@ -717,6 +728,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   return (
     <div className="p-6 w-full">
+      
       <ToastContainer position="top-right" />
 
       <h2 className="text-2xl font-semibold mb-2">Add Enquiry</h2>
@@ -746,13 +758,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         </div>
       </div>
 
-      <div onClick={() => {
-        const hot = tableRef.current?.hotInstance;
-        if (!hot) return;
-        const at = hot.countRows();
-        hot.alter("insert_row", at, 1);
-        hot.updateSettings({ viewportRowRenderingOffset: at + 1 });
-      }} className="w-full bg-[#EA4C89] text-white text-center py-1 font-semibold cursor-pointer rounded">+ Add Row</div>
+      <div className="w-full bg-[#EA4C89] text-white text-center py-1 font-semibold cursor-pointer rounded mb-3" onClick={addRow}>
+          + Add Row
+      </div>
 
       <div className="mt-3 border rounded overflow-hidden shadow">
         <HotTable
@@ -762,7 +770,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           columns={columns}
           rowHeaders={true}
           licenseKey="non-commercial-and-evaluation"
-          copyPaste={{ copyPasteEnabled: true, rowsLimit: 10000, columnsLimit: fields.length || 100, }}
+          copyPaste={{ copyPasteEnabled: true, rowsLimit: 10000, columnsLimit: fields.length || 100 }}
           pasteMode="shift_down"
           allowInsertRow={true}
           minSpareRows={1}
@@ -802,8 +810,8 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           background: #fafafa !important;
         }
         .htInvalidCell {
-            background: #ffdddd !important;
-            border: 2px solid #ff4d4d !important;
+          background: #ffdddd !important;
+          border: 2px solid #ff4d4d !important;
         }
       `}</style>
     </div>
