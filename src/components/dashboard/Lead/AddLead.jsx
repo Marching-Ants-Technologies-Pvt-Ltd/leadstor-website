@@ -9,6 +9,7 @@ import "handsontable/dist/handsontable.full.min.css";
 import * as XLSX from "xlsx";
 
 import { xFetch } from "@/utility/xFetch";
+import Spinner from "@/components/common/Spinner";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/ReactToastify.min.css";
 import { Corporate, Test, User } from "@/utility/TinyDB";
@@ -569,68 +570,156 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     return chunks;
   };
 
-  const processManualImport = async (chunks) => {
-    if (!Array.isArray(chunks) || chunks.length === 0) return;
-    setLoading(true);
+  // const processManualImport = async (chunks) => {
+  //   if (!Array.isArray(chunks) || chunks.length === 0) return;
+  //   setLoading(true);
 
-    try {
+  //   try {
+  //     let totalSent = 0;
+  //     for (let idx = 0; idx < chunks.length; idx++) {
+  //       const chunk = chunks[idx];
+  //       totalSent += chunk.length;
+  //       const toDefer = totalSent > 600;
+  //       const formData = new FormData();
+  //       chunk.forEach((contact, i) => {
+  //         contact.forEach((val, j) => {
+  //           formData.append(`contacts[${i}][${j}]`, val ?? "");
+  //         });
+  //       });
+
+  //       formData.append("testId", testId || "");
+  //       formData.append("manual", true);
+  //       formData.append("toDefer", toDefer);
+  //       formData.append("corporateType", Corporate?.type || "");
+  //       formData.append("recruiterId", Corporate?._id || "");
+  //       formData.append("owner", User?._id || "");
+  //       formData.append("roleName", User?.role || "");
+
+  //       const res = await xFetch({
+  //         method: "POST",
+  //         path: "/sendTestInvitationEmail.php",
+  //         payload: formData,
+  //         isFormData: true,
+  //       });
+
+  //       if (!res) {
+  //         throw new Error("Upload failed (no response)");
+  //       }
+  //       if (typeof res === "string") {
+  //         try {
+  //           const parsed = JSON.parse(res);
+  //           if (parsed.status && parsed.status === "Error") {
+  //             throw new Error(parsed.errorDetail || "Upload error");
+  //           }
+  //         } catch (e) {
+  //           // ignore parse error
+  //         }
+  //       } else if (res.status && res.status === "Error") {
+  //         throw new Error(res.errorDetail || "Upload error");
+  //       }
+  //     }
+
+  //     toast.success(`Successfully uploaded ${chunks.reduce((s, c) => s + c.length, 0)} records.`);
+
+  //     const emptyRow = fields.reduce((a, f) => ((a[f.dataField] = ""), a), {});
+  //     setData([emptyRow]);
+
+  //     if (typeof onRefreshTable === "function") onRefreshTable();
+  //   } catch (err) {
+  //     console.error("processManualImport error", err);
+  //     toast.error(err.message || "Upload failed");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const processManualImport = async (c) => {
+      const hot = tableRef.current?.hotInstance;
+      if (!hot) {
+        toast.error("Table not ready!");
+        return;
+      }
+
+      // Step 1: Validation (existing logic)
+      const validation = await validateHotData();
+      if (!validation.ok) {
+        toast.error(validation.message);
+        return;
+      }
+
+      const rawRows = validation.raw; // [{firstName:'', lastName:'', ...}, ...]
+
+      // Step 2: Remove completely empty rows
+      const cleanedRows = rawRows.filter((row) =>
+        Object.values(row).some((v) => String(v).trim() !== "")
+      );
+
+      if (cleanedRows.length === 0) {
+        toast.error("No valid rows to import!");
+        return;
+      }
+
+      // Step 3: Convert to "dataField → value" objects
+      const contacts = cleanedRows.map((row) => {
+        const obj = {};
+        fields.forEach((f) => {
+          obj[f.dataField] = row[f.dataField] ?? "";
+        });
+        return obj;
+      });
+
+      // Step 4: Chunking contacts (like previous logic)
+      const CHUNK_SIZE = 100;
+      const chunks = [];
+      for (let i = 0; i < contacts.length; i += CHUNK_SIZE) {
+        chunks.push(contacts.slice(i, i + CHUNK_SIZE));
+      }
+
+      // Step 5: Submit each chunk to Add Enquiry API
+      let successCount = 0;
       let totalSent = 0;
-      for (let idx = 0; idx < chunks.length; idx++) {
-        const chunk = chunks[idx];
+      
+      for (let i = 0; i < chunks.length; i++) {
+        
+        const chunk = chunks[i];
         totalSent += chunk.length;
         const toDefer = totalSent > 600;
-        const formData = new FormData();
-        chunk.forEach((contact, i) => {
-          contact.forEach((val, j) => {
-            formData.append(`contacts[${i}][${j}]`, val ?? "");
-          });
-        });
 
+        const formData = new FormData();
+        formData.append("contacts", JSON.stringify(chunk));
         formData.append("testId", testId || "");
         formData.append("manual", true);
         formData.append("toDefer", toDefer);
-        formData.append("corporateType", Corporate?.type || "");
-        formData.append("recruiterId", Corporate?._id || "");
         formData.append("owner", User?._id || "");
         formData.append("roleName", User?.role || "");
+        
 
-        const res = await xFetch({
-          method: "POST",
-          path: "/sendTestInvitationEmail.php",
-          payload: formData,
-          isFormData: true,
-        });
+        try {
+          const res = await xFetch({
+            path: "/services/invite/sendTestInvitationEmail",
+            method: "POST",
+            payload: formData,
+            isFormData:true,
+          });
 
-        if (!res) {
-          throw new Error("Upload failed (no response)");
-        }
-        if (typeof res === "string") {
-          try {
-            const parsed = JSON.parse(res);
-            if (parsed.status && parsed.status === "Error") {
-              throw new Error(parsed.errorDetail || "Upload error");
-            }
-          } catch (e) {
-            // ignore parse error
+          if (res?.status == 'success') {
+            successCount += chunks[i].length;
+            toast.success(`Uploaded chunk ${i + 1}/${chunks.length}`);
+            toast.success(`Successfully imported ${successCount} Leads`);
+            onRefreshTable?.();
+            onClose?.();
+
+          } else {
+            toast.error(`Chunk ${i + 1} failed`);
           }
-        } else if (res.status && res.status === "Error") {
-          throw new Error(res.errorDetail || "Upload error");
+        } catch (err) {
+          console.error("Chunk Upload Error", err);
+          toast.error(`Chunk ${i + 1} failed!`);
+        } finally {
+          setLoading(false); // 👉 STOP LOADER ALWAYS
         }
       }
-
-      toast.success(`Successfully uploaded ${chunks.reduce((s, c) => s + c.length, 0)} records.`);
-
-      const emptyRow = fields.reduce((a, f) => ((a[f.dataField] = ""), a), {});
-      setData([emptyRow]);
-
-      if (typeof onRefreshTable === "function") onRefreshTable();
-    } catch (err) {
-      console.error("processManualImport error", err);
-      toast.error(err.message || "Upload failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }
 
   const submitLeads = async () => {
     try {
@@ -771,14 +860,16 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           licenseKey="non-commercial-and-evaluation"
           copyPaste={{ copyPasteEnabled: true, rowsLimit: 10000, columnsLimit: fields.length || 100 }}
           pasteMode="shift_down"
-          allowInsertRow={true}
-          minSpareRows={1}
           manualColumnResize
           manualRowResize
           contextMenu={["copy", "paste", "remove_row", "row_above", "row_below", "insert_row"]}
           fillHandle={true}
           stretchH="all"
           height="420"
+          minSpareRows={0}
+          allowInsertRow={false}
+          autoWrapRow={false}
+          autoWrapCol={false}
           afterChange={(changes, source) => {
             if (!changes || changes.length === 0) return;
             const hot = tableRef.current?.hotInstance;
