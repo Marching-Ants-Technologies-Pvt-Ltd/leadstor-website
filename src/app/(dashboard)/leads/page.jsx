@@ -128,7 +128,6 @@ export default function Leads() {
         <div className="w-full bg-white rounded-md shadow-md flex flex-col"
             style={{
                 height: "calc(100vh - var(--header-height))",
-                overflow: "hidden",
             }}
         >
             {/* ⭐ CONDITIONAL RENDERING */}
