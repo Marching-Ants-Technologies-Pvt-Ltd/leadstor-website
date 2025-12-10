@@ -570,69 +570,6 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     return chunks;
   };
 
-  // const processManualImport = async (chunks) => {
-  //   if (!Array.isArray(chunks) || chunks.length === 0) return;
-  //   setLoading(true);
-
-  //   try {
-  //     let totalSent = 0;
-  //     for (let idx = 0; idx < chunks.length; idx++) {
-  //       const chunk = chunks[idx];
-  //       totalSent += chunk.length;
-  //       const toDefer = totalSent > 600;
-  //       const formData = new FormData();
-  //       chunk.forEach((contact, i) => {
-  //         contact.forEach((val, j) => {
-  //           formData.append(`contacts[${i}][${j}]`, val ?? "");
-  //         });
-  //       });
-
-  //       formData.append("testId", testId || "");
-  //       formData.append("manual", true);
-  //       formData.append("toDefer", toDefer);
-  //       formData.append("corporateType", Corporate?.type || "");
-  //       formData.append("recruiterId", Corporate?._id || "");
-  //       formData.append("owner", User?._id || "");
-  //       formData.append("roleName", User?.role || "");
-
-  //       const res = await xFetch({
-  //         method: "POST",
-  //         path: "/sendTestInvitationEmail.php",
-  //         payload: formData,
-  //         isFormData: true,
-  //       });
-
-  //       if (!res) {
-  //         throw new Error("Upload failed (no response)");
-  //       }
-  //       if (typeof res === "string") {
-  //         try {
-  //           const parsed = JSON.parse(res);
-  //           if (parsed.status && parsed.status === "Error") {
-  //             throw new Error(parsed.errorDetail || "Upload error");
-  //           }
-  //         } catch (e) {
-  //           // ignore parse error
-  //         }
-  //       } else if (res.status && res.status === "Error") {
-  //         throw new Error(res.errorDetail || "Upload error");
-  //       }
-  //     }
-
-  //     toast.success(`Successfully uploaded ${chunks.reduce((s, c) => s + c.length, 0)} records.`);
-
-  //     const emptyRow = fields.reduce((a, f) => ((a[f.dataField] = ""), a), {});
-  //     setData([emptyRow]);
-
-  //     if (typeof onRefreshTable === "function") onRefreshTable();
-  //   } catch (err) {
-  //     console.error("processManualImport error", err);
-  //     toast.error(err.message || "Upload failed");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const processManualImport = async (c) => {
       const hot = tableRef.current?.hotInstance;
       if (!hot) {
