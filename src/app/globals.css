@@ -398,6 +398,20 @@ input, textarea, select {
     outline: none;
 }
 
+.table-header{
+  background-color: #F1BBEA;
+  color: #1E293B;
+  border-bottom: #E2E8F0;
+}
+
+.custom-btn{
+  background-color: #F1BBEA;
+  color: #000000;
+}
+
+.custom-btn:hover {
+  background-color: #E38CD8;
+}
 
 @media (max-width: 1000px) {
   .sidebar {
@@ -447,4 +461,20 @@ input, textarea, select {
     .burger-menu-1000 {
         display: none !important;
     }
+}
+
+
+@keyframes scaleIn {
+  0% {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.25s ease-out;
 }

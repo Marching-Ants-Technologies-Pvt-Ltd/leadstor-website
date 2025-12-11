@@ -10,6 +10,7 @@ import UpdateLead from '@/components/dashboard/Lead/UpdateLead';
 import CallerDeskIVR from '@/components/dashboard/Lead/CallerDeskIVR';
 import { MdTimeline } from 'react-icons/md';
 import Timeline from '@/components/dashboard/Lead/ViewTimeline';
+import { btnPrimary, iconPill, tableCard, tableHeader, tableCellBase, rowHover } from "@/components/common/customStyle";
 
 const contextMenuItems = [
     { icon: "ri-edit-2-fill", title: "Edit" },
@@ -530,7 +531,7 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
             <ContextMenu items={contextMenuItems} />
             <AppliedFilters />
             <table className="leadstor-table">
-                <thead className='bg-blue-50'>
+                <thead className={tableHeader}>
                     <tr>
                         <th>
                             <input
@@ -636,12 +637,12 @@ export default function LeadsTable({ columns, setColumns, columnOrder, setColumn
 
                 /* Dark header like old UI */
                 .leadstor-table thead th {
-                    background: #f1bbeaff;
+                    background: #F1BBEA;
                     padding: 6px 10px !important;
                     font-size: 13px;
                     font-weight: 600;
-                    color: #475569;
-                    border-bottom: 1px solid #e2e8f0;
+                    color: #1E293B;
+                    border-bottom: 1px solid #E2E8F0;
                     white-space: nowrap;
                 }
 

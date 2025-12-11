@@ -23,7 +23,23 @@ const config: Config = {
           from: { transform: 'translateX(0)' },
           to: { transform: 'translateX(-100%)' },
         }
-      }
+      },
+      colors: {
+        leadstor: {
+          primary: "#F1BBEA",
+          primaryHover: "#E38CD8",
+          primaryLight: "#F6D4F0",
+          lavender: "#C084FC",
+          lavenderHover: "#A855F7",
+          violet: "#8B5CF6",
+          bg: "#F8FAFC",
+          header: "#F1F5F9",
+          divider: "#E2E8F0",
+          textDark: "#0F172A",
+          textMedium: "#334155",
+          textLight: "#64748B",
+        },
+      },
     },
   },
   plugins: [require("rippleui")],

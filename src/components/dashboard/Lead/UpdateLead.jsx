@@ -244,14 +244,14 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
             {/* PAGE HEADER */}
             <div
               className="px-6 py-4 flex justify-between items-center"
-              style={{ backgroundColor: "#f0a2e5ff", color: "#475569" }}
+              style={{ backgroundColor: "#f1bbeaff", color: "#475569" }}
             >
               <h2 className="text-xl font-semibold flex items-center gap-2">Update Lead</h2>
               <button
                 type="button"
                 onClick={handleClose}
                 className="transition p-1 rounded-full"
-                style={{ color: "white" }}
+                style={{ color: "#000000" }}
               >
                 ✕
               </button>
@@ -400,7 +400,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         .label-pink { 
           display:block; 
           margin-bottom:4px; 
-          color: #da1dc0ff;
+          color: #000000;
         }
         .input-pink {
           width:100%;
@@ -416,14 +416,14 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         }
 
         .btn-primary-pink {
-          background: #f87fe8ff;
+          background: #F1BBEA;
           color: #000000;
           padding:8px 18px;
           border-radius:8px;
           transition:0.2s;
         }
         .btn-primary-pink:hover {
-          background: #f163deff;
+          background: #E38CD8;
         }
         .btn-secondary-pink {
           background:white;
@@ -434,7 +434,8 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           transition:0.2s;
         }
         .btn-secondary-pink:hover {
-          background: #f1bbeaff;
+          background: #db8fbeff;
+          color: #ffffff;
         }
       `}</style>
     </>

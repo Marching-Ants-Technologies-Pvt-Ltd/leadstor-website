@@ -365,8 +365,8 @@ const FilterDrawer = ({ isOpen, onClose }) => {
       <div style={overlayStyle} onClick={onClose}></div>
       {/* Drawer */}
       <div style={drawerStyle}>
-        <div style={{ padding: 20, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fafafa' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 600, color: '#333' }}>Filters</h2>
+        <div style={{ padding: 20, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F1BBEA' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 500, color: '#333' }}>Filters</h2>
           <button style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#666', padding: 0, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }} onClick={onClose}>×</button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: 20, marginRight: 3 }} className="filter-drawer-scrollbar">
@@ -513,7 +513,7 @@ const FilterDrawer = ({ isOpen, onClose }) => {
         <div style={{ padding: 20, borderTop: '1px solid #eee', display: 'flex', gap: 12, background: '#fafafa' }}>
           <button style={{ padding: '10px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: 'pointer', background: '#f8f9fa', color: '#666', border: '1px solid #ddd', flex: 1 }} onClick={clearFilters}>Clear All</button>
           <button
-            style={{ padding: '10px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: applying || !hasAnyFilter ? 'not-allowed' : 'pointer', background: '#007bff', color: 'white', flex: 1, opacity: applying || !hasAnyFilter ? 0.6 : 1 }}
+            style={{ padding: '10px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: applying || !hasAnyFilter ? 'not-allowed' : 'pointer', background: '#F1BBEA', color: '#1E293B', flex: 1, opacity: applying || !hasAnyFilter ? 0.6 : 1 }}
             onClick={handleApplyFilters}
             disabled={applying || !hasAnyFilter}
             type="button"

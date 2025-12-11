@@ -175,19 +175,19 @@ export default function Settings() {
   // PAGE LAYOUT
   // ---------------------------------------------------
   return (
-    <div className="flex h-full border rounded-md shadow-sm">
+    <div className="flex h-screen w-full border rounded-md shadow-sm overflow-hidden">
 
       {/* SIDEBAR */}
-      <aside className="w-64 bg-gray-100 p-4 overflow-y-auto">
+      <aside className="w-52 bg-gray-100 p-3 overflow-y-auto text-sm">
         <h3 className="mb-4 text-lg font-semibold text-gray-700">Settings</h3>
 
-        <ul className="space-y-2 text-gray-700">
+        <ul className="ml-3 mt-1 space-y-1 border-l pl-2 border-gray-300 text-sm">
 
           {menuStructure.map(menu => (
             <li key={menu.key}>
               <div
                 onClick={() => toggleMenu(menu.key)}
-                className="cursor-pointer flex justify-between items-center px-2 py-2 hover:bg-gray-200 rounded"
+                className="cursor-pointer flex justify-between items-center px-2 py-1 hover:bg-gray-200 rounded"
               >
                 <span>{menu.label}</span>
                 {openMenus[menu.key] ? <RiArrowDownSLine /> : <RiArrowRightSLine />}
@@ -252,14 +252,14 @@ export default function Settings() {
 
         <button
           onClick={() => router.push('/leads')}
-          className="w-full mt-4 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="w-full mt-3 px-2 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
         >
           ← Back
         </button>
       </aside>
 
       {/* MAIN CONTENT */}
-      <section className="flex-1 p-6 bg-white overflow-y-auto">
+      <section className="flex-1 p-4 bg-white overflow-y-auto text-sm">
         <Suspense fallback={<Loading />}>
           {renderContent()}
         </Suspense>

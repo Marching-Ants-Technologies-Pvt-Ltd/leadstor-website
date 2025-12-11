@@ -24,8 +24,8 @@ function DownloadProgressBar({ isVisible, progress, message, onCancel }) {
                     {/* Icon and content */}
                     <div className="flex items-start gap-3 flex-1 min-w-0">
                         {/* Download icon */}
-                        <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full flex-shrink-0 mt-0.5">
-                            <i className="ri-download-line text-blue-600"></i>
+                        <div className="flex items-center justify-center w-8 h-8 bg-[#F1BBEA] rounded-full flex-shrink-0 mt-0.5">
+                            <i className="ri-download-line text-black-600"></i>
                         </div>
                         
                         {/* Message and progress */}
@@ -358,9 +358,9 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                                     disabled={isExporting}
                                     className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
                                         selectedLimit === option.value && !isCustomRange
-                                            ? 'bg-blue-600 text-white border-blue-600'
+                                            ? 'bg-[#F1BBEA] text-black border-gray-300'
                                             : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-700 hover:border-gray-400'
-                                    } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+                                    } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#F1BBEA] focus:ring-offset-2`}
                                 >
                                     {option.label}
                                 </button>
@@ -404,7 +404,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                                     disabled={isExporting}
                                     className={`w-full px-3 py-2 border rounded-md text-sm transition-colors ${
                                         isCustomRange
-                                            ? 'border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                                            ? 'border-[#F1BBEA] focus:border-[#F1BBEA] focus:ring-2 focus:ring-gray-200'
                                             : 'border-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200'
                                     } focus:outline-none disabled:bg-gray-50 disabled:cursor-not-allowed`}
                                     placeholder="1"
@@ -426,7 +426,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                                     disabled={isExporting}
                                     className={`w-full px-3 py-2 border rounded-md text-sm transition-colors ${
                                         isCustomRange
-                                            ? 'border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                                            ? 'border-[#F1BBEA] focus:border-[#F1BBEA] focus:ring-2 focus:ring-gray-200'
                                             : 'border-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200'
                                     } focus:outline-none disabled:bg-gray-50 disabled:cursor-not-allowed`}
                                     placeholder="100"
@@ -434,12 +434,12 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                             </div>
                         </div>
                         {isCustomRange && (
-                            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                            <div className="p-3 bg-[#F1BBEA] border border-[#F1BBEA] rounded-md">
                                 <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <span className="text-sm text-blue-800">
+                                    <span className="text-sm text-black-800">
                                         Will export rows {fromRow + 1} to {tillRow} ({Math.max(0, tillRow - fromRow).toLocaleString()} total rows)
                                     </span>
                                 </div>
@@ -465,7 +465,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                     <button
                         onClick={onClose}
                         disabled={isExporting}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                         Cancel
                     </button>
@@ -474,7 +474,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                         <button
                             onClick={() => handleExport()}
                             disabled={isExporting}
-                            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                            className="px-4 py-2 text-sm font-medium bg-[#F1BBEA] text-black border border-[#F1BBEA] rounded-md hover:bg-[#F1BBEA] focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                         >
                             {isExporting ? (
                                 <>
@@ -497,7 +497,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                         <button
                             onClick={handleCustomExport}
                             disabled={isExporting}
-                            className="px-4 py-2 text-sm font-medium bg-blue-600 text-white border border-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+                            className="px-4 py-2 text-sm font-medium bg-[#F1BBEA] text-black border border-[#F1BBEA] rounded-md hover:bg-[#F1BBEA] focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
                         >
                             {isExporting ? (
                                 <>

@@ -752,119 +752,119 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   };
 
   return (
-  <div className="p-4 w-full">
+    <div className="p-4 w-full">
 
-    <ToastContainer position="top-right" />
+      <ToastContainer position="top-right" />
 
-    <h2 className="text-xl font-semibold mb-1">Add Enquiry</h2>
+      <h2 className="text-xl font-semibold mb-1">Add Enquiry</h2>
 
-    <p className="italic text-gray-500 text-xs mb-2">
-      (Note: Email Id or Mobile is mandatory)
-    </p>
+      <p className="italic text-gray-500 text-xs mb-2">
+        (Note: Email Id or Mobile is mandatory)
+      </p>
 
-    <div className="bg-blue-50 p-2 rounded border text-xs mb-3 flex items-center justify-between">
-      <span>
-        <b>NOTE:</b> First row of the excel should contain headers.
-      </span>
-      <button
-        onClick={downloadTemplate}
-        className="text-blue-700 underline text-xs pl-2"
-      >
-        Download Template
-      </button>
-    </div>
-
-    <div className="flex justify-between items-center mb-2">
-      <div className="flex gap-2">
-
-        {/* Back */}
+      <div className="bg-blue-50 p-2 rounded border text-xs mb-3 flex items-center justify-between">
+        <span>
+          <b>NOTE:</b> First row of the excel should contain headers.
+        </span>
         <button
-          onClick={onClose}
-          className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-100"
+          onClick={downloadTemplate}
+          className="text-blue-700 underline text-xs pl-2"
         >
-          ⬅ Back
-        </button>
-
-        {/* Import Excel */}
-        <label className="px-3 py-1.5 rounded-lg cursor-pointer text-sm shadow-sm hover:bg-pink-300 transition-all color-cls">
-          Import Excel
-          <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportExcel} />
-        </label>
-
-        {/* Add Enquiry */}
-        <button
-          onClick={submitLeads}
-          disabled={loading}
-          className="px-4 py-1.5 rounded-lg text-white bg-green-600 hover:bg-green-700 text-sm disabled:opacity-60"
-        >
-          {loading ? "Adding..." : "Add Enquiry"}
+          Download Template
         </button>
       </div>
-    </div>
 
-    {/* Add Row */}
-    <div
-      className="w-full text-center py-1 cursor-pointer rounded text-sm mb-2 color-cls"
-      onClick={addRow}
-    >
-      + Add Row
-    </div>
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex gap-2">
 
-    {/* Table */}
-    <div className="mt-2 border rounded shadow-sm">
-      <HotTable
-        ref={tableRef}
-        data={data}
-        colHeaders={colHeaders}
-        columns={columns}
-        rowHeaders={true}
-        licenseKey="non-commercial-and-evaluation"
-        copyPaste={{ copyPasteEnabled: true, rowsLimit: 10000, columnsLimit: fields.length || 100 }}
-        pasteMode="shift_down"
-        manualColumnResize
-        manualRowResize
-        contextMenu={["copy", "paste", "remove_row", "row_above", "row_below", "insert_row"]}
-        fillHandle={true}
-        stretchH="all"
-        height="360"
-        minSpareRows={0}
-        allowInsertRow={false}
-        autoWrapRow={false}
-        autoWrapCol={false}
-        afterChange={(changes, source) => {
-          if (!changes || changes.length === 0) return;
-          const hot = tableRef.current?.hotInstance;
-          if (!hot) return;
-          changes.forEach(([row, prop]) => {
-            const colIndex = typeof prop === "number" ? prop : hot.propToCol(prop);
-            hot.setCellMeta(row, colIndex, "className", "");
-          });
-          hot.render();
-        }}
-      />
-    </div>
+          {/* Back */}
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-100"
+          >
+            ⬅ Back
+          </button>
 
-    <style jsx>{`
-      .htInvalid {
-        background: #ffe6e6 !important;
-      }
-      .custom-hot .ht_clone_top th,
-      .custom-hot th {
-        background: #f1bbeaff !important;
-        color: #475569 !important;
-        font-size: 12px !important;
-        font-weight: 600;
-      }
-      .custom-hot td {
-        background: #fafafa !important;
-        font-size: 12px !important;
-      }
-      .color-cls {
-        background: #f1bbeaff !important;
-        color: #222 !important;
-      }
-    `}</style>
-  </div>
-);
+          {/* Import Excel */}
+          <label className="px-3 py-1.5 rounded-lg cursor-pointer text-sm shadow-sm hover:bg-pink-300 transition-all color-cls">
+            Import Excel
+            <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportExcel} />
+          </label>
+
+          {/* Add Enquiry */}
+          <button
+            onClick={submitLeads}
+            disabled={loading}
+            className="px-4 py-1.5 rounded-lg text-white bg-green-600 hover:bg-green-700 text-sm disabled:opacity-60"
+          >
+            {loading ? "Adding.. Please Wait..." : "Add Enquiry"}
+          </button>
+        </div>
+      </div>
+
+      {/* Add Row */}
+      <div
+        className="w-full text-center py-1 cursor-pointer rounded text-sm mb-2 color-cls"
+        onClick={addRow}
+      >
+        + Add Row
+      </div>
+
+      {/* Table */}
+      <div className="mt-2 border rounded shadow-sm">
+        <HotTable
+          ref={tableRef}
+          data={data}
+          colHeaders={colHeaders}
+          columns={columns}
+          rowHeaders={true}
+          licenseKey="non-commercial-and-evaluation"
+          copyPaste={{ copyPasteEnabled: true, rowsLimit: 10000, columnsLimit: fields.length || 100 }}
+          pasteMode="shift_down"
+          manualColumnResize
+          manualRowResize
+          contextMenu={["copy", "paste", "remove_row", "row_above", "row_below", "insert_row"]}
+          fillHandle={true}
+          stretchH="all"
+          height="360"
+          minSpareRows={0}
+          allowInsertRow={false}
+          autoWrapRow={false}
+          autoWrapCol={false}
+          afterChange={(changes, source) => {
+            if (!changes || changes.length === 0) return;
+            const hot = tableRef.current?.hotInstance;
+            if (!hot) return;
+            changes.forEach(([row, prop]) => {
+              const colIndex = typeof prop === "number" ? prop : hot.propToCol(prop);
+              hot.setCellMeta(row, colIndex, "className", "");
+            });
+            hot.render();
+          }}
+        />
+      </div>
+
+      <style jsx>{`
+        .htInvalid {
+          background: #ffe6e6 !important;
+        }
+        .custom-hot .ht_clone_top th,
+        .custom-hot th {
+          background: #f1bbeaff !important;
+          color: #475569 !important;
+          font-size: 12px !important;
+          font-weight: 600;
+        }
+        .custom-hot td {
+          background: #fafafa !important;
+          font-size: 12px !important;
+        }
+        .color-cls {
+          background: #f1bbeaff !important;
+          color: #222 !important;
+        }
+      `}</style>
+    </div>
+  );
 
 }

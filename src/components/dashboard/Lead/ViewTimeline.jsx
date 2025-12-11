@@ -1,129 +1,99 @@
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
-import { Corporate, User, Test, Owners } from "@/utility/TinyDB";
+import { Owners } from "@/utility/TinyDB";
 import { xFetch } from "@/utility/xFetch";
 import { MdAccessTime, MdClose } from "react-icons/md";
-import UpdateLead from "@/components/dashboard/Lead/UpdateLead"; // <-- ensure this import path is correct
+import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
 
 const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
   const [timelineData, setTimelineData] = useState({});
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
-  const [selectedCandidate, setSelectedCandidate] = useState(null);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchTimeline();
-    }
+    if (isOpen) fetchTimeline();
   }, [isOpen]);
 
   const fetchTimeline = async () => {
     try {
       const response = await xFetch({
         path: "/services/invite/getCandidateTimeLine",
-        payload: {
-          invitationId: leadDetails.invitationId,
-          time: new Date().getTime(),
-        },
+        payload: { invitationId: leadDetails.invitationId, time: Date.now() },
       });
       setTimelineData(response);
-    } catch (error) {
-      console.error("Error fetching timeline", error);
+    } catch (err) {
+      console.error("Timeline error", err);
     }
   };
 
-  const getUpdatedByName = (updated_by) => {
-    let owner = {};
-    if (Object.keys(Owners).length > 0) {
-      owner = Object.entries(Owners).map(([key, value]) => ({
-        key,
-        value,
-      }));
-    }
-
-    if (updated_by === -1) return "Admin";
-    if (updated_by === -3) return "System";
-
-    const user = owner.find((u) => Number(u.key) === Number(updated_by));
-    return user ? user.value : "Unknown";
+  const getUpdatedByName = (id) => {
+    if (id === -1) return "Admin";
+    if (id === -3) return "System";
+    const user = Object.entries(Owners).find(([key]) => Number(key) === Number(id));
+    return user ? user[1] : "Unknown";
   };
 
   const renderTimeline = () => {
-    let i = 0;
     const size = Object.keys(timelineData).length;
+    let i = 0;
 
     return Object.entries(timelineData).map(([dateTime, value], index) => {
       i++;
-      const isInverted = i % 2 === 0;
       const updatedBy = getUpdatedByName(value.updated_by);
+      const isEven = i % 2 === 0;
 
       return (
         <li
           key={index}
-          className={isInverted ? "timeline-inverted" : ""}
           style={{
             listStyle: "none",
             marginBottom: "20px",
             display: "flex",
-            flexDirection: isInverted ? "row-reverse" : "row",
-            alignItems: "flex-start",
+            flexDirection: isEven ? "row-reverse" : "row",
+            gap: "12px",
           }}
         >
+          {/* Badge */}
           <div
-            className="timeline-badge"
             style={{
-              backgroundColor: "#3b82f6",
+              backgroundColor: "#C084FC",
               color: "white",
               padding: "10px",
               borderRadius: "50%",
-              minWidth: "40px",
-              textAlign: "center",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              minWidth: "42px",
+              height: "42px",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+              fontSize: "15px",
             }}
           >
             ⏱
           </div>
 
+          {/* Card */}
           <div
-            className="timeline-panel"
             style={{
-              border: "1px solid #e5e7eb",
+              background: "white",
+              borderRadius: "12px",
               padding: "16px",
-              borderRadius: "8px",
-              backgroundColor: "#ffffff",
-              width: "100%",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              flex: 1,
+              border: "1px solid #E2E8F0",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
             }}
           >
-            <div
-              className="timeline-heading"
-              style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}
-            >
-              <MdAccessTime style={{ color: "#6b7280", marginRight: "8px" }} />
-              <small style={{ color: "#6b7280", fontSize: "14px" }}>{dateTime}</small>
+            <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
+              <MdAccessTime size={18} style={{ color: "#64748B", marginRight: "6px" }} />
+              <small style={{ color: "#475569" }}>{dateTime}</small>
             </div>
 
-            <div className="timeline-body" style={{ color: "#374151", fontSize: "14px" }}>
-              {value.status && (
-                <p>
-                  <strong>Status:</strong> {value.status}
-                </p>
-              )}
-              {value.remarks && (
-                <p>
-                  <strong>Remarks:</strong> {value.remarks}
-                </p>
-              )}
-
+            <div style={{ fontSize: "14px", color: "#1E293B" }}>
+              {value.status && <p><b>Status:</b> {value.status}</p>}
+              {value.remarks && <p><b>Remarks:</b> {value.remarks}</p>}
               {value.updated_by != null && (
                 <>
-                  {i === size && (
-                    <p>
-                      <strong>Lead Initiated by:</strong> {updatedBy}
-                    </p>
-                  )}
-                  <p>
-                    <strong>Updated By:</strong> {updatedBy}
-                  </p>
+                  {i === size && <p><b>Lead Initiated by:</b> {updatedBy}</p>}
+                  <p><b>Updated By:</b> {updatedBy}</p>
                 </>
               )}
             </div>
@@ -133,9 +103,7 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
     });
   };
 
-  const header = `${leadDetails.firstName || ""} ${
-    leadDetails.mobile ? `(${leadDetails.mobile})` : ""
-  }`;
+  const header = `${leadDetails.firstName || ""} ${leadDetails.mobile ? `(${leadDetails.mobile})` : ""}`;
 
   return (
     <>
@@ -143,72 +111,78 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
       <Modal
         isOpen={isOpen && !showUpdatePopup}
         onRequestClose={onClose}
-        contentLabel="Candidate Timeline"
         ariaHideApp={false}
         overlayClassName="modal-overlay"
-        className="modal-content"
+        className="modal-content leadstor-modal"
       >
+        {/* HEADER */}
         <div
           style={{
-            backgroundColor: "#3b82f6",
-            color: "white",
+            backgroundColor: "#F1BBEA",
+            color: "#1E293B",
             padding: "16px 24px",
-            borderTopLeftRadius: "8px",
-            borderTopRightRadius: "8px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+            borderTopLeftRadius: "12px",
+            borderTopRightRadius: "12px",
+            fontSize: "18px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            borderBottom: "1px solid #E2E8F0",
           }}
         >
-          <h2 style={{ margin: 0 }}>{header}</h2>
-
+          {header}
           <button
             onClick={onClose}
-            style={{ background: "transparent", border: "none", color: "white", cursor: "pointer" }}
+            style={{ background: "transparent", border: "none", cursor: "pointer", color: "#1E293B" }}
           >
             <MdClose size={24} />
           </button>
         </div>
 
-        <div style={{ padding: "20px" }}>
-          <ul style={{ padding: 0 }}>{renderTimeline()}</ul>
+        {/* BODY */}
+        <div style={{ padding: "20px", maxHeight: "70vh", overflowY: "auto" }}>
+          <ul style={{ padding: 0, margin: 0 }}>{renderTimeline()}</ul>
 
-          <div style={{ textAlign: "right", marginTop: "10px" }}>
+          <div style={{ textAlign: "right", marginTop: "12px" }}>
             <button
               style={{
-                backgroundColor: "#3b82f6",
+                backgroundColor: "#F1BBEA",
                 color: "white",
-                padding: "8px 16px",
-                borderRadius: "6px",
+                padding: "10px 18px",
+                fontWeight: 600,
+                borderRadius: "8px",
                 border: "none",
                 cursor: "pointer",
+                boxShadow: "0 3px 6px rgba(0,0,0,0.12)",
               }}
-              onClick={() => {
-                setSelectedCandidate(leadDetails);
-                setShowUpdatePopup(true);
-              }}
+              onClick={() => setShowUpdatePopup(true)}
+              onMouseEnter={(e) => (e.target.style.background = "#E38CD8")}
+              onMouseLeave={(e) => (e.target.style.background = "#F1BBEA")}
             >
-              Update
+              Edit
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* UPDATE POPUP – TIMELINE POPUP AUTO CLOSES */}
+      {/* UPDATE POPUP */}
       {showUpdatePopup && (
         <UpdateLead
-          selectedLead={selectedCandidate}
-          onCancel={() => {
-            setShowUpdatePopup(false);
-          }}
+          selectedLead={leadDetails}
+          onCancel={() => setShowUpdatePopup(false)}
           onSuccess={() => {
             setShowUpdatePopup(false);
-            onClose(); // close timeline popup
-            xLeads && xLeads(); // refresh parent table
+            onClose();
+            xLeads && xLeads();
           }}
         />
       )}
+      <style>{`
+          .modal-content{
+            padding:0px;
+          }
+      `}
+        </style>
     </>
   );
 };

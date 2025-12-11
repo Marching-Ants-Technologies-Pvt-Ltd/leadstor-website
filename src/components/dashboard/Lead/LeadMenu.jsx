@@ -524,7 +524,7 @@ export default function LeadsMenu({
 
         /* ACTION CHIP HOVER — keep icon white, fill background */
         .action-chip:hover {
-        background: #f1bbeaff !important;  /* your theme blue/teal */
+        background: #F1BBEA !important;  /* your theme blue/teal */
         border-color: transparent;
         }
 
