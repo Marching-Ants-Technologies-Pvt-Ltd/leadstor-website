@@ -232,7 +232,7 @@ export default function WhatsappAutomation() {
     try {
       setLoading(true);
       const res = await xFetch({
-        path: "/services/profile/updateWhastappTrigger",
+        path: "/services/profile/updateWhastappTriggerForSettings",
         method: "POST",
         payload: fd,
         isFormData: true,
@@ -267,7 +267,7 @@ export default function WhatsappAutomation() {
     try {
       setLoading(true);
       const res = await xFetch({
-        path: "/services/profile/deleteWhastappTrigger",
+        path: "/services/profile/deleteWhastappTriggerForSettings",
         method: "POST",
         payload: fd,
         isFormData: true,

@@ -9,6 +9,7 @@ import "handsontable/dist/handsontable.full.min.css";
 import * as XLSX from "xlsx";
 
 import { xFetch } from "@/utility/xFetch";
+import Spinner from "@/components/common/Spinner";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/ReactToastify.min.css";
 import { Corporate, Test, User } from "@/utility/TinyDB";
@@ -55,7 +56,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       if (res && Array.isArray(res)) {
         // Remove unwanted items
         let filtered = res.filter(
-          (f) => !["action", "updateTime", "leadProbability"].includes(f.dataField)
+          (f) => !["action", "updateTime", "leadProbability","courseMode"].includes(f.dataField)
         );
 
         // Ensure lastName exists; inject if missing (as requested earlier)
@@ -231,8 +232,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     ...getColumnDefinition(f),
   }));
 
-  const colHeaders = fields.map((f) => f.displayName ?? f.fieldName ?? f.dataField);
-
+  const colHeaders = fields.map(
+    (f) => f.displayName || f.fieldName
+  );
   /* ---------- Helpers: validators like old code ---------- */
 
   const emailRegex = /.+@.+/;
@@ -569,68 +571,93 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     return chunks;
   };
 
-  const processManualImport = async (chunks) => {
-    if (!Array.isArray(chunks) || chunks.length === 0) return;
-    setLoading(true);
+  const processManualImport = async (c) => {
+      const hot = tableRef.current?.hotInstance;
+      if (!hot) {
+        toast.error("Table not ready!");
+        return;
+      }
 
-    try {
+      // Step 1: Validation (existing logic)
+      const validation = await validateHotData();
+      if (!validation.ok) {
+        toast.error(validation.message);
+        return;
+      }
+
+      const rawRows = validation.raw;
+
+      // Step 2: Remove completely empty rows
+      const cleanedRows = rawRows.filter((row) =>
+        Object.values(row).some((v) => String(v).trim() !== "")
+      );
+
+      if (cleanedRows.length === 0) {
+        toast.error("No valid rows to import!");
+        return;
+      }
+
+      // Step 3: Convert to "dataField → value" objects
+      const contacts = cleanedRows.map((row) => {
+        const obj = {};
+        fields.forEach((f) => {
+          obj[f.dataField] = row[f.dataField] ?? "";
+        });
+        return obj;
+      });
+
+      // Step 4: Chunking contacts (like previous logic)
+      const CHUNK_SIZE = 100;
+      const chunks = [];
+      for (let i = 0; i < contacts.length; i += CHUNK_SIZE) {
+        chunks.push(contacts.slice(i, i + CHUNK_SIZE));
+      }
+
+      // Step 5: Submit each chunk to Add Enquiry API
+      let successCount = 0;
       let totalSent = 0;
-      for (let idx = 0; idx < chunks.length; idx++) {
-        const chunk = chunks[idx];
+      
+      for (let i = 0; i < chunks.length; i++) {
+        
+        const chunk = chunks[i];
         totalSent += chunk.length;
         const toDefer = totalSent > 600;
-        const formData = new FormData();
-        chunk.forEach((contact, i) => {
-          contact.forEach((val, j) => {
-            formData.append(`contacts[${i}][${j}]`, val ?? "");
-          });
-        });
 
+        const formData = new FormData();
+        formData.append("contacts", JSON.stringify(chunk));
         formData.append("testId", testId || "");
         formData.append("manual", true);
         formData.append("toDefer", toDefer);
-        formData.append("corporateType", Corporate?.type || "");
-        formData.append("recruiterId", Corporate?._id || "");
         formData.append("owner", User?._id || "");
         formData.append("roleName", User?.role || "");
 
-        const res = await xFetch({
-          method: "POST",
-          path: "/sendTestInvitationEmail.php",
-          payload: formData,
-          isFormData: true,
-        });
+        setLoading(true);
+        try {
+          const res = await xFetch({
+            path: "/services/invite/sendTestInvitationEmail",
+            method: "POST",
+            payload: formData,
+            isFormData:true,
+          });
 
-        if (!res) {
-          throw new Error("Upload failed (no response)");
-        }
-        if (typeof res === "string") {
-          try {
-            const parsed = JSON.parse(res);
-            if (parsed.status && parsed.status === "Error") {
-              throw new Error(parsed.errorDetail || "Upload error");
-            }
-          } catch (e) {
-            // ignore parse error
+          if (res?.status == 'success') {
+            successCount += chunks[i].length;
+            toast.success(`Uploaded chunk ${i + 1}/${chunks.length}`);
+            toast.success(`Successfully imported ${successCount} Leads`);
+            onRefreshTable?.();
+            onClose?.();
+
+          } else {
+            toast.error(`Chunk ${i + 1} failed`);
           }
-        } else if (res.status && res.status === "Error") {
-          throw new Error(res.errorDetail || "Upload error");
+        } catch (err) {
+          console.error("Chunk Upload Error", err);
+          toast.error(`Chunk ${i + 1} failed!`);
+        } finally {
+          setLoading(false); // 👉 STOP LOADER ALWAYS
         }
       }
-
-      toast.success(`Successfully uploaded ${chunks.reduce((s, c) => s + c.length, 0)} records.`);
-
-      const emptyRow = fields.reduce((a, f) => ((a[f.dataField] = ""), a), {});
-      setData([emptyRow]);
-
-      if (typeof onRefreshTable === "function") onRefreshTable();
-    } catch (err) {
-      console.error("processManualImport error", err);
-      toast.error(err.message || "Upload failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }
 
   const submitLeads = async () => {
     try {
@@ -726,42 +753,66 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   };
 
   return (
-    <div className="p-6 w-full">
-      
+    <div className="p-4 w-full">
+
       <ToastContainer position="top-right" />
 
-      <h2 className="text-2xl font-semibold mb-2">Add Enquiry</h2>
+      <h2 className="text-xl font-semibold mb-1">Add Enquiry</h2>
 
-      <p className="italic text-gray-600 mb-3">
-        (Note: Email Id or Mobile is mandatory to add data successfully)
+      <p className="italic text-gray-500 text-xs mb-2">
+        (Note: Email Id or Mobile is mandatory)
       </p>
 
-      <div className="bg-blue-100 p-3 rounded border text-sm mb-4">
-        <b>NOTE:</b> First row of the excel should contain column headers (First Name, Last Name, Email Id / Mobile etc.).
-        <button onClick={downloadTemplate} className="text-blue-700 underline ml-1">
+      <div className="bg-blue-50 p-2 rounded border text-xs mb-3 flex items-center justify-between">
+        <span>
+          <b>NOTE:</b> First row of the excel should contain headers.
+        </span>
+        <button
+          onClick={downloadTemplate}
+          className="text-blue-700 underline text-xs pl-2"
+        >
           Download Template
         </button>
       </div>
 
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex gap-3">
-          <button onClick={onClose} className="px-5 py-2.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-700 hover:bg-gray-100 transition-all duration-200">⬅ Back</button>
-          <label className="px-5 py-2.5 rounded-xl cursor-pointer shadow-sm hover:bg-pink-400 transition-all duration-200 color-cls">
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex gap-2">
+
+          {/* Back */}
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-100"
+          >
+            ⬅ Back
+          </button>
+
+          {/* Import Excel */}
+          <label className="px-3 py-1.5 rounded-lg cursor-pointer text-sm shadow-sm hover:bg-pink-300 transition-all color-cls">
             Import Excel
             <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportExcel} />
           </label>
 
-          <button onClick={submitLeads} disabled={loading} className="px-5 py-2.5 rounded-xl text-white bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-sm">
-            {loading ? "Adding..." : "Add Enquiry"}
+          {/* Add Enquiry */}
+          <button
+            onClick={submitLeads}
+            disabled={loading}
+            className="px-4 py-1.5 rounded-lg text-white bg-green-600 hover:bg-green-700 text-sm disabled:opacity-60"
+          >
+            {loading ? "Adding.. Please Wait..." : "Add Enquiry"}
           </button>
         </div>
       </div>
 
-      <div className="w-full text-center py-1 cursor-pointer rounded mb-3 color-cls" onClick={addRow}>
-          + Add Row
+      {/* Add Row */}
+      <div
+        className="w-full text-center py-1 cursor-pointer rounded text-sm mb-2 color-cls"
+        onClick={addRow}
+      >
+        + Add Row
       </div>
 
-      <div className="mt-3 border rounded overflow-hidden shadow">
+      {/* Table */}
+      <div className="mt-2 border rounded shadow-sm">
         <HotTable
           ref={tableRef}
           data={data}
@@ -771,19 +822,21 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           licenseKey="non-commercial-and-evaluation"
           copyPaste={{ copyPasteEnabled: true, rowsLimit: 10000, columnsLimit: fields.length || 100 }}
           pasteMode="shift_down"
-          allowInsertRow={true}
-          minSpareRows={1}
           manualColumnResize
           manualRowResize
           contextMenu={["copy", "paste", "remove_row", "row_above", "row_below", "insert_row"]}
           fillHandle={true}
           stretchH="all"
-          height="420"
+          height="360"
+          minSpareRows={0}
+          allowInsertRow={false}
+          autoWrapRow={false}
+          autoWrapCol={false}
           afterChange={(changes, source) => {
             if (!changes || changes.length === 0) return;
             const hot = tableRef.current?.hotInstance;
             if (!hot) return;
-            changes.forEach(([row, prop, oldVal, newVal]) => {
+            changes.forEach(([row, prop]) => {
               const colIndex = typeof prop === "number" ? prop : hot.propToCol(prop);
               hot.setCellMeta(row, colIndex, "className", "");
             });
@@ -795,28 +848,24 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       <style jsx>{`
         .htInvalid {
           background: #ffe6e6 !important;
-          box-shadow: inset 0 0 0 2px rgba(255, 77, 103, 0.12);
         }
-
         .custom-hot .ht_clone_top th,
         .custom-hot th {
           background: #f1bbeaff !important;
           color: #475569 !important;
+          font-size: 12px !important;
           font-weight: 600;
         }
-
         .custom-hot td {
           background: #fafafa !important;
+          font-size: 12px !important;
         }
-        .htInvalidCell {
-          background: #ffdddd !important;
-          border: 2px solid #ff4d4d !important;
-        }
-        .color-cls{
+        .color-cls {
           background: #f1bbeaff !important;
-          color: #121213ff !important;
+          color: #222 !important;
         }
       `}</style>
     </div>
   );
+
 }

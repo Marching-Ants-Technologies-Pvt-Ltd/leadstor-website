@@ -1,6 +1,6 @@
 "use client";
 import Flatpickr from "react-flatpickr";
-import "flatpickr/dist/themes/material_blue.css"; // base theme
+import "flatpickr/dist/themes/material_blue.css";
 import { useEffect, useState } from "react";
 import "./DateInputPickerStyles.jsx";
 

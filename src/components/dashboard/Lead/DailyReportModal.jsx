@@ -80,116 +80,132 @@ export default function DailyReportModal({ isOpen, onClose }) {
   	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-			<div className="bg-white rounded-2xl shadow-2xl w-[450px] p-6 max-h-[90vh] overflow-y-auto transform transition-all duration-300">
-	
-			{/* Step 1: Owner selection */}
-			{step === "select" && User?._id == -1 && (
-			<>
-				<h2 className="text-lg font-semibold mb-4">Select Owner</h2>
-				<select
-				className="w-full border p-2 rounded mb-4 bg-white text-black cursor-pointer select-none focus:outline-none focus:border-gray-400 hover:border-gray-400 thin-scrollbar"
-				value={selectedOwner}
-				onChange={(e) => setSelectedOwner(e.target.value)}
-				>
-				<option key="0" value="">Select Owner</option>
-				<option key="-1" value="-1">Admin</option>
-				{Object.entries(Owners).map(([id, name]) => (
-					<option key={id} value={id}>
-					{name}
-					</option>
-				))}
-				</select>
+		<div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+			<div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]
+							w-[480px] p-7 max-h-[90vh] overflow-y-auto border border-gray-100
+							animate-scaleIn">
 
-				<div className="flex justify-end gap-3 mt-6">
-				<button
-				onClick={onClose}
-				className="px-4 py-2 rounded-lg bg-gray-200 text-gray-800 font-medium shadow hover:bg-gray-300 transition"
-				>
-				Cancel
-				</button>
-				<button
-				onClick={handleConfirm}
-				className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white font-medium shadow hover:from-blue-700 hover:to-blue-600 transition disabled:opacity-50"
-				disabled={!selectedOwner}
-				>
-				Get Report
-				</button>
-			</div>
-			</>
-			)}
+				{/* Step 1: Select Owner */}
+				{step === "select" && User?._id == -1 && (
+					<>
+						<h2 className="text-xl font-semibold text-gray-800 mb-5">
+							Select Owner
+						</h2>
 
-			{/* Step 2: Report */}
-			{step === "report" && (
-			<>
-				{/* Title */}
-				<h2 className="text-xl font-bold text-gray-800 mb-6 border-b">
-				Daily Call Report
-				</h2>
-
-				{/* Username */}
-				<div className="flex justify-center mb-6">
-				<div className="bg-gray-50 border rounded-lg px-3 py-1 text-gray-700 font-medium shadow-inner">
-					{userName}
-				</div>
-				</div>
-
-				{/* Report Table */}
-				<div className="overflow-x-auto rounded-lg border">
-				<table className="w-full text-sm text-left border-collapse">
-					<thead>
-					<tr className="bg-blue-50 text-blue-800">
-						<th className="border px-3 py-2 font-semibold">Status</th>
-						<th className="border px-3 py-2 font-semibold text-right">
-						Count
-						</th>
-					</tr>
-					</thead>
-					<tbody>
-					{reportData.map((val, idx) => (
-						<tr
-						key={idx}
-						className="odd:bg-white even:bg-gray-50 hover:bg-blue-50/50 transition"
+						<select
+							className="w-full border border-gray-300 p-3 rounded-lg bg-gray-50 text-gray-800 
+								cursor-pointer focus:outline-none
+								hover:border-[#F1BBEA] transition"
+							value={selectedOwner}
+							onChange={(e) => setSelectedOwner(e.target.value)}
 						>
-						<td className="border px-3 py-2">{val.status}</td>
-						<td className="border px-3 py-2 text-right">{val.count}</td>
-						</tr>
-					))}
-					</tbody>
-					<tfoot>
-					<tr className="bg-blue-100 font-bold">
-						<td className="border px-3 py-2">Total</td>
-						<td className="border px-3 py-2 text-right">{totalCall}</td>
-					</tr>
-					</tfoot>
-				</table>
-				</div>
+							<option value="">Select Owner</option>
+							<option value="-1">Admin</option>
+							{Object.entries(Owners).map(([id, name]) => (
+								<option key={id} value={id}>{name}</option>
+							))}
+						</select>
 
-				{/* Action Buttons */}
-				<div className="flex justify-end gap-3 mt-6">
-				<button
-					className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white font-medium shadow hover:from-blue-700 hover:to-blue-600 transition"
-					onClick={() => {
-					downloadDailyReport(userId, userName);
-					onClose();
-					setStep("select"); // reset
-					}}
-				>
-					Download
-				</button>
-				<button
-					className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 font-medium shadow hover:bg-gray-400 transition"
-					onClick={() => {
-					onClose();
-					setStep("select"); // reset
-					}}
-				>
-					Close
-				</button>
-				</div>
-			</>
-			)}
-		</div>
+						<div className="flex justify-end gap-3 mt-7">
+							<button
+								onClick={onClose}
+								className="px-5 py-2.5 rounded-lg bg-gray-200 text-gray-800 font-medium 
+									shadow hover:bg-gray-300 transition"
+							>
+								Cancel
+							</button>
+
+							<button
+								onClick={handleConfirm}
+								disabled={!selectedOwner}
+								className="px-5 py-2.5 rounded-lg 
+									bg-[#F1BBEA] text-black font-medium shadow 
+									hover:bg-[#E38CD8] transition disabled:opacity-40"
+							>
+								Get Report
+							</button>
+						</div>
+					</>
+				)}
+
+				{/* Step 2: Report */}
+				{step === "report" && (
+					<>
+						<h3 className="text-xl text-gray-900 text-center mb-1">
+						Daily Call Report
+						</h3>
+
+						<div className="flex justify-center mb-5 mt-2">
+							<div className="bg-[#C084FC] text-white rounded-full px-4 py-1 text-sm shadow-sm">
+								{userName}
+							</div>
+						</div>
+
+						{/* Table */}
+						<div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
+							<table className="w-full text-sm text-left">
+								<thead >
+									<tr
+										style={{
+											background: "#F1BBEA",
+											color: "#1E293B",
+											borderBottom: "2px solid #E2E8F0"
+										}}
+									>
+										<th className="border px-3 py-2 font-semibold">Status</th>
+										<th className="border px-3 py-2 font-semibold text-right">Count</th>
+									</tr>
+								</thead>
+
+								<tbody>
+									{reportData.map((val, idx) => (
+										<tr
+											key={idx}
+											className="odd:bg-white even:bg-gray-50 hover:bg-[#F1BBEA20] transition"
+										>
+											<td className="border px-3 py-2">{val.status}</td>
+											<td className="border px-3 py-2 text-right">{val.count}</td>
+										</tr>
+									))}
+								</tbody>
+
+								<tfoot>
+									<tr style={{ background: "#F1BBEA", color: "#1E293B" }} className="font-bold">
+										<td className="border px-3 py-2">Total</td>
+										<td className="border px-3 py-2 text-right">{totalCall}</td>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+
+						{/* Buttons */}
+						<div className="flex justify-end gap-3 mt-6">
+							<button
+								className="px-5 py-2.5 rounded-lg bg-[#F1BBEA] text-black 
+									font-medium shadow hover:bg-[#E38CD8] transition"
+								onClick={() => {
+									downloadDailyReport(userId, userName);
+									onClose();
+									setStep("select");
+								}}
+							>
+								Download
+							</button>
+
+							<button
+								className="px-5 py-2.5 rounded-lg bg-gray-300 text-gray-800 font-medium 
+									shadow hover:bg-gray-400 transition"
+								onClick={() => {
+									onClose();
+									setStep("select");
+								}}
+							>
+								Close
+							</button>
+						</div>
+					</>
+				)}
+			</div>
 		</div>
 	);
 }
