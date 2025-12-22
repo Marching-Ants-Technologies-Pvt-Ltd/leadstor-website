@@ -7,6 +7,22 @@ export default function Navbar({ data }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
+  const [openAnalytics, setOpenAnalytics] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpenAnalytics(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+
   useEffect(() => {
     function onDoc(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -41,10 +57,16 @@ export default function Navbar({ data }) {
         <button onClick={goToLegacyDashboard} className="nav-icon" title="Old Dashboard">
           <i className="ri-computer-line"></i>
         </button>
-
-        <button className="nav-icon" title="Support">
-          <i className="ri-customer-service-2-line"></i>
+        
+      {/* Analytics Hover Dropdown */}
+      <div className="relative group">
+        <button className="nav-icon" title='Analytics'>
+          <Link
+              href="/analytics/classic-analytics"
+            ><i className="ri-pie-chart-line"></i>
+          </Link>
         </button>
+      </div>
 
         <button className="nav-icon" title="Notifications">
           <i className="ri-notification-2-line"></i>

@@ -277,10 +277,10 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
                     // OWNER SELECT
                     if (item.dataField === "assignedUserId") {
-                      const { options } = renderOwnerSelect(item.displayName);
+                      const { options } = renderOwnerSelect(item.displayName || item.fieldName);
                       return (
                         <div key={index}>
-                          <label className="label-pink">{item.displayName}</label>
+                          <label className="label-pink">{item.displayName || item.fieldName}</label>
                           <select
                             value={fields.assignedUserId}
                             onChange={(e) => handleChange(item.dataField, e.target.value)}
@@ -301,7 +301,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                         <React.Fragment key={index}>
                           {/* DROPDOWN FIELD */}
                           <div>
-                            <label className="label-pink">{item.displayName}</label>
+                            <label className="label-pink">{item.displayName || item.fieldName}</label>
                             <select
                               value={value}
                               onChange={(e) => handleChange(item.dataField, e.target.value)}
@@ -335,7 +335,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                     if (item.fieldType === "text") {
                       return (
                         <div key={index}>
-                          <label className="label-pink">{item.displayName}</label>
+                          <label className="label-pink">{item.displayName || item.fieldName}</label>
                           <input
                             type={item.dataField === "emailId" ? "email" : "text"}
                             value={value}
@@ -350,7 +350,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                     if (item.fieldType === "textarea") {
                       return (
                         <div key={index} className="md:col-span-1">
-                          <label className="label-pink">{item.displayName}</label>
+                          <label className="label-pink">{item.displayName || item.fieldName}</label>
                           <textarea
                             rows="2"
                             value={value}

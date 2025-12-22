@@ -232,8 +232,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     ...getColumnDefinition(f),
   }));
 
-  const colHeaders = fields.map((f) => f.displayName ?? f.fieldName ?? f.dataField);
-
+  const colHeaders = fields.map(
+    (f) => f.displayName || f.fieldName
+  );
   /* ---------- Helpers: validators like old code ---------- */
 
   const emailRegex = /.+@.+/;

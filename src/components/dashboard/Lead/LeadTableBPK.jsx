@@ -190,152 +190,19 @@ export default function LeadsTable({
         );
     };
 
-    const handleShowTimeline = (selectedLead) => {
-        setShowTimeline(true);
-        setSelectedLead(selectedLead);
-    };
-
-    const renderStatusTimelineCell = (row, handleShowTimeline) => {
-        const value = row.status || "-";
-        const followup = row.followupDate || "Specify Followup Date";
-        const trainer = row.trainerName ? ` Trainer: ${row.trainerName}` : "";
-
-        const text =
-            row.isFollowupType === "1"
-                ? `${value} [${followup}]${trainer}`
-                : `${value}${trainer}`;
-
-        return (
-            <div className="flex items-end gap-1">
-                <span className="whitespace-normal break-words text-left max-w-[100px] ">
-                    {text}
-                    <button
-                        onClick={() => handleShowTimeline(row)}
-                        className="inline-flex items-center align-baseline ml-1 text-blue-500 hover:text-blue-700 focus:outline-none"
-                        title="View Timeline"
-                        style={{ padding: 0 }}
-                    >
-                        <i className="ri-history-line text-[15px] leading-none"></i>
-                    </button>
-                </span>
-            </div>
-        );
-    };
-
-    const renderRemarkCell = (row) => {
-        let content = row.remarks || "";
-        let audioLink = "";
-
-        // ---------------------------
-        // Extract audio (same as PHP)
-        // ---------------------------
-        if (content.includes("<audio")) {
-            const match = content.match(/src="([^"]+)"/);
-            audioLink = match?.[1] || "";
-            content = content.split("<audio")[0];
-        }
-
-        // ---------------------------
-        // Sanitize text
-        // ---------------------------
-        const div = document.createElement("div");
-        div.innerText = content;
-        let safeText = div.innerHTML;
-
-        // ---------------------------
-        // Prepend latestRemarksDate
-        // ---------------------------
-        if (row.latestRemarksDate) {
-            safeText = `${row.latestRemarksDate}: ${safeText}`;
-        }
-
-        // ---------------------------
-        // Expand / Collapse Logic
-        // ---------------------------
-        let finalText = "";
-
-        if (safeText.length > 120) {
-            const shortText = safeText.substring(0, 120);
-
-            finalText = `
-                <div style="min-width:155px;">
-                    <div>
-                        ${shortText}
-                        <span style="cursor:pointer;color:#1976d2;" 
-                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
-                                    this.parentElement.style.display='none';">
-                            ...(view)
-                        </span>
-                    </div>
-
-                    <div class="full-text" style="display:none;">
-                        ${safeText}
-                        <span style="cursor:pointer;color:red;margin-left:6px;"
-                            onclick="this.parentElement.style.display='none';
-                                    this.parentElement.parentElement.querySelector('div').style.display='block';">
-                            (hide)
-                        </span>
-                    </div>
-                </div>
-            `;
-        } else {
-            finalText = safeText;
-        }
-
-        // ---------------------------
-        // Append additionalInfo (PHP logic)
-        // ---------------------------
-        if (row.additionalInfo?.length > 0) {
-            finalText += `
-                <br/>
-                <span style="color:green;">
-                    <i class="ri-user-fill"></i> ${row.additionalInfo}
-                </span>
-            `;
-        }
-
-        // ---------------------------
-        // When everything is empty
-        // ---------------------------
-        if (!finalText || finalText === "null") {
-            return "-";
-        }
-
-        // ---------------------------
-        // Return JSX version (same structure as your original code)
-        // ---------------------------
-        const textStyles = {
-            whiteSpace: "normal",
-            wordBreak: "normal",
-            overflowWrap: "break-word",
-            maxWidth: "480px",
-            lineHeight: "20px",
-        };
-
-        if (audioLink) {
-            return (
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <audio controls style={{ width: "140px" }}>
-                        <source src={audioLink} />
-                    </audio>
-
-                    <span
-                        style={textStyles}
-                        dangerouslySetInnerHTML={{ __html: finalText }}
-                    />
-                </div>
-            );
-        }
-
-        return (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <span
-                    style={textStyles}
-                    dangerouslySetInnerHTML={{ __html: finalText }}
-                />
-            </div>
-        );
-    };
+    const renderStatusTimelineCell = (row) => (
+        <div className="flex gap-1">
+            <span>{row.status || '-'}</span>
+            <i
+                className="ri-history-line text-blue-600 cursor-pointer"
+                title="View Timeline"
+                onClick={() => {
+                    setSelectedLead(row);
+                    setShowTimeline(true);
+                }}
+            />
+        </div>
+    );
 
     useEffect(() => {
         xFetch({ path: '/services/profile/columns' })
@@ -402,8 +269,7 @@ export default function LeadsTable({
                                     <td key={col}>
                                         {col === 'firstName' && renderNameCell(row)}
                                         {col === 'mobile' && renderMobileCell(row)}
-                                        {col === 'remarks' && renderRemarkCell(row)}
-                                        {col === 'status' && renderStatusTimelineCell(row, handleShowTimeline)}
+                                        {col === 'status' && renderStatusTimelineCell(row)}
                                         {dataFormatters[col] &&
                                             !['firstName', 'mobile', 'status'].includes(col) &&
                                             dataFormatters[col](row)}
@@ -443,65 +309,6 @@ export default function LeadsTable({
                     onClose={() => setShowTimeline(false)}
                 />
             )}
-            <style jsx>{`
-                /* Classic Leadstor Table */
-
-                .table-container {
-                    width: 100%;
-                    max-height: calc(100vh - 145px);
-                    overflow: auto;
-                    background: #ffffff;
-                    text-color: #374151;
-                }
-
-                /* Dark header like old UI */
-                .leadstor-table thead th {
-                    background: #F1BBEA;
-                    padding: 6px 10px !important;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #1E293B;
-                    border-bottom: 1px solid #E2E8F0;
-                    white-space: nowrap;
-                }
-
-                /* Dense row height */
-                .leadstor-table tbody td {
-                    padding: 5px 13px !important;
-                    font-size: 13px;
-                    border-bottom: 1px solid #e2e8f0;
-                    border-right: 1px solid #f1f5f9;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
-                    color: #000000 !important;  /* near-black, perfect readability */
-                }
-
-                /* Remove row hover highlight */
-                .leadstor-table tbody tr:hover {
-                    background: #f8fafc;
-                }
-
-                /* Compact column widths */
-                .leadstor-table td[data-column="email"] {
-                    max-width: 180px;
-                }
-                .leadstor-table td[data-column="remarks"] {
-                    max-width: 260px;
-                    color: #111827 !important;
-                }
-                .leadstor-table td[data-column="status"] {
-                    width: 150px;
-                    color: #111827 !important;
-                }
-                .leadstor-table td[data-column="mobile"] {
-                    width: 100px;
-                }
-
-                .default-clr{
-                    color: #f1bbeaff;
-                }
-            `}</style>
         </>
     );
 }
