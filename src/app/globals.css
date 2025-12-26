@@ -14,13 +14,13 @@ html, body {
   font-family: "Inter", "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
 
 }
-/* 
-html {
-  zoom: 0.8;
-} */
+
 :root {
-    --sidebar-width: 80px;   /* FIXED WIDTH */
+  --table-header-bg: #d4e0ec;
+  --table-header-text: #111827;
+  --table-header-border: #c7d2e3;
 }
+
 
 /* prefer transform for animations */
 .will-change-transform {
@@ -560,3 +560,113 @@ textarea::placeholder {
     @apply bg-background text-foreground;
   }
 }
+
+
+
+/* NAV */
+.nav-item {
+  @apply h-11 flex items-center gap-3 px-4 mx-2 my-1 rounded-lg text-sm
+  text-slate-500 font-medium cursor-pointer transition;
+}
+.nav-item:hover {
+  @apply bg-indigo-50 text-indigo-600;
+}
+.nav-item.active {
+  @apply bg-indigo-600 text-white;
+}
+
+/* HEADER ICONS */
+.header-icon {
+  @apply w-9 h-9 flex items-center justify-center rounded-lg
+  text-slate-500 cursor-pointer transition;
+}
+.header-icon:hover {
+  @apply bg-slate-100 text-indigo-600;
+}
+
+/* BUTTONS */
+.action-btn {
+  @apply px-3 py-2 rounded-lg border bg-white text-sm cursor-pointer;
+}
+
+/* PAGINATION */
+.page-btn {
+  @apply px-3 py-1 rounded-lg border text-sm cursor-pointer;
+}
+.page-btn.active {
+  @apply bg-indigo-600 text-white border-indigo-600;
+}
+
+/* KPI */
+.kpi-card {
+  @apply flex-1 bg-white rounded-lg px-3 py-2 flex items-center gap-3 shadow-sm;
+}
+.kpi-count {
+  @apply text-xl font-bold;
+}
+.kpi-label {
+  @apply text-xs text-slate-500;
+}
+.overdue .kpi-count { color: #dc2626; }
+.today .kpi-count { color: #f59e0b; }
+.new .kpi-count { color: #2563eb; }
+.hot .kpi-count { color: #c026d3; }
+.conversion .kpi-count { color: green; }
+
+/* AVATAR */
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* NAME CELL */
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.edit-icon {
+  cursor: pointer;
+  font-size: 13px;
+  color: #9ca3af;
+}
+.edit-icon:hover { color: #2563eb; }
+
+/* STATUS PILLS */
+.status-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+.status-joined { background: #22c55e; }
+.status-hot { background: #ef4444; }
+.status-followup { background: #f59e0b; }
+.status-postmeeting-followup { background: #3b82f6; }
+.status-not-interested,
+.status-cold { background: #9ca3af; }
+
+/* PROBABILITY */
+.prob-high,
+.prob-medium,
+.prob-low {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.prob-high { background: #dcfce7; border: 1px solid #22c55e; }
+.prob-high::before { content: "🔥"; }
+.prob-medium { background: #fef3c7; border: 1px solid #f59e0b; }
+.prob-medium::before { content: "⏳"; }
+.prob-low { background: #e5e7eb; border: 1px solid #9ca3af; }
+.prob-low::before { content: "❄️"; }

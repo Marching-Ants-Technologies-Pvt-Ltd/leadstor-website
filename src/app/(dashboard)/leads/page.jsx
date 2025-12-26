@@ -125,12 +125,8 @@ export default function Leads() {
     };
 
     return (
-        <div className="w-full bg-white rounded-md shadow-md flex flex-col"
-            style={{
-                height: "calc(100vh - var(--header-height))",
-            }}
-        >
-            {/* ⭐ CONDITIONAL RENDERING */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+            {/* CONDITIONAL RENDERING */}
             {openAddLead ? (
                 
                 // SHOW ADD LEAD INLINE REPLACING TABLE
@@ -140,7 +136,6 @@ export default function Leads() {
 
             ) : (
                 <>
-                <div className="bg-white py-2 pt-1 rounded-b-xl shadow-sm">
                     {/* TOP MENU */}
                     <LeadsMenu
                         onOpenAdvanceFilter={() => setDrawerOpen(true)}
@@ -154,32 +149,33 @@ export default function Leads() {
                         setCancelExportFunction={setCancelExportFunction}
                         setOpenAddLead={setOpenAddLead}
                     />
-                </div>
                     {/* NORMAL LEADS TABLE */}
-                    <LeadsTable
-                        columns={columns}
-                        setColumns={setColumns}
-                        columnOrder={columnOrder}
-                        setColumnOrder={setColumnOrder}
-                        leads={leads}
-                        setLeads={setLeads}
-                        selectedLeadIds={selectedLeadIds}
-                        setSelectedLeadIds={setSelectedLeadIds}
-                    />
+                    <div className="flex-1 flex flex-col px-4 gap-3 overflow-hidden">
+                        <LeadsTable
+                            columns={columns}
+                            setColumns={setColumns}
+                            columnOrder={columnOrder}
+                            setColumnOrder={setColumnOrder}
+                            leads={leads}
+                            setLeads={setLeads}
+                            selectedLeadIds={selectedLeadIds}
+                            setSelectedLeadIds={setSelectedLeadIds}
+                        />
 
-                    {/* PAGINATION */}
-                    <LeadsTablePagination
-                        columns={columns}
-                        setColumns={setColumns}
-                        columnOrder={columnOrder}
-                        setColumnOrder={handleReorder}
-                        fetchAndSetColumns={fetchAndSetColumns}
-                        showPerPageDropdown={showPerPageDropdown}
-                        setShowPerPageDropdown={setShowPerPageDropdown}
-                        downloadNotification={downloadNotification}
-                        toggleDownloadCard={toggleDownloadCard}
-                        onDownloadCancel={handleDownloadCancel}
-                    />
+                        {/* PAGINATION */}
+                        <LeadsTablePagination
+                            columns={columns}
+                            setColumns={setColumns}
+                            columnOrder={columnOrder}
+                            setColumnOrder={handleReorder}
+                            fetchAndSetColumns={fetchAndSetColumns}
+                            showPerPageDropdown={showPerPageDropdown}
+                            setShowPerPageDropdown={setShowPerPageDropdown}
+                            downloadNotification={downloadNotification}
+                            toggleDownloadCard={toggleDownloadCard}
+                            onDownloadCancel={handleDownloadCancel}
+                        />
+                    </div>
 
                     {/* ADVANCE FILTER */}
                     <FilterDrawer

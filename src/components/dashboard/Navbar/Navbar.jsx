@@ -2,8 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {Corporate} from "@/utility/TinyDB";
 
-export default function Navbar({ data }) {
+export default function Navbar({ collapsed, setCollapsed, data }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -50,7 +51,23 @@ export default function Navbar({ data }) {
   };
 
   return (
-    <div className="flex items-center gap-4" ref={menuRef}>
+  <header className="h-14 flex items-center px-6 border-b bg-white">
+
+    {/* LEFT */}
+    <div className="flex items-center gap-4 h-full">
+      <i
+        className="fa fa-bars cursor-pointer text-slate-500 hover:text-blue-600"
+        onClick={() => setCollapsed(!collapsed)}
+      />
+      <span className="font-medium text-slate-800">
+        Lead Management
+      </span>
+    </div>
+
+    {/* RIGHT */}
+    <div className="ml-auto flex items-center gap-6 h-full">
+
+      <div className="flex items-center gap-4" ref={menuRef}>
 
       {/* icon buttons */}
       <div className="flex items-center gap-3">
@@ -81,13 +98,7 @@ export default function Navbar({ data }) {
           aria-haspopup="true"
           aria-expanded={open}
         >
-          <div className="hidden md:block text-right leading-tight">
-            <div className="text-sm font-medium text-gray-700">{data.user.name}</div>
-            <div className="text-xs text-gray-400">{data.user.role}</div>
-          </div>
-
           <Image src={data.user.image} alt="avatar" width={28} height={28} className="rounded-full" />
-          <i className="ri-arrow-down-s-line text-gray-400"></i>
         </button>
 
         {open && (
@@ -95,6 +106,12 @@ export default function Navbar({ data }) {
                 className="dropdown-panel"
                 role="menu"
             >
+
+              <div className="hidden md:block ml-5 leading-tight">
+                <div className="text-xs text-gray-600">{data.user.name} [{data.user.role}]</div>
+                <div className="text-xs text-gray-400"> {Corporate?.name}</div>
+              </div>
+
                 <Link href="/businessProfile">
                 <div className="dropdown-row">
                     <i className="ri-user-3-line text-blue-500 text-lg"></i>
@@ -176,5 +193,8 @@ export default function Navbar({ data }) {
         `}</style>
 
     </div>
-  );
+    </div>
+  </header>
+);
+
 }

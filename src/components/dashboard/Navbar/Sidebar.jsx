@@ -4,7 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-
+import 'font-awesome/css/font-awesome.min.css';
+import { useState } from 'react';
 import {
   Contact,
   Wallet,
@@ -15,7 +16,7 @@ import {
   IndianRupee
 } from "lucide-react";
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, setCollapsed }) {
   const pathName = usePathname();
 
   useEffect(() => {
@@ -27,129 +28,41 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{
-        width: '70px',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        bottom: 0,
-        zIndex: 40,
-      }}
-      className="bg-white border-r flex flex-col items-center py-6"
-    >
-      {/* Logo */}
-      <div className="mb-8">
-        <Image src="/icons/leadstor.png" alt="logo" width={38} height={38} />
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 w-full">
-        <ul className="flex flex-col gap-4 w-full items-center m-0 p-0">
-
-          <Link href="/leads">
-            <li className="menu-icon-item">
-              <Contact className="w-5 h-5 stroke-[1.8]" />
-              <span className="tooltip">Lead Management</span>
-            </li>
-          </Link>
-
-          <Link href="/payments">
-            <li className="menu-icon-item">
-              <Wallet className="w-5 h-5 stroke-[1.8]" />
-              <span className="tooltip">Payments</span>
-            </li>
-          </Link>
-
-          <Link href="/placements">
-            <li className="menu-icon-item">
-              <BriefcaseBusiness className="w-5 h-5 stroke-[1.8]" />
-              <span className="tooltip">Placement</span>
-            </li>
-          </Link>
-
-          <Link href="/batches">
-            <li className="menu-icon-item">
-              <Users className="w-5 h-5 stroke-[1.8]" />
-              <span className="tooltip">Batches</span>
-            </li>
-          </Link>
-
-          <Link href="/invoices">
-            <li className="menu-icon-item">
-              <FileText className="w-5 h-5 stroke-[1.8]" />
-              <span className="tooltip">Invoices</span>
-            </li>
-          </Link>
-
-          <Link href="/branches">
-            <li className="menu-icon-item">
-              <Network className="w-5 h-5 stroke-[1.8]" />
-              <span className="tooltip">Branches</span>
-            </li>
-          </Link>
-
-          <Link href="/expenses">
-            <li className="menu-icon-item">
-              <IndianRupee className="w-5 h-5 stroke-[1.8]" />
-              <span className="tooltip">Expenses</span>
-            </li>
-          </Link>
-
-        </ul>
-      </nav>
-
-      {/* Styles */}
-      <style jsx>{`
-        .menu-icon-item {
-          list-style: none;
-          width: 48px;
-          height: 48px;
-          border-radius: 12px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          cursor: pointer;
-          color: #444;
-          position: relative;
-          transition: all 0.22s ease;
-        }
-
-        /* Hover – pastel theme */
-        .menu-icon-item:hover {
-          background: #f1bbeaff;
-          color: #475569;
-        }
-
-        /* Active */
-        .menu-icon-item.__active {
-          background: #f1bbeaff;
-          color: #475569!important;
-          font-weight: 600;
-        }
-
-        /* Tooltip – much closer */
-        .tooltip {
-          position: absolute;
-          left: 60px; /* only 10px away */
-          top: 50%;
-          transform: translateY(-50%);
-          padding: 6px 12px;
-          background: white;
-          color: #111;
-          font-size: 13px;
-          border-radius: 6px;
-          white-space: nowrap;
-          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
-          opacity: 0;
-          pointer-events: none;
-          transition: opacity 0.16s ease, transform 0.16s ease;
-        }
-
-        .menu-icon-item:hover .tooltip {
-          opacity: 1;
-          transform: translateY(-50%) translateX(2px);
-        }
-      `}</style>
-    </aside>
+        className={`bg-white border-r border-slate-200 transition-all duration-300 shrink-0
+        ${collapsed ? 'w-16' : 'w-[220px]'}`}
+      >
+        {/* LOGO */}
+        <div className="h-14 flex items-center gap-3 px-4 font-semibold text-slate-800 border-b">
+          <Image src="/icons/leadstor.png" alt="logo" width={38} height={38} />
+          {!collapsed && <span>LeadStor</span>}
+        </div>
+        
+        {/* NAV */}
+        <nav className="pt-2">
+        {[
+            { icon: 'fa fa-tachometer', label: 'Leads', href: '/leads', active: true },
+            { icon: 'fa fa-credit-card', label: 'Payments', href: '/payments' },
+            { icon: 'fa fa-briefcase', label: 'Placement', href: '/placements' },
+            { icon: 'fa fa-users', label: 'Batches', href: '/batches' },
+            { icon: 'fa fa-file-text', label: 'Invoices', href: '/invoices' },
+            { icon: 'fa fa-sitemap', label: 'Branches', href: '/branches' },
+            { icon: 'fa fa-inr', label: 'Expenses', href: '/expenses' },
+        ].map(({ icon, label, href, active }, i) => (
+            <Link key={i} href={href}>
+            <div
+                className={`h-11 flex items-center gap-3 px-4 mx-2 my-1 rounded-lg text-sm cursor-pointer transition
+                ${
+                active
+                    ? 'bg-sky-400 text-white'
+                    : 'text-slate-600 hover:bg-blue-50 hover:text-blue-600'
+                }`}
+            >
+                <i className={`fa-solid ${icon} min-w-[20px] text-center`} />
+                {!collapsed && <span className="whitespace-nowrap">{label}</span>}
+            </div>
+            </Link>
+        ))}
+        </nav>
+      </aside>
   );
 }
