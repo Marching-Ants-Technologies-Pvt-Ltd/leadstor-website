@@ -197,142 +197,152 @@ export default function LeadsMenu({
 
   return (
     <>
-      <div className="lead-topbar compact">
-          <div className="search-wrap">
-            <SearchBox />
-        </div>
+      <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
 
-        <div className="right">
-          {/* Primary action: Add */}
-          <div className="action-group desktop">
+          {/* SEARCH */}
+          <div className="flex items-center gap-2 bg-slate-50 border rounded-lg px-3 py-2 w-[300px]">
+            <i className="fa fa-search text-blue-400 text-sm " />
+            <input
+              placeholder="Search by name/email"
+              className="bg-transparent outline-none w-full text-sm bg-slate-50"
+            />
+          </div>
+
+          {/* ACTIONS */}
+          <div className="flex items-center gap-2">
+
+            {/* ADD */}
             <button
               onClick={handleAddLead}
-              className="action-chip"
-              title="Add lead (manual)"
-              aria-label="Add lead"
+              className="action-chip primary"
             >
-              <i className="ri-user-add-line" />
-              <span className="label">Add</span>
+              <i className="fa fa-user-plus" />
+              <span>Add</span>
             </button>
 
-            <div className="divider" />
+            {/* EXPORT */}
+            <div className="relative group">
+              <button className="action-chip">
+                <i className="fa fa-file-excel-o text-emerald-600" />
+                <span>Export</span>
+                <i className="fa fa-caret-down text-xs opacity-60" />
+              </button>
 
-            {/* Export / Reports */}
-            <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer action-chip'>
-                <i className="ri-file-excel-2-fill"></i>
-                <span className="label">Export</span>
-                <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                    <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5"
-                        onClick={() => setDailyReport(true) } >
-                        <i className="ri-calendar-event-line text-lg mt-1"></i>
-                        <span className='text-sm'>Daily report</span>
-                    </a>
-                    <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={() => setShowExportModal(true)}>
-                        <i className="ri-download-cloud-2-line text-lg mt-1"></i>
-                        <span className='text-sm'>Export enquiries</span>
-                    </a>
-                </div>
-            </div>
-
-            {/* Filters */}
-            <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer action-chip'>
-                <i className="ri-filter-2-line text-xl"></i>
-                <span className="label">Filter</span>
-                <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                    <a onClick={handelFollowUpFilters} className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                        <i className="ri-user-follow-line text-lg mt-1"></i>
-                        <span className='text-sm'>Pending Followup</span>
-                    </a>
-                    <a onClick={handelBookmarks} className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                        <i className="ri-bookmark-line text-lg mt-1"></i>
-                        <span className='text-sm'>Bookmarks</span>
-                    </a>
-                    <div className="dropdown-divider my-1" role="separator"></div>
-                    <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={onOpenAdvanceFilter}>
-                        <i className="ri-equalizer-3-line text-lg mt-1"></i>
-                        <span className='text-sm'>Advance</span>
-                    </a>
-                </div>
-            </div>
-
-            {/* Actions: grouped popover */}
-            <div className='flex py-1 dropdown dropdown-hover border rounded-md gap-2 px-2 justify-center items-center cursor-pointer ml-0 action-chip'>
-                <i className="ri-shapes-line text-xl"></i>
-                <span className="label">Actions</span>
-                <div className="dropdown-menu dropdown-menu-bottom-center bg-white top-10 w-44">
-                    <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={() => setShowSendSms(true)}>
-                        <i className="ri-chat-1-line text-lg mt-1"></i>
-                        <span className='text-sm'>Send SMS</span>
-                    </a>
-                    <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5" onClick={() => setShowSendEmail(true)}>
-                        <i className="ri-mail-ai-line text-lg mt-1"></i>
-                        <span className='text-sm'>Send Email</span>
-                    </a>
-                    <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5">
-                        <i className="ri-user-voice-line text-lg"></i>
-                        <span className='text-sm'>Invite Again</span>
-                    </a>
-                    {/* Bulk Update with submenu */}
-                    <div className="dropdown dropdown-hover relative group">
-                        <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5 group" onClick={() => {
-                            if (selectedLeadIds.length === 0) {
-                                toast.error('Please select at least one record to bulk update.');
-                            } else {
-                                setShowBulkUpdateDrawer(true);
-                            }
-                        }}>
-                            <i className="ri-database-2-line text-lg"></i>
-                            <span className='text-sm'>Bulk Update</span>
-                            <i className="ri-arrow-right-s-line text-xs ml-auto"></i>
-                        </a>
-                    </div>
-                    <div className="dropdown-divider my-1" role="separator"></div>
-                    <a className="dropdown-item flex-row gap-2 justify-start items-center py-0.5 hover:bg-rose-100 text-rose-500">
-                        <i className="ri-delete-bin-7-line text-lg"></i>
-                        <span className='text-sm'>Delete Invite</span>
-                    </a>
-                </div>
-            </div>
-
-            {/* Analytics + Settings + Refresh */}
-            <button className="action-chip muted" title="Analytics">
-              <i className="ri-pie-chart-line" />
-            </button>
-            <button className="action-chip muted" title="Settings" onClick={() => router.push('/leads/settings')}>
-              <i className="ri-settings-line" />
-            </button>
-            <button className="action-chip muted" title="Refresh" onClick={() => window.tableRefresh()}>
-              <i className="ri-refresh-line" />
-            </button>
-          </div>
-
-          {/* Compact / mobile burger */}
-          <div className="burger mobile" ref={burgerRef}>
-            <button
-              className="burger-btn"
-              onClick={() => setBurgerOpen(v => !v)}
-              aria-label="Open menu"
-              aria-expanded={burgerOpen}
-            >
-              <i className="ri-menu-3-line" />
-            </button>
-
-            {burgerOpen && (
-              <div className="burger-panel">
-                <button className="burger-item" onClick={handleAddLead}><i className="ri-user-add-line" /> <span>Add</span></button>
-                <button className="burger-item" onClick={() => { setShowImport(true); setBurgerOpen(false); }}><i className="ri-upload-cloud-2-line" /> <span>Import</span></button>
-                <button className="burger-item" onClick={() => { setShowExportModal(true); setBurgerOpen(false); }}><i className="ri-file-excel-2-fill" /> <span>Export</span></button>
-                <button className="burger-item" onClick={() => { onOpenAdvanceFilter?.(); setBurgerOpen(false); }}><i className="ri-filter-2-line" /> <span>Filter</span></button>
-                <button className="burger-item" onClick={() => { setShowSendEmail(true); setBurgerOpen(false); }}><i className="ri-mail-ai-line" /> <span>Send Email</span></button>
-                <button className="burger-item" onClick={() => { setShowBulkUpdateDrawer(true); setBurgerOpen(false); }}><i className="ri-database-2-line" /> <span>Bulk Update</span></button>
-                <div className="burger-divider" />
-                <button className="burger-item" onClick={() => { router.push('/leads/settings'); setBurgerOpen(false); }}><i className="ri-settings-line" /> <span>Settings</span></button>
-                <button className="burger-item" onClick={() => { window.tableRefresh(); setBurgerOpen(false); }}><i className="ri-refresh-line" /> <span>Refresh</span></button>
+              <div className="dropdown-panel hidden group-hover:block">
+                <button onClick={() => setDailyReport(true)} className="drop-item">
+                  <i className="fa fa-calendar text-blue-500" />
+                  Daily report
+                </button>
+                <button onClick={() => setShowExportModal(true)} className="drop-item">
+                  <i className="fa fa-download text-green-600" />
+                  Export enquiries
+                </button>
               </div>
-            )}
+            </div>
+
+            {/* FILTER */}
+            <div className="relative group">
+              <button className="action-chip">
+                <i className="fa fa-filter text-indigo-600" />
+                <span>Filter</span>
+                <i className="fa fa-caret-down text-xs opacity-60" />
+              </button>
+
+              <div className="dropdown-panel hidden group-hover:block">
+                <button onClick={handelFollowUpFilters} className="drop-item">
+                  <i className="fa fa-clock-o text-orange-500" />
+                  Pending Follow-ups
+                </button>
+                <button onClick={handelBookmarks} className="drop-item">
+                  <i className="fa fa-bookmark text-yellow-500" />
+                  Bookmarks
+                </button>
+                <div className="dropdown-divider" />
+                <button onClick={onOpenAdvanceFilter} className="drop-item">
+                  <i className="fa fa-sliders text-purple-500" />
+                  Advanced
+                </button>
+              </div>
+            </div>
+
+            {/* ACTIONS */}
+            <div className="relative group">
+              <button className="action-chip">
+                <i className="fa fa-th-large text-sky-600" />
+                <span>Actions</span>
+                <i className="fa fa-caret-down text-xs opacity-60" />
+              </button>
+
+              <div className="dropdown-panel hidden group-hover:block">
+                <button onClick={() => setShowSendSms(true)} className="drop-item">
+                  <i className="fa fa-comment text-blue-500" />
+                  Send SMS
+                </button>
+                <button onClick={() => setShowSendEmail(true)} className="drop-item">
+                  <i className="fa fa-envelope text-indigo-500" />
+                  Send Email
+                </button>
+                <button
+                  className="drop-item"
+                  onClick={() => {
+                    if (!selectedLeadIds.length) {
+                      toast.error('Select at least one record');
+                    } else {
+                      setShowBulkUpdateDrawer(true);
+                    }
+                  }}
+                >
+                  <i className="fa fa-database text-purple-500" />
+                  Bulk Update
+                </button>
+
+                <div className="dropdown-divider" />
+
+                <button className="drop-item text-rose-500 hover:bg-rose-50">
+                  <i className="fa fa-trash" />
+                  Delete
+                </button>
+              </div>
+            </div>
+
+            <button
+              className="icon-btn"
+              title="Settings"
+              onClick={() => router.push('/leads/settings')}
+            >
+              <i className="fa fa-cog" />
+            </button>
+
+            <button
+              className="icon-btn"
+              title="Refresh"
+              onClick={() => window.tableRefresh()}
+            >
+              <i className="fa fa-refresh" />
+            </button>
+
           </div>
-        </div>
       </div>
+
+      {/* KPI BAR */}
+      <div className="flex gap-2 px-4 py-2 bg-[#f5f6f8] border-b">
+        {[
+          ['8', 'Overdue', 'text-red-600'],
+          ['12', "Today's Follow-ups", 'text-amber-500'],
+          ['6', 'New Leads', 'text-blue-600'],
+          ['4', 'Hot Leads', 'text-fuchsia-600'],
+          ['7', 'Conversions this month', 'text-green-600'],
+        ].map(([count, label, color], i) => (
+          <div
+            key={i}
+            className="flex-1 bg-white rounded-lg px-3 py-2 flex items-center gap-3 shadow-sm"
+          >
+            <div className={`text-xl font-bold ${color}`}>{count}</div>
+            <div className="text-xs text-slate-500">{label}</div>
+          </div>
+        ))}
+      </div>
+
 
       {/* Modals and drawers (kept as-is) */}
       {showImport && (
@@ -457,181 +467,79 @@ export default function LeadsMenu({
 
       <style jsx>{`
         /* Compact HubSpot-like topbar */
-        .lead-topbar.compact {
-          height: 54px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 6px 12px;
-          background: #fff;
-        }
-        .lead-topbar .left {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          flex: 1 1 auto;
-          min-width: 0;
-        }
-        .lead-topbar .right {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .logo-wrap { display:flex; align-items:center; }
-        .search-wrap { flex: 1 1 420px; min-width: 220px; }
-
-        /* Action group (desktop) */
-        .action-group.desktop {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          align-self: stretch;
-        }
-
         .action-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 10px;
-          border-radius: 10px;
-          background: #fff;
-          border: 1px solid rgba(15,23,42,0.06);
-          font-size: 14px;
-          color: #0f172a;
-          cursor: pointer;
-          transition: transform .08s ease, background .08s ease, box-shadow .08s ease;
-          height: 36px;
-        }
-        .action-chip.primary {
-          background: linear-gradient(180deg,#0ea5a0,#06b6d4);
-          color: #fff;
-          border: none;
-          box-shadow: 0 2px 8px rgba(6,95,70,0.06);
-        }
-        .action-chip.primary .label { font-weight: 600; }
-        .action-chip.muted {
-          background: transparent;
-          border: 1px solid rgba(15,23,42,0.04);
-        }
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(15,23,42,0.08);
+            background: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+          }
 
-        .action-chip .label {
-          display: inline-block;
-          line-height: 1;
-          font-size: 13px;
-        }
+          .action-chip:hover {
+            background: #f1f5f9;
+          }
 
-        /* ACTION CHIP HOVER — keep icon white, fill background */
-        .action-chip:hover {
-        background: #F1BBEA !important;  /* your theme blue/teal */
-        border-color: transparent;
-        }
+          .action-chip.primary {
+            /*background: linear-gradient(180deg, #0ea5e9, #0284c7);*/
+            background: linear-gradient(180deg, #0B5ED7, #084298);
+            color: #ffffff;
+            border: none;
+          }
 
-        /* Ensure icons stay white on hover */
-        .action-chip:hover i {
-        }
+          .dropdown-panel {
+            position: absolute;
+            top: 110%;
+            right: 0;
+            min-width: 190px;
+            background: white;
+            border-radius: 12px;
+            border: 1px solid rgba(15,23,42,0.08);
+            box-shadow: 0 10px 30px rgba(2,6,23,0.12);
+            padding: 6px;
+            z-index: 50;
+          }
 
-        /* Primary chip hover (Add button) */
-        .action-chip.primary:hover {
-        background: linear-gradient(180deg,#0ea5a0,#06b6d4);
-        opacity: 0.92;
-        }
+          .drop-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+          }
 
+          .drop-item:hover {
+            background: #f8fafc;
+          }
 
-        /* dropdown panel */
-        .dropdown-panel {
-          position: absolute;
-          margin-top: 6px;
-          right: 12px;
-          background: white;
-          border: 1px solid rgba(15,23,42,0.06);
-          border-radius: 10px;
-          box-shadow: 0 6px 18px rgba(2,6,23,0.08);
-          min-width: 180px;
-          z-index: 60;
-          padding: 6px;
-        }
-        .dropdown-panel.wide { min-width: 240px; }
-        .drop-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 8px 10px;
-          width: 100%;
-          border-radius: 8px;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          color: #0f172a;
-          text-align: left;
-        }
-        .drop-item:hover { background: #f8fafc; }
+          .dropdown-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 6px 0;
+          }
 
-        .dropdown-divider {
-          height: 1px;
-          background: rgba(15,23,42,0.04);
-          margin: 6px 0;
-        }
+          .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(15,23,42,0.06);
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #475569;
+          }
 
-        .drop-item.text-rose { color: #e11d48; }
+          .icon-btn:hover {
+            background: #f1f5f9;
+          }
 
-        /* burger (mobile) */
-        .burger.mobile { display: none; position: relative; }
-        .burger-btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 36px;
-          border-radius: 8px;
-          border: 1px solid rgba(15,23,42,0.06);
-          background: white;
-          cursor: pointer;
-        }
-
-        .burger-panel {
-          position: absolute;
-          right: 0;
-          top: 46px;
-          min-width: 200px;
-          background: white;
-          border-radius: 10px;
-          border: 1px solid rgba(15,23,42,0.06);
-          box-shadow: 0 6px 18px rgba(2,6,23,0.08);
-          padding: 8px;
-          z-index: 80;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .burger-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 8px 10px;
-          background: transparent;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          color: #0f172a;
-          text-align: left;
-        }
-        .burger-item:hover { background: #f8fafc; }
-
-        .burger-divider { height: 1px; background: rgba(15,23,42,0.04); margin: 6px 0; }
-
-        /* responsiveness */
-        @media (max-width: 1024px) {
-          .action-group.desktop { display: none; }
-          .burger.mobile { display: block; }
-          .search-wrap { min-width: 160px; }
-        }
-
-        @media (max-width: 640px) {
-          .search-wrap { display: none; }
-        }
       `}</style>
     </>
   );

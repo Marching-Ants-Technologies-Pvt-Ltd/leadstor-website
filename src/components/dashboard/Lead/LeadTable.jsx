@@ -27,14 +27,6 @@ const dataFormatters = {
         if (_id === -1) return getCurrentUserNameIfAdmin();
         return getLeadOwnerById(_id);
     },
-    leadProbability: (row) => {
-        let _id = parseInt(row['leadProbability']);
-        if (!_id || typeof _id !== 'number') return '';
-        if (_id < 20) return '';
-        if (_id === 20) return `<i class="warning">Low</i>`;
-        if (_id === 55) return `<i class="primary">Medium</i>`;
-        return '<i class="success">High</i>';
-    }
 };
 
 export default function LeadsTable({
@@ -115,45 +107,45 @@ export default function LeadsTable({
             e.stopPropagation();
 
             await xFetch({
-                path: "/services/leads/bookmark",
-                payload: {
-                    invitationId: row.invitationId,
-                    bookmark: isBookmarked ? 0 : 1
-                }
+            path: "/services/leads/bookmark",
+            payload: {
+                invitationId: row.invitationId,
+                bookmark: isBookmarked ? 0 : 1
+            }
             });
 
             setLeads(prev =>
-                prev.map(l =>
-                    l.invitationId === row.invitationId
-                        ? { ...l, isBookmarked: isBookmarked ? 0 : 1 }
-                        : l
-                )
+            prev.map(l =>
+                l.invitationId === row.invitationId
+                ? { ...l, isBookmarked: isBookmarked ? 0 : 1 }
+                : l
+            )
             );
         };
 
         return (
             <div className="flex items-center gap-2">
-                <i
-                    className={`cursor-pointer text-[15px] ${
-                        isBookmarked
-                            ? "ri-bookmark-fill text-yellow-500"
-                            : "ri-bookmark-line text-gray-400 hover:text-gray-600"
-                    }`}
-                    onClick={toggleBookmark}
-                    title="Bookmark"
-                />
+                <span className="font-medium text-slate-800">{row.firstName} 
+                    {/* Bookmark */}
+                    {/* <i
+                        className={`ri-bookmark-${
+                        isBookmarked ? "fill text-yellow-500" : "line text-gray-400"
+                        } cursor-pointer text-[15px]`}
+                        onClick={toggleBookmark}
+                        title="Bookmark"
+                    /> */}
 
-                <i
-                    className="ri-pencil-fill cursor-pointer hover:text-pink-600 text-[14px] default-clr"
-                    title="Edit Lead"
-                    onClick={(e) => {
+                    {/* Edit */}
+                    <i
+                        className="ri-pencil-fill ml-1.5 text-amber-500 cursor-pointer text-[14px]"
+                        title="Edit Lead"
+                        onClick={(e) => {
                         e.stopPropagation();
                         setSelectedCandidate(row);
                         setShowUpdatePopup(true);
-                    }}
-                />
-
-                <span className="font-medium">{row.firstName}</span>
+                        }}
+                    />
+                </span>
             </div>
         );
     };
@@ -196,62 +188,96 @@ export default function LeadsTable({
     };
 
     const renderStatusTimelineCell = (row, handleShowTimeline) => {
-        const value = row.status || "-";
-        const followup = row.followupDate || "Specify Followup Date";
-        const trainer = row.trainerName ? ` Trainer: ${row.trainerName}` : "";
+        const status = row.status || "-";
 
-        const text =
-            row.isFollowupType === "1"
-                ? `${value} [${followup}]${trainer}`
-                : `${value}${trainer}`;
+        const STATUS_MAP = {
+            "Phone Not Picked": "bg-sky-500",
+            "May Visit": "bg-indigo-500",
+            "Visited": "bg-blue-500",
+            "Hot Lead": "bg-red-500",
+            "Warm Lead": "bg-amber-500",
+            "Send Reminder": "bg-purple-500",
+            "Joined": "bg-green-500",
+            "Follow Up": "bg-orange-500",
+            "Not Interested": "bg-gray-400",
+            "PostMeeting FollowUp": "bg-cyan-500"
+        };
+
+        const pillColor = STATUS_MAP[status] || "bg-slate-400";
 
         return (
-            <div className="flex items-end gap-1">
-                <span className="whitespace-normal break-words text-left max-w-[100px] ">
-                    {text}
-                    <button
-                        onClick={() => handleShowTimeline(row)}
-                        className="inline-flex items-center align-baseline ml-1 text-blue-500 hover:text-blue-700 focus:outline-none"
-                        title="View Timeline"
-                        style={{ padding: 0 }}
-                    >
-                        <i className="ri-history-line text-[15px] leading-none"></i>
-                    </button>
-                </span>
+            <div className="flex items-center gap-2">
+            {/* STATUS PILL */}
+            <span
+                className={`px-3 py-[3px] rounded-full text-xs font-medium text-white
+                ${pillColor} whitespace-nowrap`}
+            >
+                {status}
+            </span>
+
+            {/* TIMELINE ICON */}
+            <i
+                className="ri-history-line text-blue-500 cursor-pointer text-[14px]"
+                title="View Timeline"
+                onClick={() => handleShowTimeline(row)}
+            />
             </div>
         );
     };
+
+    const renderProbability = (row) => {
+        const value = Number(row.leadProbability || 0);
+        if(value == 0) 
+            return '-';
+
+        let icon = "";
+        let border = "";
+        let bg = "";
+
+        if (value >= 70) {
+            icon = "🔥";
+            border = "border-green-500";
+            bg = "bg-green-100";
+        } else if (value >= 40) {
+            icon = "⏳";
+            border = "border-amber-500";
+            bg = "bg-amber-100";
+        } else if (value > 0) {
+            icon = "🧊";
+            border = "border-slate-400";
+            bg = "bg-slate-100";
+        }
+
+        return (
+            <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center
+                border ${border} ${bg} text-[13px]`}
+                title={`${value}%`}
+            >
+                {icon}
+            </div>
+        );
+    };
+
 
     const renderRemarkCell = (row) => {
         let content = row.remarks || "";
         let audioLink = "";
 
-        // ---------------------------
-        // Extract audio (same as PHP)
-        // ---------------------------
         if (content.includes("<audio")) {
             const match = content.match(/src="([^"]+)"/);
             audioLink = match?.[1] || "";
             content = content.split("<audio")[0];
         }
 
-        // ---------------------------
-        // Sanitize text
-        // ---------------------------
         const div = document.createElement("div");
         div.innerText = content;
         let safeText = div.innerHTML;
 
-        // ---------------------------
-        // Prepend latestRemarksDate
-        // ---------------------------
         if (row.latestRemarksDate) {
             safeText = `${row.latestRemarksDate}: ${safeText}`;
         }
 
-        // ---------------------------
-        // Expand / Collapse Logic
-        // ---------------------------
         let finalText = "";
 
         if (safeText.length > 120) {
@@ -282,9 +308,6 @@ export default function LeadsTable({
             finalText = safeText;
         }
 
-        // ---------------------------
-        // Append additionalInfo (PHP logic)
-        // ---------------------------
         if (row.additionalInfo?.length > 0) {
             finalText += `
                 <br/>
@@ -294,16 +317,10 @@ export default function LeadsTable({
             `;
         }
 
-        // ---------------------------
-        // When everything is empty
-        // ---------------------------
         if (!finalText || finalText === "null") {
             return "-";
         }
 
-        // ---------------------------
-        // Return JSX version (same structure as your original code)
-        // ---------------------------
         const textStyles = {
             whiteSpace: "normal",
             wordBreak: "normal",
@@ -354,154 +371,179 @@ export default function LeadsTable({
     return (
         <>
             <AppliedFilters />
+            {/* TABLE */}
+            <div className="bg-white rounded-xl border overflow-auto h-[360px]">
+                    <table className="w-full border-collapse text-sm leadstor-table-modern">
 
-            <div className="table-container">
-                <table className="leadstor-table">
-                    <thead className={tableHeader}>
-                        <tr>
-                            <th>
-                                <input
-                                    ref={selectAllRef}
-                                    type="checkbox"
-                                    checked={
-                                        leads.length > 0 &&
-                                        leads.every(l => selectedLeadIds.includes(l.invitationId))
-                                    }
-                                    onChange={e =>
-                                        setSelectedLeadIds(
-                                            e.target.checked ? leads.map(l => l.invitationId) : []
-                                        )
-                                    }
-                                />
+                    {/* HEADER */}
+                    <thead className={`sticky top-0 z-10 ${tableHeader}`}>
+                    <tr>
+                        <th className="p-2 border-b w-[40px]">
+                        <input
+                            ref={selectAllRef}
+                            type="checkbox"
+                            checked={
+                            leads.length > 0 &&
+                            leads.every(l => selectedLeadIds.includes(l.invitationId))
+                            }
+                            onChange={e =>
+                            setSelectedLeadIds(
+                                e.target.checked ? leads.map(l => l.invitationId) : []
+                            )
+                            }
+                        />
+                        </th>
+
+                        {columns
+                        .filter(c => c.dataField !== 'action')
+                        .map((c, i) => (
+                            <th
+                            key={i}
+                            className="p-2 text-left font-semibold border-b whitespace-nowrap"
+                            >
+                            {c.displayName || c.fieldName}
                             </th>
-
-                            {columns.filter(c => c.dataField !== 'action').map((c, i) => (
-                                <th key={i}>{c.displayName || c.fieldName}</th>
-                            ))}
-                        </tr>
+                        ))}
+                    </tr>
                     </thead>
 
+                    {/* BODY */}
                     <tbody>
-                        {leads.map(row => (
-                            <tr key={row.invitationId}>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedLeadIds.includes(row.invitationId)}
-                                        onChange={e =>
-                                            setSelectedLeadIds(
-                                                e.target.checked
-                                                    ? [...selectedLeadIds, row.invitationId]
-                                                    : selectedLeadIds.filter(id => id !== row.invitationId)
-                                            )
-                                        }
-                                    />
-                                </td>
+                    {leads.map(row => (
+                        <tr
+                        key={row.invitationId}
+                        className="border-b hover:bg-slate-50 transition h-[44px]"
+                        >
+                        <td className="p-2">
+                            <input
+                            type="checkbox"
+                            checked={selectedLeadIds.includes(row.invitationId)}
+                            onChange={e =>
+                                setSelectedLeadIds(
+                                e.target.checked
+                                    ? [...selectedLeadIds, row.invitationId]
+                                    : selectedLeadIds.filter(id => id !== row.invitationId)
+                                )
+                            }
+                            />
+                        </td>
 
-                                {columnOrder.map(col => (
-                                    <td key={col}>
-                                        {col === 'firstName' && renderNameCell(row)}
-                                        {col === 'mobile' && renderMobileCell(row)}
-                                        {col === 'remarks' && renderRemarkCell(row)}
-                                        {col === 'status' && renderStatusTimelineCell(row, handleShowTimeline)}
-                                        {dataFormatters[col] &&
-                                            !['firstName', 'mobile', 'status'].includes(col) &&
-                                            dataFormatters[col](row)}
-                                        {!dataFormatters[col] &&
-                                            !['firstName', 'mobile', 'status'].includes(col) &&
-                                            row[col]}
-                                    </td>
-                                ))}
-                            </tr>
+                        {columnOrder.map(col => (
+                            <td
+                            key={col}
+                            className="p-2 whitespace-nowrap overflow-hidden text-ellipsis align-middle"
+                            data-column={col}
+                            data-tooltip={row[col]}
+                            >
+                            {col === 'firstName' && renderNameCell(row)}
+                            {col === 'mobile' && renderMobileCell(row)}
+                            {col === 'remarks' && renderRemarkCell(row)}
+                            {col === 'status' &&
+                                renderStatusTimelineCell(row, handleShowTimeline)}
+                            {col === 'leadProbability' && renderProbability(row)}
+
+                            {dataFormatters[col] &&
+                                !['firstName', 'mobile', 'status','leadProbability '].includes(col) &&
+                                dataFormatters[col](row)}
+
+                            {!dataFormatters[col] &&
+                                !['firstName', 'mobile', 'status','leadProbability'].includes(col) &&
+                                row[col]}
+                            </td>
                         ))}
+                        </tr>
+                    ))}
                     </tbody>
                 </table>
             </div>
 
+            {/* KEEP ALL MODALS AS-IS */}
             {showUpdatePopup && (
-                <UpdateLead
-                    selectedLead={selectedCandidate}
-                    onCancel={() => setShowUpdatePopup(false)}
-                    onSuccess={() => {
-                        setShowUpdatePopup(false);
-                        xLeads();
-                    }}
-                />
+            <UpdateLead
+                selectedLead={selectedCandidate}
+                onCancel={() => setShowUpdatePopup(false)}
+                onSuccess={() => {
+                setShowUpdatePopup(false)
+                xLeads()
+                }}
+            />
             )}
 
             {showCallerDeskIVR && (
-                <CallerDeskIVR
-                    candidate={callerCandidate}
-                    onClose={() => setShowCallerDeskIVR(false)}
-                />
+            <CallerDeskIVR
+                candidate={callerCandidate}
+                onClose={() => setShowCallerDeskIVR(false)}
+            />
             )}
 
             {showTimeline && (
-                <Timeline
-                    leadDetails={selectedLead}
-                    isOpen
-                    onClose={() => setShowTimeline(false)}
-                />
+            <Timeline
+                leadDetails={selectedLead}
+                isOpen
+                onClose={() => setShowTimeline(false)}
+            />
             )}
+
+            {/* STYLES */}
             <style jsx>{`
-                /* Classic Leadstor Table */
+            /* ===== MODERN CRM TABLE ===== */
 
-                .table-container {
-                    width: 100%;
-                    max-height: calc(100vh - 145px);
-                    overflow: auto;
-                    background: #ffffff;
-                    text-color: #374151;
-                }
+            .leadstor-table-modern {
+                table-layout: fixed;
+                min-width: 2700px; 
+            }
+            
+            .leadstor-table-modern td {
+                position: relative;
+                max-width: 350px;
+                white-space: normal;          /* allow line break */
+                word-break: break-word;       /* break long words */
+                overflow-wrap: anywhere;      /* handles long emails/urls */
+                line-height: 1.4;
+                padding-top: 8px;
+                padding-bottom: 8px;
+            }
 
-                /* Dark header like old UI */
-                .leadstor-table thead th {
-                    background: #F1BBEA;
-                    padding: 6px 10px !important;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #1E293B;
-                    border-bottom: 1px solid #E2E8F0;
-                    white-space: nowrap;
-                }
+            .leadstor-table-modern th {
+                height: 44px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                vertical-align: top;
+            }
 
-                /* Dense row height */
-                .leadstor-table tbody td {
-                    padding: 5px 13px !important;
-                    font-size: 13px;
-                    border-bottom: 1px solid #e2e8f0;
-                    border-right: 1px solid #f1f5f9;
-                    white-space: nowrap;
-                    text-overflow: ellipsis;
-                    overflow: hidden;
-                    color: #000000 !important;  /* near-black, perfect readability */
-                }
+            .leadstor-table-modern thead th {
+                background: #d4e0ec;
+                font-size: 13px;
+                font-weight: 600;
+                background: #d4e0ec;
+                color: #111827;
+                height: 44px;
+            }
 
-                /* Remove row hover highlight */
-                .leadstor-table tbody tr:hover {
-                    background: #f8fafc;
-                }
+            .leadstor-table-modern tbody td {
+                font-size: 13px;
+                color: #111827;
+                border-right: 1px solid #f1f5f9;
+            }
 
-                /* Compact column widths */
-                .leadstor-table td[data-column="email"] {
-                    max-width: 180px;
-                }
-                .leadstor-table td[data-column="remarks"] {
-                    max-width: 260px;
-                    color: #111827 !important;
-                }
-                .leadstor-table td[data-column="status"] {
-                    width: 150px;
-                    color: #111827 !important;
-                }
-                .leadstor-table td[data-column="mobile"] {
-                    width: 100px;
-                }
+            .leadstor-table-modern tbody tr:last-child td {
+                border-bottom: none;
+            }
 
-                .default-clr{
-                    color: #f1bbeaff;
-                }
+            /* Sticky header shadow */
+            thead.sticky {
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            }
+
+            /* Checkbox alignment */
+            input[type="checkbox"] {
+                width: 14px;
+                height: 14px;
+                cursor: pointer;
+            }
             `}</style>
         </>
-    );
+    )
+
 }

@@ -4,7 +4,6 @@ import { fullScreenSwitch, toggleScrollbar, getPageNumbers } from "@/utility/Tab
 import { LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadsLastPage, User } from "@/utility/TinyDB";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import ColumnReorderPopup from "@/components/dashboard/Lead/ColumnReorderPopup";
 
 let setPagingX;
 let setSummaryX;
@@ -41,8 +40,6 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
     const [limit, setLimit] = useState(LeadsPerPage.value());
     const [paging, setPaging] = useState([]);
     const [summary, setSummary] = useState('Fetching leads...');
-    const [showColumnReorderPopup, setShowColumnReorderPopup] = useState(false);
-    const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
 
     // Handler for reordering columns (for ColumnReorderPopup)
     const onReorder = (newOrder) => {
@@ -110,11 +107,11 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 1000;
 
     return (
-        <div className="flex px-4 py-3 poppins text-gray-600 text-[14px] cursor-default pagination-responsive items-center justify-between">
+         <div className="bg-white rounded-xl border px-4 py-2 flex justify-between items-center">
             {/* Desktop: Show summary, per-page selector, settings on the left; pagination controls on the right */}
             {!isMobile && (
                 <>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-6 text-sm text-slate-600">
                         <div className='border-r pr-4 flex justify-center items-center'>
                             <div
                                 style={{
@@ -177,17 +174,6 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                                                 </div>
                                             )}
                                         </div>
-    
-                                        <ColumnReorderPopup
-                                            isOpen={showColumnReorderPopup}
-                                            setIsOpen={setShowColumnReorderPopup}
-                                            columns={columns}
-                                            setColumns={setColumns}
-                                            setColumnOrder={setColumnOrder}
-                                            fetchAndSetColumns={fetchAndSetColumns}
-                                            refreshTable={window.tableRefresh}
-                                            onReorder={onReorder}
-                                        />
                                     </div>
                                 </div>
                             </div>
@@ -296,38 +282,6 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                                 ))}
                             </div>
                         )}
-                        {/* Settings icon always visible on mobile */}
-                        {User?._id === -1 && (
-                            <label
-                                className="group ml-2 ri-settings-line text-lg relative top-0.5 cursor-pointer hover:bg-gray-100 rounded px-1 py-0.5"
-                                tabIndex="0"
-                                onClick={e => { e.stopPropagation(); setShowColumnReorderPopup(true); }}
-                                title="Reorder or Rename Columns"
-                            >
-                                {/* Tooltip for settings icon - matches number box tooltip */}
-                                <div
-                                    className="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-50 pointer-events-none"
-                                    style={{ transform: 'translateX(-50%)' }}
-                                >
-                                    <div
-                                        className="bg-black text-white text-xs rounded px-2 py-1 whitespace-nowrap shadow-lg font-normal poppins"
-                                    >
-                                        Reorder or Rename Columns
-                                    </div>
-                                    <div className="w-2 h-2 bg-black rotate-45 mx-auto -mt-1"></div>
-                                </div>
-                            </label>
-                        )}
-                        <ColumnReorderPopup
-                            isOpen={showColumnReorderPopup}
-                            setIsOpen={setShowColumnReorderPopup}
-                            columns={columns}
-                            setColumns={setColumns}
-                            setColumnOrder={setColumnOrder}
-                            fetchAndSetColumns={fetchAndSetColumns}
-                            refreshTable={window.tableRefresh}
-                            onReorder={onReorder}
-                        />
                     </div>
                     <div className='pagination ml-4' onClick={handelPageChange}>
                         {downloadNotification?.hasActiveDownload && (
@@ -374,18 +328,86 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                                 {!isMobile && <span className="text-sm font-medium">{downloadNotification.progress}%</span>}
                             </button>
                         )}
-                        <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
-                            <i className="ri-arrow-left-s-line"></i>
-                        </div>
-                        {paging.map((item, index) => (
-                            <div key={index} data-value={item.pageNum} className={item.style}>{item.name}</div>
-                        ))}
-                        <div data-value='NEXT' className='arrow-btn rounded-e-md'>
-                            <i className="ri-arrow-right-s-line"></i>
+                        <div className='pagination ml-6 flex items-center gap-x-2' onClick={handelPageChange}>
+                            <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
+                                <i className="ri-arrow-left-s-line"></i>
+                            </div>
+
+                            {paging.map((item, index) => (
+                                <div key={index} data-value={item.pageNum} className={item.style}>
+                                {item.name}
+                                </div>
+                            ))}
+
+                            <div data-value='NEXT' className='arrow-btn rounded-e-md'>
+                                <i className="ri-arrow-right-s-line"></i>
+                            </div>
                         </div>
                     </div>
                 </div>
             )}
+            <style jsx>{`
+                .pagination {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .pagination > div {
+                    min-width: 34px;
+                    height: 34px;
+                    padding: 0 10px;
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                    background: #ffffff;
+                    color: #334155;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    transition: all 0.2s ease;
+                }
+                
+                .pagination > div:hover {
+                    background: #f1f5f9;
+                    border-color: #cbd5e1;
+                }
+                
+                .pagination .active {
+                    background: #2563eb;        /* Blue */
+                    color: #ffffff;
+                    border-color: #2563eb;
+                    font-weight: 600;
+                }
+
+                .pagination .active:hover {
+                    background: #2563eb;
+                }
+
+                .arrow-btn {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 8px;
+                    border: 1px solid #e2e8f0;
+                    background: #ffffff;
+                    color: #334155;
+
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+
+                .arrow-btn:hover {
+                    background: #f1f5f9;
+                }
+            `}
+            </style>
         </div>
     );
 }
