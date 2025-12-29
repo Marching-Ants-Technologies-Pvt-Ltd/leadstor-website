@@ -1,3 +1,4 @@
+'use client'
 import { create } from 'zustand';
 import { Corporate, User, Test } from '@/utility/TinyDB';
 

@@ -4,7 +4,7 @@ import Image from 'next/image';
 import FbConnect from './partials/connect';
 import FbConnected from './partials/connected';
 import Spinner from '@/components/elements/Spinner';
-
+import {TinyDB} from '@/utility/TinyDB';
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
 
@@ -12,24 +12,30 @@ export default function FacebookIntegration() {
 
     const [isLoggedIn, setIsLoggedIn] = useState(0);
     const [accessToken, setAccessToken] = useState(null);
-    const userData = JSON.parse(localStorage.getItem('session_user'));
+    const [userData, setUserData] = useState(null);
 
     useEffect(() => {
-        // Initialize Facebook SDK
+        const data = TinyDB?.User || null;
+        setUserData(JSON.parse(data));
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
         window.fbAsyncInit = function () {
-            FB.init({
-                appId: process.env.NEXT_PUBLIC_FB_APP_ID,
-                xfbml: true,
-                autoLogAppEvents: true,
-                version: 'v21.0',
+            if (!window.FB) return;
+
+            window.FB.init({
+            appId: process.env.NEXT_PUBLIC_FB_APP_ID,
+            xfbml: true,
+            autoLogAppEvents: true,
+            version: 'v21.0',
             });
 
-            // Check login status
-            FB.getLoginStatus(function (response) {
-                statusChangeCallback(response);
-            });
+            window.FB.getLoginStatus(statusChangeCallback);
         };
     }, []);
+
 
     const statusChangeCallback = (response) => {
         if (response.status === 'connected') {
@@ -41,15 +47,25 @@ export default function FacebookIntegration() {
         }
     };
 
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
-    myHeaders.append("Authorization", `Bearer ${userData.cn_token ?? ''}`);
+    const getHeaders = () => {
+        const headers = new Headers();
+        headers.append("Content-Type", "application/json");
+
+        if (userData?.cn_token) {
+            headers.append(
+            "Authorization",
+            `Bearer ${userData.cn_token}`
+            );
+        }
+
+        return headers;
+    };
 
     const getExtendedUserToken = (token) => {
 
         const requestOptions = {
             method: "GET",
-            headers: myHeaders,
+            headers: getHeaders(),
             redirect: "follow"
         };
 

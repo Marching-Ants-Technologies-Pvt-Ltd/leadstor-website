@@ -3,11 +3,14 @@
 // Make sure this utility can only be called from session
 let CurrentSessionData = {};
 let LeadOwnersById = {};
-try{
-    CurrentSessionData = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
-    LeadOwnersById = JSON.parse(localStorage.getItem('LeadOwnersById') ?? '{}');
-}catch(e){
-    console.error(`Unable to parse current state of user`, e);
+
+if (typeof window !== 'undefined') {
+    try{
+        CurrentSessionData = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
+        LeadOwnersById = JSON.parse(localStorage.getItem('LeadOwnersById') ?? '{}');
+    }catch(e){
+        console.error(`Unable to parse current state of user`, e);
+    }
 }
 
 export const Corporate = CurrentSessionData?.corporate;

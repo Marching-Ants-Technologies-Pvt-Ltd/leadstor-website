@@ -1,3 +1,4 @@
+'use client'
 import React, { useState, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { xFetch } from '@/utility/xFetch';
