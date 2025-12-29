@@ -431,7 +431,7 @@ export default function LeadsTable({
                         {columnOrder.map(col => (
                             <td
                             key={col}
-                            className="p-2 whitespace-nowrap overflow-hidden text-ellipsis align-middle"
+                            className="p-2 whitespace-nowrap overflow-hidden text-ellipsis align-top"
                             data-column={col}
                             data-tooltip={row[col]}
                             >
