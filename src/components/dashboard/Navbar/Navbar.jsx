@@ -34,21 +34,6 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
     return () => document.removeEventListener('click', onDoc);
   }, []);
 
-  const goToLegacyDashboard = () => {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor/dashboard`;
-
-    const tokenInput = document.createElement('input');
-    tokenInput.type = 'hidden';
-    tokenInput.name = 'token';
-    tokenInput.value = localStorage.getItem('access_token') ?? '';
-
-    form.appendChild(tokenInput);
-    document.body.appendChild(form);
-    form.submit();
-    form.remove();
-  };
 
   return (
   <header className="h-14 flex items-center px-6 border-b bg-white">
@@ -71,9 +56,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
 
       {/* icon buttons */}
       <div className="flex items-center gap-3">
-        <button onClick={goToLegacyDashboard} className="nav-icon" title="Old Dashboard">
-          <i className="ri-computer-line"></i>
-        </button>
+      
         
       {/* Analytics Hover Dropdown */}
       <div className="relative group">

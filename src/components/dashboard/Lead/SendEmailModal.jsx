@@ -1,3 +1,4 @@
+'use client'
 import { useState, useEffect } from 'react';
 import { xFetch } from '@/utility/xFetch';
 import { ToastContainer, toast } from 'react-toastify';

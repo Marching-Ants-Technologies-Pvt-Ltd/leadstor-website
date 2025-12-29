@@ -670,3 +670,4 @@ textarea::placeholder {
 .prob-medium::before { content: "⏳"; }
 .prob-low { background: #e5e7eb; border: 1px solid #9ca3af; }
 .prob-low::before { content: "❄️"; }
+

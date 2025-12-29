@@ -1,3 +1,4 @@
+'use client'
 import React, { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -206,6 +207,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           //notificationsPostStatusUpdate(fields.invitationId, fields.status);
         }
         if (onSuccess) onSuccess();
+          getAINextStep(payload.invitationId);
       } else {
         toast.error(response?.error || "Failed to update candidate.");
       }
@@ -215,6 +217,20 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       setLoading(false);
     }
   };
+
+  const getAINextStep = async (invitationId) => {
+      const payload = { invitationId: invitationId };
+      try {
+          const response = await xFetch({
+              method: "POST", 
+              path: "/services/invite/getNextStepForLead",
+              payload,
+          });
+          console.log("AI Next Step Response:", response);
+      } catch (error) {
+          console.error("Error fetching AI Next Step:", error);
+      }
+  }
 
   useEffect(() => {
     fetchAndSetColumns();
@@ -228,30 +244,41 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     if (Object.keys(Owners).length > 0) {
       setOwner(Object.entries(Owners).map(([key, value]) => ({ key, value })));
     }
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <>
-      {/* When timeline is open we hide the Update popup UI and show Timeline only.
-          This ensures Timeline modal appears while UpdateLead stays logically mounted. */}
       {!showTimeline && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3">
           <ToastContainer position="bottom-right" autoClose={3000} />
 
           {/* MAIN POPUP */}
-          <div className="bg-white rounded-xl shadow-xl w-[850px] max-h-[120vh] flex flex-col overflow-hidden">
-            {/* PAGE HEADER */}
-            <div
-              className="px-6 py-4 flex justify-between items-center"
-              style={{ backgroundColor: "#f1bbeaff", color: "#475569" }}
+          <div className="
+            bg-white rounded-2xl shadow-2xl
+            w-full max-w-4xl
+            max-h-[90vh]
+            flex flex-col overflow-hidden
+          ">
+            {/* HEADER */}
+            <div className="
+              px-6 py-2 flex justify-between items-center
+              border-b backdrop-blur update-header
+            "
             >
-              <h2 className="text-xl font-semibold flex items-center gap-2">Update Lead</h2>
+              <h2 className="text-[15px] font-semibold tracking-wide">
+                Update Lead
+              </h2>
+
               <button
                 type="button"
                 onClick={handleClose}
-                className="transition p-1 rounded-full"
-                style={{ color: "#000000" }}
+                className="
+                  h-8 w-8 flex items-center justify-center
+                  rounded-full hover:bg-slate-200
+                  text-slate-600 hover:text-black transition
+                "
               >
                 ✕
               </button>
@@ -259,11 +286,10 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
             {/* FORM */}
             <form
-              className="px-6 pt-4 pb-5 overflow-y-auto flex-1 custom-scroll"
+              className="px-6 pt-5 pb-6 overflow-y-auto flex-1 custom-scroll"
               onSubmit={handleSubmit}
             >
-              {/* CHANGED TO 3 COLUMNS */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {columns
                   .filter(
                     (c) =>
@@ -275,16 +301,21 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                     const value = fields?.[item.dataField] || "";
                     const options = dynamicFields[item.dataField] || [];
 
-                    // OWNER SELECT
                     if (item.dataField === "assignedUserId") {
-                      const { options } = renderOwnerSelect(item.displayName || item.fieldName);
+                      const { options } = renderOwnerSelect(
+                        item.displayName || item.fieldName
+                      );
                       return (
-                        <div key={index}>
-                          <label className="label-pink">{item.displayName || item.fieldName}</label>
+                        <div key={index} className="field-card">
+                          <label className="label-crm">
+                            {item.displayName || item.fieldName}
+                          </label>
                           <select
                             value={fields.assignedUserId}
-                            onChange={(e) => handleChange(item.dataField, e.target.value)}
-                            className="input-pink"
+                            onChange={(e) =>
+                              handleChange(item.dataField, e.target.value)
+                            }
+                            className="input-crm"
                           >
                             {options?.map((o, i) => (
                               <option key={i} value={o.key} disabled={o.disabled}>
@@ -296,16 +327,22 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                       );
                     }
 
-                    if (item.fieldType === "dropdown" || item.fieldType === "datetime") {
+                    if (
+                      item.fieldType === "dropdown" ||
+                      item.fieldType === "datetime"
+                    ) {
                       return (
                         <React.Fragment key={index}>
-                          {/* DROPDOWN FIELD */}
-                          <div>
-                            <label className="label-pink">{item.displayName || item.fieldName}</label>
+                          <div className="field-card">
+                            <label className="label-crm">
+                              {item.displayName || item.fieldName}
+                            </label>
                             <select
                               value={value}
-                              onChange={(e) => handleChange(item.dataField, e.target.value)}
-                              className="input-pink"
+                              onChange={(e) =>
+                                handleChange(item.dataField, e.target.value)
+                              }
+                              className="input-crm"
                             >
                               <option value="">-- Select --</option>
                               {options.map((opt) => (
@@ -316,13 +353,14 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                             </select>
                           </div>
 
-                          {/* FOLLOWUP FIELD ONLY WHEN STATUS */}
-                          {item.dataField == "status" && showDatePicker && (
-                            <div key={`followup-${index}`}>
-                              <label className="label-pink">Followup Date</label>
+                          {item.dataField === "status" && showDatePicker && (
+                            <div className="field-card">
+                              <label className="label-crm">Followup Date</label>
                               <DateInputPicker
                                 value={fields.followupDate}
-                                onChange={(date) => handleChange("followupDate", date)}
+                                onChange={(date) =>
+                                  handleChange("followupDate", date)
+                                }
                                 isTimeInterval
                               />
                             </div>
@@ -331,31 +369,40 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                       );
                     }
 
-                    // TEXT FIELD
                     if (item.fieldType === "text") {
                       return (
-                        <div key={index}>
-                          <label className="label-pink">{item.displayName || item.fieldName}</label>
+                        <div key={index} className="field-card">
+                          <label className="label-crm">
+                            {item.displayName || item.fieldName}
+                          </label>
                           <input
-                            type={item.dataField === "emailId" ? "email" : "text"}
+                            type={
+                              item.dataField === "emailId" ? "email" : "text"
+                            }
                             value={value}
-                            onChange={(e) => handleChange(item.dataField, e.target.value)}
-                            className="input-pink"
+                            onChange={(e) =>
+                              handleChange(item.dataField, e.target.value)
+                            }
+                            className="input-crm"
                           />
                         </div>
                       );
                     }
 
-                    // TEXTAREA — FULL WIDTH ACROSS ALL 3 COLUMNS
                     if (item.fieldType === "textarea") {
                       return (
-                        <div key={index} className="md:col-span-1">
-                          <label className="label-pink">{item.displayName || item.fieldName}</label>
+                        <div key={index} className="field-card">
+                          <label className="label-crm">
+                            {item.displayName || item.fieldName}
+                          </label>
                           <textarea
                             rows="2"
                             value={value}
-                            onChange={(e) => handleChange(item.dataField, e.target.value)}
-                            className="input-pink resize-none"
+                            disabled={item.dataField === "aINextStep"}
+                            onChange={(e) =>
+                              handleChange(item.dataField, e.target.value)
+                            }
+                            className="input-crm resize-none whitespace-pre-line"
                           />
                         </div>
                       );
@@ -365,13 +412,21 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                   })}
               </div>
 
-              {/* ACTION BUTTONS */}
-              <div className="mt-6 flex justify-end gap-3">
-                <button type="submit" disabled={loading} className="btn-primary-pink">
+              {/* ACTIONS */}
+              <div className="mt-6 mb-2 flex justify-end gap-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary-crm"
+                >
                   {loading ? "Updating..." : "Update"}
                 </button>
 
-                <button type="button" onClick={handleShowTimeline} className="btn-secondary-pink">
+                <button
+                  type="button"
+                  onClick={handleShowTimeline}
+                  className="btn-secondary-crm"
+                >
                   Timeline
                 </button>
               </div>
@@ -380,64 +435,90 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         </div>
       )}
 
-      {/* TIMELINE: shown when showTimeline === true */}
       {showTimeline && (
         <Timeline
           leadDetails={selectedLead}
           isOpen={true}
-          onClose={() => {
-            // Close timeline and return to update popup
-            setShowTimeline(false);
-          }}
+          onClose={() => setShowTimeline(false)}
         />
       )}
 
-      {/* Extra Tailwind Styles */}
+      {/* STYLES */}
       <style>{`
         .custom-scroll::-webkit-scrollbar { width: 6px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #f5b6d1; border-radius: 10px; }
-
-        .label-pink { 
-          display:block; 
-          margin-bottom:4px; 
-          color: #000000;
-        }
-        .input-pink {
-          width:100%;
-          padding:8px 10px;
-          border:1px solid #f1bbeaff;
-          border-radius:8px;
-          outline:none;
-          transition:0.2s;
-        }
-        .input-pink:focus {
-          border-color: #f1bbeaff;
-          box-shadow:0 0 0 2px #f1bbeaff;
+        .custom-scroll::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
         }
 
-        .btn-primary-pink {
-          background: #F1BBEA;
-          color: #000000;
-          padding:8px 18px;
-          border-radius:8px;
-          transition:0.2s;
+        .field-card {
+          transition: transform .15s ease, box-shadow .15s ease;
         }
-        .btn-primary-pink:hover {
-          background: #E38CD8;
+        .update-header{
+            background: "linear-gradient(135deg, #e8f1fb, #f8fbff)",
+            color: "#0f172a"
         }
-        .btn-secondary-pink {
-          background:white;
-          border:1px solid #f1bbeaff;
+        
+        .field-card:hover {
+          transform: translateY(-1px);
+        }
+
+        .label-crm {
+          font-size: 11.5px;
           color: #475569;
-          padding:8px 18px;
-          border-radius:8px;
-          transition:0.2s;
+          margin-bottom: 5px;
+          font-weight: 500;
         }
-        .btn-secondary-pink:hover {
-          background: #db8fbeff;
-          color: #ffffff;
+
+        .input-crm {
+          width: 100%;
+          padding: 8px 11px;
+          font-size: 13px;
+          border: 1px solid #d1d5db;
+          border-radius: 10px;
+          outline: none;
+          background: #f8fafc;
+          transition: all .2s ease;
+        }
+
+        .input-crm:focus {
+          background: #ffffff;
+          border-color: #60a5fa;
+          box-shadow: 0 0 0 3px rgba(96,165,250,0.2);
+        }
+
+        .btn-primary-crm {
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+          color: white;
+          padding: 9px 22px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 500;
+          box-shadow: 0 6px 14px rgba(37,99,235,.25);
+          transition: all .2s ease;
+        }
+
+        .btn-primary-crm:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 10px 20px rgba(37,99,235,.35);
+        }
+
+        .btn-secondary-crm {
+          background: #ffffff;
+          border: 1px solid #d1d5db;
+          color: #334155;
+          padding: 9px 22px;
+          border-radius: 10px;
+          font-size: 13px;
+          transition: all .2s ease;
+        }
+
+        .btn-secondary-crm:hover {
+          background: #f8fafc;
         }
       `}</style>
     </>
   );
+
+
 }

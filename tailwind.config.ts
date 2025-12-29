@@ -40,7 +40,7 @@ const config: Config = {
   				divider: '#E2E8F0',
   				textDark: '#0F172A',
   				textMedium: '#334155',
-  				textLight: '#64748B'
+  				textLight: '#64748B',
   			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
