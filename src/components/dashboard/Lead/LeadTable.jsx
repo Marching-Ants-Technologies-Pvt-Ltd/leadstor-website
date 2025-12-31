@@ -543,6 +543,7 @@ export default function LeadsTable({
                 cursor: pointer;
             }
             `}</style>
+            
         </>
     )
 
