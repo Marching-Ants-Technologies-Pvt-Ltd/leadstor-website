@@ -20,8 +20,8 @@ import SendEmailModal from '@/components/dashboard/Lead/SendEmailModal.jsx';
 import BulkUpdateDrawer from '@/components/dashboard/Lead/BulkUpdateDrawer';
 import DailyReportModal from '@/components/dashboard/Lead/DailyReportModal.jsx';
 import ExportEnquiriesModal from '@/components/dashboard/Lead/ExportEnquiriesModal.jsx';
+import { xFetch } from '@/utility/xFetch';
 
-// Props: onOpenAdvanceFilter, leads, selectedLeadIds, setSelectedLeadIds, onDownloadStart, onDownloadProgress, onDownloadEnd, onDownloadCancel, setCancelExportFunction, setOpenAddLead
 export default function LeadsMenu({
   onOpenAdvanceFilter,
   leads = [],
@@ -55,12 +55,20 @@ export default function LeadsMenu({
   const [ownerOptions, setOwnerOptions] = useState([]);
   const [courseOptions, setCourseOptions] = useState([]);
   const [statusOptions, setStatusOptions] = useState([]);
+  const [statusCounts, setStatusCounts] = useState({
+    overdue: 0,
+    todaysFollowUps: 0,
+    newLeads: 0,
+    hotLeads: 0,
+    conversions: 0,
+  });
 
   const router = useRouter();
 
   // Fetch sources
   useEffect(() => {
     const corporateId = Corporate?._id;
+    getStatusWiseLeadCount();
     if (!corporateId) return;
     (async () => {
       try {
@@ -164,6 +172,22 @@ export default function LeadsMenu({
     LeadsCurrentPage.setValue(1);
     window.tableState('Applying Filter...');
     window.tableRefresh();
+  };
+
+  const getStatusWiseLeadCount = async () => {
+      const res = await xFetch({
+        path: `/services/dashboard/getLeadStatusSummary`,
+      });
+
+      if (!res) return;
+    
+      setStatusCounts({
+        overdue: res.data.overdue || 0,
+        todaysFollowUps: res.data.todaysFollowUps || 0,
+        newLeads: res.data.newLeads || 0,
+        hotLeads: res.data.hotLeads || 0,
+        conversions: res.data.conversions || 0,
+      });
   };
 
   // selected emails / mobiles
@@ -327,11 +351,11 @@ export default function LeadsMenu({
       {/* KPI BAR */}
       <div className="flex gap-2 px-4 py-2 bg-[#f5f6f8] border-b">
         {[
-          ['8', 'Overdue', 'text-red-600'],
-          ['12', "Today's Follow-ups", 'text-amber-500'],
-          ['6', 'New Leads', 'text-blue-600'],
-          ['4', 'Hot Leads', 'text-fuchsia-600'],
-          ['7', 'Conversions this month', 'text-green-600'],
+          [statusCounts.overdue, 'Overdue', 'text-red-600'],
+          [statusCounts.todaysFollowUps, "Today's Follow-ups", 'text-amber-500'],
+          [statusCounts.newLeads, 'New Leads', 'text-blue-600'],
+          [statusCounts.hotLeads, 'Hot Leads', 'text-fuchsia-600'],
+          [statusCounts.conversions, 'Conversions this month', 'text-green-600'],
         ].map(([count, label, color], i) => (
           <div
             key={i}
