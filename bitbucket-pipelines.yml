@@ -2,7 +2,7 @@ image: node:18
 
 pipelines:
   branches:
-    main:
+    master:
       - step:
           name: Deploy to Vercel (Production)
           caches:
