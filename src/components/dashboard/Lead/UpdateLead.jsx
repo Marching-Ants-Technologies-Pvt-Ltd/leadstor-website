@@ -19,6 +19,101 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [owner, setOwner] = useState([]);
   const [originalFields, setOriginalFields] = useState({ ...selectedLead });
   const [showTimeline, setShowTimeline] = useState(false);
+  const FIELD_GROUPS = {
+    leadDetails: ['mobile', 'firstName', 'emailId', 'location'],
+    salesUpdate: ['status', 'leadProbability'],
+    notes: ['remarks'],
+    context: ['course', 'source', 'assignedUserId']
+  };
+  const ALL_GROUPED_FIELDS = Object.values(FIELD_GROUPS).flat();
+    const EXCLUDED_ADDITIONAL_FIELDS = [
+    "createdDate",
+    "updateTime",
+    "aINextStep",
+    "action"
+  ];
+
+  const getUngroupedColumns = () => {
+    return columns.filter(
+      c =>
+        !ALL_GROUPED_FIELDS.includes(c.dataField) &&
+        !EXCLUDED_ADDITIONAL_FIELDS.includes(c.dataField) 
+    );
+  };
+
+  const renderFieldByColumn = (item, index) => {
+    const value = fields?.[item.dataField] || "";
+    const options = dynamicFields[item.dataField] || [];
+
+    if (item.dataField === "assignedUserId") {
+      const { options: ownerOptions } = renderOwnerSelect(
+        item.displayName || item.fieldName
+      );
+
+      return (
+        <div key={index} className="field-card">
+          <label className="label-crm">{item.displayName || item.fieldName}</label>
+          <select
+            value={fields.assignedUserId}
+            onChange={(e) => handleChange(item.dataField, e.target.value)}
+            className="input-crm"
+          >
+            {ownerOptions.map((o, i) => (
+              <option key={i} value={o.key} disabled={o.disabled}>
+                {o.value}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    if (item.fieldType === "dropdown") {
+      return (
+        <div key={index} className="field-card">
+          <label className="label-crm">{item.displayName || item.fieldName}</label>
+          <select
+            value={value}
+            onChange={(e) => handleChange(item.dataField, e.target.value)}
+            className="input-crm"
+          >
+            <option value="">-- Select --</option>
+            {options.map((opt) => (
+              <option key={opt.key} value={opt.key}>
+                {opt.value}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    if (item.fieldType === "textarea") {
+      return (
+        <div key={index} className="field-card">
+          <label className="label-crm">{item.displayName || item.fieldName}</label>
+          <textarea
+            rows="3"
+            value={value}
+            onChange={(e) => handleChange(item.dataField, e.target.value)}
+            className="input-crm resize-none"
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div key={index} className="field-card">
+        <label className="label-crm">{ item.displayName || item.fieldName }</label>
+        <input
+          type={item.dataField === "emailId" ? "email" : "text"}
+          value={value}
+          onChange={(e) => handleChange(item.dataField, e.target.value)}
+          className="input-crm"
+        />
+      </div>
+    );
+  };
 
   // Fetch and apply custom column names and order
   const fetchAndSetColumns = async () => {
@@ -244,8 +339,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     if (Object.keys(Owners).length > 0) {
       setOwner(Object.entries(Owners).map(([key, value]) => ({ key, value })));
     }
-    
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -286,151 +379,100 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
             {/* FORM */}
             <form
-              className="px-6 pt-5 pb-6 overflow-y-auto flex-1 custom-scroll"
+              className="flex flex-col flex-1 overflow-hidden"
               onSubmit={handleSubmit}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {columns
-                  .filter(
-                    (c) =>
-                      c.dataField !== "action" &&
-                      c.dataField !== "createdDate" &&
-                      c.dataField !== "updateTime"
-                  )
-                  .map((item, index) => {
-                    const value = fields?.[item.dataField] || "";
-                    const options = dynamicFields[item.dataField] || [];
+              <div className="px-6 pt-5 pb-6 overflow-y-auto flex-1 custom-scroll">
+                  {/* LEAD DETAILS */}
+                  <section className="crm-section">
+                    <h3 className="crm-section-title">Lead Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {columns
+                        .filter(c => FIELD_GROUPS.leadDetails.includes(c.dataField))
+                        .map(renderFieldByColumn)}
+                    </div>
+                  </section>
 
-                    if (item.dataField === "assignedUserId") {
-                      const { options } = renderOwnerSelect(
-                        item.displayName || item.fieldName
-                      );
-                      return (
-                        <div key={index} className="field-card">
-                          <label className="label-crm">
-                            {item.displayName || item.fieldName}
-                          </label>
-                          <select
-                            value={fields.assignedUserId}
-                            onChange={(e) =>
-                              handleChange(item.dataField, e.target.value)
-                            }
-                            className="input-crm"
-                          >
-                            {options?.map((o, i) => (
-                              <option key={i} value={o.key} disabled={o.disabled}>
-                                {o.value}
-                              </option>
-                            ))}
-                          </select>
+                  {/* SALES UPDATE */}
+                  <section className="crm-section bg-soft">
+                    <h3 className="crm-section-title">Sales Update</h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {columns
+                        .filter(c => FIELD_GROUPS.salesUpdate.includes(c.dataField))
+                        .map(renderFieldByColumn)}
+                    </div>
+
+                    {/* FOLLOW UP DATE */}
+                    {showDatePicker && (
+                      <div className="mt-4 max-w-sm">
+                        <label className="label-crm">Follow-up Date</label>
+                        <DateInputPicker
+                          value={fields.followupDate}
+                          onChange={(date) => handleChange("followupDate", date)}
+                          isTimeInterval
+                        />
+                      </div>
+                    )}
+
+                    {/* AI NEXT STEP */}
+                    {fields.aINextStep && (
+                      <div className="ai-card">
+                        <span className="ai-icon">✨</span>
+                        <div>
+                          <div className="ai-title">AI Next Best Action</div>
+                          <p>{fields.aINextStep}</p>
                         </div>
-                      );
-                    }
+                      </div>
+                    )}
 
-                    if (
-                      item.fieldType === "dropdown" ||
-                      item.fieldType === "datetime"
-                    ) {
-                      return (
-                        <React.Fragment key={index}>
-                          <div className="field-card">
-                            <label className="label-crm">
-                              {item.displayName || item.fieldName}
-                            </label>
-                            <select
-                              value={value}
-                              onChange={(e) =>
-                                handleChange(item.dataField, e.target.value)
-                              }
-                              className="input-crm"
-                            >
-                              <option value="">-- Select --</option>
-                              {options.map((opt) => (
-                                <option key={opt.key} value={opt.key}>
-                                  {opt.value}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                    {/* NOTES */}
+                    <div className="mt-4">
+                      {columns
+                        .filter(c => FIELD_GROUPS.notes.includes(c.dataField))
+                        .map(renderFieldByColumn)}
+                    </div>
+                  </section>
 
-                          {item.dataField === "status" && showDatePicker && (
-                            <div className="field-card">
-                              <label className="label-crm">Followup Date</label>
-                              <DateInputPicker
-                                value={fields.followupDate}
-                                onChange={(date) =>
-                                  handleChange("followupDate", date)
-                                }
-                                isTimeInterval
-                              />
-                            </div>
-                          )}
-                        </React.Fragment>
-                      );
-                    }
+                  {/* LEAD CONTEXT */}
+                  <section className="crm-section">
+                    <h3 className="crm-section-title">Lead Context</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {columns
+                        .filter(c => FIELD_GROUPS.context.includes(c.dataField))
+                        .map(renderFieldByColumn)}
+                    </div>
+                  </section>
 
-                    if (item.fieldType === "text") {
-                      return (
-                        <div key={index} className="field-card">
-                          <label className="label-crm">
-                            {item.displayName || item.fieldName}
-                          </label>
-                          <input
-                            type={
-                              item.dataField === "emailId" ? "email" : "text"
-                            }
-                            value={value}
-                            onChange={(e) =>
-                              handleChange(item.dataField, e.target.value)
-                            }
-                            className="input-crm"
-                          />
-                        </div>
-                      );
-                    }
+                  {/* ADDITIONAL DETAILS (AUTO-FETCHED) */}
+                  {getUngroupedColumns().length > 0 && (
+                    <section className="crm-section">
+                      <h3 className="crm-section-title">Additional Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {getUngroupedColumns().map(renderFieldByColumn)}
+                      </div>
+                    </section>
+                  )}
 
-                    if (item.fieldType === "textarea") {
-                      return (
-                        <div key={index} className="field-card">
-                          <label className="label-crm">
-                            {item.displayName || item.fieldName}
-                          </label>
-                          <textarea
-                            rows="2"
-                            value={value}
-                            disabled={item.dataField === "aINextStep"}
-                            onChange={(e) =>
-                              handleChange(item.dataField, e.target.value)
-                            }
-                            className="input-crm resize-none whitespace-pre-line"
-                          />
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  })}
               </div>
 
               {/* ACTIONS */}
-              <div className="mt-6 mb-2 flex justify-end gap-3">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary-crm"
-                >
-                  {loading ? "Updating..." : "Update"}
-                </button>
-
+              <div className="sticky-footer">
                 <button
                   type="button"
                   onClick={handleShowTimeline}
                   className="btn-secondary-crm"
                 >
-                  Timeline
+                  View Timeline
+                </button>
+
+                <button type="submit" disabled={loading} className="btn-primary-crm">
+                  {loading ? "Updating..." : "Save Changes"}
                 </button>
               </div>
+
             </form>
+
           </div>
         </div>
       )}
@@ -455,7 +497,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           transition: transform .15s ease, box-shadow .15s ease;
         }
         .update-header{
-            background: "linear-gradient(135deg, #e8f1fb, #f8fbff)",
+            background: #f5f7ff;
             color: "#0f172a"
         }
         
@@ -516,9 +558,59 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         .btn-secondary-crm:hover {
           background: #f8fafc;
         }
+        .crm-section {
+          margin-bottom: 26px;
+        }
+
+        .crm-section-title {
+          font-size: 12px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: .04em;
+          color: #64748b;
+          margin-bottom: 10px;
+        }
+
+        .bg-soft {
+          background: #f8faff;
+          padding: 18px;
+          border-radius: 14px;
+        }
+
+        .ai-card {
+          margin-top: 16px;
+          display: flex;
+          gap: 12px;
+          padding: 14px 16px;
+          background: linear-gradient(135deg, #eef2ff, #f8fafc);
+          border: 1px solid #dbeafe;
+          border-radius: 12px;
+        }
+
+        .ai-icon {
+          font-size: 20px;
+        }
+
+        .ai-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: #1e3a8a;
+          margin-bottom: 4px;
+        }
+        .sticky-footer {
+          position: sticky;
+          bottom: 0;
+          background: white;
+          padding: 14px 24px;
+          border-top: 1px solid #e5e7eb;
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          z-index: 10;
+        }
+
       `}</style>
     </>
   );
-
 
 }
