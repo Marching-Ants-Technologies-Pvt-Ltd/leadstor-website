@@ -302,7 +302,10 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           //notificationsPostStatusUpdate(fields.invitationId, fields.status);
         }
         if (onSuccess) onSuccess();
+        if(Corporate?.is_ai_nextstep_enabled == 1){
           getAINextStep(payload.invitationId);
+        }
+          
       } else {
         toast.error(response?.error || "Failed to update candidate.");
       }
