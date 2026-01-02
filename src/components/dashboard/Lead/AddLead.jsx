@@ -753,116 +753,162 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   };
 
   return (
-    <div className="p-4 w-full">
+    <div className="w-full min-h-screen bg-slate-50 px-4 py-3 flex flex-col">
 
       <ToastContainer position="top-right" />
 
-      <h2 className="text-xl font-semibold mb-1">Add Enquiry</h2>
+      {/* MAIN CARD */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm 
+                p-4 flex flex-col">
 
-      <p className="italic text-gray-500 text-xs mb-2">
-        (Note: Email Id or Mobile is mandatory)
-      </p>
+        {/* HEADER + ACTIONS */}
+        <div className="flex items-start justify-between mb-2 shrink-0">
 
-      <div className="bg-blue-50 p-2 rounded border text-xs mb-3 flex items-center justify-between">
-        <span>
-          <b>NOTE:</b> First row of the excel should contain headers.
-        </span>
-        <button
-          onClick={downloadTemplate}
-          className="text-blue-700 underline text-xs pl-2"
-        >
-          Download Template
-        </button>
-      </div>
+          {/* TITLE */}
+          <div>
+            <h2 className="text-sm font-semibold text-slate-800">
+              Add Enquiry
+            </h2>
+            <p className="text-[11px] text-slate-500">
+              Fast multi-lead entry. Use Tab to move across fields quickly.
+            </p>
+          </div>
 
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex gap-2">
+          {/* ACTION BUTTONS */}
+          <div className="flex items-center gap-2 flex-wrap">
 
-          {/* Back */}
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-100"
+            {/* Back */}
+            <button
+              onClick={onClose}
+              className="px-3 py-1 rounded-full text-xs
+                bg-slate-100 text-slate-700 hover:bg-slate-200 transition"
+            >
+              ← Back
+            </button>
+
+            {/* Download Excel */}
+            <button
+              onClick={downloadTemplate}
+              className="px-3 py-1 rounded-full text-xs font-medium
+                bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+            >
+              ⬇ Download Excel
+            </button>
+
+            {/* Import Excel */}
+            <label
+              className="px-3 py-1 rounded-full text-xs font-medium cursor-pointer
+                bg-blue-50 text-blue-700 hover:bg-blue-100 transition"
+            >
+              ⬆ Import Excel
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                className="hidden"
+                onChange={handleImportExcel}
+              />
+            </label>
+
+            {/* Add Row */}
+            <button
+              onClick={addRow}
+              className="px-3 py-1 rounded-full text-xs font-medium
+                bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition"
+            >
+              ＋ Add Row
+            </button>
+
+            {/* Save */}
+            <button
+              onClick={submitLeads}
+              disabled={loading}
+              className="px-4 py-1 rounded-full text-xs font-semibold
+                bg-blue-600 text-white hover:bg-blue-700
+                disabled:opacity-60 transition"
+            >
+              {loading ? "Saving..." : "Save Enquiries"}
+            </button>
+
+          </div>
+        </div>
+
+        {/* TABLE CONTAINER (RESPONSIVE HEIGHT) */}
+        <div
+            className="
+              border border-slate-200 rounded-xl overflow-hidden
+              h-[calc(100vh-260px)]
+              min-h-[300px]
+              max-h-[75vh]
+              
+              sm:h-[calc(100vh-240px)]
+              md:h-[calc(100vh-220px)]
+              lg:h-[calc(100vh-200px)]
+              xl:h-[calc(100vh-180px)]
+            "
           >
-            ⬅ Back
-          </button>
+          <HotTable
+            ref={tableRef}
+            data={data}
+            colHeaders={colHeaders}
+            columns={columns}
+            rowHeaders={true}
+            licenseKey="non-commercial-and-evaluation"
+            copyPaste={{
+              copyPasteEnabled: true,
+              rowsLimit: 10000,
+              columnsLimit: fields.length || 100
+            }}
+            pasteMode="shift_down"
+            manualColumnResize
+            manualRowResize
+            contextMenu={[
+              "copy",
+              "paste",
+              "remove_row",
+              "row_above",
+              "row_below",
+              "insert_row"
+            ]}
+            fillHandle={true}
+            stretchH="all"
+            minSpareRows={0}
+            allowInsertRow={false}
+            autoWrapRow={false}
+            autoWrapCol={false}
+            afterChange={(changes) => {
+              if (!changes) return;
+              const hot = tableRef.current?.hotInstance;
+              if (!hot) return;
 
-          {/* Import Excel */}
-          <label className="px-3 py-1.5 rounded-lg cursor-pointer text-sm shadow-sm hover:bg-pink-300 transition-all color-cls">
-            Import Excel
-            <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImportExcel} />
-          </label>
+              changes.forEach(([row, prop]) => {
+                const colIndex =
+                  typeof prop === "number" ? prop : hot.propToCol(prop);
+                hot.setCellMeta(row, colIndex, "className", "");
+              });
 
-          {/* Add Enquiry */}
-          <button
-            onClick={submitLeads}
-            disabled={loading}
-            className="px-4 py-1.5 rounded-lg text-white bg-green-600 hover:bg-green-700 text-sm disabled:opacity-60"
-          >
-            {loading ? "Adding.. Please Wait..." : "Add Enquiry"}
-          </button>
+              hot.render();
+            }}
+          />
         </div>
       </div>
 
-      {/* Add Row */}
-      <div
-        className="w-full text-center py-1 cursor-pointer rounded text-sm mb-2 color-cls"
-        onClick={addRow}
-      >
-        + Add Row
-      </div>
-
-      {/* Table */}
-      <div className="mt-2 border rounded shadow-sm">
-        <HotTable
-          ref={tableRef}
-          data={data}
-          colHeaders={colHeaders}
-          columns={columns}
-          rowHeaders={true}
-          licenseKey="non-commercial-and-evaluation"
-          copyPaste={{ copyPasteEnabled: true, rowsLimit: 10000, columnsLimit: fields.length || 100 }}
-          pasteMode="shift_down"
-          manualColumnResize
-          manualRowResize
-          contextMenu={["copy", "paste", "remove_row", "row_above", "row_below", "insert_row"]}
-          fillHandle={true}
-          stretchH="all"
-          height="360"
-          minSpareRows={0}
-          allowInsertRow={false}
-          autoWrapRow={false}
-          autoWrapCol={false}
-          afterChange={(changes, source) => {
-            if (!changes || changes.length === 0) return;
-            const hot = tableRef.current?.hotInstance;
-            if (!hot) return;
-            changes.forEach(([row, prop]) => {
-              const colIndex = typeof prop === "number" ? prop : hot.propToCol(prop);
-              hot.setCellMeta(row, colIndex, "className", "");
-            });
-            hot.render();
-          }}
-        />
-      </div>
-
+      {/* HANDSONTABLE STYLES */}
       <style jsx>{`
         .htInvalid {
           background: #ffe6e6 !important;
         }
+
         .custom-hot .ht_clone_top th,
         .custom-hot th {
-          background: #f1bbeaff !important;
+          background: #f8fafc !important;
           color: #475569 !important;
           font-size: 12px !important;
           font-weight: 600;
         }
+
         .custom-hot td {
-          background: #fafafa !important;
+          background: #ffffff !important;
           font-size: 12px !important;
-        }
-        .color-cls {
-          background: #f1bbeaff !important;
-          color: #222 !important;
         }
       `}</style>
     </div>
