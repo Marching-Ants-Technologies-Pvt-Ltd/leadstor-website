@@ -211,18 +211,19 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 		setIsLoading(true);
 		
 		try {
-		// Prepare payload based on service type
-		const payload = {
-			customerNumber: formattedClientNumber,
-			agentNumber: formattedAgentNumber
-		};
-		
-		// Add service-specific parameters
-		if (selectedIvrService === 'voxbay') {
-			// Voxbay requires additional parameters
-			payload.agentExtNo = '100'; // Default extension, you might want to make this configurable
-			payload.callerId = formattedAgentNumber; // Use agent number as caller ID by default
-		}
+			// Prepare payload based on service type
+			const payload = new FormData();
+
+			// Common fields
+			payload.append('customerNumber', formattedClientNumber);
+			payload.append('agentNumber', formattedAgentNumber);
+
+			// Add service-specific parameters
+			if (selectedIvrService === 'voxbay') {
+				payload.append('agentExtNo', '100'); // default extension
+				payload.append('callerId', formattedAgentNumber); // agent number as caller ID
+			}
+
 		
 		// Get the appropriate endpoint for selected service
 		const endpoint = getServiceEndpoint(selectedIvrService);
@@ -231,7 +232,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 			path: endpoint,
 			method: 'POST',
 			payload: payload,
-			isFormData: false // Use JSON payload instead of FormData
+			isFormData: true
 		});
 		
 		if (response.success || response.message) {
