@@ -41,6 +41,12 @@ export default function Profile() {
             body: JSON.stringify({ api_token: session.user.cn_token }),
             redirect: "follow"
         };
+        myHeaders.append("Authorization", "Bearer " + sessionToken );
+        const conceptninjaHeaderOptions = {
+            method: "GET",
+            headers: myHeaders,
+            redirect: "follow"
+        };
 
         try {
 
@@ -69,6 +75,20 @@ export default function Profile() {
 
             if (result.page === 'LEAD') {
                 localStorage.setItem('ninja_lead_link', result.page_url);
+                localStorage.setItem('access_token', sessionToken);
+
+                const coporrateInfo = await fetch(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/profile/corporate`,conceptninjaHeaderOptions);
+
+                const data = await coporrateInfo.json();
+                data['user']['image'] = session.user.image;
+                data['user']['name'] = session.user.name;
+                data['user']['email'] = session.user.email;
+                data['session'] = {
+                    "provider": session.user.auth_provider,
+                    "uuid": session.user.uuid,
+                };
+                localStorage.setItem('CurrentSessionData', JSON.stringify(data));
+
                 setLoadingText('Taking You to Lead Management Page, Please Wait...');
                 router.push('/leads');
             }

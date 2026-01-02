@@ -32,23 +32,8 @@ export default function ClientLayout({ children }) {
         router.push('/signin');
         return;
       }
-
-      localStorage.setItem('access_token', sessionData.user.cn_token);
-
-      xFetch({ path: '/services/profile/corporate' })
-        .then(data => {
-          data['user']['image'] = sessionData.user.image;
-          data['user']['name'] = sessionData.user.name;
-          data['user']['email'] = sessionData.user.email;
-          data['session'] = {
-            "provider": sessionData.user.auth_provider,
-            "uuid": sessionData.user.uuid,
-          };
-
-          localStorage.setItem('CurrentSessionData', JSON.stringify(data));
-          setSession(data);
-        })
-        .catch(() => router.push('/signout'));
+      const data = JSON.parse(localStorage.getItem('CurrentSessionData'));
+      setSession(data);
     };
 
     fetchSession();
