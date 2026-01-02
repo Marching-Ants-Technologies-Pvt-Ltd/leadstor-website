@@ -25,6 +25,21 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     notes: ['remarks'],
     context: ['course', 'source', 'assignedUserId']
   };
+  const ALL_GROUPED_FIELDS = Object.values(FIELD_GROUPS).flat();
+    const EXCLUDED_ADDITIONAL_FIELDS = [
+    "createdDate",
+    "updateTime",
+    "aINextStep",
+    "action"
+  ];
+
+  const getUngroupedColumns = () => {
+    return columns.filter(
+      c =>
+        !ALL_GROUPED_FIELDS.includes(c.dataField) &&
+        !EXCLUDED_ADDITIONAL_FIELDS.includes(c.dataField) 
+    );
+  };
 
   const renderFieldByColumn = (item, index) => {
     const value = fields?.[item.dataField] || "";
@@ -428,6 +443,17 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                         .map(renderFieldByColumn)}
                     </div>
                   </section>
+
+                  {/* ADDITIONAL DETAILS (AUTO-FETCHED) */}
+                  {getUngroupedColumns().length > 0 && (
+                    <section className="crm-section">
+                      <h3 className="crm-section-title">Additional Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {getUngroupedColumns().map(renderFieldByColumn)}
+                      </div>
+                    </section>
+                  )}
+
               </div>
 
               {/* ACTIONS */}
