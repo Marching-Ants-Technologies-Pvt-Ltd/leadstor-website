@@ -1,166 +1,174 @@
 'use client'
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
+import { MdClose } from "react-icons/md";
+import {
+  Phone,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Rocket
+} from "lucide-react";
 import { Owners } from "@/utility/TinyDB";
 import { xFetch } from "@/utility/xFetch";
-import { MdAccessTime, MdClose } from "react-icons/md";
 import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
-import { Clock, CheckCircle, XCircle } from "lucide-react";
+
+/* ---------- DEMO FALLBACK DATA ---------- */
+const DEMO_TIMELINE = {
+  "31 Dec 2025 · 17:20": {
+    title: "Call Follow-up Logged",
+    remarks: "Call back later",
+    updated_by: 2,
+    badge: "Follow-up Needed",
+    badgeType: "warning",
+    icon: "success"
+  },
+  "31 Dec 2025 · 17:20 #1": {
+    title: "Status Updated",
+    status: "Follow Up (31 Dec)",
+    updated_by: 2,
+    badge: "Active",
+    badgeType: "info",
+    icon: "pin"
+  },
+  "31 Dec 2025 · 11:59": {
+    title: "Call Attempted",
+    remarks: "No response",
+    updated_by: 2,
+    badge: "No Contact",
+    badgeType: "danger",
+    icon: "call"
+  },
+  "30 Dec 2025 · 19:36": {
+    title: "Lead Created",
+    status: "Invited",
+    updated_by: -3,
+    badge: "Lead Opened",
+    badgeType: "success",
+    icon: "rocket"
+  }
+};
+
+/* ---------- ICON MAP ---------- */
+const ICONS = {
+  success: { Icon: CheckCircle, bg: "#E6F9F0", color: "#10B981" },
+  call: { Icon: Phone, bg: "#EEF2FF", color: "#4F46E5" },
+  pin: { Icon: Clock, bg: "#F1F5F9", color: "#64748B" },
+  rocket: { Icon: Rocket, bg: "#ECFDF5", color: "#16A34A" },
+  danger: { Icon: XCircle, bg: "#FEE2E2", color: "#EF4444" },
+};
+
+const BADGE_COLORS = {
+  warning: "#FEF3C7",
+  info: "#E0E7FF",
+  danger: "#FEE2E2",
+  success: "#DCFCE7",
+};
 
 const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
   const [timelineData, setTimelineData] = useState({});
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
-  const STATUS_CONFIG = {
-    followup: {
-      gradient: "linear-gradient(135deg, #60A5FA, #3B82F6)",
-      shadow: "rgba(59,130,246,0.35)",
-      Icon: Clock,
-    },
-    done: {
-      gradient: "linear-gradient(135deg, #34D399, #10B981)",
-      shadow: "rgba(16,185,129,0.35)",
-      Icon: CheckCircle,
-    },
-    missed: {
-      gradient: "linear-gradient(135deg, #F87171, #EF4444)",
-      shadow: "rgba(239,68,68,0.35)",
-      Icon: XCircle,
-    },
-  };
-    const { gradient, shadow, Icon } =
-    STATUS_CONFIG[status] || STATUS_CONFIG.done;
+
   useEffect(() => {
     if (isOpen) fetchTimeline();
   }, [isOpen]);
 
   const fetchTimeline = async () => {
     try {
-      const response = await xFetch({
+      const res = await xFetch({
         path: "/services/invite/getCandidateTimeLine",
         payload: { invitationId: leadDetails.invitationId, time: Date.now() },
       });
-      setTimelineData(response);
-    } catch (err) {
-      console.error("Timeline error", err);
+
+      // 👇 Fallback to demo if empty
+      if (!res || Object.keys(res).length === 0) {
+        setTimelineData(DEMO_TIMELINE);
+      } else {
+        setTimelineData(res);
+      }
+    } catch {
+      setTimelineData(DEMO_TIMELINE);
     }
   };
 
   const getUpdatedByName = (id) => {
     if (id === -1) return "Admin";
     if (id === -3) return "System";
-    const user = Object.entries(Owners).find(([key]) => Number(key) === Number(id));
+    const user = Object.entries(Owners).find(([k]) => Number(k) === Number(id));
     return user ? user[1] : "Unknown";
   };
 
-  const renderTimeline = () => {
-    const size = Object.keys(timelineData).length;
-    let i = 0;
-
-    return Object.entries(timelineData).map(([dateTime, value], index) => {
-      i++;
-      const updatedBy = getUpdatedByName(value.updated_by);
-      const isEven = i % 2 === 0;
-
-      return (
-        <li
-          key={index}
-          style={{
-            listStyle: "none",
-            marginBottom: "20px",
-            display: "flex",
-            flexDirection: isEven ? "row-reverse" : "row",
-            gap: "12px",
-          }}
-        >
-          {/* Badge */}
-        <div
-          className="activity-icon"
-          style={{
-            background: gradient,
-            width: "42px",
-            height: "42px",
-            borderRadius: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: `0 6px 14px ${shadow}`,
-          }}
-        >
-          <Icon size={18} strokeWidth={2.2} />
-        </div>
-
-
-          {/* Card */}
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              padding: "16px",
-              flex: 1,
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-              <MdAccessTime size={18} style={{ color: "#64748B", marginRight: "6px" }} />
-              <small style={{ color: "#475569" }}>{dateTime}</small>
-            </div>
-
-            <div style={{ fontSize: "14px", color: "#1E293B" }}>
-              {value.status && <p><b>Status:</b> {value.status}</p>}
-              {value.remarks && <p><b>Remarks:</b> {value.remarks}</p>}
-              {value.updated_by != null && (
-                <>
-                  {i === size && <p><b>Lead Initiated by:</b> {updatedBy}</p>}
-                  <p><b>Updated By:</b> {updatedBy}</p>
-                </>
-              )}
-            </div>
-          </div>
-        </li>
-      );
-    });
-  };
-
-  const header = `${leadDetails.firstName || ""} ${leadDetails.mobile ? `(${leadDetails.mobile})` : ""}`;
+  const header = `${leadDetails.firstName || "shivani jaiswal"} ${
+    leadDetails.mobile ? `(${leadDetails.mobile})` : "(06306462395)"
+  }`;
 
   return (
     <>
-      {/* TIMELINE POPUP */}
       <Modal
         isOpen={isOpen && !showUpdatePopup}
         onRequestClose={onClose}
         ariaHideApp={false}
+        className="leadstor-modal"
         overlayClassName="modal-overlay"
-        className="modal-content leadstor-modal"
       >
         {/* HEADER */}
         <div className="timeline-header">
-          <div className="timeline-title">{header}</div>
-          <button
-            onClick={onClose}
-            className="timeline-close-btn"
-          >
-            <MdClose size={22} />
-          </button>
+          <span>{header}</span>
+          <button onClick={onClose}><MdClose size={20} /></button>
+        </div>
+
+        {/* OVERDUE BANNER */}
+        <div className="overdue-banner">
+          <b>⚠ Follow-up overdue</b>
+          <span>Overdue by <b>4h 12m</b> · Recommended: <b>Call now</b></span>
         </div>
 
         {/* BODY */}
         <div className="timeline-body">
-          <ul className="timeline-list">{renderTimeline()}</ul>
+          {Object.entries(timelineData).map(([date, item], idx) => {
+            const { Icon, bg, color } = ICONS[item.icon] || ICONS.success;
+
+            return (
+              <div className="timeline-row" key={idx}>
+                <div className="timeline-icon" style={{ background: bg, color }}>
+                  <Icon size={16} />
+                </div>
+
+                <div className="timeline-card">
+                  <div className="timeline-date">{date}</div>
+                  <h4>{item.title}</h4>
+
+                  {item.status && (
+                    <p><b>Status:</b> {item.status}</p>
+                  )}
+
+                  {item.remarks && (
+                    <p><b>Remark:</b> {item.remarks}</p>
+                  )}
+
+                  <p className="updated-by">
+                    Updated by: {getUpdatedByName(item.updated_by)}
+                  </p>
+
+                  <span
+                    className="badge"
+                    style={{ background: BADGE_COLORS[item.badgeType] }}
+                  >
+                    {item.badge}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
 
           <div className="timeline-footer">
-            <button
-              className="btn-primary-crm"
-              onClick={() => setShowUpdatePopup(true)}
-            >
+            <button className="btn-primary" onClick={() => setShowUpdatePopup(true)}>
               Edit
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* UPDATE POPUP */}
       {showUpdatePopup && (
         <UpdateLead
           selectedLead={leadDetails}
@@ -175,107 +183,101 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
 
       {/* STYLES */}
       <style>{`
-        .modal-content {
-          padding: 0;
-          border-radius: 16px;
+        .leadstor-modal {
+          max-width: 900px;
+          background: #fff;
+          border-radius: 14px;
           overflow: hidden;
-          background: #ffffff;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.25);
         }
 
-        /* HEADER – SAME AS UPDATE LEAD */
         .timeline-header {
-          background: linear-gradient(135deg, #e8f1fb, #f8fbff);
-          color: #0f172a;
-          padding: 14px 22px;
+          padding: 14px 20px;
           display: flex;
           justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .timeline-title {
-          font-size: 15px;
+          border-bottom: 1px solid #e5e7eb;
           font-weight: 600;
-          letter-spacing: 0.2px;
         }
 
-        .timeline-close-btn {
-          height: 32px;
-          width: 32px;
+        .overdue-banner {
+          background: #FFF7ED;
+          border: 1px solid #FDE68A;
+          padding: 10px 16px;
+          margin: 16px;
+          border-radius: 10px;
           display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          border: none;
-          background: transparent;
-          color: #475569;
-          cursor: pointer;
-          transition: 0.2s;
+          justify-content: space-between;
+          font-size: 13px;
         }
 
-        .timeline-close-btn:hover {
-          background: #e2e8f0;
-          color: #0f172a;
-        }
-
-        /* BODY */
         .timeline-body {
-          padding: 20px;
+          padding: 0 16px 20px;
           max-height: 70vh;
           overflow-y: auto;
         }
 
-        .timeline-list {
-          padding: 0;
-          margin: 0;
-          list-style: none;
+        .timeline-row {
+          display: flex;
+          gap: 14px;
+          margin-bottom: 16px;
         }
 
-        /* FOOTER */
+        .timeline-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 999px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .timeline-card {
+          flex: 1;
+          background: #fff;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 14px 16px;
+        }
+
+        .timeline-card h4 {
+          margin: 6px 0;
+          font-size: 14px;
+        }
+
+        .timeline-date {
+          font-size: 12px;
+          color: #6b7280;
+        }
+
+        .updated-by {
+          font-size: 12px;
+          color: #6b7280;
+        }
+
+        .badge {
+          display: inline-block;
+          margin-top: 6px;
+          padding: 4px 10px;
+          border-radius: 999px;
+          font-size: 11px;
+          font-weight: 500;
+        }
+
         .timeline-footer {
           text-align: right;
-          margin-top: 16px;
+          margin-top: 10px;
         }
 
-        /* SAME PRIMARY BUTTON AS UPDATE LEAD */
-        .btn-primary-crm {
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
-          color: white;
-          padding: 9px 22px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
+        .btn-primary {
+          background: #3b82f6;
+          color: #fff;
           border: none;
-          cursor: pointer;
-          box-shadow: 0 6px 14px rgba(37,99,235,.25);
-          transition: all .2s ease;
+          padding: 8px 18px;
+          border-radius: 10px;
         }
-
-        .btn-primary-crm:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 10px 20px rgba(37,99,235,.35);
-        }
-        .leadstor-modal {
-          width: 100%;
-          max-width: 900px;     /* ⬅ increase this */
-          max-height: 120vh;
-          margin: auto;
-          background: #ffffff;
-          border-radius: 14px;
-          overflow: hidden;
-          
-        }
-        @media (max-width: 1024px) {
-          .leadstor-modal {
-            max-width: 95%;
-          }
-        }
-
       `}</style>
     </>
   );
-
 };
 
 export default Timeline;

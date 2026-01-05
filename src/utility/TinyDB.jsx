@@ -72,3 +72,10 @@ export const LeadFilters = {
     setValue: (value) => localStorage.setItem('LeadFilters', JSON.stringify(value)),
     reset: () => localStorage.setItem('LeadFilters', '[]'),
 }
+
+export const LeadSearch = {
+  value: () => localStorage.getItem('LeadSearch') ?? '',
+  setValue: (value) => localStorage.setItem('LeadSearch', value),
+  reset: () => localStorage.setItem('LeadSearch', '')
+};
+

@@ -1,7 +1,7 @@
 'use client';
 import '@/app/style/table-style.css';
 import { showFullRemarks, HorizontalScroll } from '@/utility/TableControllers';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo  } from 'react';
 import AppliedFilters, { showAppliedFilter } from '@/components/dashboard/Lead/AppliedFilters';
 import { xFetch } from '@/utility/xFetch';
 import {
@@ -12,12 +12,19 @@ import {
     LeadsPerPage,
     TotalLeads,
     LeadsCurrentPage,
-    LeadFilters
+    LeadFilters,
+    LeadSearch 
 } from '@/utility/TinyDB';
 import UpdateLead from '@/components/dashboard/Lead/UpdateLead';
 import CallerDeskIVR from '@/components/dashboard/Lead/CallerDeskIVR';
 import Timeline from '@/components/dashboard/Lead/ViewTimeline';
 import { tableHeader } from "@/components/common/customStyle";
+import {
+  useReactTable,
+  getCoreRowModel,
+  flexRender,
+  ColumnDef,
+} from '@tanstack/react-table';
 
 let setLeadsFn;
 
@@ -63,11 +70,22 @@ export default function LeadsTable({
     }, [isIndeterminate]);
 
     async function xLeads() {
-        let currentPage = LeadsCurrentPage.value();
         let limit = LeadsPerPage.value();
-        let offset = (currentPage - 1) * limit;
-        let filters = LeadFilters.value();
+        let total = TotalLeads.value() || 0;
 
+        let maxPage = Math.max(1, Math.ceil(total / limit));
+        let currentPage = LeadsCurrentPage.value();
+
+        // 🔒 Clamp page
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > maxPage) currentPage = maxPage;
+
+        LeadsCurrentPage.setValue(currentPage);
+
+        let offset = (currentPage - 1) * limit;
+
+        let filters = LeadFilters.value();
+        offset = Math.max(0, offset);
         let payload = {
             testId: Test._id,
             testType: Test.type,
@@ -76,21 +94,35 @@ export default function LeadsTable({
             order: "asc",
             offset,
             limit,
-            search: document.querySelector('div#table-search-bar input')?.value ?? ''
+            search: LeadSearch.value()
         };
 
         if (filters.length > 0) {
             filters.forEach(item => payload[item.query] = item.value);
             showAppliedFilter(filters, () => {
                 LeadFilters.reset();
+                LeadsPerPage.setValue(newLimit);
+                LeadsCurrentPage.setValue(1);
                 xLeads();
             });
         }
 
         xFetch({ path: '/services/invite/enquiries', payload })
             .then(data => {
-                setLeadsFn(data?.rows || []);
-                TotalLeads.setValue(parseInt(data?.total || 0));
+                const rows = data?.rows || [];
+                const total = parseInt(data?.total || 0);
+
+                if (rows.length === 0 &&
+                    total > 0 &&
+                    LeadsCurrentPage.value() > 1 &&
+                    !LeadSearch.value()
+                    ) {
+                    LeadsCurrentPage.setValue(1);
+                    xLeads();
+                    return;
+                }
+                setLeadsFn(rows);
+                TotalLeads.setValue(total);
             })
             .finally(() => {
                 if (typeof window.onTableRefresh === 'function') window.onTableRefresh();
@@ -355,6 +387,7 @@ export default function LeadsTable({
     };
 
     useEffect(() => {
+        LeadsCurrentPage.setValue(1); 
         xFetch({ path: '/services/profile/columns' })
             .then(data => {
                 setColumns(data);
@@ -366,144 +399,176 @@ export default function LeadsTable({
 
         window.tableRefresh = () => xLeads();
         HorizontalScroll();
+        return () => {
+            delete window.tableRefresh;
+        };
     }, []);
+
+    /* =======================
+     TANSTACK COLUMN DEFINITIONS
+     ======================= */
+
+    const tableColumns = useMemo(() => {
+        const cols = [];
+
+        // Checkbox column
+        cols.push({
+        id: 'select',
+        header: () => (
+            <input
+            ref={selectAllRef}
+            type="checkbox"
+            checked={
+                leads.length > 0 &&
+                leads.every(l => selectedLeadIds.includes(l.invitationId))
+            }
+            onChange={(e) =>
+                setSelectedLeadIds(
+                e.target.checked ? leads.map(l => l.invitationId) : []
+                )
+            }
+            />
+        ),
+        cell: ({ row }) => (
+            <input
+            type="checkbox"
+            checked={selectedLeadIds.includes(row.original.invitationId)}
+            onChange={(e) =>
+                setSelectedLeadIds(
+                e.target.checked
+                    ? [...selectedLeadIds, row.original.invitationId]
+                    : selectedLeadIds.filter(id => id !== row.original.invitationId)
+                )
+            }
+            />
+        ),
+        });
+
+        columnOrder.forEach(col => {
+        cols.push({
+            accessorKey: col,
+            header: columns.find(c => c.dataField === col)?.displayName || col,
+            cell: ({ row }) => {
+            const r = row.original;
+
+            if (col === 'firstName') return renderNameCell(r);
+            if (col === 'mobile') return renderMobileCell(r);
+            if (col === 'remarks') return renderRemarkCell(r);
+            if (col === 'status') return renderStatusTimelineCell(r);
+            if (col === 'leadProbability') return renderProbability(r);
+
+            if (dataFormatters[col]) return dataFormatters[col](r);
+
+            return r[col] ?? '-';
+            }
+        });
+        });
+
+        return cols;
+    }, [columns, columnOrder, leads, selectedLeadIds]);
+
+    const table = useReactTable({
+        data: leads,
+        columns: tableColumns,
+        getCoreRowModel: getCoreRowModel(),
+    });
 
     return (
         <>
-            <AppliedFilters />
-            {/* TABLE */}
-            <div className="bg-white rounded-xl border overflow-auto h-[360px]">
-                    <table className="w-full border-collapse text-sm leadstor-table-modern">
+        <AppliedFilters />
 
-                    {/* HEADER */}
-                    <thead className={`sticky top-0 z-10 ${tableHeader}`}>
-                    <tr>
-                        <th className="p-2 border-b w-[40px]">
-                        <input
-                            ref={selectAllRef}
-                            type="checkbox"
-                            checked={
-                            leads.length > 0 &&
-                            leads.every(l => selectedLeadIds.includes(l.invitationId))
-                            }
-                            onChange={e =>
-                            setSelectedLeadIds(
-                                e.target.checked ? leads.map(l => l.invitationId) : []
-                            )
-                            }
-                        />
-                        </th>
-
-                        {columns
-                        .filter(c => c.dataField !== 'action')
-                        .map((c, i) => (
-                            <th
-                            key={i}
-                            className="p-2 text-left font-semibold border-b whitespace-nowrap"
-                            >
-                            {c.displayName || c.fieldName}
-                            </th>
-                        ))}
-                    </tr>
-                    </thead>
-
-                    {/* BODY */}
-                    <tbody>
-                    {leads.map(row => (
-                        <tr
-                        key={row.invitationId}
-                        className="border-b hover:bg-slate-50 transition h-[44px]"
-                        >
-                        <td className="p-2">
-                            <input
-                            type="checkbox"
-                            checked={selectedLeadIds.includes(row.invitationId)}
-                            onChange={e =>
-                                setSelectedLeadIds(
-                                e.target.checked
-                                    ? [...selectedLeadIds, row.invitationId]
-                                    : selectedLeadIds.filter(id => id !== row.invitationId)
-                                )
-                            }
-                            />
-                        </td>
-
-                        {columnOrder.map(col => (
-                            <td
-                            key={col}
-                            className="p-2 whitespace-nowrap overflow-hidden text-ellipsis align-top"
-                            data-column={col}
-                            data-tooltip={row[col]}
-                            >
-                            {col === 'firstName' && renderNameCell(row)}
-                            {col === 'mobile' && renderMobileCell(row)}
-                            {col === 'remarks' && renderRemarkCell(row)}
-                            {col === 'status' &&
-                                renderStatusTimelineCell(row, handleShowTimeline)}
-                            {col === 'leadProbability' && renderProbability(row)}
-
-                            {dataFormatters[col] &&
-                                !['firstName', 'mobile', 'status','leadProbability '].includes(col) &&
-                                dataFormatters[col](row)}
-
-                            {!dataFormatters[col] &&
-                                !['firstName', 'mobile', 'status','leadProbability'].includes(col) &&
-                                row[col]}
-                            </td>
-                        ))}
-                        </tr>
+        <div className="bg-white rounded-xl border flex-1 overflow-x-auto overflow-y-auto">
+            <table className="w-full border-collapse text-sm leadstor-table-modern">
+            <thead className={`sticky top-0 z-10 ${tableHeader}`}>
+                {table.getHeaderGroups().map(headerGroup => (
+                <tr key={headerGroup.id}>
+                    {headerGroup.headers.map(header => (
+                    <th
+                        key={header.id}
+                        className="p-2 text-left font-semibold border-b whitespace-nowrap"
+                    >
+                        {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                        )}
+                    </th>
                     ))}
-                    </tbody>
-                </table>
-            </div>
+                </tr>
+                ))}
+            </thead>
 
-            {/* KEEP ALL MODALS AS-IS */}
-            {showUpdatePopup && (
+            <tbody>
+            {table.getRowModel().rows.length === 0 ? (
+                <tr>
+                <td
+                    colSpan={table.getAllColumns().length}
+                    className="text-center py-10 text-slate-500"
+                >
+                    <div className="flex flex-col items-center gap-2">
+                    <i className="ri-search-line text-2xl text-slate-400" />
+                    <div className="font-medium">
+                        No results found
+                    </div>
+                    {LeadSearch.value() && (
+                        <div className="text-xs">
+                        Try adjusting your search or filters
+                        </div>
+                    )}
+                    </div>
+                </td>
+                </tr>
+            ) : (
+                table.getRowModel().rows.map(row => (
+                <tr
+                    key={row.id}
+                    className="border-b hover:bg-slate-50 transition h-[44px] align-top"
+                >
+                    {row.getVisibleCells().map(cell => (
+                    <td key={cell.id} className="p-2">
+                        {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                        )}
+                    </td>
+                    ))}
+                </tr>
+                ))
+            )}
+            </tbody>
+
+            </table>
+        </div>
+
+        {/* MODALS */}
+        {showUpdatePopup && (
             <UpdateLead
-                selectedLead={selectedCandidate}
-                onCancel={() => setShowUpdatePopup(false)}
-                onSuccess={() => {
-                setShowUpdatePopup(false)
-                xLeads()
-                }}
+            selectedLead={selectedCandidate}
+            onCancel={() => setShowUpdatePopup(false)}
+            onSuccess={() => {
+                setShowUpdatePopup(false);
+                xLeads();
+            }}
             />
-            )}
+        )}
 
-            {showCallerDeskIVR && (
+        {showCallerDeskIVR && (
             <CallerDeskIVR
-                candidate={callerCandidate}
-                onClose={() => setShowCallerDeskIVR(false)}
+            candidate={callerCandidate}
+            onClose={() => setShowCallerDeskIVR(false)}
             />
-            )}
+        )}
 
-            {showTimeline && (
+        {showTimeline && (
             <Timeline
-                leadDetails={selectedLead}
-                isOpen
-                onClose={() => setShowTimeline(false)}
+            leadDetails={selectedLead}
+            isOpen
+            onClose={() => setShowTimeline(false)}
             />
-            )}
-
-            {/* STYLES */}
-            <style jsx>{`
+        )}
+        {/* STYLES */}
+        <style jsx>{`
             /* ===== MODERN CRM TABLE ===== */
-
-            .leadstor-table-modern {
-                table-layout: fixed;
-                min-width: 2700px; 
-            }
             
-            .leadstor-table-modern td {
-                position: relative;
-                max-width: 350px;
-                white-space: normal;          /* allow line break */
-                word-break: break-word;       /* break long words */
-                overflow-wrap: anywhere;      /* handles long emails/urls */
-                line-height: 1.4;
-                padding-top: 8px;
-                padding-bottom: 8px;
-            }
-
             .leadstor-table-modern th {
                 height: 44px;
                 white-space: nowrap;
@@ -520,31 +585,8 @@ export default function LeadsTable({
                 color: #111827;
                 height: 44px;
             }
-
-            .leadstor-table-modern tbody td {
-                font-size: 13px;
-                color: #111827;
-                border-right: 1px solid #f1f5f9;
-            }
-
-            .leadstor-table-modern tbody tr:last-child td {
-                border-bottom: none;
-            }
-
-            /* Sticky header shadow */
-            thead.sticky {
-                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-            }
-
-            /* Checkbox alignment */
-            input[type="checkbox"] {
-                width: 14px;
-                height: 14px;
-                cursor: pointer;
-            }
-            `}</style>
-            
+                
+        `}</style>
         </>
-    )
-
+    );
 }

@@ -14,6 +14,7 @@ import React from "react";
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
+import { LeadsCurrentPage } from '@/utility/TinyDB';
 
 
 export default function ClientLayout({ children }) {
@@ -64,6 +65,19 @@ export default function ClientLayout({ children }) {
 
   const pageInfo = getPageInfo(pathname);
 
+  useEffect(() => {
+    window.refreshLeadPage = () => {
+      LeadsCurrentPage.setValue(1);
+      window.refreshLeadMenu?.();
+      window.tableRefresh?.();
+      window.onTableRefresh?.();
+    };
+
+    return () => {
+      delete window.refreshLeadPage;
+    };
+  }, []);
+  
   if (!session) return <Loading />;
 
   return (
