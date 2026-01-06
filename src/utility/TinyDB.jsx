@@ -5,10 +5,10 @@ let CurrentSessionData = {};
 let LeadOwnersById = {};
 
 if (typeof window !== 'undefined') {
-    try{
+    try {
         CurrentSessionData = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
         LeadOwnersById = JSON.parse(localStorage.getItem('LeadOwnersById') ?? '{}');
-    }catch(e){
+    } catch (e) {
         console.error(`Unable to parse current state of user`, e);
     }
 }
@@ -18,12 +18,22 @@ export const Test = CurrentSessionData?.test;
 export const User = CurrentSessionData?.user;
 export const Owners = LeadOwnersById;
 
-export function getLeadOwnerById(id){
+export function getLeadOwnerById(id, defaultValue = '') {
+    if (id === null || id === undefined) return defaultValue;
 
-    if(!id || typeof id !== 'number') return '';
-    if(!LeadOwnersById[id]) return '';
-    
-    return LeadOwnersById[id];
+    const parsedId =
+        typeof id === 'number'
+            ? id
+            : typeof id === 'string'
+                ? Number(id.trim())
+                : NaN;
+
+    // Must be a finite integer (allows +ve / -ve)
+    if (!Number.isFinite(parsedId) || !Number.isInteger(parsedId)) {
+        return defaultValue;
+    }
+
+    return LeadOwnersById[parsedId] ?? defaultValue;
 }
 
 export function getCurrentUserMobile() {

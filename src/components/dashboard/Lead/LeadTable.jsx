@@ -372,7 +372,7 @@ export default function LeadsTable({
         <>
             <AppliedFilters />
             {/* TABLE */}
-            <div className="bg-white rounded-xl border overflow-auto h-[360px]">
+            <div className="bg-white rounded-xl border overflow-auto" style={{height: 'calc(100vh - Xpx)'}}>
                     <table className="w-full border-collapse text-sm leadstor-table-modern">
 
                     {/* HEADER */}

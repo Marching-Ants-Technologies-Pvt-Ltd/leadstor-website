@@ -1,6 +1,6 @@
 "use client";
 
-function jsonToQueryParams(json) {
+export function jsonToQueryParams(json) {
     return Object.keys(json)
         .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(json[key]))
         .join("&");
