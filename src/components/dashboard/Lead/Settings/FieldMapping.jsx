@@ -101,23 +101,49 @@ export default function FieldMapping() {
 
   // Save with validation
   const handleSave = () => {
-    const invalid = fields.find(
-      (f) =>
-        selectedIds.includes(f.id) &&
-        (!f.fieldType || f.fieldType.trim() === "")
-    );
+      // 1. Check for missing fieldType
+      const invalidType = fields.find(
+        (f) =>
+          selectedIds.includes(f.id) &&
+          (!f.fieldType || f.fieldType.trim() === "")
+      );
 
-    if (invalid) {
-      toast.error(`Select field type for "${invalid.fieldName}"`);
-      return;
-    }
+      if (invalidType) {
+        toast.error(`Please select field type for "${invalidType.fieldName}"`);
+        return;
+      }
 
-    const formData = new FormData();
-    formData.append("selectedFields", JSON.stringify(selectedIds));
+      // 2. Get only selected fields
+      const selectedFields = fields.filter((f) => selectedIds.includes(f.id));
 
-    const updatedFields = fields
-      .filter((f) => selectedIds.includes(f.id))
-      .map((f) => ({
+      // 3. Check for duplicate dataField
+      const dataFields = selectedFields.map((f) => f.dataField?.trim());
+      const uniqueDataFields = new Set(dataFields);
+
+      if (uniqueDataFields.size !== dataFields.length) {
+        // Find which dataField is duplicated
+        const duplicates = dataFields.filter(
+          (item, index) => dataFields.indexOf(item) !== index
+        );
+
+        const duplicateField = fields.find(
+          (f) => selectedIds.includes(f.id) && duplicates.includes(f.dataField?.trim())
+        );
+
+        const fieldName = duplicateField?.fieldName || duplicateField?.dataField || "a field";
+
+        toast.error(`Duplicate column detected: "${duplicateField?.dataField}" is used more than once (${fieldName})`);
+        return;
+      }
+
+      // 4. Prepare payload
+      const formData = new FormData();
+
+      // Optional: send selected IDs (if backend needs it)
+      formData.append("selectedFields", JSON.stringify(selectedIds));
+
+      // Send full selected field data
+      const updatedFields = selectedFields.map((f) => ({
         id: f.id,
         fieldName: f.fieldName,
         displayName: f.displayName,
@@ -126,23 +152,30 @@ export default function FieldMapping() {
         fieldType: f.fieldType,
       }));
 
-    formData.append("updatedFields", JSON.stringify(updatedFields));
+      formData.append("updatedFields", JSON.stringify(updatedFields));
 
-    setLoading(true);
-    xFetch({
-      path: "/services/profile/updateLeadFieldMapping",
-      method: "POST",
-      payload: formData,
-      isFormData: true,
-    })
-      .then((res) => {
-        if (res.status === true) {
-          toast.success("Field mapping updated successfully");
-        }
+      // 5. Save
+      setLoading(true);
+
+      xFetch({
+        path: "/services/profile/updateLeadFieldMapping",
+        method: "POST",
+        payload: formData,
+        isFormData: true,
       })
-      .catch(() => toast.error("Error saving field mapping"))
-      .finally(() => setLoading(false));
-  };
+        .then((res) => {
+          if (res.status === true) {
+            toast.success("Field mapping updated successfully");
+          } else {
+            toast.error(res.message || "Failed to update field mapping");
+          }
+        })
+        .catch((err) => {
+          console.error("Save error:", err);
+          toast.error("Error saving field mapping");
+        })
+        .finally(() => setLoading(false));
+    };
 
   return (
     <div className="p-6">
@@ -192,6 +225,7 @@ export default function FieldMapping() {
               <th className="p-2">Sr.</th>
               <th className="p-2">Field Name</th>
               <th className="p-2">Display Name</th>
+              <th className="p-2">Data Field (DB Column)</th>
               <th className="p-2">Field Type</th>
             </tr>
           </thead>
@@ -257,6 +291,7 @@ export default function FieldMapping() {
                       </div>
                   </td>
 
+                  <td className="p-2">{row.dataField}</td>
                   <td className="p-2">
                     <select
                       className={`w-full border rounded px-2 py-1 ${

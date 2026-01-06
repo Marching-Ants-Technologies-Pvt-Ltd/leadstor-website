@@ -54,6 +54,7 @@ export default function LeadsTable({
     const [selectedCandidate, setSelectedCandidate] = useState(null);
 
     const [showTimeline, setShowTimeline] = useState(false);
+    const [selectedLeadForTimeline, setSelectedLeadForTimeline] = useState(null);
     const [selectedLead, setSelectedLead] = useState({});
 
     const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
@@ -214,46 +215,50 @@ export default function LeadsTable({
         );
     };
 
-    const handleShowTimeline = (selectedLead) => {
+    const handleShowTimeline = (lead) => {
+        setSelectedLeadForTimeline(lead);
         setShowTimeline(true);
-        setSelectedLead(selectedLead);
     };
 
-    const renderStatusTimelineCell = (row, handleShowTimeline) => {
+    const refreshLeads = () => {
+        xLeads();
+    };
+    
+    const renderStatusTimelineCell = (row) => {
         const status = row.status || "-";
 
         const STATUS_MAP = {
-            "Phone Not Picked": "bg-sky-500",
-            "May Visit": "bg-indigo-500",
-            "Visited": "bg-blue-500",
-            "Hot Lead": "bg-red-500",
-            "Warm Lead": "bg-amber-500",
-            "Send Reminder": "bg-purple-500",
-            "Joined": "bg-green-500",
-            "Follow Up": "bg-orange-500",
-            "Not Interested": "bg-gray-400",
-            "PostMeeting FollowUp": "bg-cyan-500"
+        "Phone Not Picked": "bg-sky-500",
+        "May Visit": "bg-indigo-500",
+        "Visited": "bg-blue-500",
+        "Hot Lead": "bg-red-500",
+        "Warm Lead": "bg-amber-500",
+        "Send Reminder": "bg-purple-500",
+        "Joined": "bg-green-500",
+        "Follow Up": "bg-orange-500",
+        "Not Interested": "bg-gray-400",
+        "PostMeeting FollowUp": "bg-cyan-500",
         };
 
         const pillColor = STATUS_MAP[status] || "bg-slate-400";
 
         return (
-            <div className="flex items-center gap-2">
-            {/* STATUS PILL */}
+        <div className="flex items-center gap-2">
             <span
-                className={`px-3 py-[3px] rounded-full text-xs font-medium text-white
-                ${pillColor} whitespace-nowrap`}
+            className={`px-3 py-1 rounded-full text-xs font-medium text-white ${pillColor} whitespace-nowrap`}
             >
-                {status}
+            {status}
             </span>
 
-            {/* TIMELINE ICON */}
-            <i
-                className="ri-history-line text-blue-500 cursor-pointer text-[14px]"
-                title="View Timeline"
-                onClick={() => handleShowTimeline(row)}
-            />
-            </div>
+            <button
+            type="button"
+            className="text-blue-600 hover:text-blue-800 transition-colors"
+            title="View Timeline"
+            onClick={() => handleShowTimeline(row)}
+            >
+            <i className="ri-history-line text-xl" />
+            </button>
+        </div>
         );
     };
 
@@ -290,7 +295,6 @@ export default function LeadsTable({
             </div>
         );
     };
-
 
     const renderRemarkCell = (row) => {
         let content = row.remarks || "";
@@ -558,11 +562,12 @@ export default function LeadsTable({
             />
         )}
 
-        {showTimeline && (
+        {showTimeline && selectedLeadForTimeline && (
             <Timeline
-            leadDetails={selectedLead}
-            isOpen
+            leadDetails={selectedLeadForTimeline}
+            isOpen={showTimeline}
             onClose={() => setShowTimeline(false)}
+            xLeads={refreshLeads}           // ← most important fix!
             />
         )}
         {/* STYLES */}

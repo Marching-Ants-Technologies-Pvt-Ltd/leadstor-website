@@ -4,71 +4,116 @@ import Modal from "react-modal";
 import { MdClose } from "react-icons/md";
 import {
   Phone,
-  CheckCircle,
+  CheckCircle2,
   Clock,
-  XCircle,
-  Rocket
+  AlertCircle,
+  CalendarCheck,
+  History,
+  Rocket,
 } from "lucide-react";
 import { Owners } from "@/utility/TinyDB";
 import { xFetch } from "@/utility/xFetch";
 import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
 
-/* ---------- DEMO FALLBACK DATA ---------- */
-const DEMO_TIMELINE = {
-  "31 Dec 2025 · 17:20": {
-    title: "Call Follow-up Logged",
-    remarks: "Call back later",
-    updated_by: 2,
-    badge: "Follow-up Needed",
-    badgeType: "warning",
-    icon: "success"
+// Status → visual config
+const STATUS_CONFIG = {
+  "Invited": {
+    type: "info",
+    Icon: Rocket,
+    color: "#3b82f6",
+    ring: "ring-blue-400",
+    pill: "bg-blue-50 text-blue-800",
   },
-  "31 Dec 2025 · 17:20 #1": {
-    title: "Status Updated",
-    status: "Follow Up (31 Dec)",
-    updated_by: 2,
-    badge: "Active",
-    badgeType: "info",
-    icon: "pin"
+  "Follow Up": {
+    type: "warning",
+    Icon: CalendarCheck,
+    color: "#f59e0b",
+    ring: "ring-amber-400",
+    pill: "bg-amber-50 text-amber-800",
   },
-  "31 Dec 2025 · 11:59": {
-    title: "Call Attempted",
-    remarks: "No response",
-    updated_by: 2,
-    badge: "No Contact",
-    badgeType: "danger",
-    icon: "call"
+  "Hot Lead": {
+    type: "danger",
+    Icon: AlertCircle,
+    color: "#ef4444",
+    ring: "ring-red-400",
+    pill: "bg-red-50 text-red-800",
   },
-  "30 Dec 2025 · 19:36": {
-    title: "Lead Created",
-    status: "Invited",
-    updated_by: -3,
-    badge: "Lead Opened",
-    badgeType: "success",
-    icon: "rocket"
+  "Registered": {
+    type: "success",
+    Icon: CheckCircle2,
+    color: "#10b981",
+    ring: "ring-emerald-400",
+    pill: "bg-emerald-50 text-emerald-800",
+  },
+  default: {
+    type: "gray",
+    Icon: History,
+    color: "#6b7280",
+    ring: "ring-gray-300",
+    pill: "bg-gray-100 text-gray-700",
+  },
+};
+
+const getFollowUpStatus = (datetimeStr, currentStatus) => {
+  if (currentStatus !== "Follow Up") return null;
+
+  try {
+    // Parse your weird format: "5th-January-2026 18:08:26 PM #1"
+    const clean = datetimeStr.replace(/#\d+$/, "").trim();
+    const [dayPart, timePart] = clean.split(" ");
+    const [dayNum, month, year] = dayPart.replace("th", "").replace("st", "").replace("nd", "").replace("rd", "").split("-");
+    const dateStr = `${month} ${dayNum}, ${year} ${timePart}`;
+    const followUpDate = new Date(dateStr);
+
+    if (isNaN(followUpDate)) return null;
+
+    const now = new Date();
+    const diffMs = followUpDate - now;
+    const diffMins = Math.round(diffMs / 60000);
+    const diffHours = Math.round(diffMs / 3600000);
+    const diffDays = Math.round(diffMs / 86400000);
+
+    if (diffMs > 0) {
+      // Future
+      if (diffDays > 1) return `Follow-up expected in ${diffDays} days`;
+      if (diffHours > 0) return `Follow-up expected in ${diffHours} hours`;
+      return `Follow-up expected in ${diffMins} minutes`;
+    } else {
+      // Overdue
+      const overdueMins = Math.abs(diffMins);
+      const overdueHours = Math.abs(diffHours);
+      const overdueDays = Math.abs(diffDays);
+
+      if (overdueDays > 1) return `Follow-up overdue by ${overdueDays} days – please contact`;
+      if (overdueHours > 0) return `Follow-up overdue by ${overdueHours} hours – please contact`;
+      return `Follow-up overdue by ${overdueMins} minutes – please contact`;
+    }
+  } catch (e) {
+    return null;
   }
 };
 
-/* ---------- ICON MAP ---------- */
-const ICONS = {
-  success: { Icon: CheckCircle, bg: "#E6F9F0", color: "#10B981" },
-  call: { Icon: Phone, bg: "#EEF2FF", color: "#4F46E5" },
-  pin: { Icon: Clock, bg: "#F1F5F9", color: "#64748B" },
-  rocket: { Icon: Rocket, bg: "#ECFDF5", color: "#16A34A" },
-  danger: { Icon: XCircle, bg: "#FEE2E2", color: "#EF4444" },
-};
-
-const BADGE_COLORS = {
-  warning: "#FEF3C7",
-  info: "#E0E7FF",
-  danger: "#FEE2E2",
-  success: "#DCFCE7",
+const parseDisplayDate = (key) => {
+  // "5th-January-2026 18:08:26 PM #1" → "5 Jan 2026, 18:08"
+  try {
+    const clean = key.replace(/#\d+$/, "").trim();
+    const [dayPart, timePart] = clean.split(" ");
+    const [dayNum, month, year] = dayPart.replace(/[a-z]{2}/, "").split("-");
+    const shortMonth = month.slice(0, 3);
+    const time = timePart.slice(0, 5); // remove seconds
+    return `${dayNum} ${shortMonth} ${year}, ${time}`;
+  } catch {
+    return key;
+  }
 };
 
 const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
-  const [timelineData, setTimelineData] = useState({});
+  const [timelineData, setTimelineData] = useState([]);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
 
+  const handleEditClick = () => {
+    setShowUpdatePopup(true);
+  };
   useEffect(() => {
     if (isOpen) fetchTimeline();
   }, [isOpen]);
@@ -80,26 +125,35 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
         payload: { invitationId: leadDetails.invitationId, time: Date.now() },
       });
 
-      // 👇 Fallback to demo if empty
-      if (!res || Object.keys(res).length === 0) {
-        setTimelineData(DEMO_TIMELINE);
-      } else {
-        setTimelineData(res);
+      if (res && Object.keys(res).length > 0) {
+        const entries = Object.entries(res)
+          .map(([key, data]) => ({
+            datetimeKey: key,
+            displayDate: parseDisplayDate(key),
+            ...data,
+          }))
+          .sort((a, b) => {
+            // Sort by real date (newest first)
+            const dateA = new Date(a.displayDate.replace(",", ""));
+            const dateB = new Date(b.displayDate.replace(",", ""));
+            return dateB - dateA;
+          });
+
+        setTimelineData(entries);
       }
-    } catch {
-      setTimelineData(DEMO_TIMELINE);
+    } catch (e) {
+      console.error("Timeline fetch failed", e);
     }
   };
 
   const getUpdatedByName = (id) => {
-    if (id === -1) return "Admin";
-    if (id === -3) return "System";
-    const user = Object.entries(Owners).find(([k]) => Number(k) === Number(id));
-    return user ? user[1] : "Unknown";
+    if (id === "-1" || id === -1) return "Admin";
+    if (id === "-3" || id === -3) return "System";
+    return Owners[String(id)] || "Unknown";
   };
 
-  const header = `${leadDetails.firstName || "shivani jaiswal"} ${
-    leadDetails.mobile ? `(${leadDetails.mobile})` : "(06306462395)"
+  const headerName = `${leadDetails?.firstName || "Unknown Lead"} ${
+    leadDetails?.mobile ? `(${leadDetails.mobile})` : ""
   }`;
 
   return (
@@ -108,62 +162,137 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
         isOpen={isOpen && !showUpdatePopup}
         onRequestClose={onClose}
         ariaHideApp={false}
-        className="leadstor-modal"
-        overlayClassName="modal-overlay"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        overlayClassName="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
       >
-        {/* HEADER */}
-        <div className="timeline-header">
-          <span>{header}</span>
-          <button onClick={onClose}><MdClose size={20} /></button>
-        </div>
+        <div className="w-full max-w-3xl max-h-[92vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-3">
+            <h2 className="text-lg font-semibold text-gray-900">{headerName}</h2>
+            <button
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100"
+            >
+              <MdClose size={20} />
+            </button>
+          </div>
 
-        {/* OVERDUE BANNER */}
-        <div className="overdue-banner">
-          <b>⚠ Follow-up overdue</b>
-          <span>Overdue by <b>4h 12m</b> · Recommended: <b>Call now</b></span>
-        </div>
-
-        {/* BODY */}
-        <div className="timeline-body">
-          {Object.entries(timelineData).map(([date, item], idx) => {
-            const { Icon, bg, color } = ICONS[item.icon] || ICONS.success;
-
-            return (
-              <div className="timeline-row" key={idx}>
-                <div className="timeline-icon" style={{ background: bg, color }}>
-                  <Icon size={16} />
-                </div>
-
-                <div className="timeline-card">
-                  <div className="timeline-date">{date}</div>
-                  <h4>{item.title}</h4>
-
-                  {item.status && (
-                    <p><b>Status:</b> {item.status}</p>
-                  )}
-
-                  {item.remarks && (
-                    <p><b>Remark:</b> {item.remarks}</p>
-                  )}
-
-                  <p className="updated-by">
-                    Updated by: {getUpdatedByName(item.updated_by)}
-                  </p>
-
-                  <span
-                    className="badge"
-                    style={{ background: BADGE_COLORS[item.badgeType] }}
-                  >
-                    {item.badge}
-                  </span>
-                </div>
+          {/* AI Next Action (if exists) */}
+          {leadDetails?.aINextStep && (
+            <div className="relative mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+              <div className="absolute -top-2 left-6 rounded-full bg-amber-600 px-2.5 py-0.5 text-xs font-semibold text-white">
+                AI Next Action
               </div>
-            );
-          })}
+              <p className="mt-1 font-medium">{leadDetails.aINextStep}</p>
+            </div>
+          )}
 
-          <div className="timeline-footer">
-            <button className="btn-primary" onClick={() => setShowUpdatePopup(true)}>
-              Edit
+          {/* Timeline - tighter spacing */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+            {timelineData.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No timeline yet</div>
+            ) : (
+              timelineData.map((item, index) => {
+                const status = item.status || "Action";
+                const config = STATUS_CONFIG[status] || STATUS_CONFIG.default;
+                const { Icon, color, ring, pill } = config;
+
+                const isLast = index === timelineData.length - 1;
+                const followUpInfo = getFollowUpStatus(item.datetimeKey, status);
+
+                return (
+                  <div key={item.datetime} className="flex gap-4 relative">
+                    {/* Smaller icon */}
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full bg-white ring-2 ring-offset-1 ${ring}`}
+                      >
+                        <Icon size={16} color={color} strokeWidth={2.5} />
+                      </div>
+                      {!isLast && (
+                        <div className="absolute top-8 bottom-0 left-1/2 w-px -translate-x-1/2 bg-gray-200" />
+                      )}
+                    </div>
+
+                    {/* Compact card */}
+                    <div className="flex-1 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                        {/* Date + Status Pill */}
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                          <span className="text-xs font-medium text-gray-600">
+                            {item.displayDate}
+                          </span>
+
+                          {item.status && (
+                            <span
+                              className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${pill}`}
+                            >
+                              {item.status}
+                            </span>
+                          )}
+                        </div>
+
+                          {/* Remarks Section */}
+                          {item.status && (
+                            <div className="mb-1">
+                              <p className="text-sm text-gray-500">
+                                Status:{" "}
+                                <span className="font-medium text-gray-700">
+                                  {item.status}
+                                </span>
+                              </p>
+                            </div>
+                          )}
+
+                      {/* Remarks Section */}
+                      {item.remarks && (
+                        <div className="mb-1">
+                          <p className="text-sm text-gray-500">
+                            Renarks:{" "}
+                            <span className="font-medium text-gray-700">
+                              {item.remarks}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Meta */}
+                      <div className="mb-1">
+                        <p className="text-sm text-gray-500">
+                          Updated by{" "}
+                          <span className="font-medium text-gray-700">
+                            {getUpdatedByName(item.updated_by)}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Follow-up warning (only relevant for Follow Up) */}
+                      {followUpInfo && (
+                        <div className="mt-2">
+                          <p
+                            className={`text-sm font-medium ${
+                              followUpInfo.includes("Overdue")
+                                ? "text-red-600"
+                                : "text-amber-700"
+                            }`}
+                          >
+                            {followUpInfo}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex justify-end">
+            <button
+              onClick={handleEditClick}
+              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+            >
+              Edit Lead
             </button>
           </div>
         </div>
@@ -175,107 +304,10 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
           onCancel={() => setShowUpdatePopup(false)}
           onSuccess={() => {
             setShowUpdatePopup(false);
-            onClose();
-            xLeads && xLeads();
+            xLeads?.();
           }}
         />
       )}
-
-      {/* STYLES */}
-      <style>{`
-        .leadstor-modal {
-          max-width: 900px;
-          background: #fff;
-          border-radius: 14px;
-          overflow: hidden;
-        }
-
-        .timeline-header {
-          padding: 14px 20px;
-          display: flex;
-          justify-content: space-between;
-          border-bottom: 1px solid #e5e7eb;
-          font-weight: 600;
-        }
-
-        .overdue-banner {
-          background: #FFF7ED;
-          border: 1px solid #FDE68A;
-          padding: 10px 16px;
-          margin: 16px;
-          border-radius: 10px;
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-        }
-
-        .timeline-body {
-          padding: 0 16px 20px;
-          max-height: 70vh;
-          overflow-y: auto;
-        }
-
-        .timeline-row {
-          display: flex;
-          gap: 14px;
-          margin-bottom: 16px;
-        }
-
-        .timeline-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 999px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .timeline-card {
-          flex: 1;
-          background: #fff;
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-          padding: 14px 16px;
-        }
-
-        .timeline-card h4 {
-          margin: 6px 0;
-          font-size: 14px;
-        }
-
-        .timeline-date {
-          font-size: 12px;
-          color: #6b7280;
-        }
-
-        .updated-by {
-          font-size: 12px;
-          color: #6b7280;
-        }
-
-        .badge {
-          display: inline-block;
-          margin-top: 6px;
-          padding: 4px 10px;
-          border-radius: 999px;
-          font-size: 11px;
-          font-weight: 500;
-        }
-
-        .timeline-footer {
-          text-align: right;
-          margin-top: 10px;
-        }
-
-        .btn-primary {
-          background: #3b82f6;
-          color: #fff;
-          border: none;
-          padding: 8px 18px;
-          border-radius: 10px;
-        }
-      `}</style>
     </>
   );
 };
