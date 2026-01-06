@@ -1,281 +1,315 @@
 'use client'
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
+import { MdClose } from "react-icons/md";
+import {
+  Phone,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  CalendarCheck,
+  History,
+  Rocket,
+} from "lucide-react";
 import { Owners } from "@/utility/TinyDB";
 import { xFetch } from "@/utility/xFetch";
-import { MdAccessTime, MdClose } from "react-icons/md";
 import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
-import { Clock, CheckCircle, XCircle } from "lucide-react";
+
+// Status → visual config
+const STATUS_CONFIG = {
+  "Invited": {
+    type: "info",
+    Icon: Rocket,
+    color: "#3b82f6",
+    ring: "ring-blue-400",
+    pill: "bg-blue-50 text-blue-800",
+  },
+  "Follow Up": {
+    type: "warning",
+    Icon: CalendarCheck,
+    color: "#f59e0b",
+    ring: "ring-amber-400",
+    pill: "bg-amber-50 text-amber-800",
+  },
+  "Hot Lead": {
+    type: "danger",
+    Icon: AlertCircle,
+    color: "#ef4444",
+    ring: "ring-red-400",
+    pill: "bg-red-50 text-red-800",
+  },
+  "Registered": {
+    type: "success",
+    Icon: CheckCircle2,
+    color: "#10b981",
+    ring: "ring-emerald-400",
+    pill: "bg-emerald-50 text-emerald-800",
+  },
+  default: {
+    type: "gray",
+    Icon: History,
+    color: "#6b7280",
+    ring: "ring-gray-300",
+    pill: "bg-gray-100 text-gray-700",
+  },
+};
+
+const getFollowUpStatus = (datetimeStr, currentStatus) => {
+  if (currentStatus !== "Follow Up") return null;
+
+  try {
+    // Parse your weird format: "5th-January-2026 18:08:26 PM #1"
+    const clean = datetimeStr.replace(/#\d+$/, "").trim();
+    const [dayPart, timePart] = clean.split(" ");
+    const [dayNum, month, year] = dayPart.replace("th", "").replace("st", "").replace("nd", "").replace("rd", "").split("-");
+    const dateStr = `${month} ${dayNum}, ${year} ${timePart}`;
+    const followUpDate = new Date(dateStr);
+
+    if (isNaN(followUpDate)) return null;
+
+    const now = new Date();
+    const diffMs = followUpDate - now;
+    const diffMins = Math.round(diffMs / 60000);
+    const diffHours = Math.round(diffMs / 3600000);
+    const diffDays = Math.round(diffMs / 86400000);
+
+    if (diffMs > 0) {
+      // Future
+      if (diffDays > 1) return `Follow-up expected in ${diffDays} days`;
+      if (diffHours > 0) return `Follow-up expected in ${diffHours} hours`;
+      return `Follow-up expected in ${diffMins} minutes`;
+    } else {
+      // Overdue
+      const overdueMins = Math.abs(diffMins);
+      const overdueHours = Math.abs(diffHours);
+      const overdueDays = Math.abs(diffDays);
+
+      if (overdueDays > 1) return `Follow-up overdue by ${overdueDays} days – please contact`;
+      if (overdueHours > 0) return `Follow-up overdue by ${overdueHours} hours – please contact`;
+      return `Follow-up overdue by ${overdueMins} minutes – please contact`;
+    }
+  } catch (e) {
+    return null;
+  }
+};
+
+const parseDisplayDate = (key) => {
+  // "5th-January-2026 18:08:26 PM #1" → "5 Jan 2026, 18:08"
+  try {
+    const clean = key.replace(/#\d+$/, "").trim();
+    const [dayPart, timePart] = clean.split(" ");
+    const [dayNum, month, year] = dayPart.replace(/[a-z]{2}/, "").split("-");
+    const shortMonth = month.slice(0, 3);
+    const time = timePart.slice(0, 5); // remove seconds
+    return `${dayNum} ${shortMonth} ${year}, ${time}`;
+  } catch {
+    return key;
+  }
+};
 
 const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
-  const [timelineData, setTimelineData] = useState({});
+  const [timelineData, setTimelineData] = useState([]);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
-  const STATUS_CONFIG = {
-    followup: {
-      gradient: "linear-gradient(135deg, #60A5FA, #3B82F6)",
-      shadow: "rgba(59,130,246,0.35)",
-      Icon: Clock,
-    },
-    done: {
-      gradient: "linear-gradient(135deg, #34D399, #10B981)",
-      shadow: "rgba(16,185,129,0.35)",
-      Icon: CheckCircle,
-    },
-    missed: {
-      gradient: "linear-gradient(135deg, #F87171, #EF4444)",
-      shadow: "rgba(239,68,68,0.35)",
-      Icon: XCircle,
-    },
+
+  const handleEditClick = () => {
+    setShowUpdatePopup(true);
   };
-    const { gradient, shadow, Icon } =
-    STATUS_CONFIG[status] || STATUS_CONFIG.done;
   useEffect(() => {
     if (isOpen) fetchTimeline();
   }, [isOpen]);
 
   const fetchTimeline = async () => {
     try {
-      const response = await xFetch({
+      const res = await xFetch({
         path: "/services/invite/getCandidateTimeLine",
         payload: { invitationId: leadDetails.invitationId, time: Date.now() },
       });
-      setTimelineData(response);
-    } catch (err) {
-      console.error("Timeline error", err);
+
+      if (res && Object.keys(res).length > 0) {
+        const entries = Object.entries(res)
+          .map(([key, data]) => ({
+            datetimeKey: key,
+            displayDate: parseDisplayDate(key),
+            ...data,
+          }))
+          .sort((a, b) => {
+            // Sort by real date (newest first)
+            const dateA = new Date(a.displayDate.replace(",", ""));
+            const dateB = new Date(b.displayDate.replace(",", ""));
+            return dateB - dateA;
+          });
+
+        setTimelineData(entries);
+      }
+    } catch (e) {
+      console.error("Timeline fetch failed", e);
     }
   };
 
   const getUpdatedByName = (id) => {
-    if (id === -1) return "Admin";
-    if (id === -3) return "System";
-    const user = Object.entries(Owners).find(([key]) => Number(key) === Number(id));
-    return user ? user[1] : "Unknown";
+    if (id === "-1" || id === -1) return "Admin";
+    if (id === "-3" || id === -3) return "System";
+    return Owners[String(id)] || "Unknown";
   };
 
-  const renderTimeline = () => {
-    const size = Object.keys(timelineData).length;
-    let i = 0;
-
-    return Object.entries(timelineData).map(([dateTime, value], index) => {
-      i++;
-      const updatedBy = getUpdatedByName(value.updated_by);
-      const isEven = i % 2 === 0;
-
-      return (
-        <li
-          key={index}
-          style={{
-            listStyle: "none",
-            marginBottom: "20px",
-            display: "flex",
-            flexDirection: isEven ? "row-reverse" : "row",
-            gap: "12px",
-          }}
-        >
-          {/* Badge */}
-        <div
-          className="activity-icon"
-          style={{
-            background: gradient,
-            width: "42px",
-            height: "42px",
-            borderRadius: "12px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: `0 6px 14px ${shadow}`,
-          }}
-        >
-          <Icon size={18} strokeWidth={2.2} />
-        </div>
-
-
-          {/* Card */}
-          <div
-            style={{
-              background: "white",
-              borderRadius: "12px",
-              padding: "16px",
-              flex: 1,
-              border: "1px solid #E2E8F0",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-              <MdAccessTime size={18} style={{ color: "#64748B", marginRight: "6px" }} />
-              <small style={{ color: "#475569" }}>{dateTime}</small>
-            </div>
-
-            <div style={{ fontSize: "14px", color: "#1E293B" }}>
-              {value.status && <p><b>Status:</b> {value.status}</p>}
-              {value.remarks && <p><b>Remarks:</b> {value.remarks}</p>}
-              {value.updated_by != null && (
-                <>
-                  {i === size && <p><b>Lead Initiated by:</b> {updatedBy}</p>}
-                  <p><b>Updated By:</b> {updatedBy}</p>
-                </>
-              )}
-            </div>
-          </div>
-        </li>
-      );
-    });
-  };
-
-  const header = `${leadDetails.firstName || ""} ${leadDetails.mobile ? `(${leadDetails.mobile})` : ""}`;
+  const headerName = `${leadDetails?.firstName || "Unknown Lead"} ${
+    leadDetails?.mobile ? `(${leadDetails.mobile})` : ""
+  }`;
 
   return (
     <>
-      {/* TIMELINE POPUP */}
       <Modal
         isOpen={isOpen && !showUpdatePopup}
         onRequestClose={onClose}
         ariaHideApp={false}
-        overlayClassName="modal-overlay"
-        className="modal-content leadstor-modal"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        overlayClassName="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
       >
-        {/* HEADER */}
-        <div className="timeline-header">
-          <div className="timeline-title">{header}</div>
-          <button
-            onClick={onClose}
-            className="timeline-close-btn"
-          >
-            <MdClose size={22} />
-          </button>
-        </div>
-
-        {/* BODY */}
-        <div className="timeline-body">
-          <ul className="timeline-list">{renderTimeline()}</ul>
-
-          <div className="timeline-footer">
+        <div className="w-full max-w-3xl max-h-[92vh] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-6 py-3">
+            <h2 className="text-lg font-semibold text-gray-900">{headerName}</h2>
             <button
-              className="btn-primary-crm"
-              onClick={() => setShowUpdatePopup(true)}
+              onClick={onClose}
+              className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100"
             >
-              Edit
+              <MdClose size={20} />
+            </button>
+          </div>
+
+          {/* AI Next Action (if exists) */}
+          {leadDetails?.aINextStep && (
+            <div className="relative mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
+              <div className="absolute -top-2 left-6 rounded-full bg-amber-600 px-2.5 py-0.5 text-xs font-semibold text-white">
+                AI Next Action
+              </div>
+              <p className="mt-1 font-medium">{leadDetails.aINextStep}</p>
+            </div>
+          )}
+
+          {/* Timeline - tighter spacing */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-5">
+            {timelineData.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">No timeline yet</div>
+            ) : (
+              timelineData.map((item, index) => {
+                const status = item.status || "Action";
+                const config = STATUS_CONFIG[status] || STATUS_CONFIG.default;
+                const { Icon, color, ring, pill } = config;
+
+                const isLast = index === timelineData.length - 1;
+                const followUpInfo = getFollowUpStatus(item.datetimeKey, status);
+
+                return (
+                  <div key={item.datetime} className="flex gap-4 relative">
+                    {/* Smaller icon */}
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full bg-white ring-2 ring-offset-1 ${ring}`}
+                      >
+                        <Icon size={16} color={color} strokeWidth={2.5} />
+                      </div>
+                      {!isLast && (
+                        <div className="absolute top-8 bottom-0 left-1/2 w-px -translate-x-1/2 bg-gray-200" />
+                      )}
+                    </div>
+
+                    {/* Compact card */}
+                    <div className="flex-1 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                        {/* Date + Status Pill */}
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                          <span className="text-xs font-medium text-gray-600">
+                            {item.displayDate}
+                          </span>
+
+                          {item.status && (
+                            <span
+                              className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${pill}`}
+                            >
+                              {item.status}
+                            </span>
+                          )}
+                        </div>
+
+                          {/* Remarks Section */}
+                          {item.status && (
+                            <div className="mb-1">
+                              <p className="text-sm text-gray-500">
+                                Status:{" "}
+                                <span className="font-medium text-gray-700">
+                                  {item.status}
+                                </span>
+                              </p>
+                            </div>
+                          )}
+
+                      {/* Remarks Section */}
+                      {item.remarks && (
+                        <div className="mb-1">
+                          <p className="text-sm text-gray-500">
+                            Renarks:{" "}
+                            <span className="font-medium text-gray-700">
+                              {item.remarks}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Meta */}
+                      <div className="mb-1">
+                        <p className="text-sm text-gray-500">
+                          Updated by{" "}
+                          <span className="font-medium text-gray-700">
+                            {getUpdatedByName(item.updated_by)}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Follow-up warning (only relevant for Follow Up) */}
+                      {followUpInfo && (
+                        <div className="mt-2">
+                          <p
+                            className={`text-sm font-medium ${
+                              followUpInfo.includes("Overdue")
+                                ? "text-red-600"
+                                : "text-amber-700"
+                            }`}
+                          >
+                            {followUpInfo}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex justify-end">
+            <button
+              onClick={handleEditClick}
+              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+            >
+              Edit Lead
             </button>
           </div>
         </div>
       </Modal>
 
-      {/* UPDATE POPUP */}
       {showUpdatePopup && (
         <UpdateLead
           selectedLead={leadDetails}
           onCancel={() => setShowUpdatePopup(false)}
           onSuccess={() => {
             setShowUpdatePopup(false);
-            onClose();
-            xLeads && xLeads();
+            xLeads?.();
           }}
         />
       )}
-
-      {/* STYLES */}
-      <style>{`
-        .modal-content {
-          padding: 0;
-          border-radius: 16px;
-          overflow: hidden;
-          background: #ffffff;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-        }
-
-        /* HEADER – SAME AS UPDATE LEAD */
-        .timeline-header {
-          background: linear-gradient(135deg, #e8f1fb, #f8fbff);
-          color: #0f172a;
-          padding: 14px 22px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .timeline-title {
-          font-size: 15px;
-          font-weight: 600;
-          letter-spacing: 0.2px;
-        }
-
-        .timeline-close-btn {
-          height: 32px;
-          width: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 999px;
-          border: none;
-          background: transparent;
-          color: #475569;
-          cursor: pointer;
-          transition: 0.2s;
-        }
-
-        .timeline-close-btn:hover {
-          background: #e2e8f0;
-          color: #0f172a;
-        }
-
-        /* BODY */
-        .timeline-body {
-          padding: 20px;
-          max-height: 70vh;
-          overflow-y: auto;
-        }
-
-        .timeline-list {
-          padding: 0;
-          margin: 0;
-          list-style: none;
-        }
-
-        /* FOOTER */
-        .timeline-footer {
-          text-align: right;
-          margin-top: 16px;
-        }
-
-        /* SAME PRIMARY BUTTON AS UPDATE LEAD */
-        .btn-primary-crm {
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
-          color: white;
-          padding: 9px 22px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          border: none;
-          cursor: pointer;
-          box-shadow: 0 6px 14px rgba(37,99,235,.25);
-          transition: all .2s ease;
-        }
-
-        .btn-primary-crm:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 10px 20px rgba(37,99,235,.35);
-        }
-        .leadstor-modal {
-          width: 100%;
-          max-width: 900px;     /* ⬅ increase this */
-          max-height: 120vh;
-          margin: auto;
-          background: #ffffff;
-          border-radius: 14px;
-          overflow: hidden;
-          
-        }
-        @media (max-width: 1024px) {
-          .leadstor-modal {
-            max-width: 95%;
-          }
-        }
-
-      `}</style>
     </>
   );
-
 };
 
 export default Timeline;

@@ -5,41 +5,14 @@ import { LeadsPerPage, TotalLeads, LeadsCurrentPage, LeadsLastPage, User } from 
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-let setPagingX;
-let setSummaryX;
-
-async function handelPaging() {
-    let currentPage = LeadsCurrentPage.value();
-    let maxLeads = TotalLeads.value();
-    let limit = LeadsPerPage.value();
-
-    const totalPages = Math.ceil(maxLeads / limit);
-    const pages = await getPageNumbers(currentPage, totalPages);
-
-    // Update paging section
-    setPagingX(pages);
-    LeadsLastPage.setValue(totalPages);
-
-    // Compose summary
-    let offset = (currentPage - 1) * limit;
-    if (offset < 1) offset = 1;
-
-    let leads = offset + limit - 1;
-    if (leads > maxLeads) leads = maxLeads;
-
-    if(maxLeads < 1){
-        setSummaryX(`No leads found!`);
-        return;
-    }
-
-    setSummaryX(`Viewing ${offset} to ${leads} of ${maxLeads}`);
-}
-
 export default function LeadsTablePagination({ columns, setColumns, columnOrder, setColumnOrder, fetchAndSetColumns, showPerPageDropdown, setShowPerPageDropdown, downloadNotification, toggleDownloadCard, onDownloadCancel }) {
 
     const [limit, setLimit] = useState(LeadsPerPage.value());
     const [paging, setPaging] = useState([]);
     const [summary, setSummary] = useState('Fetching leads...');
+    const [isLoading, setIsLoading] = useState(true);
+    let setPagingX;
+    let setSummaryX;
 
     // Handler for reordering columns (for ColumnReorderPopup)
     const onReorder = (newOrder) => {
@@ -66,6 +39,7 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
         setLimit(newLimit);
         LeadsCurrentPage.value(1);
         LeadsPerPage.setValue(newLimit);
+        setIsLoading(true);
         setSummary('Fetching leads...');
         window.tableRefresh();
     }
@@ -94,9 +68,42 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
 
         // Load page
         LeadsCurrentPage.setValue(newPage);
+        setIsLoading(true);
         setSummary('Fetching leads...');
         window.tableRefresh();
     }
+
+    async function handelPaging() {
+        let currentPage = LeadsCurrentPage.value();
+        let maxLeads = TotalLeads.value();
+        let limit = LeadsPerPage.value();
+        if (TotalLeads.value() < 1 && LeadsCurrentPage.value() !== 1) {
+            LeadsCurrentPage.setValue(1);
+        }
+        const totalPages = Math.ceil(maxLeads / limit);
+
+        // STOP loader once paging is calculated
+        setIsLoading(false);
+
+        // No leads case
+        if (maxLeads < 1) {
+            setPagingX([]);                 // clear pagination
+            LeadsLastPage.setValue(1);
+            setSummaryX('No leads found!');
+            return;
+        }
+        
+        const pages = await getPageNumbers(currentPage, totalPages);
+        setPagingX(pages);
+        LeadsLastPage.setValue(totalPages);
+
+        let offset = (currentPage - 1) * limit + 1;
+        let leads = offset + limit - 1;
+        if (leads > maxLeads) leads = maxLeads;
+
+        setSummaryX(`Viewing ${offset} to ${leads} of ${maxLeads}`);
+    }
+
 
     useEffect(() => {
         // Handel Paging
@@ -113,12 +120,9 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                 <>
                     <div className="flex items-center gap-6 text-sm text-slate-600">
                         <div className='border-r pr-4 flex justify-center items-center'>
-                            <div
-                                style={{
-                                    display: (!summary.startsWith('View')) ? 'block' : 'none'
-                                }}
-                                className="spinner-simple w-5 h-5 mr-2 border-[2px]">
-                            </div>
+                            {isLoading && (
+                            <div className="spinner-simple w-5 h-5 mr-2 border-[2px]" />
+                            )}
                             {summary}
                         </div>
                         <div className='pl-4 flex justify-center items-center'>
@@ -179,9 +183,6 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                             </div>
                             {/* Scrollbars and fullscreen buttons only on desktop */}
                             <div className="flex items-center text-gray-500 pt-1 justify-center cursor-pointer">
-                                <span className="tooltip tooltip-top ml-6" data-tooltip="Hide Scrollbars">
-                                    <button onClick={toggleScrollbar} className="ri-scroll-to-bottom-fill text-xl"></button>
-                                </span>
                                 <span className="tooltip tooltip-top" data-tooltip="View Fullscreen">
                                     <button onClick={fullScreenSwitch} className="ri-fullscreen-line text-lg ml-2"></button>
                                 </span>
@@ -232,13 +233,17 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                                 <span className="text-sm font-medium">{downloadNotification.progress}%</span>
                             </button>
                         )}
-                        <div data-value='PREVIOUS' className='arrow-btn rounded-s-md'>
+                        <div data-value="PREVIOUS" className={`arrow-btn rounded-s-md ${TotalLeads.value() < 1 ? 'opacity-40 pointer-events-none' : ''}`}
+                            >
                             <i className="ri-arrow-left-s-line"></i>
                         </div>
                         {paging.map((item, index) => (
                             <div key={index} data-value={item.pageNum} className={item.style}>{item.name}</div>
                         ))}
-                        <div data-value='NEXT' className='arrow-btn rounded-e-md'>
+                        <div
+                            data-value="NEXT"
+                            className={`arrow-btn rounded-e-md ${TotalLeads.value() < 1 ? 'opacity-40 pointer-events-none' : ''}`}
+                            >
                             <i className="ri-arrow-right-s-line"></i>
                         </div>
                     </div>
