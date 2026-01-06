@@ -27,6 +27,7 @@ export default function LeadsMenu({
   onDownloadCancel,
   setCancelExportFunction,
   setOpenAddLead,
+  onDeleteSelected
 }) {
   const router = useRouter();
 
@@ -237,6 +238,18 @@ export default function LeadsMenu({
 
             {openMenu === 'actions' && (
               <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                {selectedLeadIds.length > 0 && (
+                  <button
+                    className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
+                    onClick={() => {
+                      onDeleteSelected(); 
+                      setOpenMenu(null);
+                    }}
+                  >
+                    <i className="fa fa-trash" />
+                    Delete Invite ({selectedLeadIds.length})
+                  </button>
+                )}
                 <button className="drop-item" onClick={() => setShowSendEmail(true)}>
                   <i className="fa fa-envelope text-indigo-500" />
                   Send Email

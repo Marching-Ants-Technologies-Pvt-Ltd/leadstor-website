@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import LeadsTable from '@/components/dashboard/Lead/LeadTable';
 import LeadsMenu from '@/components/dashboard/Lead/LeadMenu';
 import LeadsTablePagination from '@/components/dashboard/Lead/Pagination';
@@ -124,16 +126,38 @@ export default function Leads() {
         }));
     };
 
+    const handleDeleteSelected = async () => {
+        if (selectedLeadIds.length === 0) return;
+
+        if (!confirm(`Are you sure you want to delete ${selectedLeadIds.length} invite(s)? This cannot be undone.`)) {
+            return;
+        }
+        try {
+            const response = await xFetch({
+                path: "/services/invite/deleteInvite",
+                method: "POST",
+                payload: { invitationIds: selectedLeadIds },
+            });
+
+            if (response) {
+                toast.success(`Deleted ${selectedLeadIds.length} invite(s) successfully`);
+                setSelectedLeadIds([]);
+                window.tableRefresh?.();
+            } else {
+                toast.error("Failed to delete invites");
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+            toast.error("Error deleting invites");
+        }
+    };
+
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
-            {/* CONDITIONAL RENDERING */}
+            <ToastContainer position="top-right" />
+            
             {openAddLead ? (
-                
-                // SHOW ADD LEAD INLINE REPLACING TABLE
-                <AddLead
-                    onClose={() => setOpenAddLead(false)}
-                />
-
+                <AddLead onClose={() => setOpenAddLead(false)} />
             ) : (
                 <>
                     {/* TOP MENU */}
@@ -148,6 +172,7 @@ export default function Leads() {
                         onDownloadCancel={handleDownloadCancel}
                         setCancelExportFunction={setCancelExportFunction}
                         setOpenAddLead={setOpenAddLead}
+                        onDeleteSelected={handleDeleteSelected}
                     />
                     {/* NORMAL LEADS TABLE */}
                     <div className="flex-1 flex flex-col px-4 gap-3 overflow-hidden">
