@@ -1,0 +1,458 @@
+'use client'
+
+import { useEffect, useState, useRef } from 'react';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+import { useRouter } from 'next/navigation';
+import { xFetch, jsonToQueryParams } from '@/utility/xFetch';
+import { Corporate } from '@/utility/TinyDB';
+import PaymentsTable from './table';
+import ReportDropdown from './reportMenu';
+import DatePickerModal from '@/components/elements/DatePickerModal';
+import TextareaModal from '@/components/elements/TextareaModal';
+
+export default function PaymentsSectionController() {
+
+    const [leads, setLeads] = useState(null);
+    const [counsellor, setCounsellor] = useState([]);
+    const [trainer, setTrainer] = useState([]);
+    const [query, setQuery] = useState({ corporateId: Corporate._id, search: '', order: 'asc', offset: 0, limit: 50 })
+    const [openDatePicker, setOpenDatePicker] = useState(false);
+    const [sendBulkSMS, setSendBulkSMS] = useState(false);
+    const [sendBulkEmail, setSendBulkEmail] = useState(false);
+    const searchTimeoutRef = useRef(null);
+
+    const router = useRouter();
+    let totalPages = 0;
+    let currentPage = 0;
+
+    // Helper Functions
+    const pad = (n) => String(n).padStart(2, "0");
+
+    const refresh = () => {
+        setQuery((prev) => ({
+            ...prev,
+            offset: 0
+        }));
+    }
+
+    const handleKeyUp = (event) => {
+        clearTimeout(searchTimeoutRef.current);
+
+        searchTimeoutRef.current = setTimeout(() => {
+            setQuery((prev) => ({
+                ...prev,
+                offset: 0,
+                search: event.target.value
+            }));
+        }, 300);
+    };
+
+    const getPages = () => {
+        totalPages = Math.ceil(leads?.total || 0 / query.limit);
+        currentPage = Math.floor(query.offset / query.limit);
+
+        const pages = [];
+        const delta = 1; // how many pages around current
+
+        const rangeStart = Math.max(0, currentPage - delta);
+        const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
+
+        if (rangeStart > 0) {
+            pages.push(0);
+            if (rangeStart > 1) pages.push("...");
+        }
+
+        for (let i = rangeStart; i <= rangeEnd; i++) {
+            pages.push(i);
+        }
+
+        if (rangeEnd < totalPages - 1) {
+            if (rangeEnd < totalPages - 2) pages.push("...");
+            pages.push(totalPages - 1);
+        }
+
+        return pages.filter(
+            (item, index) => pages.indexOf(item) === index
+        );
+    }
+
+    const changePage = (pageIndex) => {
+        if (pageIndex < 0 || pageIndex >= totalPages) return;
+
+        setQuery((prev) => ({
+            ...prev,
+            offset: pageIndex * prev.limit
+        }));
+    };
+
+    const changeLimit = (e) => {
+        const newLimit = Number(e.target.value);
+
+        setQuery((prev) => ({
+            ...prev,
+            limit: newLimit,
+            offset: 0 // reset to first page
+        }));
+    };
+
+    const filterPendingPayments = (e) => {
+        let status = (e.target.getAttribute('data-status') === '0');
+        e.target.setAttribute('data-status', ((status) ? '1' : '0'));
+        let span = e.target.querySelector('span');
+        if (span) span.style.display = (status) ? '' : 'none';
+
+        console.log(`Status: ${status}`, span);
+
+        if (status) {
+            setQuery((prev) => ({
+                ...prev,
+                pending: true,
+                offset: 0 // reset to first page
+            }));
+
+            return;
+        }
+
+        // remove `pending` when status is false
+        setQuery(prev => {
+            const { pending, ...rest } = prev;
+            return {
+                ...rest,
+                offset: 0
+            };
+        });
+
+    }
+
+    const cbChangePlacementReadyStatus = (id) => {
+        xFetch({
+            method: 'POST',
+            path: '/services/joinees/changePlacementReadystatus',
+            payload: { trackingId: id, corporateId: Corporate._id }
+        })
+            .then(data => {
+                console.log('ChangePlacementReadyStatus', data);
+                toast('Placement Ready Status Updated');
+                refresh();
+            })
+            .catch(error => {
+                console.error(`An error occurred while fetching leads`, error);
+                toast.error('Server error occurred, Try again');
+            });
+    }
+
+    const cbDeleteRecord = (id) => {
+        xFetch({
+            method: 'POST',
+            path: '/services/joinees/deleteMyJoineeRecord',
+            payload: { trackingId: id }
+        })
+            .then(data => {
+                console.log('ChangePlacementReadyStatus', id);
+                toast('Joinee Record Deleted');
+                refresh();
+            })
+            .catch(error => {
+                console.error(`An error occurred while fetching leads`, error);
+                toast.error('Unable to delete, Try again');
+            });
+    }
+
+    const cbChangeCounsellorOrTrainer = (who, payload) => {
+        console.log('Change CouNer', { who, payload });
+        xFetch({
+            method: 'POST',
+            path: `/services/joinees/${(who === 'Counsellor') ? 'updateAssignTo' : 'assignTrainer'}`,
+            payload: payload
+        })
+            .then(data => {
+                toast(`${who} Updated For Joinee`);
+                refresh();
+            })
+            .catch(error => {
+                console.error(`An error occurred while fetching leads`, error);
+                toast.error(`Unable to update ${who.toLowerCase()}, Try again`);
+            });
+    }
+
+    const exportReport = (data) => {
+        data['corporateId'] = Corporate._id;
+        let target = (data?.type || 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
+        let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/${target}.php?${jsonToQueryParams(data)}`;
+
+        console.log('Export-' + target, data, link);
+        window.open(link, '_blank', 'noopener,noreferrer');
+
+    }
+
+    const sendBulkPaymentAlert = (content, type) => {
+        let rows = [...document.querySelectorAll('table#paymentsReportTable tbody td input[type=checkbox]:checked')].map(i => i.id);
+        let payload = { content, type, rows };
+        checkUncheckRows();
+        console.log('SEND BULK', payload);
+    }
+
+    const openTextArea = (type) => {
+        let rows = [...document.querySelectorAll('table#paymentsReportTable tbody td input[type=checkbox]:checked')].map(i => i.id);
+        if(rows.length < 1) {
+            toast.warning(`Select Joinees to Send ${type}`);
+            return;
+        }
+
+        if(type === 'SMS'){
+            setSendBulkSMS(true);
+            return;
+        }
+
+        setSendBulkEmail(true);
+    }
+
+    const checkUncheckRows = (state = false) => {
+        [...document.querySelectorAll('table#paymentsReportTable tbody td input[type=checkbox]')].map(i => i.checked = state);
+    }
+
+    // ON DOM LOAD
+    useEffect(() => {
+        // Full Counsellors List
+        xFetch({
+            path: '/services/profile/getUsers',
+            payload: { userRole: 'Counsellor', list: 1 }
+        })
+            .then(data => {
+                console.log(data);
+                setCounsellor(data);
+            })
+            .catch(error => {
+                console.error(`An error occurred while fetching leads`, error);
+                toast.error('Server error occurred, Try again');
+            });
+
+        // Pull Trainers List
+        xFetch({
+            path: '/services/profile/getUsers',
+            payload: { userRole: 'Trainer', list: 1 }
+        })
+            .then(data => {
+                console.log(data);
+                setTrainer(data);
+            })
+            .catch(error => {
+                console.error(`An error occurred while fetching leads`, error);
+                toast.error('Server error occurred, Try again');
+            });
+
+    }, [setCounsellor, setTrainer]);
+
+    useEffect(() => {
+        xFetch({
+            path: '/services/joinees/admissions',
+            payload: query
+        })
+            .then(data => {
+                console.log(data);
+                setLeads(data);
+            })
+            .catch(error => {
+                console.error(`An error occurred while fetching leads`, error);
+                toast.error('Server error occurred, Try again');
+            });
+    }, [query, setLeads])
+
+    return (
+        <div>
+            <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+                transition={Bounce}
+            />
+            <DatePickerModal
+                open={openDatePicker}
+                onConfirm={(date) => {
+                    let value = `${date.startDate.getFullYear()}-${pad(date.startDate.getMonth() + 1)}-${pad(date.startDate.getDate())},${date.endDate.getFullYear()}-${pad(date.endDate.getMonth() + 1)}-${pad(date.endDate.getDate())}`;
+                    let [type, interval] = openDatePicker?.split('@')
+                    let payload = {
+                        type,
+                        fileName: `ConceptNinjas_${type}_${interval}`,
+                        monthInterval: value,
+                        qutype: 2
+                    }
+
+                    exportReport(payload);
+                }}
+                onClose={() => setOpenDatePicker(false)}
+            />
+
+            <TextareaModal
+                open={sendBulkSMS}
+                title="SMS 📲"
+                description="Text message (sms) will be sent to selected joinees"
+                primaryText="Send SMS"
+                placeholder="Enter SMS & signature. Limited to 160 characters."
+                onConfirm={(text) => {
+                    sendBulkPaymentAlert(text, 'SMS');
+                }}
+                onClose={() => setSendBulkSMS(false)}
+            />
+
+            <TextareaModal
+                open={sendBulkEmail}
+                title="Email 📤"
+                description="Email will be sent to selected joinees"
+                primaryText="Send Email"
+                placeholder="Enter email content & signature."
+                onConfirm={(text) => {
+                    sendBulkPaymentAlert(text, 'Email');
+                }}
+                onClose={() => setSendBulkEmail(false)}
+            />
+
+            <div className="bg-white border-b border-slate-200 px-5 py-3 flex justify-between items-center">
+                <div className="flex gap-7 text-xs text-slate-500">
+                    <div>
+                        <div>Total Outstanding</div>
+                        <div className="text-base font-semibold text-slate-900">₹ 12,48,350</div>
+                    </div>
+                    <div>
+                        <div>Overdue</div>
+                        <div className="text-base font-semibold text-red-600">₹ 3,10,001</div>
+                    </div>
+                    <div>
+                        <div>Due Today</div>
+                        <div className="text-base font-semibold text-amber-600">₹ 85,000</div>
+                    </div>
+                    <div>
+                        <div>Collected Today</div>
+                        <div className="text-base font-semibold text-green-600">₹ 1,25,000</div>
+                    </div>
+                </div>
+
+                <div className="flex gap-2">
+                    <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50">📩 Send Payment Link</button>
+                    <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50">📝 Add Note</button>
+                    <button className="px-4 py-2 text-sm rounded bg-blue-600 text-white">💳 Mark as Collected</button>
+                </div>
+            </div>
+
+            <div>
+                {/* Controllers */}
+                <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-slate-200">
+                    <button className="border px-2 py-1 rounded" onClick={(e) => router.push('/payments/0/create')}>➕</button>
+                    <button className="border px-2 py-1 rounded" onClick={() => openTextArea('SMS') }>📲</button>
+                    <button className="border px-2 py-1 rounded" onClick={() => openTextArea('Email') }>📤</button>
+                    <button className="border px-2 py-1 rounded">🧪</button>
+
+                    <ReportDropdown
+                        onChange={(value, label) => {
+                            console.log("VALUE:", value);
+                            console.log("LABEL:", label);
+
+                            if (value.includes('Custom')) {
+                                setOpenDatePicker(value);
+                                return;
+                            }
+
+                            let [type, interval] = value.split('@')
+                            let payload = {
+                                type,
+                                fileName: `ConceptNinjas_${type}_${label}`,
+                                monthInterval: interval,
+                                qutype: 1
+                            }
+
+                            exportReport(payload);
+
+                        }}
+                    />
+
+                    <button className="border px-2 py-1 rounded" data-status="0" onClick={filterPendingPayments}>📢<span className='text-rose-500 pointer-events-none' style={{ display: "none" }}>&bull; Reset ✘</span></button>
+
+                    <div className="flex-1"></div>
+
+                    <input className="border px-2 py-1 rounded" placeholder="Search" onKeyUp={handleKeyUp} />
+                    <button className="border px-2 py-1 rounded" onClick={refresh}>⭮</button>
+                    <button className="border px-2 py-1 rounded">⚙︎</button>
+                </div>
+
+                {/* Table View */}
+                <div className="h-[calc(100vh-120px)] overflow-scroll show-scrollbar" >
+                    <PaymentsTable
+                        rows={leads?.rows || []}
+                        router={router}
+                        changePlacementReadyStatus={cbChangePlacementReadyStatus}
+                        deleteRecord={cbDeleteRecord}
+                        counsellors={counsellor}
+                        trainers={trainer}
+                        changeCounsellorOrTrainer={cbChangeCounsellorOrTrainer}
+                        checkUncheckRows={checkUncheckRows}
+                    />
+                </div>
+
+                {/* Pagination Controller */}
+                <div className="sticky bottom-0 bg-white border-t border-slate-200 flex justify-between items-center px-4 py-3 text-sm">
+                    <div className="flex items-center gap-2">
+                        Showing 1 to {leads?.rows?.length || 0} of {leads?.total || 0} rows
+                        <select
+                            className="border rounded px-1"
+                            value={query.limit}
+                            onChange={changeLimit}
+                        >
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                        </select>
+
+                        rows per page
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                        {/* Previous */}
+                        <button
+                            className="border w-8 h-8 rounded"
+                            onClick={() => changePage(currentPage - 1)}
+                        >
+                            ‹
+                        </button>
+
+                        {/* Page numbers */}
+                        {getPages().map((page, index) =>
+                            page === "..." ? (
+                                <span key={index} className="px-1 text-slate-400">
+                                    …
+                                </span>
+                            ) : (
+                                <button
+                                    key={page}
+                                    onClick={() => changePage(page)}
+                                    className={`w-8 h-8 rounded ${page === currentPage
+                                        ? "bg-blue-600 text-white"
+                                        : "border"
+                                        }`}
+                                >
+                                    {page + 1}
+                                </button>
+                            )
+                        )}
+
+                        {/* Next */}
+                        <button
+                            className="border w-8 h-8 rounded"
+                            onClick={() => changePage(currentPage + 1)}
+                        >
+                            ›
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    )
+}
