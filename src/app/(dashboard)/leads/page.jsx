@@ -36,10 +36,13 @@ export default function Leads() {
     const fetchAndSetColumns = async () => {
         try {
             const data = await xFetch({ path: '/services/profile/columns' });
-            setColumns(data);
-            let _columnOrder = data.map((item) => item.dataField);
-            _columnOrder = _columnOrder.filter(item => item !== 'action');
-            setColumnOrder(_columnOrder);
+            const filteredColumns = data.filter(
+                c => c.dataField !== 'action' && c.dataField !== 'altMobile'
+            );
+
+            setColumns(filteredColumns);
+            setColumnOrder(filteredColumns.map(c => c.dataField));
+
         } catch (error) {
             setColumns([]);
         }
@@ -152,6 +155,8 @@ export default function Leads() {
         }
     };
 
+    
+
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
             <ToastContainer position="top-right" />
@@ -185,6 +190,7 @@ export default function Leads() {
                             setLeads={setLeads}
                             selectedLeadIds={selectedLeadIds}
                             setSelectedLeadIds={setSelectedLeadIds}
+                            onOpenAdvanceFilter={() => setDrawerOpen(true)}
                         />
 
                         {/* PAGINATION */}
@@ -207,6 +213,7 @@ export default function Leads() {
                         isOpen={isDrawerOpen}
                         onClose={() => setDrawerOpen(false)}
                         onApplyFilters={handleApplyFilters}
+                        onOpenAdvanceFilter={() => setDrawerOpen(true)}
                     />
                 </>
             )}

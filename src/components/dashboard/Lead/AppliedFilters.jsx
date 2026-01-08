@@ -1,46 +1,110 @@
-import { useState } from "react";
+'use client';
 
-let onCloseFn;
-let filterOptionsFn;
+import { useState, useEffect } from "react";
+import { LeadFilters, LeadsCurrentPage } from '@/utility/TinyDB';
 
-export function showAppliedFilter(items = {}, onClose = null) {
+let globalOnCloseFn = null;
 
-    if (onClose && typeof onClose === 'function') onCloseFn = onClose;
-    filterOptionsFn(items);
+export function showAppliedFilter(items = [], onClose = null) {
+  if (onClose && typeof onClose === 'function') {
+    globalOnCloseFn = onClose;
+  }
+  // Trigger UI update via global setter
+  if (typeof window !== 'undefined') {
+    window.__setAppliedFilters?.(items?.length > 0 ? items : null);
+  }
 }
 
-export default function AppliedFilters() {
+export default function AppliedFilters({ onOpenAdvanceFilter }) {
+  const [filterOptions, setFilterOptions] = useState(null);
 
-    const [filterOptions, setFilterOptions] = useState(null);
-    filterOptionsFn = setFilterOptions;
+    // Expose setter globally so showAppliedFilter can update it
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            window.__setAppliedFilters = setFilterOptions;
+        }
 
-    const handelClose = (event) => {
+        return () => {
+            if (typeof window !== 'undefined') {
+                delete window.__setAppliedFilters;
+            }
+        };
+    }, []);
+
+    const handleClearFilters = () => {
+        // 1. Clear storage
+        LeadFilters.reset();
+
+        // 2. Reset pagination
+        LeadsCurrentPage.setValue(1);
+
+        // 3. Hide the filter bar
         setFilterOptions(null);
-        if (onCloseFn) onCloseFn();
-    }
 
-    return (
-        <div
-            style={{
-                display: (filterOptions) ? 'flex' : 'none',
-            }}
-            className="bg-orange-50 w-full p-3 poppins flex-row">
-            <div className="flex justify-start items-start gap-1 text-gray-600 border-r pr-3">
-                <i className="ri-filter-fill text-lg"></i>
-                <div className="font-medium text-sm relative top-1">Filters</div>
-            </div>
+        // 4. Call any external onClose if provided
+        if (globalOnCloseFn) {
+            globalOnCloseFn();
+            globalOnCloseFn = null;
+        }
 
-            <div className="grow flex justify-start flex-wrap items-center text-sm text-gray-700 px-3 gap-3">
-                {filterOptions && filterOptions.map((option, index) => (
-                    <div key={index} className="bg-white border rounded-[4px] py-1 px-3">
-                        <strong className="font-medium">{option.title}</strong> in ({option.value})
-                    </div>
-                ))}
-            </div>
+        // 5. Trigger table refresh
+        if (typeof window.tableRefresh === 'function') {
+            window.tableRefresh();
+        }
+        if (window.resetFilterDrawerForm) {
+            window.resetFilterDrawerForm();
+        }
+    };
 
-            <div className="flex justify-center items-start border-l pl-3 pr-1">
-                <i onClick={handelClose} className="ri-close-large-fill text-rose-500 font-semibold cursor-pointer relative top-0.5"></i>
-            </div>
-        </div>
-    );
+    // Listen for showAppliedFilter calls (your existing global mechanism)
+    useEffect(() => {
+        window.showAppliedFilter = (items = []) => {
+        setFilters(items?.length > 0 ? items : []);
+        };
+        return () => {
+            delete window.showAppliedFilter;
+        };
+    }, []);
+
+  if (!filterOptions) return null;
+
+  return (
+    <div className="bg-orange-50 w-full p-3 flex items-center gap-4 border-b shadow-sm">
+      <div className="flex items-center gap-2 text-gray-700 pr-4 border-r">
+        <i className="ri-filter-fill text-lg"></i>
+        <span className="font-medium text-sm">Active Filters</span>
+      </div>
+
+      <div className="flex-1 flex flex-wrap gap-2">
+        {filterOptions
+            .filter(opt => opt?.title !== 'Button')
+            .map((opt, i) => (
+                <div
+                key={i}
+                className="bg-white border border-gray-300 rounded px-3 py-1 text-sm"
+                >
+                <strong>{opt.title}:</strong> {opt.value}
+                </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-4">
+        <button
+            onClick={onOpenAdvanceFilter}
+            className="px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 
+                        border border-gray-300 rounded-full transition-colors duration-200 
+                        focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1"
+            >
+            Modify Filters
+        </button>
+        <button
+          onClick={handleClearFilters}
+          className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50"
+          title="Clear & close"
+        >
+          <i className="ri-close-line text-xl"></i>
+        </button>
+      </div>
+    </div>
+  );
 }

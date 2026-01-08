@@ -3,10 +3,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import CustomSelect from '@/components/CustomSelect';
-import { Corporate, User, Test, LeadFilters } from '@/utility/TinyDB';
+import { Corporate, User, Test, LeadFilters,LeadsCurrentPage } from '@/utility/TinyDB';
 import DateInputPicker from "@/components/DateInputPicker/DateInputPicker";
 
-const FilterDrawer = ({ isOpen, onClose }) => {
+const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
   const [selectedFilters, setSelectedFilters] = useState({
     status: [],
     course: [],
@@ -22,6 +22,15 @@ const FilterDrawer = ({ isOpen, onClose }) => {
     followupDate: '',
     followupDate_end: '',
   });
+  const resetDrawerForm = () => {
+    setSelectedFilters({
+      status: [], course: [], source: [], location: [], owner: '',
+      courseMode: '', probability: '',
+      enquiryDateFrom: '', enquiryDateTo: '',
+      updatedDateFrom: '', updatedDateTo: '',
+      followupDate: '', followupDate_end: '',
+    });
+  };
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [filterOptions, setFilterOptions] = useState({
     status: [],
@@ -111,6 +120,16 @@ const FilterDrawer = ({ isOpen, onClose }) => {
     fetchOptions();
   }, [sessionData]);
 
+  // Expose reset function globally when drawer mounts
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.resetFilterDrawerForm = resetDrawerForm;
+    }
+    return () => {
+      delete window.resetFilterDrawerForm;
+    };
+  }, []);
+
   const toggleMultiSelect = (type) => {
     setActiveDropdown(activeDropdown === type ? null : type);
   };
@@ -147,21 +166,7 @@ const FilterDrawer = ({ isOpen, onClose }) => {
   };
 
   const clearFilters = () => {
-    setSelectedFilters({
-      status: [],
-      course: [],
-      source: [],
-      location: [],
-      owner: '',
-      courseMode: '',
-      probability: '',
-      enquiryDateFrom: '',
-      enquiryDateTo: '',
-      updatedDateFrom: '',
-      updatedDateTo: '',
-      followupDate: '',
-      followupDate_end: ''
-    });
+    resetDrawerForm();
   };
 
   // Convert HTML5 date format (yyyy-MM-dd) to legacy format (dd-M-yyyy)
@@ -309,19 +314,22 @@ const FilterDrawer = ({ isOpen, onClose }) => {
   const [applying, setApplying] = useState(false);
 
   const handleApplyFilters = async () => {
-    if (!hasAnyFilter) return;
-    setApplying(true);
-    
-    const filters = buildLeadFilters();
-    LeadFilters.setValue(filters);
-    
-    if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
-      window.tableRefresh();
-    }
-    setApplying(false);
-    onClose && onClose();
-  };
+      if (!hasAnyFilter) return;
+      setApplying(true);
 
+      const filters = buildLeadFilters();
+      LeadFilters.setValue(filters);
+
+      // Reset page when new filters are applied
+      LeadsCurrentPage.setValue(1);
+
+      if (window.tableRefresh) {
+        window.tableRefresh();
+      }
+
+      setApplying(false);
+      onClose?.();
+  };
   
   useEffect(() => {
     const handleClickOutside = (event) => {
