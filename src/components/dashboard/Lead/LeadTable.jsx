@@ -44,7 +44,8 @@ export default function LeadsTable({
     leads,
     setLeads,
     selectedLeadIds,
-    setSelectedLeadIds
+    setSelectedLeadIds,
+    onOpenAdvanceFilter
 }) {
     setLeadsFn = setLeads;
 
@@ -77,7 +78,6 @@ export default function LeadsTable({
         let maxPage = Math.max(1, Math.ceil(total / limit));
         let currentPage = LeadsCurrentPage.value();
 
-        // 🔒 Clamp page
         if (currentPage < 1) currentPage = 1;
         if (currentPage > maxPage) currentPage = maxPage;
 
@@ -99,13 +99,23 @@ export default function LeadsTable({
         };
 
         if (filters.length > 0) {
-            filters.forEach(item => payload[item.query] = item.value);
+            // Show the applied filters bar with proper clear handler
             showAppliedFilter(filters, () => {
+                // This is called when user clicks × in AppliedFilters
                 LeadFilters.reset();
-                LeadsPerPage.setValue(newLimit);
                 LeadsCurrentPage.setValue(1);
-                xLeads();
+                xLeads(); // refresh immediately
             });
+
+            // Apply filters to payload
+            filters.forEach(item => {
+                payload[item.query] = item.value;
+            });
+        } else {
+            // Optional: hide filters bar if no filters
+            if (typeof window !== 'undefined') {
+                window.__setAppliedFilters?.(null);
+            }
         }
 
         xFetch({ path: '/services/invite/enquiries', payload })
@@ -187,8 +197,7 @@ export default function LeadsTable({
        MOBILE + WHATSAPP + IVR
     ======================= */
     const renderMobileCell = (row) => {
-        const phone = row.mobile;
-
+        const phone = row.altMobile ? row.mobile + ', ' + row.altMobile : null;
         return (
             <div className="flex items-center gap-2">
                 <span>{phone}</span>
@@ -392,15 +401,7 @@ export default function LeadsTable({
 
     useEffect(() => {
         LeadsCurrentPage.setValue(1); 
-        xFetch({ path: '/services/profile/columns' })
-            .then(data => {
-                setColumns(data);
-                setColumnOrder(
-                    data.map(i => i.dataField).filter(i => i !== 'action')
-                );
-                xLeads();
-            });
-
+        xLeads();
         window.tableRefresh = () => xLeads();
         HorizontalScroll();
         return () => {
@@ -451,7 +452,9 @@ export default function LeadsTable({
         columnOrder.forEach(col => {
         cols.push({
             accessorKey: col,
-            header: columns.find(c => c.dataField === col)?.displayName || col,
+            header: columns?.find(c => c.dataField === col)?.displayName
+                    || columns?.find(c => c.dataField === col)?.fieldName,
+
             cell: ({ row }) => {
             const r = row.original;
 
@@ -479,7 +482,7 @@ export default function LeadsTable({
 
     return (
         <>
-        <AppliedFilters />
+        <AppliedFilters onOpenAdvanceFilter={onOpenAdvanceFilter} />
 
         <div className="bg-white rounded-xl border flex-1 overflow-x-auto overflow-y-auto">
             <table className="w-full border-collapse text-sm leadstor-table-modern">
