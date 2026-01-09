@@ -256,18 +256,25 @@ export default function LeadsTable({
         let followupDisplay = "";
         const followupDate = row.followupDate;
 
-        if (!followupDate || followupDate.trim() === "") {
-            followupDisplay = (
-            <span
-                className="text-red-600 text-xs font-medium cursor-pointer hover:underline"
-                onClick={() => updateInviteDetails(row.invitationId)} // ← your PHP onclick equivalent
-            >
-                [Specify Followup Date]
-            </span>
-            );
-        } else if (row.isFollowupType === "1") {
+        if(followupDate && followupDate.trim() !== '' && row.isFollowupType === "1"){
             followupDisplay = (
             <span className="text-gray-600 text-xs ml-1.5">[{followupDate}]</span>
+            );
+        }
+        
+        if ( (!followupDate || followupDate.trim() === "" ) && row.isFollowupType === "1") {
+            followupDisplay = (
+                <span className="text-gray-600 text-xs ml-1.5">
+                    <span
+                        className="text-red-600 text-xs font-medium cursor-pointer hover:underline"
+                        onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCandidate(row);
+                        setShowUpdatePopup(true);
+                        }}
+                    > [Specify Followup Date]
+                    </span>
+                </span>
             );
         }
 
@@ -308,11 +315,7 @@ export default function LeadsTable({
         return (
             <div className="flex items-center gap-2 flex-wrap">
             {/* Status Pill */}
-            <span
-                className={`px-3 py-1 rounded-full text-xs font-medium text-white ${pillColor} whitespace-nowrap`}
-            >
-                {status}
-            </span>
+            <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${pillColor} whitespace-nowrap`}> {status} </span>
 
             {/* Followup Date */}
             {followupDisplay}
