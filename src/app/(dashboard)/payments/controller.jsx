@@ -9,18 +9,22 @@ import PaymentsTable from './table';
 import ReportDropdown from './reportMenu';
 import DatePickerModal from '@/components/elements/DatePickerModal';
 import TextareaModal from '@/components/elements/TextareaModal';
+import FilterPopup from './filterPopup';
 
 export default function PaymentsSectionController() {
 
     const [leads, setLeads] = useState(null);
     const [counsellor, setCounsellor] = useState([]);
     const [trainer, setTrainer] = useState([]);
-    const [query, setQuery] = useState({ corporateId: Corporate._id, search: '', order: 'asc', offset: 0, limit: 50 })
+    const [filterParams, setFilterParams] = useState({});
+    const [query, setQuery] = useState({ corporateId: Corporate._id, search: '', order: 'asc', offset: 0, limit: 50 });
+    const [filterPopup, setFilterPopup] = useState(false);
     const [openDatePicker, setOpenDatePicker] = useState(false);
     const [sendBulkSMS, setSendBulkSMS] = useState(false);
     const [sendBulkEmail, setSendBulkEmail] = useState(false);
     const searchTimeoutRef = useRef(null);
 
+    const corporateId = Corporate?._id;
     const router = useRouter();
     let totalPages = 0;
     let currentPage = 0;
@@ -194,12 +198,12 @@ export default function PaymentsSectionController() {
 
     const openTextArea = (type) => {
         let rows = [...document.querySelectorAll('table#paymentsReportTable tbody td input[type=checkbox]:checked')].map(i => i.id);
-        if(rows.length < 1) {
+        if (rows.length < 1) {
             toast.warning(`Select Joinees to Send ${type}`);
             return;
         }
 
-        if(type === 'SMS'){
+        if (type === 'SMS') {
             setSendBulkSMS(true);
             return;
         }
@@ -211,37 +215,39 @@ export default function PaymentsSectionController() {
         [...document.querySelectorAll('table#paymentsReportTable tbody td input[type=checkbox]')].map(i => i.checked = state);
     }
 
-    // ON DOM LOAD
     useEffect(() => {
-        // Full Counsellors List
-        xFetch({
-            path: '/services/profile/getUsers',
-            payload: { userRole: 'Counsellor', list: 1 }
-        })
-            .then(data => {
-                console.log(data);
-                setCounsellor(data);
+        let isMounted = true;
+
+        Promise.all([
+            xFetch({
+                path: '/services/profile/getUsers',
+                payload: { userRole: 'Counsellor', list: 1 }
+            }),
+            xFetch({
+                path: '/services/profile/getUsers',
+                payload: { userRole: 'Trainer', list: 1 }
+            }),
+            xFetch({
+                path: '/services/joinees/getFilterParameters',
+                payload: { corporateId: Corporate._id }
+            })
+        ])
+            .then(([counsellors, trainers, filterParams]) => {
+                if (!isMounted) return;
+
+                setCounsellor(counsellors);
+                setTrainer(trainers);
+                setFilterParams(filterParams);
             })
             .catch(error => {
-                console.error(`An error occurred while fetching leads`, error);
+                console.error('Error loading initial data', error);
                 toast.error('Server error occurred, Try again');
             });
 
-        // Pull Trainers List
-        xFetch({
-            path: '/services/profile/getUsers',
-            payload: { userRole: 'Trainer', list: 1 }
-        })
-            .then(data => {
-                console.log(data);
-                setTrainer(data);
-            })
-            .catch(error => {
-                console.error(`An error occurred while fetching leads`, error);
-                toast.error('Server error occurred, Try again');
-            });
-
-    }, [setCounsellor, setTrainer]);
+        return () => {
+            isMounted = false;
+        };
+    }, [corporateId]);
 
     useEffect(() => {
         xFetch({
@@ -314,6 +320,15 @@ export default function PaymentsSectionController() {
                 onClose={() => setSendBulkEmail(false)}
             />
 
+            <FilterPopup
+                open={filterPopup}
+                onApply={(data) => {
+                    console.log('Filter', data);
+                }}
+                onClose={() => setFilterPopup(false)}
+            />
+
+
             <div className="bg-white border-b border-slate-200 px-5 py-3 flex justify-between items-center">
                 <div className="flex gap-7 text-xs text-slate-500">
                     <div>
@@ -344,15 +359,13 @@ export default function PaymentsSectionController() {
             <div>
                 {/* Controllers */}
                 <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-slate-200">
-                    <button className="border px-2 py-1 rounded" onClick={(e) => router.push('/payments/0/create')}>➕</button>
-                    <button className="border px-2 py-1 rounded" onClick={() => openTextArea('SMS') }>📲</button>
-                    <button className="border px-2 py-1 rounded" onClick={() => openTextArea('Email') }>📤</button>
-                    <button className="border px-2 py-1 rounded">🧪</button>
+                    <button className="border px-2 py-1 rounded" onClick={(e) => router.push('/payments/create')}>➕</button>
+                    <button className="border px-2 py-1 rounded" onClick={() => openTextArea('SMS')}>📱</button>
+                    <button className="border px-2 py-1 rounded" onClick={() => openTextArea('Email')}>📤</button>
+                    <button className="border px-2 py-1 rounded" onClick={() => setFilterPopup({ counsellor, trainer, filterParams })}>🔬</button>
 
                     <ReportDropdown
                         onChange={(value, label) => {
-                            console.log("VALUE:", value);
-                            console.log("LABEL:", label);
 
                             if (value.includes('Custom')) {
                                 setOpenDatePicker(value);
