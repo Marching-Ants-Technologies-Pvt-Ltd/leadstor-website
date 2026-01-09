@@ -76,6 +76,13 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
     });
   };
 
+  const transformOwnerOptions = (owners) => {console.log("Owners Data:", owners);
+    if (Object.keys(owners).length > 0) {
+        return Object.entries(owners).map(([key, value]) => ({ key, value }));
+      }
+      return [];
+  }
+
   // Fetch filter options from backend
   useEffect(() => {
     const fetchOptions = async () => {
@@ -104,7 +111,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
           course: transformOptions(response.courses),
           source: transformOptions(response.sources),
           location: transformOptions(response.locations),
-          owner: transformOptions(response.owners),
+          owner: transformOwnerOptions(response.owners),
           courseMode: transformOptions(response.courseModes),
           probability: transformOptions(response.probabilities)
         });
@@ -187,7 +194,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       
       filters.push({
         title: 'Button',
-        value: "LeadFilters",
+        value: "FilterLeads",
         query: 'button'
       });
 
@@ -206,6 +213,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       filters.push({
         title: 'Course',
         value: btoa(courseValue), 
+        displayValue: courseValue,
         query: 'course'
         });
     }
@@ -231,6 +239,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       filters.push({
         title: 'Owner',
         value: selectedFilters.owner,
+        displayValue: filterOptions.owner.find(opt => opt.key === selectedFilters.owner)?.value || selectedFilters.owner,
         query: 'owner'
       });
     }
@@ -247,6 +256,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       filters.push({
         title: 'Probability',
         value: selectedFilters.probability,
+        displayValue: selectedFilters.probability === '20' ? 'Low' : selectedFilters.probability === '55' ? 'Medium' : 'High',
         query: 'leadProbability'
       });
     }
@@ -317,7 +327,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       if (!hasAnyFilter) return;
       setApplying(true);
 
-      const filters = buildLeadFilters();
+      const filters = buildLeadFilters();console.log("Applied Filters:", filters);
       LeadFilters.setValue(filters);
 
       // Reset page when new filters are applied
@@ -326,7 +336,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       if (window.tableRefresh) {
         window.tableRefresh();
       }
-
+console.log(filterOptions);
       setApplying(false);
       onClose?.();
   };
@@ -371,161 +381,176 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
   return (
     <>
       
-      <div style={overlayStyle} onClick={onClose}></div>
-      {/* Drawer */}
-      <div style={drawerStyle}>
-        <div style={{ padding: 20, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F1BBEA' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 500, color: '#333' }}>Filters</h2>
-          <button style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#666', padding: 0, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4 }} onClick={onClose}>×</button>
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto', padding: 20, marginRight: 3 }} className="filter-drawer-scrollbar">
-          {loading ? <div>Loading filter options...</div> : <>
-          {/* Multi-select filters */}
-          {['status', 'course', 'source', 'location'].map(type => (
-              <div key={type} style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14 }}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </label>
-              <div className="multi-select" style={{position: 'relative'}}>
-                <div 
-                  className={`multi-select-trigger ${activeDropdown === type ? 'active' : ''}`}
-                  style={{width: '100%', padding: '10px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, background: 'white', color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}
-                  onClick={() => toggleMultiSelect(type)}
-                >
-                  <span>{getDisplayText(type)}</span>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </div>
-                <div className={`multi-select-dropdown ${activeDropdown === type ? 'active' : ''}`} style={{position: 'absolute', top: '100%', left: 0, right: 0, background: 'white', border: '1px solid #ddd', borderTop: 'none', borderRadius: '0 0 6px 6px', maxHeight: 200, overflowY: 'auto', zIndex: 10, display: activeDropdown === type ? 'block' : 'none'}}>
-                  {filterOptions[type] && filterOptions[type].length > 0 ? filterOptions[type].map(option => {
-                    const optionValue = option.value;
-                    const optionLabel = option.label;
-                    return (
-                      <div 
-                        key={optionValue}
-                        className={`multi-select-option ${selectedFilters[type].includes(optionValue) ? 'selected' : ''}`}
-                        style={{padding: '8px 12px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, background: selectedFilters[type].includes(optionValue) ? '#e3f2fd' : 'white', color: selectedFilters[type].includes(optionValue) ? '#1976d2' : '#333'}}
-                        onClick={() => selectMultiOption(type, optionValue)}
-                      >
-                        <div className={`checkbox ${selectedFilters[type].includes(optionValue) ? 'checked' : ''}`} style={{width: 16, height: 16, border: '1px solid #ddd', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'white', background: selectedFilters[type].includes(optionValue) ? '#007bff' : 'white', marginRight: 8}}>
-                          {selectedFilters[type].includes(optionValue) ? '✓' : ''}
-                        </div>
-                        <span>{optionLabel}</span>
-                      </div>
-                    );
-                  }) : <div style={{padding: '8px 12px', color: '#aaa'}}>No options</div>}
-                </div>
-              </div>
-            </div>
-          ))}
+      <div
+        className={`fixed inset-0 bg-black/50 z-[1000] transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
+        }`}
+        onClick={onClose}
+      />
 
-          {/* Single-select filters */}
-          <div style={{marginBottom: 24}}>
-            <label style={{display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14}}>Owner</label>
-            <CustomSelect
-              options={filterOptions.owner}
-              value={selectedFilters.owner}
-              onChange={value => updateSingleFilter('owner', value)}
-              placeholder="Select Owner"
-            />
-          </div>
-
-          <div style={{marginBottom: 24}}>
-            <label style={{display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14}}>Course Mode</label>
-            <CustomSelect
-              options={[
-                { label: 'Online', value: 'Online' },
-                { label: 'Offline', value: 'Offline' }
-              ]}
-              value={selectedFilters.courseMode}
-              onChange={value => updateSingleFilter('courseMode', value)}
-              placeholder="Select Course Mode"
-            />
-          </div>
-
-          <div style={{marginBottom: 24}}>
-            <label style={{display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14}}>Probability</label>
-            <CustomSelect
-              options={[
-                { label: 'Low', value: '20' },
-                { label: 'Medium', value: '55' },
-                { label: 'High', value: '85' }
-              ]}
-              value={selectedFilters.probability}
-              onChange={value => updateSingleFilter('probability', value)}
-              placeholder="Select Probability"
-            />
-          </div>
-
-            {/* Modern Calendar for Enquiry Date */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14 }}>Enquiry Date</label>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <DateInputPicker
-                  value={selectedFilters.enquiryDateFrom}
-                  onChange={date => updateSingleFilter('enquiryDateFrom', date)}
-                  placeholder="From"
-                  isTimeInterval={false}
-              />
-                <span style={{ color: '#666', fontSize: 14, whiteSpace: 'nowrap' }}>to</span>
-                <DateInputPicker
-                  value={selectedFilters.enquiryDateTo}
-                  onChange={date => updateSingleFilter('enquiryDateTo', date)}
-                  placeholder="To"
-                  isTimeInterval={false}
-              />
-            </div>
-          </div>
-
-            {/* Modern Calendar for Updated Date */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14 }}>Updated Date</label>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <DateInputPicker
-                  value={selectedFilters.updatedDateFrom}
-                  onChange={date => updateSingleFilter('updatedDateFrom', date)}
-                  placeholder="From"
-                  isTimeInterval={false}
-              />
-                <span style={{ color: '#666', fontSize: 14, whiteSpace: 'nowrap' }}>to</span>
-                <DateInputPicker
-                  value={selectedFilters.updatedDateTo}
-                  onChange={date => updateSingleFilter('updatedDateTo', date)}
-                  placeholder="To"
-                  isTimeInterval={false}
-              />
-              </div>
-            </div>
-
-            {/* Modern Calendar for Pending Followup */}
-            <div style={{ marginBottom: 24 }}>
-              <label style={{ display: 'block', fontWeight: 500, color: '#333', marginBottom: 8, fontSize: 14 }}>Pending Followup Date</label>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <DateInputPicker
-                  value={selectedFilters.followupDate}
-                  onChange={date => updateSingleFilter('followupDate', date)}
-                  placeholder="From"
-                  isTimeInterval={false}
-              />
-                <span style={{ color: '#666', fontSize: 14, whiteSpace: 'nowrap' }}>to</span>
-                <DateInputPicker
-                  value={selectedFilters.followupDate_end}
-                  onChange={date => updateSingleFilter('followupDate_end', date)}
-                  placeholder="To"
-                  isTimeInterval={false}
-              />
-              </div>
-            </div>
-          </>}
-        </div>
-        <div style={{ padding: 20, borderTop: '1px solid #eee', display: 'flex', gap: 12, background: '#fafafa' }}>
-          <button style={{ padding: '10px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: 'pointer', background: '#f8f9fa', color: '#666', border: '1px solid #ddd', flex: 1 }} onClick={clearFilters}>Clear All</button>
+      <div
+        className={`fixed top-0 right-0 w-96 h-full bg-white z-[1001] shadow-2xl transition-transform duration-300 flex flex-col ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Header */}
+        <div className="p-5 border-b border-gray-200 flex items-center justify-between lead-header">
+          <h2 className="text-lg font-medium text-gray-800">Filters</h2>
           <button
-            style={{ padding: '10px 20px', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 500, cursor: applying || !hasAnyFilter ? 'not-allowed' : 'pointer', background: '#F1BBEA', color: '#1E293B', flex: 1, opacity: applying || !hasAnyFilter ? 0.6 : 1 }}
+            className="text-gray-600 hover:text-gray-800 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100"
+            onClick={onClose}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          {loading ? (
+            <div className="text-center text-gray-500">Loading filter options...</div>
+          ) : (
+            <>
+              {/* Multi-selects */}
+              {['status', 'course', 'source', 'location'].map(type => (
+                <div key={type} className="mb-6">
+                  <label className="block font-medium text-gray-700 mb-2 text-sm">
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </label>
+                  <div className="relative multi-select">
+                    <div
+                      className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm cursor-pointer flex items-center justify-between hover:border-gray-400 transition ${
+                        activeDropdown === type ? 'border-blue-500 ring-1 ring-blue-200' : ''
+                      }`}
+                      onClick={() => toggleMultiSelect(type)}
+                    >
+                      <span className="text-gray-700 truncate">{getDisplayText(type)}</span>
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+
+                    {activeDropdown === type && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-b-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                        {filterOptions[type]?.length > 0 ? (
+                          filterOptions[type].map(option => (
+                            <div
+                              key={option.value}
+                              className={`px-4 py-2.5 text-sm flex items-center gap-3 cursor-pointer hover:bg-blue-50 transition ${
+                                selectedFilters[type].includes(option.value) ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                              }`}
+                              onClick={() => selectMultiOption(type, option.value)}
+                            >
+                              <div
+                                className={`w-4 h-4 border rounded-sm flex items-center justify-center text-white text-xs ${
+                                  selectedFilters[type].includes(option.value) ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                                }`}
+                              >
+                                {selectedFilters[type].includes(option.value) && '✓'}
+                              </div>
+                              <span>{option.label}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="px-4 py-3 text-gray-400 text-sm">No options</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* Owner - Native Select */}
+              <div className="mb-6">
+                <label className="block font-medium text-gray-700 mb-2 text-sm">
+                  Owner
+                </label>
+                <select
+                  value={selectedFilters.owner || ''} // Ensure controlled component
+                  onChange={(e) => updateSingleFilter('owner', e.target.value)} // Sends only the KEY/ID
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm 
+                            focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none
+                            bg-white text-gray-800 cursor-pointer"
+                >
+                  <option value="">Select Owner</option>
+                  {filterOptions.owner.map((opt, index) => (
+                    <option 
+                      key={index} 
+                      value={opt.key || opt.value} // Use 'key' if available, fallback to 'value'
+                      disabled={opt.disabled || false}
+                    >
+                      {opt.value || opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Course Mode */}
+              <div className="mb-6">
+                <label className="block font-medium text-gray-700 mb-2 text-sm">Course Mode</label>
+                <select
+                  value={selectedFilters.courseMode}
+                  onChange={e => updateSingleFilter('courseMode', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none"
+                >
+                  <option value="">Select Course Mode</option>
+                  <option value="Online">Online</option>
+                  <option value="Offline">Offline</option>
+                </select>
+              </div>
+
+              {/* Probability */}
+              <div className="mb-6">
+                <label className="block font-medium text-gray-700 mb-2 text-sm">Probability</label>
+                <select
+                  value={selectedFilters.probability}
+                  onChange={e => updateSingleFilter('probability', e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none"
+                >
+                  <option value="">Select Probability</option>
+                  <option value="20">Low</option>
+                  <option value="55">Medium</option>
+                  <option value="85">High</option>
+                </select>
+              </div>
+
+              {/* Date Pickers */}
+              <div className="mb-6">
+                <label className="block font-medium text-gray-700 mb-2 text-sm">Enquiry Date</label>
+                <div className="flex items-center gap-3">
+                  <DateInputPicker
+                    value={selectedFilters.enquiryDateFrom}
+                    onChange={date => updateSingleFilter('enquiryDateFrom', date)}
+                    placeholder="From"
+                    isTimeInterval={false}
+                    className="flex-1"
+                  />
+                  <span className="text-gray-500 text-sm">to</span>
+                  <DateInputPicker
+                    value={selectedFilters.enquiryDateTo}
+                    onChange={date => updateSingleFilter('enquiryDateTo', date)}
+                    placeholder="To"
+                    isTimeInterval={false}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+
+            </>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="p-5 border-t border-gray-200 bg-gray-50 flex gap-3">
+          <button
+            onClick={clearFilters}
+            className="flex-1 px-5 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition disabled:opacity-50"
+          >
+            Clear All
+          </button>
+          <button
             onClick={handleApplyFilters}
             disabled={applying || !hasAnyFilter}
-            type="button"
+            className="btn-primary-crm"
           >
             {applying ? 'Applying...' : 'Apply Filters'}
           </button>

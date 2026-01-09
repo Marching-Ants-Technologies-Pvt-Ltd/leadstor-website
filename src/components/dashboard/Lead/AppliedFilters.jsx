@@ -83,7 +83,7 @@ export default function AppliedFilters({ onOpenAdvanceFilter }) {
                 key={i}
                 className="bg-white border border-gray-300 rounded px-3 py-1 text-sm"
                 >
-                <strong>{opt.title}:</strong> {opt.value}
+                <strong>{opt.title}:</strong> {opt.displayValue || opt.value}
                 </div>
         ))}
       </div>

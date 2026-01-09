@@ -53,11 +53,11 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                 className={`h-11 flex items-center gap-3 px-4 mx-2 my-1 rounded-lg text-sm cursor-pointer transition
                 ${
                 active
-                    ? 'bg-sky-400 text-white'
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md'
                     : 'text-slate-600 hover:bg-blue-50 hover:text-blue-600'
                 }`}
             >
-                <i className={`fa-solid ${icon} min-w-[20px] text-center`} />
+                <i className={`fa-solid ${icon} min-w-[20px]`} />
                 {!collapsed && <span className="whitespace-nowrap">{label}</span>}
             </div>
             </Link>

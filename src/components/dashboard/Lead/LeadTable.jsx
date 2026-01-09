@@ -197,7 +197,7 @@ export default function LeadsTable({
        MOBILE + WHATSAPP + IVR
     ======================= */
     const renderMobileCell = (row) => {
-        const phone = row.altMobile ? row.mobile + ', ' + row.altMobile : null;
+        const phone = row.altMobile ? row.mobile + ', ' + row.altMobile : row.mobile;
         return (
             <div className="flex items-center gap-2">
                 <span>{phone}</span>
@@ -236,29 +236,48 @@ export default function LeadsTable({
     const renderStatusTimelineCell = (row) => {
         const status = row.status || "-";
 
+        // Status pill color mapping (same as before)
         const STATUS_MAP = {
-        "Phone Not Picked": "bg-sky-500",
-        "May Visit": "bg-indigo-500",
-        "Visited": "bg-blue-500",
-        "Hot Lead": "bg-red-500",
-        "Warm Lead": "bg-amber-500",
-        "Send Reminder": "bg-purple-500",
-        "Joined": "bg-green-500",
-        "Follow Up": "bg-orange-500",
-        "Not Interested": "bg-gray-400",
-        "PostMeeting FollowUp": "bg-cyan-500",
+            "Phone Not Picked": "bg-sky-500",
+            "May Visit": "bg-indigo-500",
+            "Visited": "bg-blue-500",
+            "Hot Lead": "bg-red-500",
+            "Warm Lead": "bg-amber-500",
+            "Send Reminder": "bg-purple-500",
+            "Joined": "bg-green-500",
+            "Follow Up": "bg-orange-500",
+            "Not Interested": "bg-gray-400",
+            "PostMeeting FollowUp": "bg-cyan-500",
         };
 
         const pillColor = STATUS_MAP[status] || "bg-slate-400";
 
-        return (
-        <div className="flex items-center gap-2">
-            <span
-            className={`px-3 py-1 rounded-full text-xs font-medium text-white ${pillColor} whitespace-nowrap`}
-            >
-            {status}
-            </span>
+        // Followup Date logic (red link if missing)
+        let followupDisplay = "";
+        const followupDate = row.followupDate;
 
+        if (!followupDate || followupDate.trim() === "") {
+            followupDisplay = (
+            <span
+                className="text-red-600 text-xs font-medium cursor-pointer hover:underline"
+                onClick={() => updateInviteDetails(row.invitationId)} // ← your PHP onclick equivalent
+            >
+                [Specify Followup Date]
+            </span>
+            );
+        } else if (row.isFollowupType === "1") {
+            followupDisplay = (
+            <span className="text-gray-600 text-xs ml-1.5">[{followupDate}]</span>
+            );
+        }
+
+        // Trainer name (if exists)
+        const trainerName = row.trainerName ? (
+            <span className="text-gray-500 text-xs ml-2">Trainer: {row.trainerName}</span>
+        ) : null;
+
+        // Icons section
+        const timelineIcon = (
             <button
             type="button"
             className="text-blue-600 hover:text-blue-800 transition-colors"
@@ -267,7 +286,46 @@ export default function LeadsTable({
             >
             <i className="ri-history-line text-xl" />
             </button>
-        </div>
+        );
+
+        let extraIcons = null;
+        if (status.toLowerCase().includes("meeting")) {
+            extraIcons = (
+            <div className="flex items-center gap-3">
+                {timelineIcon}
+                <button
+                type="button"
+                className="text-indigo-600 hover:text-indigo-800 transition-colors"
+                title="View Meeting Details"
+                onClick={() => showCandidateMeetingDetails(row.invitationId)} // ← your PHP function
+                >
+                <i className="ri-video-chat-line text-xl" />
+                </button>
+            </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center gap-2 flex-wrap">
+            {/* Status Pill */}
+            <span
+                className={`px-3 py-1 rounded-full text-xs font-medium text-white ${pillColor} whitespace-nowrap`}
+            >
+                {status}
+            </span>
+
+            {/* Followup Date */}
+            {followupDisplay}
+
+            {/* Trainer Name */}
+            {trainerName}
+
+            {/* Icons (timeline always, + video if Meeting) */}
+            {extraIcons || timelineIcon}
+
+            {/* Trainer name as fallback if no extra icons */}
+            {!extraIcons && trainerName}
+            </div>
         );
     };
 
@@ -399,6 +457,74 @@ export default function LeadsTable({
         );
     };
 
+    const renderAINextStepCell = (row) => {
+        let content = row.aINextStep || "";
+
+        const div = document.createElement("div");
+        div.innerText = content;
+        let safeText = div.innerHTML;
+
+        let finalText = "";
+
+        if (safeText.length > 120) {
+            const shortText = safeText.substring(0, 120);
+
+            finalText = `
+                <div style="min-width:155px;">
+                    <div>
+                        ${shortText}
+                        <span style="cursor:pointer;color:#1976d2;" 
+                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
+                                    this.parentElement.style.display='none';">
+                            ...(view)
+                        </span>
+                    </div>
+
+                    <div class="full-text" style="display:none;">
+                        ${safeText}
+                        <span style="cursor:pointer;color:red;margin-left:6px;"
+                            onclick="this.parentElement.style.display='none';
+                                    this.parentElement.parentElement.querySelector('div').style.display='block';">
+                            (hide)
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            finalText = safeText;
+        }
+
+        if (row.additionalInfo?.length > 0) {
+            finalText += `
+                <br/>
+                <span style="color:green;">
+                    <i class="ri-user-fill"></i> ${row.additionalInfo}
+                </span>
+            `;
+        }
+
+        if (!finalText || finalText === "null") {
+            return "-";
+        }
+
+        const textStyles = {
+            whiteSpace: "normal",
+            wordBreak: "normal",
+            overflowWrap: "break-word",
+            maxWidth: "480px",
+            lineHeight: "20px",
+        };
+
+        return (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <span
+                    style={textStyles}
+                    dangerouslySetInnerHTML={{ __html: finalText }}
+                />
+            </div>
+        );
+    };
+
     useEffect(() => {
         LeadsCurrentPage.setValue(1); 
         xLeads();
@@ -463,6 +589,7 @@ export default function LeadsTable({
             if (col === 'remarks') return renderRemarkCell(r);
             if (col === 'status') return renderStatusTimelineCell(r);
             if (col === 'leadProbability') return renderProbability(r);
+            if (col === 'aINextStep') return renderAINextStepCell(r);
 
             if (dataFormatters[col]) return dataFormatters[col](r);
 
@@ -509,7 +636,7 @@ export default function LeadsTable({
                 <tr>
                 <td
                     colSpan={table.getAllColumns().length}
-                    className="text-center py-10 text-slate-500"
+                    className="w-32 text-center py-10 text-slate-500"
                 >
                     <div className="flex flex-col items-center gap-2">
                     <i className="ri-search-line text-2xl text-slate-400" />
@@ -531,7 +658,7 @@ export default function LeadsTable({
                     className="border-b hover:bg-slate-50 transition h-[44px] align-top"
                 >
                     {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="p-2">
+                    <td key={cell.id} className="w-32 p-2">
                         {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
