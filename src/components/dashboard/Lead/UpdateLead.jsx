@@ -74,12 +74,21 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           <label className="label-crm">{item.displayName || item.fieldName}</label>
           <select
             value={value}
-            onChange={(e) => handleChange(item.dataField, e.target.value)}
+            onChange={(e) => {
+              const selectedOption = e.target.options[e.target.selectedIndex];
+              const selectedValue = e.target.value;
+              const isFollowupType = selectedOption.getAttribute('data-isfollowup');
+              handleChange(item.dataField, selectedValue, isFollowupType);
+            }}
             className="input-crm"
           >
             <option value="">-- Select --</option>
             {options.map((opt) => (
-              <option key={opt.key} value={opt.key}>
+              <option 
+                key={opt.key} 
+                value={opt.key} 
+                data-isfollowup={opt.isFollowup}
+              >
                 {opt.value}
               </option>
             ))}
@@ -202,7 +211,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       .then((data) => {
         console.log("Lead Data:", data);
         setFields(data);
-        if (data.status === "Follow Up") {
+        if (data.status === "Follow Up" || data.isFollowupType == '1') {
           setShowDatePicker(true);
         }
       })
@@ -219,10 +228,10 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     if (onCancel) onCancel();
   };
 
-  const handleChange = (field, value) => {
+  const handleChange = (field, value, isFollowupType) => {console.log(field),console.log(value);console.log(isFollowupType);
     setFields((prev) => ({ ...prev, [field]: value }));
     if (field == "status") {
-      if (value === "Follow Up") {
+      if (value === "Follow Up" || isFollowupType == '1') {
         setShowDatePicker(true);
       } else {
         setShowDatePicker(false);
@@ -336,7 +345,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
     selectedLead.remarks = "";
     setFields(selectedLead);
-    if (selectedLead.status === "Follow Up") {
+    if (selectedLead.status === "Follow Up" || selectedLead.isFollowupType == '1') {
       setShowDatePicker(true);
     }
     if (Object.keys(Owners).length > 0) {

@@ -268,238 +268,242 @@ export default function AnalyticsDashboard() {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="p-2 space-y-6 bg-slate-50 min-h-screen">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-slate-800">Analytics</h1>
+    <div className="min-h-screen bg-gray-50 overflow-y-auto">
+      <div className="mx-auto">
+        <div className="p-2 space-y-6 bg-slate-50 min-h-screen">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-xl font-semibold text-slate-800">Analytics</h1>
 
-        <DateFilterMessage
-          filters={filters}
-          range={range}
-        />
+            <DateFilterMessage
+              filters={filters}
+              range={range}
+            />
 
-        <div className="bg-white border rounded-2xl p-4 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+            <div className="bg-white border rounded-2xl p-4 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
 
-            {/* Date Range */}
-            <div>
-              <label className="text-xs text-slate-500">Date Range</label>
-              <select
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                value={filters.datePreset}
-                onChange={e => setFilters(f => ({ ...f, datePreset: e.target.value }))}
-              >
-                <option value="TODAY">Today</option>
-                <option value="THIS_WEEK">Current Week</option>
-                <option value="LAST_WEEK">Last Week</option>
-                <option value="THIS_MONTH">Current Month</option>
-                <option value="CUSTOM">Custom</option>
-              </select>
-            </div>
+                {/* Date Range */}
+                <div>
+                  <label className="text-xs text-slate-500">Date Range</label>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={filters.datePreset}
+                    onChange={e => setFilters(f => ({ ...f, datePreset: e.target.value }))}
+                  >
+                    <option value="TODAY">Today</option>
+                    <option value="THIS_WEEK">Current Week</option>
+                    <option value="LAST_WEEK">Last Week</option>
+                    <option value="THIS_MONTH">Current Month</option>
+                    <option value="CUSTOM">Custom</option>
+                  </select>
+                </div>
 
-            <MultiSelectDropdown label="Course" options={course} value={filters.course}
-              onChange={v => setFilters(f => ({ ...f, course: v }))} />
+                <MultiSelectDropdown label="Course" options={course} value={filters.course}
+                  onChange={v => setFilters(f => ({ ...f, course: v }))} />
 
-            <MultiSelectDropdown label="Source" options={source} value={filters.source}
-              onChange={v => setFilters(f => ({ ...f, source: v }))} />
+                <MultiSelectDropdown label="Source" options={source} value={filters.source}
+                  onChange={v => setFilters(f => ({ ...f, source: v }))} />
 
-            <MultiSelectDropdown label="Counsellor" options={owner} value={filters.owner}
-              onChange={v => setFilters(f => ({ ...f, owner: v }))} />
+                <MultiSelectDropdown label="Counsellor" options={owner} value={filters.owner}
+                  onChange={v => setFilters(f => ({ ...f, owner: v }))} />
 
-            <MultiSelectDropdown label="Status" options={status} value={filters.status}
-              onChange={v => setFilters(f => ({ ...f, status: v }))} />
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-end gap-4">
-
-            {/* Custom date picker */}
-            {filters.datePreset === 'CUSTOM' && (
-              <div className="w-full md:w-[260px]">
-                <label className="text-xs text-slate-500 mb-1 block">
-                  From – To
-                </label>
-
-                <DatePicker
-                  selectsRange
-                  startDate={customRange[0]}
-                  endDate={customRange[1]}
-                  onChange={(dates) => {
-                    const [start, end] = dates;
-                    setCustomRange(dates);
-
-                    if (start && end) {
-                      setRange({
-                        from: dayjs(start),
-                        to: dayjs(end),
-                      });
-                    }
-                  }}
-                  dateFormat="dd/MM/yyyy"
-                  className="w-full border rounded-lg px-3 py-2 text-sm"
-                  placeholderText="Select date range"
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  yearDropdownItemNumber={100}
-                  scrollableYearDropdown
-                  minDate={new Date(1990, 0, 1)}
-                  maxDate={new Date()}
-                  calendarStartDay={1}
-                />
+                <MultiSelectDropdown label="Status" options={status} value={filters.status}
+                  onChange={v => setFilters(f => ({ ...f, status: v }))} />
               </div>
-            )}
 
-            <div className="w-full md:w-[220px]">
-              <label className="text-xs text-slate-500">Downloads</label>
-              <select
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                value={reportType}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setReportType(val);
+              <div className="mt-4 flex flex-wrap items-end gap-4">
 
-                  if (val) {
-                    downloadReport(val);
-                  }
-                }}
-              >
-                <option value="">Select Report</option>
-                <option value="funnel">Funnel</option>
+                {/* Custom date picker */}
+                {filters.datePreset === 'CUSTOM' && (
+                  <div className="w-full md:w-[260px]">
+                    <label className="text-xs text-slate-500 mb-1 block">
+                      From – To
+                    </label>
 
-                <option
-                  value="workload"
-                  disabled={isWorkloadDisabled}
-                >
-                  Workload {isWorkloadDisabled ? '(Future dates only)' : ''}
-                </option>
+                    <DatePicker
+                      selectsRange
+                      startDate={customRange[0]}
+                      endDate={customRange[1]}
+                      onChange={(dates) => {
+                        const [start, end] = dates;
+                        setCustomRange(dates);
 
-                <option value="missedfollowup">Missed Follow Up</option>
-              </select>
+                        if (start && end) {
+                          setRange({
+                            from: dayjs(start),
+                            to: dayjs(end),
+                          });
+                        }
+                      }}
+                      dateFormat="dd/MM/yyyy"
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                      placeholderText="Select date range"
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      yearDropdownItemNumber={100}
+                      scrollableYearDropdown
+                      minDate={new Date(1990, 0, 1)}
+                      maxDate={new Date()}
+                      calendarStartDay={1}
+                    />
+                  </div>
+                )}
+
+                <div className="w-full md:w-[220px]">
+                  <label className="text-xs text-slate-500">Downloads</label>
+                  <select
+                    className="w-full border rounded-lg px-3 py-2 text-sm"
+                    value={reportType}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setReportType(val);
+
+                      if (val) {
+                        downloadReport(val);
+                      }
+                    }}
+                  >
+                    <option value="">Select Report</option>
+                    <option value="funnel">Funnel</option>
+
+                    <option
+                      value="workload"
+                      disabled={isWorkloadDisabled}
+                    >
+                      Workload {isWorkloadDisabled ? '(Future dates only)' : ''}
+                    </option>
+
+                    <option value="missedfollowup">Missed Follow Up</option>
+                  </select>
+                </div>
+              </div>
+
             </div>
           </div>
 
+          {/* SUMMARY CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <StatCard icon="ri-user-add-line" label="Leads" value={summary.totalLeads || 0}
+              sub={`Open ${summary.totalOpen || 0}`} />
+
+            <StatCard icon="ri-refresh-line" label="Conversion" value={summary.totalJoined || 0}
+              sub={`Followups ${summary.totalFollowUp || 0}`} />
+
+            <StatCard icon="ri-money-rupee-circle-line"  label="Revenue" value={summary.totalAmount || 0}
+              sub={`Due ${summary.dueAmount || 0}`} />
+
+            <StatCard icon="ri-wallet-3-line"  label="Collection" value={summary.collection || 0}
+              sub={`Invoices ${summary.invoices || 0}`} />
+
+            <StatCard icon="ri-book-open-line"  label="Courses" value={summary.course?.count || 0}
+              sub={`Total ${summary.totalLeads || 0}`} />
+
+            <StatCard icon="ri-links-line"  label="Sources" value={summary.source?.count || 0}
+              sub={`Total ${sourceTotal}`} />
+
+            <StatCard icon="ri-user-star-line"  label="Counsellors" value={summary.owner?.count || 0}
+              sub={`Total ${ownerTotal}`} />
+          </div>
+
+          {/* CHARTS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-2xl border p-4">
+              <h3 className="font-semibold mb-2">Won Opportunities</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={wonTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line dataKey="value" stroke="#2563eb" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div className="bg-white rounded-2xl border p-4">
+              <h3 className="font-semibold mb-2">Sales Trend</h3>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={salesTrend}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area dataKey="value" stroke="#16a34a" fill="#86efac" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="space-y-8 mt-8">
+
+            {/* Leads Distribution */}
+            <ChartCard
+              title="Leads Distribution Graph"
+              subtitle="The graphical representation illustrates the distribution of leads among counsellors."
+            >
+              <DonutChart
+                data={buildPieData(summary.owner?.items)}
+              />
+            </ChartCard>
+
+            {/* Leads Conversion */}
+            <ChartCard
+              title="Leads Conversion Graph"
+              subtitle="The graphical representation illustrates the conversion of leads done by counsellors."
+            >
+              <DonutChart
+                data={buildPieData(
+                  summary.owner?.items?.filter(i => Number(i.leadsCount) > 0)
+                )}
+              />
+            </ChartCard>
+
+            {/* Lead Source */}
+            <ChartCard
+              title="Lead-Source Graph"
+              subtitle="The graphical representation illustrates the distribution of leads based on sources."
+            >
+              <DonutChart
+                data={buildPieData(summary.source?.items)}
+              />
+            </ChartCard>
+
+            {/* Lead Course */}
+            <ChartCard
+              title="Lead-Course Graph"
+              subtitle="The graphical representation illustrates the distribution of leads based on courses."
+            >
+              <DonutChart
+                data={buildPieData(summary.course?.items)}
+              />
+            </ChartCard>
+
+            {/* Lead Status */}
+            <ChartCard
+              title="Lead-Status Graph"
+              subtitle="The graphical representation illustrates the distribution of leads based on current status."
+            >
+              <DonutChart
+                data={buildPieData(summary.status?.items)}
+              />
+            </ChartCard>
+
+            {/* Follow Up */}
+            <ChartCard
+              title="Lead Follow-Up Graph"
+              subtitle="The graphical representation illustrates the distribution of leads based on follow-up status."
+            >
+              <DonutChart
+                data={[
+                  { label: 'Follow-Up', value: summary.totalFollowUp },
+                  { label: 'Pending Follow-Up', value: summary.pendingFollowUps },
+                ]}
+              />
+            </ChartCard>
+
+          </div>
         </div>
-      </div>
-
-      {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard icon="ri-user-add-line" label="Leads" value={summary.totalLeads || 0}
-          sub={`Open ${summary.totalOpen || 0}`} />
-
-        <StatCard icon="ri-refresh-line" label="Conversion" value={summary.totalJoined || 0}
-          sub={`Followups ${summary.totalFollowUp || 0}`} />
-
-        <StatCard icon="ri-money-rupee-circle-line"  label="Revenue" value={summary.totalAmount || 0}
-          sub={`Due ${summary.dueAmount || 0}`} />
-
-        <StatCard icon="ri-wallet-3-line"  label="Collection" value={summary.collection || 0}
-          sub={`Invoices ${summary.invoices || 0}`} />
-
-        <StatCard icon="ri-book-open-line"  label="Courses" value={summary.course?.count || 0}
-          sub={`Total ${summary.totalLeads || 0}`} />
-
-        <StatCard icon="ri-links-line"  label="Sources" value={summary.source?.count || 0}
-          sub={`Total ${sourceTotal}`} />
-
-        <StatCard icon="ri-user-star-line"  label="Counsellors" value={summary.owner?.count || 0}
-          sub={`Total ${ownerTotal}`} />
-      </div>
-
-      {/* CHARTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border p-4">
-          <h3 className="font-semibold mb-2">Won Opportunities</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <LineChart data={wonTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Line dataKey="value" stroke="#2563eb" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-2xl border p-4">
-          <h3 className="font-semibold mb-2">Sales Trend</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={salesTrend}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Area dataKey="value" stroke="#16a34a" fill="#86efac" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="space-y-8 mt-8">
-
-        {/* Leads Distribution */}
-        <ChartCard
-          title="Leads Distribution Graph"
-          subtitle="The graphical representation illustrates the distribution of leads among counsellors."
-        >
-          <DonutChart
-            data={buildPieData(summary.owner?.items)}
-          />
-        </ChartCard>
-
-        {/* Leads Conversion */}
-        <ChartCard
-          title="Leads Conversion Graph"
-          subtitle="The graphical representation illustrates the conversion of leads done by counsellors."
-        >
-          <DonutChart
-            data={buildPieData(
-              summary.owner?.items?.filter(i => Number(i.leadsCount) > 0)
-            )}
-          />
-        </ChartCard>
-
-        {/* Lead Source */}
-        <ChartCard
-          title="Lead-Source Graph"
-          subtitle="The graphical representation illustrates the distribution of leads based on sources."
-        >
-          <DonutChart
-            data={buildPieData(summary.source?.items)}
-          />
-        </ChartCard>
-
-        {/* Lead Course */}
-        <ChartCard
-          title="Lead-Course Graph"
-          subtitle="The graphical representation illustrates the distribution of leads based on courses."
-        >
-          <DonutChart
-            data={buildPieData(summary.course?.items)}
-          />
-        </ChartCard>
-
-        {/* Lead Status */}
-        <ChartCard
-          title="Lead-Status Graph"
-          subtitle="The graphical representation illustrates the distribution of leads based on current status."
-        >
-          <DonutChart
-            data={buildPieData(summary.status?.items)}
-          />
-        </ChartCard>
-
-        {/* Follow Up */}
-        <ChartCard
-          title="Lead Follow-Up Graph"
-          subtitle="The graphical representation illustrates the distribution of leads based on follow-up status."
-        >
-          <DonutChart
-            data={[
-              { label: 'Follow-Up', value: summary.totalFollowUp },
-              { label: 'Pending Follow-Up', value: summary.pendingFollowUps },
-            ]}
-          />
-        </ChartCard>
-
       </div>
     </div>
   );
