@@ -494,15 +494,6 @@ export default function LeadsTable({
             finalText = safeText;
         }
 
-        if (row.additionalInfo?.length > 0) {
-            finalText += `
-                <br/>
-                <span style="color:green;">
-                    <i class="ri-user-fill"></i> ${row.additionalInfo}
-                </span>
-            `;
-        }
-
         if (!finalText || finalText === "null") {
             return "-";
         }
