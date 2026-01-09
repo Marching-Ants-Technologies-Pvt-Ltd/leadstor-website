@@ -5,7 +5,6 @@ export default function JoineeInstallmentNotFound() {
                 height: 'calc(100vh - 60px)'
             }}
             className="w-full flex justify-center items-center">
-            {/* w-[400px] p-5 rounded-md shadow-md min-h-52 bg-white */}
             <div className="w-[400px]">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="62" height="62" color="#374151" fill="none" stroke="#374151" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14.5 8.5C14.5 5.73858 12.2614 3.5 9.5 3.5C6.73858 3.5 4.5 5.73858 4.5 8.5C4.5 11.2614 6.73858 13.5 9.5 13.5C12.2614 13.5 14.5 11.2614 14.5 8.5Z" />
