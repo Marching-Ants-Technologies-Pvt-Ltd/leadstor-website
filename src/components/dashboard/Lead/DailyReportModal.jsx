@@ -81,130 +81,147 @@ export default function DailyReportModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
-      <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.12)]
-                    w-[480px] p-7 max-h-[90vh] overflow-y-auto border border-gray-100
-                    animate-scaleIn">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto border border-gray-200 animate-fadeIn">
 
-        {/* Step 1: Select Owner */}
-        {step === "select" && User?._id == -1 && (
-          <>
-            <h2 className="text-xl font-semibold text-gray-800 mb-5">
-              Select Owner
+        {/* Modern Lead-style Header */}
+        <div className="px-6 py-2 flex justify-between items-center
+              border-b backdrop-blur lead-header">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">
+              {step === "select" ? "Select Owner" : "Daily Call Report"}
             </h2>
+          </div>
 
-            <select
-              className="w-full border border-gray-300 p-3 rounded-lg bg-gray-50 text-gray-800 
-                        cursor-pointer focus:outline-none
-                        hover:border-[#3B82F6] transition"
-              value={selectedOwner}
-              onChange={(e) => setSelectedOwner(e.target.value)}
-            >
-              <option value="">Select Owner</option>
-              <option value="-1">Admin</option>
-              {Object.entries(Owners).map(([id, name]) => (
-                <option key={id} value={id}>{name}</option>
-              ))}
-            </select>
+          <button
+            onClick={onClose}
+            className="h-8 w-8 flex items-center justify-center
+                  rounded-full hover:bg-slate-200
+                  text-slate-600 hover:text-black transition"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
 
-            <div className="flex justify-end gap-3 mt-7">
-              <button
-                onClick={onClose}
-                className="px-5 py-2.5 rounded-lg bg-gray-200 text-gray-800 font-medium 
-                          shadow hover:bg-gray-300 transition"
-              >
-                Cancel
-              </button>
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Step 1: Select Owner */}
+          {step === "select" && User?._id == -1 && (
+            <>
+              <div className="space-y-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Choose the owner for the report
+                </label>
 
-              <button
-                onClick={handleConfirm}
-                disabled={!selectedOwner}
-                className="px-5 py-2.5 rounded-lg 
-                          bg-[#3B82F6] text-white font-medium shadow 
-                          hover:bg-[#2563EB] transition disabled:opacity-40"
-              >
-                Get Report
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Step 2: Report */}
-        {step === "report" && (
-          <>
-            <h3 className="text-xl text-gray-900 text-center mb-1">
-              Daily Call Report
-            </h3>
-
-            <div className="flex justify-center mb-5 mt-2">
-              <div className="bg-[#3B82F6] text-white rounded-full px-4 py-1 text-sm shadow-sm">
-                {userName}
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto rounded-lg border border-gray-200 shadow-sm">
-              <table className="w-full text-sm text-left">
-                <thead>
-                  <tr
-                    style={{
-                      background: "#EFF6FF",           // Leadstor light blue
-                      color: "#1E293B",
-                      borderBottom: "2px solid #DBEAFE" // soft blue border
-                    }}
-                  >
-                    <th className="border px-3 py-2 font-semibold">Status</th>
-                    <th className="border px-3 py-2 font-semibold text-right">Count</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {reportData.map((val, idx) => (
-                    <tr
-                      key={idx}
-                      className="odd:bg-white even:bg-gray-50 hover:bg-[#EFF6FF] transition" // light blue hover
-                    >
-                      <td className="border px-3 py-2">{val.status}</td>
-                      <td className="border px-3 py-2 text-right">{val.count}</td>
-                    </tr>
+                <select
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-800 
+                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none 
+                            transition shadow-sm hover:border-blue-400"
+                  value={selectedOwner}
+                  onChange={(e) => setSelectedOwner(e.target.value)}
+                >
+                  <option value="">-- Select Owner --</option>
+                  <option value="-1">Admin</option>
+                  {Object.entries(Owners).map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
+                    </option>
                   ))}
-                </tbody>
+                </select>
+              </div>
 
-                <tfoot>
-                  <tr style={{ background: "#DBEAFE", color: "#1E293B" }} className="font-bold"> {/* soft blue total row */}
-                    <td className="border px-3 py-2">Total</td>
-                    <td className="border px-3 py-2 text-right">{totalCall}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+              <div className="flex justify-end gap-4 pt-4 border-t border-gray-100">
+                <button
+                  onClick={onClose}
+                  className="px-6 py-2.5 rounded-lg bg-gray-100 text-gray-700 font-medium 
+                            hover:bg-gray-200 transition shadow-sm"
+                >
+                  Cancel
+                </button>
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                className="px-5 py-2.5 rounded-lg bg-[#3B82F6] text-white 
-                          font-medium shadow hover:bg-[#2563EB] transition"
-                onClick={() => {
-                  downloadDailyReport(userId, userName);
-                  onClose();
-                  setStep("select");
-                }}
-              >
-                Download
-              </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={!selectedOwner}
+                  className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-medium 
+                            hover:bg-blue-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Get Report
+                </button>
+              </div>
+            </>
+          )}
 
-              <button
-                className="px-5 py-2.5 rounded-lg bg-gray-300 text-gray-800 font-medium 
-                          shadow hover:bg-gray-400 transition"
-                onClick={() => {
-                  onClose();
-                  setStep("select");
-                }}
-              >
-                Close
-              </button>
-            </div>
-          </>
-        )}
+          {/* Step 2: Report */}
+          {step === "report" && (
+            <>
+              <div className="text-center space-y-2 mb-6">
+                <div className="inline-block bg-blue-100 text-blue-800 px-4 py-1 rounded-full text-sm font-medium shadow-sm">
+                  {userName}
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
+                <table className="w-full text-sm text-left">
+                  <thead>
+                    <tr className="bg-blue-50 border-b border-blue-100">
+                      <th className="px-6 py-3 font-semibold text-gray-700">Status</th>
+                      <th className="px-6 py-3 font-semibold text-gray-700 text-right">Count</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-gray-100">
+                    {reportData.map((val, idx) => (
+                      <tr
+                        key={idx}
+                        className="hover:bg-blue-50/50 transition-colors"
+                      >
+                        <td className="px-6 py-3 text-gray-800">{val.status}</td>
+                        <td className="px-6 py-3 text-right font-medium text-gray-900">{val.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+
+                  <tfoot>
+                    <tr className="bg-blue-50 font-bold border-t border-blue-100">
+                      <td className="px-6 py-3 text-gray-800">Total</td>
+                      <td className="px-6 py-3 text-right text-gray-900">{totalCall}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-4 pt-6 border-t border-gray-100">
+                <button
+                  className="px-6 py-2.5 rounded-lg bg-gray-200 text-gray-700 font-medium 
+                            hover:bg-gray-300 transition shadow-sm"
+                  onClick={() => {
+                    onClose();
+                    setStep("select");
+                  }}
+                >
+                  Close
+                </button>
+
+                <button
+                  className="px-6 py-2.5 rounded-lg bg-blue-600 text-white font-medium 
+                            hover:bg-blue-700 transition shadow-md flex items-center gap-2"
+                  onClick={() => {
+                    downloadDailyReport(userId, userName);
+                    onClose();
+                    setStep("select");
+                  }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download Report
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

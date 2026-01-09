@@ -360,7 +360,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
             {/* HEADER */}
             <div className="
               px-6 py-2 flex justify-between items-center
-              border-b backdrop-blur update-header
+              border-b backdrop-blur lead-header
             "
             >
               <h2 className="text-[15px] font-semibold tracking-wide">
@@ -499,10 +499,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         .field-card {
           transition: transform .15s ease, box-shadow .15s ease;
         }
-        .update-header{
-            background: #f5f7ff;
-            color: "#0f172a"
-        }
         
         .field-card:hover {
           transform: translateY(-1px);
@@ -530,22 +526,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           background: #ffffff;
           border-color: #60a5fa;
           box-shadow: 0 0 0 3px rgba(96,165,250,0.2);
-        }
-
-        .btn-primary-crm {
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
-          color: white;
-          padding: 9px 22px;
-          border-radius: 10px;
-          font-size: 13px;
-          font-weight: 500;
-          box-shadow: 0 6px 14px rgba(37,99,235,.25);
-          transition: all .2s ease;
-        }
-
-        .btn-primary-crm:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 10px 20px rgba(37,99,235,.35);
         }
 
         .btn-secondary-crm {

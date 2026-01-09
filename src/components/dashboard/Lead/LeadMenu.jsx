@@ -156,7 +156,7 @@ export default function LeadsMenu({
 
         {/* ACTIONS */}
         <div className="flex items-center gap-2" ref={menuRef}>
-          <button onClick={handleAddLead} className="action-chip primary">
+          <button onClick={handleAddLead} className="btn-primary-crm action-chip">
             <i className="fa fa-user-plus" />
             Add
           </button>
@@ -329,7 +329,6 @@ export default function LeadsMenu({
           padding: 6px 12px;
           border-radius: 10px;
           border: 1px solid rgba(15,23,42,0.08);
-          background: #fff;
           font-size: 13px;
           cursor: pointer;
         }

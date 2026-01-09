@@ -321,212 +321,220 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[32rem] mx-auto border border-gray-200">
-                {/* Header */}
-                <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-2xl font-medium text-gray-500">Export Enquiries</h2>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-50">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[520px] max-h-[90vh] overflow-y-auto border border-gray-200 animate-fadeIn">
+
+                {/* Modern Lead-style Header */}
+                <div className="px-6 py-2 flex justify-between items-center
+                    border-b backdrop-blur lead-header">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-semibold">
+                        Export Enquiries
+                        </h2>
+                    </div>
+
                     <button
                         onClick={onClose}
-                        className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 focus:outline-none border-none bg-transparent"
-                        style={{ color: '#9ca3af', background: 'transparent', border: 'none', boxShadow: 'none', outline: 'none', transition: 'none' }}
-                        disabled={isExporting}
+                        className="h-8 w-8 flex items-center justify-center
+                            rounded-full hover:bg-slate-200
+                            text-slate-600 hover:text-black transition"
                         aria-label="Close"
                     >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5" style={{ color: '#9ca3af', background: 'transparent', transition: 'none' }}>
-                            <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
-                        </svg>
+                        ✕
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="px-6 py-5 space-y-6">
-                    {/* Quick Export Options */}
-                    <div>
-                        <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">Quick Export</h4>
-                            <p className="text-xs text-gray-600">Export a specific number of most recent enquiries with predefined options</p>
-                        </div>
-                        <div className="grid grid-cols-5 gap-2 mb-3">
-                            {exportOptions.map((option) => (
-                                <button
-                                    key={option.value}
-                                    onClick={() => {
-                                        setSelectedLimit(option.value);
-                                        setIsCustomRange(false);
-                                    }}
-                                    disabled={isExporting}
-                                    className={`px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                                        selectedLimit === option.value && !isCustomRange
-                                            ? 'bg-[#F1BBEA] text-black border-gray-300'
-                                            : 'bg-white hover:bg-gray-50 border-gray-300 text-gray-700 hover:border-gray-400'
-                                    } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-[#F1BBEA] focus:ring-offset-2`}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
-                        {selectedLimit && !isCustomRange && (
-                            <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    <span className="text-sm text-green-800">
-                                        Ready to export {selectedLimit === 'ALL' ? 'all' : selectedLimit} {selectedLimit === 'ALL' ? `(${totalLeads.toLocaleString()})` : ''} most recent enquiries
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                <div className="p-6 space-y-8">
+                {/* Quick Export Options */}
+                <div>
+                    <div className="mb-4">
+                    <h4 className="text-lg font-semibold text-gray-800">Quick Export</h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                        Export a specific number of most recent enquiries with predefined options
+                    </p>
                     </div>
 
-                    {/* Custom Range */}
-                    <div>
-                        <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">Custom Range Export</h4>
-                            <p className="text-xs text-gray-600">Export a specific range of enquiries by defining start and end row numbers</p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 mb-3">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">From Row</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max={totalLeads}
-                                    value={fromRow === 0 ? 1 : fromRow + 1}
-                                    onChange={(e) => {
-                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                        setFromRow(value - 1);
-                                        setIsCustomRange(true);
-                                        setSelectedLimit(null);
-                                    }}
-                                    disabled={isExporting}
-                                    className={`w-full px-3 py-2 border rounded-md text-sm transition-colors ${
-                                        isCustomRange
-                                            ? 'border-[#F1BBEA] focus:border-[#F1BBEA] focus:ring-2 focus:ring-gray-200'
-                                            : 'border-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200'
-                                    } focus:outline-none disabled:bg-gray-50 disabled:cursor-not-allowed`}
-                                    placeholder="1"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">To Row</label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max={totalLeads}
-                                    value={tillRow}
-                                    onChange={(e) => {
-                                        const value = Math.max(1, parseInt(e.target.value) || 1);
-                                        setTillRow(value);
-                                        setIsCustomRange(true);
-                                        setSelectedLimit(null);
-                                    }}
-                                    disabled={isExporting}
-                                    className={`w-full px-3 py-2 border rounded-md text-sm transition-colors ${
-                                        isCustomRange
-                                            ? 'border-[#F1BBEA] focus:border-[#F1BBEA] focus:ring-2 focus:ring-gray-200'
-                                            : 'border-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200'
-                                    } focus:outline-none disabled:bg-gray-50 disabled:cursor-not-allowed`}
-                                    placeholder="100"
-                                />
-                            </div>
-                        </div>
-                        {isCustomRange && (
-                            <div className="p-3 bg-[#F1BBEA] border border-[#F1BBEA] rounded-md">
-                                <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-black-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span className="text-sm text-black-800">
-                                        Will export rows {fromRow + 1} to {tillRow} ({Math.max(0, tillRow - fromRow).toLocaleString()} total rows)
-                                    </span>
-                                </div>
-                            </div>
-                        )}
+                    <div className="grid grid-cols-5 gap-3 mb-4">
+                    {exportOptions.map((option) => (
+                        <button
+                        key={option.value}
+                        onClick={() => {
+                            setSelectedLimit(option.value);
+                            setIsCustomRange(false);
+                        }}
+                        disabled={isExporting}
+                        className={`px-4 py-2.5 text-sm font-medium rounded-lg border transition-all ${
+                            selectedLimit === option.value && !isCustomRange
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                        } disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-200 focus:ring-offset-2`}
+                        >
+                        {option.label}
+                        </button>
+                    ))}
                     </div>
 
-                    {/* Total leads info */}
-                    {totalLeads > 0 && (
-                        <div className="pt-4 border-t border-gray-200">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span>Total available enquiries: <span className="font-semibold text-gray-900">{totalLeads.toLocaleString()}</span></span>
-                            </div>
+                    {selectedLimit && !isCustomRange && (
+                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-blue-800">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span>
+                            Ready to export {selectedLimit === 'ALL' ? 'all' : selectedLimit}{' '}
+                            {selectedLimit === 'ALL' ? `(${totalLeads.toLocaleString()})` : ''} most recent enquiries
+                        </span>
                         </div>
+                    </div>
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg">
-                    <button
-                        onClick={onClose}
+                {/* Custom Range Export */}
+                <div>
+                    <div className="mb-4">
+                    <h4 className="text-lg font-semibold text-gray-800">Custom Range Export</h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                        Export a specific range of enquiries by defining start and end row numbers
+                    </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">From Row</label>
+                        <input
+                        type="number"
+                        min="1"
+                        max={totalLeads}
+                        value={fromRow === 0 ? 1 : fromRow + 1}
+                        onChange={(e) => {
+                            const value = Math.max(1, parseInt(e.target.value) || 1);
+                            setFromRow(value - 1);
+                            setIsCustomRange(true);
+                            setSelectedLimit(null);
+                        }}
                         disabled={isExporting}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        Cancel
-                    </button>
-                    
-                    {!isCustomRange && selectedLimit ? (
-                        <button
-                            onClick={() => handleExport()}
-                            disabled={isExporting}
-                            className="px-4 py-2 text-sm font-medium bg-[#F1BBEA] text-black border border-[#F1BBEA] rounded-md hover:bg-[#F1BBEA] focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-                        >
-                            {isExporting ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Exporting...
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Export {selectedLimit === 'ALL' ? 'All' : selectedLimit} Records
-                                </>
-                            )}
-                        </button>
-                    ) : isCustomRange ? (
-                        <button
-                            onClick={handleCustomExport}
-                            disabled={isExporting}
-                            className="px-4 py-2 text-sm font-medium bg-[#F1BBEA] text-black border border-[#F1BBEA] rounded-md hover:bg-[#F1BBEA] focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-                        >
-                            {isExporting ? (
-                                <>
-                                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Exporting...
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Export Rows {fromRow + 1}-{tillRow}
-                                </>
-                            )}
-                        </button>
-                    ) : (
-                        <button
-                            disabled
-                            className="px-4 py-2 text-sm font-medium text-gray-400 bg-gray-200 border border-gray-300 rounded-md cursor-not-allowed flex items-center gap-2"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Select Export Option
-                        </button>
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition disabled:bg-gray-100"
+                        placeholder="1"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">To Row</label>
+                        <input
+                        type="number"
+                        min="1"
+                        max={totalLeads}
+                        value={tillRow}
+                        onChange={(e) => {
+                            const value = Math.max(1, parseInt(e.target.value) || 1);
+                            setTillRow(value);
+                            setIsCustomRange(true);
+                            setSelectedLimit(null);
+                        }}
+                        disabled={isExporting}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none transition disabled:bg-gray-100"
+                        placeholder="100"
+                        />
+                    </div>
+                    </div>
+
+                    {isCustomRange && (
+                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                        <div className="flex items-center gap-2 text-sm text-blue-800">
+                        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>
+                            Will export rows {fromRow + 1} to {tillRow} ({Math.max(0, tillRow - fromRow).toLocaleString()} total rows)
+                        </span>
+                        </div>
+                    </div>
                     )}
+                </div>
+
+                {/* Total Info */}
+                {totalLeads > 0 && (
+                    <div className="pt-4 border-t border-gray-200">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>
+                        Total available enquiries: <span className="font-semibold text-gray-900">{totalLeads.toLocaleString()}</span>
+                        </span>
+                    </div>
+                    </div>
+                )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end gap-4 px-6 py-5 bg-gray-50 border-t border-gray-200 rounded-b-2xl">
+                <button
+                    onClick={onClose}
+                    disabled={isExporting}
+                    className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                    Cancel
+                </button>
+
+                {!isCustomRange && selectedLimit ? (
+                    <button
+                    onClick={() => handleExport()}
+                    disabled={isExporting}
+                    className="px-6 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                    {isExporting ? (
+                        <>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Exporting...
+                        </>
+                    ) : (
+                        <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export {selectedLimit === 'ALL' ? 'All' : selectedLimit} Records
+                        </>
+                    )}
+                    </button>
+                ) : isCustomRange ? (
+                    <button
+                    onClick={handleCustomExport}
+                    disabled={isExporting}
+                    className="px-6 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                    {isExporting ? (
+                        <>
+                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Exporting...
+                        </>
+                    ) : (
+                        <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Export Rows {fromRow + 1}-{tillRow}
+                        </>
+                    )}
+                    </button>
+                ) : (
+                    <button
+                    disabled
+                    className="px-6 py-2.5 text-sm font-medium text-gray-400 bg-gray-100 border border-gray-300 rounded-lg cursor-not-allowed flex items-center gap-2"
+                    >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Select Export Option
+                    </button>
+                )}
                 </div>
             </div>
         </div>

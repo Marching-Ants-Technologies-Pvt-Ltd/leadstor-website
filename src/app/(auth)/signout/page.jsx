@@ -11,6 +11,11 @@ export default function SignOut() {
     const { data: session, status } = useSession();
 
     useEffect(() => {
+        localStorage.removeItem('CurrentSessionData');
+        localStorage.removeItem('LeadOwnersById');
+        localStorage.removeItem('LeadsPerPage');
+        localStorage.removeItem('TotalLeads');
+        localStorage.removeItem('LeadsCurrentPage');
         if (status === 'unauthenticated') router.push('/signin');
         if (status === 'authenticated') signOut();
     }, [status, router]);
