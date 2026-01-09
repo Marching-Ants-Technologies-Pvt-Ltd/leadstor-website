@@ -59,12 +59,7 @@ export default function DateRangeModal({
                     <button
                         disabled={!range.from || !range.to}
                         onClick={handleConfirm}
-                        className={`px-4 py-2 text-sm rounded text-white
-              ${range.from && range.to
-                                ? "bg-blue-600 hover:bg-blue-700"
-                                : "bg-blue-400 cursor-not-allowed"}
-            `}
-                    >
+                        className={`px-4 py-2 text-sm rounded text-white ${range.from && range.to ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-400 cursor-not-allowed"}`}>
                         Apply
                     </button>
                 </div>
