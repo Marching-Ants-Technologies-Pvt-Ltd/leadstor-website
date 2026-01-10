@@ -6,6 +6,8 @@ export default function TextareaModal({
     description = "",
     primaryText = "Confirm",
     placeholder = "Type here...",
+    rows = 4,
+    maxChar = 0,
     onConfirm,
     onClose
 }) {
@@ -27,13 +29,21 @@ export default function TextareaModal({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
             {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/40"
-                onClick={onClose}
-            />
+            <div className="absolute inset-0 bg-black/40" />
 
             {/* Modal */}
             <div className="relative bg-white rounded-lg shadow-xl w-[420px] p-5">
+                {/* Top-right actions */}
+                <div className="absolute -top-10 right-0 flex gap-2">
+                    <button
+                        onClick={onClose}
+                        className="w-8 h-8 flex items-center justify-center rounded-full bg-white border shadow hover:bg-gray-100"
+                        aria-label="Close"
+                    >
+                        ✕
+                    </button>
+                </div>
+
                 <h3 className="text-lg font-semibold text-gray-800">
                     {title}
                 </h3>
@@ -47,25 +57,25 @@ export default function TextareaModal({
                 <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    rows={4}
+                    rows={rows}
                     className="w-full border rounded px-3 py-2 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder={placeholder}
                 />
+                {maxChar > 0 &&
+                    <div className={`text-right text-xs font-medium ${(text.length > maxChar) ? 'text-rose-600' : 'text-gray-500'}`}>{text.length}/{maxChar} Characters</div>
+                }
 
                 <div className="flex justify-end gap-3 mt-5">
                     <button
-                        onClick={onClose}
-                        className="px-4 py-2 text-sm rounded border hover:bg-gray-100"
-                    >
-                        Close
-                    </button>
-
-                    <button
                         disabled={!text.trim()}
                         onClick={handleConfirm}
-                        className={`px-4 py-2 text-sm rounded text-white ${text.trim() ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-300 cursor-not-allowed"}`}
+                        className={`px-4 py-1.5 text-sm rounded border font-normal ${text.trim() &&
+                                (maxChar > 0 ? text.trim().length <= maxChar : true)
+                                ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                                : "bg-gray-100 text-gray-700 border-gray-300 cursor-not-allowed"}`
+                        }
                     >
-                        {primaryText}
+                        {primaryText} to {open} Candidates
                     </button>
                 </div>
             </div>

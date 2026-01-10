@@ -124,7 +124,13 @@ export default function PaymentsTable({
             <table className="text-[13px] border-collapse bg-white" id='paymentsReportTable'>
                 <thead className="bg-slate-100">
                     <tr className="border-b border-slate-200">
-                        <th className="p-2"><input type="checkbox" onChange={(e) => checkUncheckRows(e.target.checked)} /></th>
+                        <th className="p-2">
+                            <input 
+                                className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-blue-500' 
+                                type="checkbox" 
+                                onChange={(e) => checkUncheckRows(e.target.checked)} 
+                            />
+                        </th>
                         <th className="p-2 text-left min-w-36">Name</th>
                         <th className="p-2 text-left">Email</th>
                         <th className="p-2 text-left">Mobile</th>
@@ -148,7 +154,11 @@ export default function PaymentsTable({
                     {rows.map(item => (
                         <tr className="hover:bg-slate-50" key={item?.id}>
                             <td className="p-2">
-                                <input id={item?.id} type="checkbox" />
+                                <input 
+                                    className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500' 
+                                    id={item?.id} 
+                                    type="checkbox" 
+                                />
                             </td>
                             <td className="p-2">{item?.name || '-'} <span className='cursor-pointer' onClick={(e) => router.push(`/payments/${item.id}`)}>✏️</span></td>
                             <td className="p-2">{item?.email || '-'}</td>
