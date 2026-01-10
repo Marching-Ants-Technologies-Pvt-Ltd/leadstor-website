@@ -1,18 +1,22 @@
 import { useState } from 'react';
 import ConfirmDelete from '@/components/elements/ConfirmDelete';
-import { STATUS, MonthNameByIndex } from './paymentUtils';
+import { STATUS, MonthNameByIndex } from '../paymentUtils';
 
 export default function JoineeInstallments({
     installments = {},
     currency = '?',
-    onInstallmentEdit = (e) => {},
-    onInstallmentDelete = (e) => {}
+    onInstallmentEdit = (e) => { },
+    onInstallmentDelete = (e) => { }
 }) {
 
     const [deleteInstallment, setDeleteInstallment] = useState(null);
     const Items = Object.entries(installments);
     const today = new Date();
     const todayStr = `${today.getDate()}-${MonthNameByIndex[today.getMonth()]}-${today.getFullYear()}`;
+
+    const addNewInstallment = () => {
+        onInstallmentEdit({ count: Items.length + 1, type: 'Create', currencyIcon: currency, date: todayStr });
+    } 
 
     return (
         <div className="bg-white border border-gray-200 rounded-[10px] p-5 mt-5">
@@ -21,7 +25,7 @@ export default function JoineeInstallments({
                 Installments
             </h4>
 
-            <ConfirmDelete 
+            <ConfirmDelete
                 open={deleteInstallment}
                 onClose={() => setDeleteInstallment(null)}
                 onConfirm={() => {
@@ -32,45 +36,47 @@ export default function JoineeInstallments({
             />
 
             {Items.length > 0 ? (
-                <div id="InstallmentCards flex gap-2">
-                    {Items.map(([key, value]) => (
-                        <InstallmentCard
-                            key={key}
-                            counter={key}
-                            currencyIcon={currency}
-                            amount={value?.amount ?? 0}
-                            date={value?.date ?? '-'}
-                            status={value?.status ?? '0'}
-                            refNo={value?.refNum ?? ''}
-                            onDelete={setDeleteInstallment}
-                            onEdit={onInstallmentEdit}
-                        />
-                    ))}
+                <div>
+                    <div id="InstallmentCards flex gap-2">
+                        {Items.map(([key, value]) => (
+                            <InstallmentCard
+                                key={key}
+                                counter={key}
+                                currencyIcon={currency}
+                                amount={value?.amount ?? 0}
+                                date={value?.date ?? '-'}
+                                status={value?.status ?? '0'}
+                                refNo={value?.refNum ?? ''}
+                                onDelete={setDeleteInstallment}
+                                onEdit={onInstallmentEdit}
+                            />
+                        ))}
+                    </div>
+                    <button onClick={addNewInstallment} className="mt-6 px-3 py-2 text-[13px] bg-blue-600 text-white rounded-md hover:bg-blue-800">
+                        ✚ Add Installment
+                    </button>
                 </div>
             ) : (
                 <div className="bg-green-50 rounded-md w-full min-h-52 flex justify-center items-center flex-col mt-3">
-                    
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" color="#292525" fill="none" stroke="#292525" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14.4998 19H12.4998C9.67139 19 8.25718 19 7.3785 18.1213C6.49982 17.2426 6.49982 15.8284 6.49982 13V8C6.49982 5.17157 6.49982 3.75736 7.3785 2.87868C8.25718 2 9.67139 2 12.4998 2H13.843C14.6605 2 15.0692 2 15.4368 2.15224C15.8043 2.30448 16.0933 2.59351 16.6714 3.17157L19.3282 5.82843C19.9063 6.40648 20.1953 6.69552 20.3476 7.06306C20.4998 7.4306 20.4998 7.83935 20.4998 8.65685V13C20.4998 15.8284 20.4998 17.2426 19.6211 18.1213C18.7425 19 17.3282 19 14.4998 19Z" />
-                            <path d="M14.9998 2.5V3.5C14.9998 5.38562 14.9998 6.32843 15.5856 6.91421C16.1714 7.5 17.1142 7.5 18.9998 7.5H19.9998" />
-                            <path d="M6.49945 5C4.8426 5 3.49945 6.34315 3.49945 8V16C3.49945 18.8285 3.49945 20.2427 4.37813 21.1213C5.25681 22 6.67102 22 9.49945 22H14.4998C16.1566 22 17.4998 20.6568 17.4998 19" />
-                            <path d="M10 11H14M10 15H17" />
-                        </svg>
-                        <p className="text-sm text-gray-700 mt-4">Records Not Found!</p>
-                        <p className="text-xs text-gray-700 mt-1"><span className="text-blue-500 font-semibold cursor-pointer hover:underline">Click here</span> to add first installment</p>
+
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" color="#292525" fill="none" stroke="#292525" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14.4998 19H12.4998C9.67139 19 8.25718 19 7.3785 18.1213C6.49982 17.2426 6.49982 15.8284 6.49982 13V8C6.49982 5.17157 6.49982 3.75736 7.3785 2.87868C8.25718 2 9.67139 2 12.4998 2H13.843C14.6605 2 15.0692 2 15.4368 2.15224C15.8043 2.30448 16.0933 2.59351 16.6714 3.17157L19.3282 5.82843C19.9063 6.40648 20.1953 6.69552 20.3476 7.06306C20.4998 7.4306 20.4998 7.83935 20.4998 8.65685V13C20.4998 15.8284 20.4998 17.2426 19.6211 18.1213C18.7425 19 17.3282 19 14.4998 19Z" />
+                        <path d="M14.9998 2.5V3.5C14.9998 5.38562 14.9998 6.32843 15.5856 6.91421C16.1714 7.5 17.1142 7.5 18.9998 7.5H19.9998" />
+                        <path d="M6.49945 5C4.8426 5 3.49945 6.34315 3.49945 8V16C3.49945 18.8285 3.49945 20.2427 4.37813 21.1213C5.25681 22 6.67102 22 9.49945 22H14.4998C16.1566 22 17.4998 20.6568 17.4998 19" />
+                        <path d="M10 11H14M10 15H17" />
+                    </svg>
+                    <p className="text-sm text-gray-700 mt-4">Records Not Found!</p>
+                    <p className="text-xs text-gray-700 mt-1">
+                        <span onClick={addNewInstallment} className="text-blue-500 font-semibold cursor-pointer hover:underline">Click here</span> to add first installment</p>
                 </div>
             )}
-
-            <button onClick={() => onInstallmentEdit({ count: Items.length +1, type: 'Create', currencyIcon: currency, date: todayStr })} className="mt-6 px-3 py-2 text-[13px] bg-blue-600 text-white rounded-md hover:bg-blue-800">
-                ✚ Add Installment
-            </button>
 
         </div>
     )
 }
 
 // Helper Components
-function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, status = '0', refNo = '', onDelete = (e) => {}, onEdit = (e) => {} }) {
+function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, status = '0', refNo = '', onDelete = (e) => { }, onEdit = (e) => { } }) {
 
     let statusText = STATUS?.[status] ?? 'Not Paid';
     return (
@@ -88,7 +94,7 @@ function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, st
                 </button>
             </div>
 
-            <div className="flex-1 px-5 py-3 space-y-1 text-sm" onClick={() => onEdit({count: parseInt(counter), amount, date, status, refNo, type: `Edit #${counter}`, currencyIcon })}>
+            <div className="flex-1 px-5 py-3 space-y-1 text-sm" onClick={() => onEdit({ count: parseInt(counter), amount, date, status, refNo, type: `Edit #${counter}`, currencyIcon })}>
                 <div className="flex justify-between">
                     <span className="text-gray-500">Amount</span>
                     <span title='Click to edit' className="font-semibold cursor-pointer">{currencyIcon}{amount}</span>

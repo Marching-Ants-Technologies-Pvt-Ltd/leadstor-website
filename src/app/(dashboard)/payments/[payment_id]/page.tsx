@@ -17,7 +17,6 @@ export default function EditPaymentDetails({ params, }: {
 
     return (
         <div className='overflow-y-auto'>
-            
             <JoineePaymentForm payment_id={paymentId} />
         </div>
     );

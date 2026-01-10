@@ -17,12 +17,14 @@ export default function FilterPopup({ open, onApply, onClose }) {
     const [active, setActive] = useState('');
     const [selected, setSelected] = useState({});
     const [range, setRange] = useState({ from: null, to: null });
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
         if (open) {
+            console.log(open);
             setActive(SECTIONS[0].key);
-            setSelected({});
-            setRange({ from: null, to: null });
+            setSelected(open?.applied?.selected ?? {});
+            setRange({ from: open?.applied?.range?.from, to: open?.applied?.range?.to });
         }
     }, [open]);
 
@@ -96,8 +98,16 @@ export default function FilterPopup({ open, onApply, onClose }) {
     const handleClear = () => {
         setSelected({});
         setRange({ from: null, to: null });
-    };
 
+        onApply?.({
+            selected: {},
+            range: {
+                from: null,
+                to: null
+            }
+        });
+        onClose?.();
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -112,9 +122,9 @@ export default function FilterPopup({ open, onApply, onClose }) {
                     {hasFilters && (
                         <button
                             onClick={handleClear}
-                            className="px-3 py-1 pr-4 text-xs bg-transparent border-2 border-white text-white font-semibold rounded-full shadow hover:bg-gray-100 hover:text-gray-900"
+                            className="px-4 py-1 text-sm text-white font-medium bg-blue-600 rounded-full"
                         >
-                            🧹 Clear Filter
+                            ↪ Clear Filter
                         </button>
                     )}
 
@@ -142,7 +152,10 @@ export default function FilterPopup({ open, onApply, onClose }) {
                         return (
                             <button
                                 key={s.key}
-                                onClick={() => setActive(s.key)}
+                                onClick={() => {
+                                    setActive(s.key)
+                                    setSearch('');
+                                }}
                                 className={`w-full text-left px-3 py-2 rounded text-sm flex justify-between ${active === s.key ? "bg-blue-50 text-blue-700 font-medium" : "hover:bg-gray-100"}`}>
                                 <span>{s.label}</span>
                                 {count > 0 && (
@@ -174,12 +187,27 @@ export default function FilterPopup({ open, onApply, onClose }) {
                     {(SECTIONS.length > 1) && SECTIONS.slice(0, 6).map(s => (
                         active === s.key && (
                             <div key={s.key}>
-                                <h4 className="text-sm font-semibold mb-5">
-                                    {s.label}
-                                </h4>
+
+                                <div className="flex items-center justify-evenly align-middle mb-4">
+                                    <div className="flex-1">
+                                        <h4 className="text-base font-semibold">
+                                            {s.label}
+                                        </h4>
+                                    </div>
+                                    <div className="flex justify-end align-middle flex-1 relative">
+                                        <input
+                                            className="outline-none text-sm border border-gray-300 pl-8 py-1 rounded-md"
+                                            type="text"
+                                            placeholder="Search..."
+                                            value={search}
+                                            onChange={(e) => setSearch(e?.target?.value ?? '')}
+                                        />
+                                        <div className="absolute left-[9px] -top-[6px] text-3xl text-gray-400">⌕</div>
+                                    </div>
+                                </div>
 
                                 <div className="space-y-2 h-[400px] overflow-y-auto">
-                                    {s?.options?.map(opt => (
+                                    {s?.options?.filter(opt => opt?.value?.toLowerCase()?.includes(search.toLowerCase())).map(opt => (
                                         <label
                                             key={opt.id}
                                             className="flex items-center gap-2 text-sm cursor-pointer"
@@ -200,11 +228,15 @@ export default function FilterPopup({ open, onApply, onClose }) {
                     {/* Date Range */}
                     {active === "date" && (
                         <div>
-                            <div className="mb-3 flex justify-between">
-                                <h4 className="text-sm font-semibold">
+                            <div className="mb-3 flex justify-between align-middle items-center">
+                                <h4 className="text-base font-semibold">
                                     Date Range
                                 </h4>
-                                <button onClick={() => setRange({ from: null, to: null })}>⟳ Reset</button>
+                                <button
+                                    className="border rounded-md border-gray-400 py-0.5 px-3"
+                                    onClick={() => setRange({ from: null, to: null })}
+                                >⟳ Reset</button>
+
                             </div>
 
                             <DayPicker

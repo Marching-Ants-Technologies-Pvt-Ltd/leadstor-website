@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { STATUS, MonthNameAsKey, MonthNameByIndex } from './paymentUtils';
+import { STATUS, MonthNameAsKey, MonthNameByIndex } from '../paymentUtils';
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
@@ -84,7 +84,7 @@ export default function JoineeInstallmentForm({
                     Installment | {record?.type ?? '?'}
                 </h3>
 
-                <p className="text-xs text-gray-600 mt-0.5 border-b border-gray-200 pb-4">
+                <p className="text-sm text-gray-600 mt-0 border-b border-gray-200 pb-4">
                     Please make sure the details you provide are correct, also you are free to edit this anytime
                 </p>
 

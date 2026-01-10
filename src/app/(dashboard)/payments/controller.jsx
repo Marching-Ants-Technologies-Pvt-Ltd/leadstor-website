@@ -13,21 +13,36 @@ import FilterPopup from './filterPopup';
 
 export default function PaymentsSectionController() {
 
+    const corporateId = Corporate?._id;
+    const router = useRouter();
+    let totalPages = 0;
+    let currentPage = 0;
+
     const [leads, setLeads] = useState(null);
     const [counsellor, setCounsellor] = useState([]);
     const [trainer, setTrainer] = useState([]);
     const [filterParams, setFilterParams] = useState({});
-    const [query, setQuery] = useState({ corporateId: Corporate._id, search: '', order: 'asc', offset: 0, limit: 50 });
     const [filterPopup, setFilterPopup] = useState(false);
     const [openDatePicker, setOpenDatePicker] = useState(false);
     const [sendBulkSMS, setSendBulkSMS] = useState(false);
     const [sendBulkEmail, setSendBulkEmail] = useState(false);
     const searchTimeoutRef = useRef(null);
+    const [downloadReport, setDownloadReport] = useState(false);
+    const [query, setQuery] = useState({
+        corporateId: Corporate._id,
+        search: '',
+        order: 'asc',
+        offset: 0,
+        limit: 50
+    });
 
-    const corporateId = Corporate?._id;
-    const router = useRouter();
-    let totalPages = 0;
-    let currentPage = 0;
+    const [appliedFilters, setAppliedFilters] = useState({
+        selected: {},
+        range: {
+            from: null,
+            to: null
+        }
+    });
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -181,12 +196,33 @@ export default function PaymentsSectionController() {
 
     const exportReport = (data) => {
         data['corporateId'] = Corporate._id;
-        let target = (data?.type || 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
+        let target = (data?.type ?? '' === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
         let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/${target}.php?${jsonToQueryParams(data)}`;
 
         console.log('Export-' + target, data, link);
         window.open(link, '_blank', 'noopener,noreferrer');
 
+    }
+
+    const downloadJoineesReport = (type) => {
+        if (!type) return;
+        if (type === 'Joinee@Detailed_Download') {
+            let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`;
+            console.log('Report:', link);
+            window.open(link, '_blank', 'noopener,noreferrer');
+            return;
+        }
+
+        let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/exportAllJoinees?corporateId=${Corporate._id}`;
+        console.log('Report:', link);
+        window.open(link, '_blank', 'noopener,noreferrer');
+    }
+
+    const base64Encode = (str) => {
+        const bytes = new TextEncoder().encode(str);
+        return btoa(
+            Array.from(bytes, b => String.fromCharCode(b)).join('')
+        );
     }
 
     const sendBulkPaymentAlert = (content, type) => {
@@ -323,11 +359,36 @@ export default function PaymentsSectionController() {
             <FilterPopup
                 open={filterPopup}
                 onApply={(data) => {
-                    console.log('Filter', data);
+                    let isItClearFilterEvent = !(Object.keys(data?.selected ?? {}).length > 0 || data?.range?.from);
+                    console.log('Filter', data, { isItClearFilterEvent });
+                    // Preserve the applied ones
+                    setAppliedFilters(data);
+
+                    // Applying Filter to Query<state>
+                    let doj = '';
+                    let dojend = '';
+                    if (data?.range?.from && data?.range?.to) {
+                        doj = `${data.range.from.getFullYear()}-${pad(data.range.from.getMonth() + 1)}-${pad(data.range.from.getDate())}`;
+                        dojend = `${data.range.to.getFullYear()}-${pad(data.range.to.getMonth() + 1)}-${pad(data.range.to.getDate())}`;
+                    }
+
+                    setQuery(prev => ({
+                        ...prev,
+                        offset: 0,
+                        search: '',
+                        ['label']       : base64Encode((data?.selected?.course_label ?? []).join(',')),
+                        ['source']      : (data?.selected?.source ?? []).join(','),
+                        ['counsellor']  : (data?.selected?.counsellor ?? []).join(','),
+                        ['trainer']     : (data?.selected?.trainer ?? []).join(','),
+                        ['batchid']     : (data?.selected?.batch_name ?? []).join(','),
+                        ['status']      : (data?.selected?.status ?? []).join(','),
+                        ['doj']         : doj,
+                        ['dojend']      : dojend
+                    }));
+
                 }}
                 onClose={() => setFilterPopup(false)}
             />
-
 
             <div className="bg-white border-b border-slate-200 px-5 py-3 flex justify-between items-center">
                 <div className="flex gap-7 text-xs text-slate-500">
@@ -362,28 +423,57 @@ export default function PaymentsSectionController() {
                     <button className="border px-2 py-1 rounded" onClick={(e) => router.push('/payments/create')}>➕</button>
                     <button className="border px-2 py-1 rounded" onClick={() => openTextArea('SMS')}>📱</button>
                     <button className="border px-2 py-1 rounded" onClick={() => openTextArea('Email')}>📤</button>
-                    <button className="border px-2 py-1 rounded" onClick={() => setFilterPopup({ counsellor, trainer, filterParams })}>🔬</button>
+                    <button
+                        className="border px-2 py-1 rounded relative"
+                        onClick={() => setFilterPopup({ counsellor, trainer, filterParams, applied: appliedFilters })}
+                    >
+                        <span>🔬</span>
+                        {(Object.keys(appliedFilters?.selected ?? {}).length > 0 || appliedFilters?.range?.from) &&
+                            <div className='pointer-events-none'>
+                                <div className='h-3 w-3 bg-blue-600 absolute -top-1.5 -right-1 rounded-full'></div>
+                                <div className='h-3 w-3 bg-blue-600 absolute -top-1.5 -right-1 rounded-full animate-ping'></div>
+                            </div>
+                        }
 
-                    <ReportDropdown
-                        onChange={(value, label) => {
+                    </button>
 
-                            if (value.includes('Custom')) {
-                                setOpenDatePicker(value);
-                                return;
-                            }
+                    {/* Backdrop: Report Download */}
+                    {downloadReport && <div onClick={() => setDownloadReport(false)} className="absolute inset-0 bg-transparent z-10" />}
+                    <div className="relative w-44 text-sm">
+                        <button
+                            onClick={() => setDownloadReport({ filtered: (Object.keys(appliedFilters?.selected ?? {}).length > 0 || appliedFilters?.range?.from) })}
+                            className="w-full border rounded px-3 py-2 text-left bg-white flex justify-between items-center">
+                            <span>Download Report</span>
+                            <span className="text-gray-400">⏷</span>
+                        </button>
+                        <ReportDropdown
+                            onChange={(value, label) => {
 
-                            let [type, interval] = value.split('@')
-                            let payload = {
-                                type,
-                                fileName: `ConceptNinjas_${type}_${label}`,
-                                monthInterval: interval,
-                                qutype: 1
-                            }
+                                if (value.includes('Custom')) {
+                                    setOpenDatePicker(value);
+                                    return;
+                                }
 
-                            exportReport(payload);
+                                if (value.includes('Download')) {
+                                    downloadJoineesReport(value);
+                                    return;
+                                }
 
-                        }}
-                    />
+                                let [type, interval] = value.split('@')
+                                let payload = {
+                                    type,
+                                    fileName: `ConceptNinjas_${type}_${label}`,
+                                    monthInterval: interval,
+                                    qutype: 1
+                                }
+
+                                exportReport(payload);
+                                setDownloadReport(false);
+                            }}
+
+                            open={downloadReport}
+                        />
+                    </div>
 
                     <button className="border px-2 py-1 rounded" data-status="0" onClick={filterPendingPayments}>📢<span className='text-rose-500 pointer-events-none' style={{ display: "none" }}>&bull; Reset ✘</span></button>
 
