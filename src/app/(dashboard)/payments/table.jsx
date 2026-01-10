@@ -4,6 +4,8 @@ import { useState } from 'react';
 import ConfirmDelete from '@/components/elements/ConfirmDelete';
 import AssignPopup from './assignPopup';
 import BatchInfoModel from './batchInfoModel';
+import CompletedInstallments from './completedInstallmentsModel';
+import PendingInstallments from './pendingInstallmentsModel';
 
 export default function PaymentsTable({
     rows = [],
@@ -14,12 +16,15 @@ export default function PaymentsTable({
     trainers = {},
     changeCounsellorOrTrainer = null,
     checkUncheckRows = null,
+    downloadReceipt = null,
 }) {
 
     const [toDelete, setToDelete] = useState(0);
     const [assignedTrainer, setAssignedTrainer] = useState(null);
     const [assignedCounsellor, setAssignedCounsellor] = useState(null);
     const [batchId, setBatchId] = useState(null);
+    const [completedInstallment, setCompletedInstallment] = useState(null);
+    const [pendingInstallment, setPendingInstallment] = useState(null);
 
     const getStatusFormatted = (value) => {
         const statusMap = {
@@ -56,7 +61,6 @@ export default function PaymentsTable({
         if (type === 'counsellor') return counsellors[parsedId] ?? defaultValue;
         return defaultValue;
     }
-
 
     return (
         <>
@@ -102,6 +106,19 @@ export default function PaymentsTable({
             <BatchInfoModel
                 open={batchId}
                 onClose={() => setBatchId(null)}
+            />
+
+            <CompletedInstallments 
+                open={completedInstallment}
+                onLinkClick={(trackingId, installmentNumber) => {
+                    downloadReceipt({ trackingId, installmentNumber });
+                }}
+                onClose={() => setCompletedInstallment(null)}
+            />
+
+            <PendingInstallments
+                open={pendingInstallment}
+                onClose={() => setPendingInstallment(null)}
             />
 
             <table className="text-[13px] border-collapse bg-white" id='paymentsReportTable'>
@@ -158,8 +175,14 @@ export default function PaymentsTable({
                             </td>
                             <td className="p-2">{item?.doj || '-'}</td>
                             <td className="p-2 text-right">{item?.agreedPayment || '0'}</td>
-                            <td className="p-2 cell-right amount-received">{item?.completedPayment || '0'}</td>
-                            <td className="p-2 cell-right amount-pending">{item?.pendingAmount || '0'}</td>
+                            <td onClick={() => setCompletedInstallment({amount: item?.completedPayment || '0', id: item?.id })}
+                                className="p-2 cell-right amount-received cursor-pointer">
+                                {item?.completedPayment || '0'}
+                            </td>
+                            <td onClick={() => setPendingInstallment({amount: item?.pendingAmount || '0', id: item?.id })}
+                                className="p-2 cell-right amount-pending cursor-pointer">
+                                {item?.pendingAmount || '0'}
+                            </td>
                             <td className="p-2 text-right">
                                 <span className={((item?.pendingAmount || '0') !== "0") ? 'text-rose-500' : ''}>{item?.balance || '0'}</span>
                             </td>

@@ -10,6 +10,7 @@ import ReportDropdown from './reportMenu';
 import DatePickerModal from '@/components/elements/DatePickerModal';
 import TextareaModal from '@/components/elements/TextareaModal';
 import FilterPopup from './filterPopup';
+import PaymentAnalyticsOfTheDay from './analytics';
 
 export default function PaymentsSectionController() {
 
@@ -218,6 +219,12 @@ export default function PaymentsSectionController() {
         window.open(link, '_blank', 'noopener,noreferrer');
     }
 
+    const downloadPaymentReceipt = (payload) => {
+        let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/generateReceipt?${jsonToQueryParams(payload)}`;
+        console.log('Report:', link);
+        window.open(link, '_blank', 'noopener,noreferrer');
+    }
+
     const base64Encode = (str) => {
         const bytes = new TextEncoder().encode(str);
         return btoa(
@@ -227,9 +234,23 @@ export default function PaymentsSectionController() {
 
     const sendBulkPaymentAlert = (content, type) => {
         let rows = [...document.querySelectorAll('table#paymentsReportTable tbody td input[type=checkbox]:checked')].map(i => i.id);
-        let payload = { content, type, rows };
+        let payload = { content, type, candidates: rows.join(',') };
         checkUncheckRows();
         console.log('SEND BULK', payload);
+
+        xFetch({
+            method: 'POST',
+            path: '/services/joinees/sendPaymentNotification',
+            payload: payload
+        })
+            .then(data => {
+                console.log(data);
+                toast(`${type} sent successfully to ${rows.length} joinees.`);
+            })
+            .catch(error => {
+                console.error(`An error occurred while sending notification`, error);
+                toast.error('Server error occurred, Try again');
+            });
     }
 
     const openTextArea = (type) => {
@@ -391,29 +412,12 @@ export default function PaymentsSectionController() {
             />
 
             <div className="bg-white border-b border-slate-200 px-5 py-3 flex justify-between items-center">
-                <div className="flex gap-7 text-xs text-slate-500">
-                    <div>
-                        <div>Total Outstanding</div>
-                        <div className="text-base font-semibold text-slate-900">₹ 12,48,350</div>
-                    </div>
-                    <div>
-                        <div>Overdue</div>
-                        <div className="text-base font-semibold text-red-600">₹ 3,10,001</div>
-                    </div>
-                    <div>
-                        <div>Due Today</div>
-                        <div className="text-base font-semibold text-amber-600">₹ 85,000</div>
-                    </div>
-                    <div>
-                        <div>Collected Today</div>
-                        <div className="text-base font-semibold text-green-600">₹ 1,25,000</div>
-                    </div>
-                </div>
+                <PaymentAnalyticsOfTheDay />
 
                 <div className="flex gap-2">
-                    <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50">📩 Send Payment Link</button>
+                    <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50">🔗‍️ Send Payment Link</button>
                     <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50">📝 Add Note</button>
-                    <button className="px-4 py-2 text-sm rounded bg-blue-600 text-white">💳 Mark as Collected</button>
+                    <button className="px-4 py-2 text-sm rounded bg-blue-600 text-white">Payment Analytics</button>
                 </div>
             </div>
 
@@ -495,6 +499,7 @@ export default function PaymentsSectionController() {
                         trainers={trainer}
                         changeCounsellorOrTrainer={cbChangeCounsellorOrTrainer}
                         checkUncheckRows={checkUncheckRows}
+                        downloadReceipt={downloadPaymentReceipt}
                     />
                 </div>
 
