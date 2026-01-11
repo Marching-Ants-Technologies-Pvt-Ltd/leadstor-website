@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
 import DayPickerModal from '@/components/elements/DayPickerModel';
@@ -23,6 +24,7 @@ import { ToastContainer, toast, Bounce } from 'react-toastify';
 
 export default function JoineePaymentForm({ payment_id }) {
 
+    const router = useRouter();
     const notesRef = useRef(null);
     const corporateId = Corporate?._id;
     const [highlight, setHighlight] = useState(false);
@@ -34,6 +36,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [currentInstallment, setCurrentInstallment] = useState(null);
     const [showInfo, setShowInfo] = useState(true)
     const [courseFee, setCourseFee] = useState([]);
+    const [batch, setBatch] = useState([]);
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -102,7 +105,6 @@ export default function JoineePaymentForm({ payment_id }) {
         return (amt * pct) / 100;
     }
 
-
     const onInfoChange = (key, value) => {
         console.log('Info Changed', key, value);
 
@@ -168,10 +170,15 @@ export default function JoineePaymentForm({ payment_id }) {
             const gst = parseInt(prev.gst ?? '0', 10);
 
             const discountedAmount = Math.max(baseFee - discount, 0);
-            const gstAmount = gst >= 1 ? Math.round((discountedAmount * gst) / 100) : 0;
-            const finalAmount = discountedAmount + gstAmount;
+            const gstAmount =
+                Number.isFinite(gst) && gst >= 1
+                    ? Math.round((discountedAmount * gst) / 100)
+                    : 0;
 
-            //console.log({ baseFee, discount, discountedAmount, gst, gstAmount, finalAmount });
+            const rawFinalAmount = discountedAmount + gstAmount;
+            const finalAmount = Number.isNaN(rawFinalAmount) ? baseFee : rawFinalAmount;
+
+            console.log({ baseFee, discount, discountedAmount, gst, gstAmount, rawFinalAmount, finalAmount });
 
             return {
                 ...prev,
@@ -225,8 +232,88 @@ export default function JoineePaymentForm({ payment_id }) {
 
     }
 
+    const getBatchLabelMapping = (batches = []) => {
+        return batches
+            .map(batchId => {
+                const found = batch.find(b => b.batchId === batchId);
+                return found
+                    ? { batchId, labelId: found.labelId }
+                    : null;
+            })
+            .filter(Boolean);
+    }
+
+    const validatePayload = (payload) => {
+        const requiredFields = [
+            'name',
+            'email',
+            'mobile',
+            'doj',
+            'label',
+            'addressLine1',
+            'addressLine2',
+            'source',
+            'admission_status_id',
+            'agreedPayment'
+        ];
+
+        return requiredFields.every(field => {
+            const value = payload[field];
+
+            // check for undefined, null, empty string, or string with only spaces
+            return value !== undefined &&
+                value !== null &&
+                !(typeof value === 'string' && value.trim() === '');
+        });
+    }
+
     const saveChanges = () => {
-        console.log('To Save', candidate);
+        let payload = { ...candidate };
+        console.log('To Save', payload);
+
+        // Check For Remarks
+        if (payload.remarks === '') {
+            if (payload.last_remark === '') {
+                // Ask For Remarks
+                toast.warning('Please, enter a remark before you save this changes.');
+                scrollToNotes();
+                return;
+            }
+
+            payload.remarks = payload.last_remark;
+        }
+
+        // Check For Other Required Fields
+        if (!validatePayload(payload)) {
+            toast.warning('Some required fields are blank! Please check and try again.');
+            return;
+        }
+
+        // Include Tracking Id
+        payload['trackingId'] = payment_id;
+        payload['batches'] = getBatchLabelMapping(payload?.batchId ?? []);
+        console.log('To Save Finally', payload);
+
+        xFetch({
+            method: 'POST',
+            path: '/services/joinees/saveCandidateTrackingDetails',
+            payload,
+        })
+            .then(data => {
+                console.log('Save Response', data);
+
+                if (data.event === 'CREATED') {
+                    router.push(`/payments/${data.id}`);
+                    return;
+                }
+
+                toast.success('Changes Saved Successfully.');
+            })
+            .catch(error => {
+                console.error(`An error occurred while saving joinees details`, error);
+                toast.error('Unable to save details! Please try again');
+            });
+
     }
 
     useEffect(() => {
@@ -242,6 +329,10 @@ export default function JoineePaymentForm({ payment_id }) {
                 payload: { callback: '1' }
             }),
             xFetch({
+                path: '/services/attendance/getBatches',
+                payload: { callback: '1' }
+            }),
+            xFetch({
                 path: '/services/admin/getActiveCurrencyList',
                 payload: { status: '1' }
             }),
@@ -250,12 +341,13 @@ export default function JoineePaymentForm({ payment_id }) {
                 payload: { trackingId: payment_id }
             })
         ])
-            .then(([filterParams, courseFee, currencyList, candidateInfo]) => {
+            .then(([filterParams, courseFee, batch, currencyList, candidateInfo]) => {
                 if (!isMounted) return;
                 setFilterParams(filterParams);
                 setCurrency(currencyList);
                 setCandidate(candidateInfo);
                 setCourseFee(courseFee);
+                setBatch(batch);
 
                 // Set Current Currency
                 let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
@@ -292,8 +384,8 @@ export default function JoineePaymentForm({ payment_id }) {
             <DayPickerModal
                 open={datePicker}
                 onConfirm={(date) => {
+                    if (!date) return;
                     let value = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} 00:00:00`;
-                    console.log('New DOJ', date, value);
                     onInfoChange('doj', value);
                 }}
                 onClose={() => setDatePicker(false)}
@@ -498,7 +590,9 @@ export default function JoineePaymentForm({ payment_id }) {
                             <div className="col-span-2 relative">
                                 <label className="block text-xs text-gray-500 mb-1 relative">
                                     Remarks / Notes
-                                    <span className='text-red-500 font-semibold text-lg absolute ml-1 -mt-1'>*</span>
+                                    {(candidate?.last_remark ?? '') === '' &&
+                                        <span className='text-red-500 font-semibold text-lg absolute ml-1 -mt-1'>*</span>
+                                    }
                                 </label>
                                 <input
                                     ref={notesRef}
@@ -509,7 +603,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                     placeholder="Any special notes from finance or sales"
                                 />
                                 {/* have to edit this tomorrow */}
-                                {((candidate?.lastUpdateDateTime ?? '') !== '' && (candidate?.lastUpdateDateTime ?? '') !== '') &&
+                                {((candidate?.lastUpdateDateTime ?? '') !== '' && (candidate?.last_remark ?? '') !== '') &&
                                     <div className='mt-2 border border-gray-200 bg-gray-50 px-3 py-2 rounded-sm'>
                                         <h4 className='text-xs font-medium text-gray-500 '>Last Remarks &bull; {candidate?.lastUpdateDateTime ?? ''}</h4>
                                         <p className='text-gray-700 py-1'>{candidate?.last_remark ?? ''}</p>

@@ -34,17 +34,27 @@ export default function JoineeInstallmentForm({
     if (!data) return null;
 
     const handleConfirm = async () => {
-        console.log({record, status});
+
+        let payload = {... record};
+        if (!payload?.status) payload['status'] = '0';
+        
+        console.log({record, status, payload});
         // Installment status is changed and it is not 0
-        if (record.status !== status && record.status !== '0'){
+        if (payload.status !== '0' && payload.status !== status){
             if (!record?.receipt_date){
                 console.log(`Installment Status Is Changed But Receipt Date Is not Specified`);
-                onAlert?.(`Please update Payment Receipt Date to update this installment record.`);
+                onAlert?.(`Please update Payment Receipt Date to update this installment.`);
                 return;
             }
         }
 
-        await onConfirm?.(record);
+        // Check installment amount must not be blank or 0
+        if (payload.amount === '' || parseInt(payload.amount) < 1) {
+            onAlert?.(`Please provide a valid amount for this installment.`);
+            return;
+        }
+
+        await onConfirm?.(payload);
         onClose?.();
     };
 
@@ -191,6 +201,7 @@ export default function JoineeInstallmentForm({
                                     onMonthChange={setMonth}
                                     month={month}
                                     onSelect={(date) => {
+                                        if(!date) return;
                                         let receiptDateTxt = `${date.getDate()}-${MonthNameByIndex[date.getMonth()]}-${date.getFullYear()}`
                                         onRecChange("date", receiptDateTxt);
                                     }}
