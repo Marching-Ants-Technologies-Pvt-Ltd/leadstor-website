@@ -106,8 +106,6 @@ export default function JoineePaymentForm({ payment_id }) {
     }
 
     const onInfoChange = (key, value) => {
-        console.log('Info Changed', key, value);
-
         if (key === 'batchId') {
             setCandidate(prev => ({
                 ...prev,
@@ -178,8 +176,6 @@ export default function JoineePaymentForm({ payment_id }) {
             const rawFinalAmount = discountedAmount + gstAmount;
             const finalAmount = Number.isNaN(rawFinalAmount) ? baseFee : rawFinalAmount;
 
-            console.log({ baseFee, discount, discountedAmount, gst, gstAmount, rawFinalAmount, finalAmount });
-
             return {
                 ...prev,
                 agreedPayment: finalAmount
@@ -213,7 +209,6 @@ export default function JoineePaymentForm({ payment_id }) {
             refNum: `${data?.refNo ?? ''}`,
             receiptDate: `${data?.receipt_date ?? ''}`
         };
-        console.log('Installment Edited', data, fixed);
 
         setCandidate(prev => {
             if (!prev) return prev;
@@ -269,7 +264,6 @@ export default function JoineePaymentForm({ payment_id }) {
 
     const saveChanges = () => {
         let payload = { ...candidate };
-        console.log('To Save', payload);
 
         // Check For Remarks
         if (payload.remarks === '') {
@@ -292,7 +286,6 @@ export default function JoineePaymentForm({ payment_id }) {
         // Include Tracking Id
         payload['trackingId'] = payment_id;
         payload['batches'] = getBatchLabelMapping(payload?.batchId ?? []);
-        console.log('To Save Finally', payload);
 
         xFetch({
             method: 'POST',
@@ -300,8 +293,6 @@ export default function JoineePaymentForm({ payment_id }) {
             payload,
         })
             .then(data => {
-                console.log('Save Response', data);
-
                 if (data.event === 'CREATED') {
                     router.push(`/payments/${data.id}`);
                     return;

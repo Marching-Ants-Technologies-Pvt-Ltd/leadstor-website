@@ -53,7 +53,6 @@ export default function BatchInfoModel({ open, onClose }) {
                 payload: { id: open }
             })
                 .then(data => {
-                    console.log((data && data.length > 0) ? data[0] : {});
                     setInfo((data && data.length > 0) ? data[0] : {});
                 })
                 .catch(error => {

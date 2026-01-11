@@ -10,7 +10,6 @@ export default function PaymentAnalyticsOfTheDay() {
             path: '/services/joinees/getPaymentAnalyticsOfTheDay'
         })
             .then(data => {
-                console.log(data);
                 setAnalytics(data);
             })
             .catch(error => {

@@ -14,7 +14,6 @@ export default function CompletedInstallments({ open, onLinkClick, onClose }) {
                 payload: { trackingId: open?.id }
             })
                 .then(data => {
-                    console.log(data);
                     setInfo(data);
                 })
                 .catch(error => {

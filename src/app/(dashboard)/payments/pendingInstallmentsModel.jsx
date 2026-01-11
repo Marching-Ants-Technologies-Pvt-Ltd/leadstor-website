@@ -13,7 +13,6 @@ export default function PendingInstallments({ open, onClose }) {
                 payload: { trackingId: open?.id }
             })
                 .then(data => {
-                    console.log(data);
                     setInfo(data);
                 })
                 .catch(error => {

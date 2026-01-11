@@ -26,7 +26,6 @@ export default function JoineeInstallmentForm({
                 const parsed = parseDate(data.date);
                 setMonth(parsed);
             }
-            console.log(data);
         }
     }, [data]);
 
@@ -38,11 +37,9 @@ export default function JoineeInstallmentForm({
         let payload = {... record};
         if (!payload?.status) payload['status'] = '0';
         
-        console.log({record, status, payload});
         // Installment status is changed and it is not 0
         if (payload.status !== '0' && payload.status !== status){
             if (!record?.receipt_date){
-                console.log(`Installment Status Is Changed But Receipt Date Is not Specified`);
                 onAlert?.(`Please update Payment Receipt Date to update this installment.`);
                 return;
             }

@@ -21,7 +21,6 @@ export default function FilterPopup({ open, onApply, onClose }) {
 
     useEffect(() => {
         if (open) {
-            console.log(open);
             setActive(SECTIONS[0].key);
             setSelected(open?.applied?.selected ?? {});
             setRange({ from: open?.applied?.range?.from, to: open?.applied?.range?.to });

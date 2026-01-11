@@ -29,7 +29,6 @@ export default function JoineeInstallments({
                 open={deleteInstallment}
                 onClose={() => setDeleteInstallment(null)}
                 onConfirm={() => {
-                    console.log('Delete Installment:', deleteInstallment);
                     onInstallmentDelete(deleteInstallment);
                     setDeleteInstallment(null);
                 }}

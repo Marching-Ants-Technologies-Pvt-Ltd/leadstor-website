@@ -123,8 +123,6 @@ export default function PaymentsSectionController() {
         let span = e.target.querySelector('span');
         if (span) span.style.display = (status) ? '' : 'none';
 
-        console.log(`Status: ${status}`, span);
-
         if (status) {
             setQuery((prev) => ({
                 ...prev,
@@ -153,7 +151,6 @@ export default function PaymentsSectionController() {
             payload: { trackingId: id, corporateId: Corporate._id }
         })
             .then(data => {
-                console.log('ChangePlacementReadyStatus', data);
                 toast('Placement Ready Status Updated');
                 refresh();
             })
@@ -170,7 +167,6 @@ export default function PaymentsSectionController() {
             payload: { trackingId: id }
         })
             .then(data => {
-                console.log('ChangePlacementReadyStatus', id);
                 toast('Joinee Record Deleted');
                 refresh();
             })
@@ -181,7 +177,6 @@ export default function PaymentsSectionController() {
     }
 
     const cbChangeCounsellorOrTrainer = (who, payload) => {
-        console.log('Change CouNer', { who, payload });
         xFetch({
             method: 'POST',
             path: `/services/joinees/${(who === 'Counsellor') ? 'updateAssignTo' : 'assignTrainer'}`,
@@ -202,7 +197,6 @@ export default function PaymentsSectionController() {
         let target = (data?.type ?? '' === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
         let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/${target}.php?${jsonToQueryParams(data)}`;
 
-        console.log('Export-' + target, data, link);
         window.open(link, '_blank', 'noopener,noreferrer');
 
     }
@@ -211,19 +205,16 @@ export default function PaymentsSectionController() {
         if (!type) return;
         if (type === 'Joinee@Detailed_Download') {
             let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`;
-            console.log('Report:', link);
             window.open(link, '_blank', 'noopener,noreferrer');
             return;
         }
 
         let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/exportAllJoinees?corporateId=${Corporate._id}`;
-        console.log('Report:', link);
         window.open(link, '_blank', 'noopener,noreferrer');
     }
 
     const downloadPaymentReceipt = (payload) => {
         let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/generateReceipt?${jsonToQueryParams(payload)}`;
-        console.log('Report:', link);
         window.open(link, '_blank', 'noopener,noreferrer');
     }
 
@@ -238,7 +229,6 @@ export default function PaymentsSectionController() {
         let rows = [...document.querySelectorAll('table#paymentsReportTable tbody td input[type=checkbox]:checked')].map(i => i.id);
         let payload = { content, type, candidates: rows.join(',') };
         checkUncheckRows();
-        console.log('SEND BULK', payload);
 
         xFetch({
             method: 'POST',
@@ -246,7 +236,6 @@ export default function PaymentsSectionController() {
             payload: payload
         })
             .then(data => {
-                console.log(data);
                 toast(`${type} sent successfully to ${rows.length} joinees.`);
             })
             .catch(error => {
@@ -386,7 +375,6 @@ export default function PaymentsSectionController() {
                 open={filterPopup}
                 onApply={(data) => {
                     let isItClearFilterEvent = !(Object.keys(data?.selected ?? {}).length > 0 || data?.range?.from);
-                    console.log('Filter', data, { isItClearFilterEvent });
                     // Preserve the applied ones
                     setAppliedFilters(data);
 
