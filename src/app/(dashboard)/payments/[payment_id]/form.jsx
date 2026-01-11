@@ -15,6 +15,12 @@ import {
     MultiSelectField
 } from '@/components/elements/SelectField';
 
+import {
+    InputText,
+    InputTextWithIcon
+} from '@/components/elements/InputFields';
+import { ToastContainer, toast, Bounce } from 'react-toastify';
+
 export default function JoineePaymentForm({ payment_id }) {
 
     const notesRef = useRef(null);
@@ -27,6 +33,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [datePicker, setDatePicker] = useState(false);
     const [currentInstallment, setCurrentInstallment] = useState(null);
     const [showInfo, setShowInfo] = useState(true)
+    const [courseFee, setCourseFee] = useState([]);
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -82,6 +89,20 @@ export default function JoineePaymentForm({ payment_id }) {
         setTimeout(() => setHighlight(false), 2000);
     };
 
+    const calculateMaxDiscount = (amount, percentage) => {
+        if (!amount || !percentage) return 0;
+
+        const amt = Number(amount);
+        const pct = Number(percentage);
+
+        if (isNaN(amt) || isNaN(pct) || amt <= 0 || pct <= 0) {
+            return 0;
+        }
+
+        return (amt * pct) / 100;
+    }
+
+
     const onInfoChange = (key, value) => {
         console.log('Info Changed', key, value);
 
@@ -102,6 +123,31 @@ export default function JoineePaymentForm({ payment_id }) {
         if (key === 'candidate_currency') {
             let cnc = currency?.[value] ?? {};
             setCurrentCurrency(decodeHtml(cnc?.currency_html_code ?? '?'));
+        }
+
+        // Update Standard Fee If Course is Changed
+        if (key === 'label') {
+            let course = courseFee.filter(item => item.course.trim().toLowerCase() === value.trim().toLowerCase());
+            if (course.length < 1) {
+                course = [{
+                    standardFee: 0,
+                    maximumDiscount: 0
+                }]
+            }
+
+            course = course[0];
+            course['maximumDiscountedFees'] = calculateMaxDiscount(course?.standardFee ?? '0', course?.maximumDiscount ?? '0');
+            setCandidate(prev => ({
+                ...prev,
+                batchId: [],
+                discount: 0,
+                stdFee: parseInt(course?.standardFee ?? '0'),
+                maximumDiscount: parseInt(course?.maximumDiscount ?? '0'),
+                maximumDiscountedFees: course?.maximumDiscountedFees
+            }));
+
+            handleCalculation();
+            return;
         }
     }
 
@@ -125,7 +171,7 @@ export default function JoineePaymentForm({ payment_id }) {
             const gstAmount = gst >= 1 ? Math.round((discountedAmount * gst) / 100) : 0;
             const finalAmount = discountedAmount + gstAmount;
 
-            console.log({ baseFee, discount, discountedAmount, gst, gstAmount, finalAmount });
+            //console.log({ baseFee, discount, discountedAmount, gst, gstAmount, finalAmount });
 
             return {
                 ...prev,
@@ -158,6 +204,7 @@ export default function JoineePaymentForm({ payment_id }) {
             date: data?.date ?? null,
             status: `${data?.status ?? '0'}`,
             refNum: `${data?.refNo ?? ''}`,
+            receiptDate: `${data?.receipt_date ?? ''}`
         };
         console.log('Installment Edited', data, fixed);
 
@@ -178,6 +225,10 @@ export default function JoineePaymentForm({ payment_id }) {
 
     }
 
+    const saveChanges = () => {
+        console.log('To Save', candidate);
+    }
+
     useEffect(() => {
         let isMounted = true;
 
@@ -185,6 +236,10 @@ export default function JoineePaymentForm({ payment_id }) {
             xFetch({
                 path: '/services/joinees/getFilterParameters',
                 payload: { corporateId: Corporate._id }
+            }),
+            xFetch({
+                path: '/services/profile/getCourseAndFee',
+                payload: { callback: '1' }
             }),
             xFetch({
                 path: '/services/admin/getActiveCurrencyList',
@@ -195,11 +250,12 @@ export default function JoineePaymentForm({ payment_id }) {
                 payload: { trackingId: payment_id }
             })
         ])
-            .then(([filterParams, currencyList, candidateInfo]) => {
+            .then(([filterParams, courseFee, currencyList, candidateInfo]) => {
                 if (!isMounted) return;
                 setFilterParams(filterParams);
                 setCurrency(currencyList);
                 setCandidate(candidateInfo);
+                setCourseFee(courseFee);
 
                 // Set Current Currency
                 let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
@@ -231,6 +287,7 @@ export default function JoineePaymentForm({ payment_id }) {
                 currency={decodeHtml(currentCurrency)}
                 onChat={onWhatsappButtonClick}
                 gotoNotes={scrollToNotes}
+                onSave={saveChanges}
             />
             <DayPickerModal
                 open={datePicker}
@@ -240,18 +297,32 @@ export default function JoineePaymentForm({ payment_id }) {
                     onInfoChange('doj', value);
                 }}
                 onClose={() => setDatePicker(false)}
-                currentDate={candidate?.doj ?? ''}
             />
 
             <JoineeInstallmentForm
                 data={currentInstallment}
                 onClose={() => setCurrentInstallment(null)}
                 onConfirm={handleChangeInInstallment}
+                onAlert={(message) => toast.info(message)}
+            />
+
+            <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick={false}
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+                transition={Bounce}
             />
 
             {showInfo && (
                 <div className='max-w-[1400px] mx-auto p-6'>
-                    <div className='border border-blue-300 bg-blue-50 -mb-6 p-3 rounded-[10px] flex items-center gap-2 shadow-md'>
+                    <div className='border border-blue-300 bg-blue-50 -mb-6 p-3 rounded-md flex items-center gap-2 shadow-md'>
                         <div>
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" color="#4a90e2" fill="none" stroke="#4a90e2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M19 9.62069C19 12.1999 17.7302 14.1852 15.7983 15.4917C15.3483 15.796 15.1233 15.9482 15.0122 16.1212C14.9012 16.2942 14.8633 16.5214 14.7876 16.9757L14.7287 17.3288C14.5957 18.127 14.5292 18.526 14.2494 18.763C13.9697 19 13.5651 19 12.7559 19H10.1444C9.33528 19 8.93069 19 8.65095 18.763C8.3712 18.526 8.30469 18.127 8.17166 17.3288L8.11281 16.9757C8.03734 16.5229 7.99961 16.2965 7.88968 16.1243C7.77976 15.9521 7.55428 15.798 7.10332 15.4897C5.1919 14.1832 4 12.1986 4 9.62069C4 5.4119 7.35786 2 11.5 2C12.0137 2 12.5153 2.05248 13 2.15244" />
@@ -286,21 +357,21 @@ export default function JoineePaymentForm({ payment_id }) {
 
                         <div className="grid grid-cols-2 gap-4">
 
-                            <Field
+                            <InputText
                                 cbOnChange={handleKeyUp}
                                 label="Candidate Name"
                                 value={candidate?.name || ''}
                                 fieldName='name'
                                 required={true}
                             />
-                            <Field
+                            <InputText
                                 cbOnChange={handleKeyUp}
                                 label="Email"
                                 value={candidate?.email || ''}
                                 fieldName='email'
                                 required={true}
                             />
-                            <Field
+                            <InputText
                                 cbOnChange={handleKeyUp}
                                 label="Mobile"
                                 value={candidate?.mobile || ''}
@@ -310,12 +381,12 @@ export default function JoineePaymentForm({ payment_id }) {
 
                             <div className='relative cursor-pointer'>
                                 <div
-                                    onClick={() => setDatePicker(true)}
+                                    onClick={() => setDatePicker({ date: candidate?.doj ?? '' })}
                                     className='absolute h-11 top-4 left-0 w-full flex justify-end align-middle items-center'
                                 >
                                     <div className='mr-1.5'>📅</div>
                                 </div>
-                                <Field
+                                <InputText
                                     cbOnChange={handleKeyUp}
                                     label="Date Of Joining"
                                     value={formatDOJ(candidate?.doj || '')}
@@ -324,14 +395,27 @@ export default function JoineePaymentForm({ payment_id }) {
                                 />
                             </div>
 
-                            <SelectFieldTypeArray
-                                label="Course / Program"
-                                options={Object.values(filterParams?.labels || {})}
-                                selected={candidate?.label || 'Not Selected'}
-                                cbOnChange={onInfoChange}
-                                fieldName='label'
-                                required={true}
-                            />
+                            <div className='relative'>
+                                <SelectFieldTypeArray
+                                    label="Course / Program"
+                                    options={Object.values(filterParams?.labels || {})}
+                                    selected={candidate?.label || 'Not Selected'}
+                                    cbOnChange={onInfoChange}
+                                    fieldName='label'
+                                    required={true}
+                                />
+                                {Object.entries(candidate?.installments ?? {}).length > 0 &&
+                                    <div onClick={() => toast.info(`Course cannot be changed after first installment.`)} className='absolute top-0 left-0 w-full h-16 cursor-pointer'>
+                                        <div className='absolute right-1.5 p-1 top-6 bg-white cursor-not-allowed'>
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" color="#8E8E8E" fill="none" stroke="#8E8E8E" strokeWidth="2" strokeLinecap="round">
+                                                <path d="M12 16.5V14.5" />
+                                                <path d="M4.2678 18.8447C4.49268 20.515 5.87612 21.8235 7.55965 21.9009C8.97627 21.966 10.4153 22 12 22C13.5847 22 15.0237 21.966 16.4403 21.9009C18.1239 21.8235 19.5073 20.515 19.7322 18.8447C19.8789 17.7547 20 16.6376 20 15.5C20 14.3624 19.8789 13.2453 19.7322 12.1553C19.5073 10.485 18.1239 9.17649 16.4403 9.09909C15.0237 9.03397 13.5847 9 12 9C10.4153 9 8.97627 9.03397 7.55965 9.09909C5.87612 9.17649 4.49268 10.485 4.2678 12.1553C4.12104 13.2453 3.99999 14.3624 3.99999 15.5C3.99999 16.6376 4.12104 17.7547 4.2678 18.8447Z" />
+                                                <path d="M7.5 9V6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5V9" />
+                                            </svg>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
 
                             <MultiSelectField
                                 label="Batch / Intake"
@@ -346,14 +430,14 @@ export default function JoineePaymentForm({ payment_id }) {
                                 fieldName='batchId'
                             />
 
-                            <Field
+                            <InputText
                                 cbOnChange={handleKeyUp}
                                 label="City"
                                 value={candidate?.addressLine1 || ''}
                                 fieldName='addressLine1'
                                 required={true}
                             />
-                            <Field
+                            <InputText
                                 cbOnChange={handleKeyUp}
                                 label="Current Address"
                                 value={candidate?.addressLine2 || ''}
@@ -395,14 +479,14 @@ export default function JoineePaymentForm({ payment_id }) {
 
                         <div className="grid grid-cols-2 gap-4">
 
-                            <Field
+                            <InputText
                                 cbOnChange={handleKeyUp}
                                 label="Name"
                                 placeholder='Full Name'
                                 value={candidate?.parentGuardianName?.replace('null', '') || ''}
                                 fieldName='parentGuardianName'
                             />
-                            <Field
+                            <InputText
                                 cbOnChange={handleKeyUp}
                                 label="Mobile"
                                 placeholder='+91 98XXXXXX10'
@@ -418,9 +502,19 @@ export default function JoineePaymentForm({ payment_id }) {
                                 </label>
                                 <input
                                     ref={notesRef}
+                                    name='remark'
+                                    value={candidate?.remarks ?? ''}
+                                    onChange={(e) => handleKeyUp('remarks', e.target.value)}
                                     className={`w-full outline-none px-[10px] py-2 text-[13px] border ${(highlight) ? 'border-blue-500' : 'border-gray-300'} rounded-md`}
                                     placeholder="Any special notes from finance or sales"
                                 />
+                                {/* have to edit this tomorrow */}
+                                {((candidate?.lastUpdateDateTime ?? '') !== '' && (candidate?.lastUpdateDateTime ?? '') !== '') &&
+                                    <div className='mt-2 border border-gray-200 bg-gray-50 px-3 py-2 rounded-sm'>
+                                        <h4 className='text-xs font-medium text-gray-500 '>Last Remarks &bull; {candidate?.lastUpdateDateTime ?? ''}</h4>
+                                        <p className='text-gray-700 py-1'>{candidate?.last_remark ?? ''}</p>
+                                    </div>
+                                }
                                 {(highlight) &&
                                     <div className='absolute w-full rounded-md -top-[62px] left-20 pointer-events-none animate-bounce'>
                                         <svg
@@ -509,7 +603,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 fieldName='candidate_currency'
                             />
 
-                            <InputGroup
+                            <InputTextWithIcon
                                 label="Standard Fee"
                                 prefix={decodeHtml(currentCurrency)}
                                 value={candidate?.stdFee || '0'}
@@ -517,7 +611,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 fieldName='stdFee'
                             />
 
-                            <InputGroup
+                            <InputTextWithIcon
                                 label="Discount"
                                 prefix={decodeHtml(currentCurrency)}
                                 type="number"
@@ -527,7 +621,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 fieldName='discount'
                             />
 
-                            <InputGroup
+                            <InputTextWithIcon
                                 label="GST Rate (%)"
                                 prefix="%"
                                 type="number"
@@ -537,7 +631,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 fieldName='gst'
                             />
 
-                            <InputGroup
+                            <InputTextWithIcon
                                 label="Total Agreed Payment"
                                 prefix={decodeHtml(currentCurrency)}
                                 value={candidate?.agreedPayment || '0'}
@@ -558,121 +652,6 @@ export default function JoineePaymentForm({ payment_id }) {
                 </div>
 
             </div>
-        </div>
-    );
-}
-
-// Helper Components
-function Field({ label, value, required = false, fieldName, type = "text", placeholder = "", cbOnChange = (e) => { } }) {
-    return (
-        <div>
-            <label className="block text-xs text-gray-500 mb-1 relative">
-                {label}
-                {required && <span className='text-red-500 font-semibold text-lg absolute ml-1 -mt-1'>*</span>}
-            </label>
-            <input
-                name={fieldName}
-                type={type}
-                value={value}
-                placeholder={placeholder}
-                onChange={(e) => cbOnChange(fieldName, e.target.value)}
-                className={`w-full px-[10px] py-2 text-[13px] border border-gray-300 rounded-md focus:border-blue-500 outline-none`}
-            />
-        </div>
-    );
-}
-
-function SelectField({ label, fieldName, required = false, options, selected = '', cbOnChange = (e) => { } }) {
-    if (selected.length > 0 && !options.includes(selected)) options.push(selected);
-    return (
-        <div className='relative'>
-            <label className="block text-xs text-gray-500 mb-1">
-                {label}
-                {required && <span className='text-red-500 font-semibold text-lg absolute ml-1 -mt-1'>*</span>}
-            </label>
-            <select
-                name={fieldName}
-                onChange={(e) => cbOnChange(fieldName, e.target.value)}
-                value={selected}
-                className="w-full px-[10px] py-2 text-[13px] border border-gray-300 rounded-md select-wrapper">
-                {options.map(o => (
-                    <option key={o} value={o}>{o}</option>
-                ))}
-            </select>
-            <div className='w-5 h-5 bg-white absolute bottom-2 right-1 flex justify-start items-center align-middle pointer-events-none'>
-                <svg className='mt-0.5' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" color="#000" fill="none" stroke="#141B34" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9" />
-                </svg>
-            </div>
-        </div>
-    );
-}
-
-function SelectFieldValue({ label, fieldName, required = false, options, selected = '', cbOnChange = (e) => { } }) {
-
-    return (
-        <div className='relative'>
-            <label className="block text-xs text-gray-500 mb-1">
-                {label}
-                {required && <span className='text-red-500 font-semibold text-lg absolute ml-1 -mt-1'>*</span>}
-            </label>
-            <select
-                name={fieldName}
-                onChange={(e) => cbOnChange(fieldName, e.target.value)}
-                className="w-full px-[10px] py-2 text-[13px] border border-gray-300 rounded-md select-wrapper"
-                value={selected}>
-                <option value="">Select {label}</option>
-                {options.map(o => (
-                    <option key={o.id} value={o.id}>{o.value}</option>
-                ))}
-            </select>
-
-            <div className='w-5 h-5 bg-white absolute bottom-2 right-1 flex justify-start items-center align-middle pointer-events-none'>
-                <svg className='mt-0.5' xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" color="#000" fill="none" stroke="#141B34" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9" />
-                </svg>
-            </div>
-        </div>
-    );
-
-}
-
-function InputGroup({ label, fieldName, required = false, readOnly = false, prefix, value, type = "text", helper, cbOnChange = (e) => { } }) {
-    return (
-        <div className='relative'>
-            <label className="block text-xs text-gray-500 mb-1">
-                {label}
-                {required && <span className='text-red-500 font-semibold text-lg absolute ml-1 -mt-1'>*</span>}
-            </label>
-            <div className="relative">
-                <span className="absolute left-0 top-0 bottom-0 w-11 flex items-center justify-center bg-gray-100 border border-r-0 rounded-l-md font-semibold text-gray-700">
-                    {prefix}
-                </span>
-
-                {readOnly ? (
-                    <input
-                        name={fieldName}
-                        type={type}
-                        value={value}
-                        readOnly
-                        className="w-full pointer-events-none cursor-default pl-[52px] pr-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-900"
-                    />
-                ) : (
-                    <input
-                        name={fieldName}
-                        type={type}
-                        value={value}
-                        onChange={(e) => cbOnChange(fieldName, e.target.value)}
-                        className="w-full pl-[52px] pr-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-900 outline-none"
-                    />
-                )}
-            </div>
-
-            {helper && (
-                <span className="block mt-1 text-xs text-gray-500 leading-snug">
-                    {helper}
-                </span>
-            )}
         </div>
     );
 }

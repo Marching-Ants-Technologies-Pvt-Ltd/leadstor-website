@@ -204,8 +204,6 @@ export function MultiSelectField({
         o.value.toLowerCase().includes(search.toLowerCase())
     );
 
-    console.log('SELECTED', selected);
-
     // close on outside click
     useEffect(() => {
         const handler = e => {

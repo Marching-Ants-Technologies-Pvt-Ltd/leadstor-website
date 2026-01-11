@@ -6,10 +6,12 @@ import "react-day-picker/dist/style.css";
 export default function JoineeInstallmentForm({
     data,
     onConfirm,
+    onAlert,
     onClose
 }) {
 
     const [record, setRecord] = useState(null);
+    const [status, setStatus] = useState('0');
     const [datePickerType, setDatePickerType] = useState('installment');
     const [month, setMonth] = useState();
     const [receiptDate, setReceiptDate] = useState(new Date());
@@ -18,6 +20,7 @@ export default function JoineeInstallmentForm({
         if (data) {
             setRecord({ ...data });
             setDatePickerType('installment');
+            setStatus(data?.status ?? '0');
 
             if (data?.date) {
                 const parsed = parseDate(data.date);
@@ -31,6 +34,16 @@ export default function JoineeInstallmentForm({
     if (!data) return null;
 
     const handleConfirm = async () => {
+        console.log({record, status});
+        // Installment status is changed and it is not 0
+        if (record.status !== status && record.status !== '0'){
+            if (!record?.receipt_date){
+                console.log(`Installment Status Is Changed But Receipt Date Is not Specified`);
+                onAlert?.(`Please update Payment Receipt Date to update this installment record.`);
+                return;
+            }
+        }
+
         await onConfirm?.(record);
         onClose?.();
     };
@@ -40,6 +53,10 @@ export default function JoineeInstallmentForm({
             ...prev,
             [key]: value
         }));
+
+        if (key === 'status' && value !== '0') {
+            setDatePickerType('receipt');
+        }
     }
 
     function parseDate(dateStr) {

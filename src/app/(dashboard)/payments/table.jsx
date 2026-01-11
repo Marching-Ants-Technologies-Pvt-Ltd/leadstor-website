@@ -26,6 +26,15 @@ export default function PaymentsTable({
     const [completedInstallment, setCompletedInstallment] = useState(null);
     const [pendingInstallment, setPendingInstallment] = useState(null);
 
+    const formatAmountColumnData = (currency, amount) => {
+        if (!amount) return '0';
+        return (
+            <div>
+                <span className='font-semibold'>{currency ?? ''}</span>&nbsp;{amount}
+            </div>
+        );
+    }
+
     const getStatusFormatted = (value) => {
         const statusMap = {
             Active: "text-green-600",
@@ -108,7 +117,7 @@ export default function PaymentsTable({
                 onClose={() => setBatchId(null)}
             />
 
-            <CompletedInstallments 
+            <CompletedInstallments
                 open={completedInstallment}
                 onLinkClick={(trackingId, installmentNumber) => {
                     downloadReceipt({ trackingId, installmentNumber });
@@ -125,10 +134,10 @@ export default function PaymentsTable({
                 <thead className="bg-slate-100">
                     <tr className="border-b border-slate-200">
                         <th className="p-2">
-                            <input 
-                                className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-blue-500' 
-                                type="checkbox" 
-                                onChange={(e) => checkUncheckRows(e.target.checked)} 
+                            <input
+                                className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500 hover:border-blue-500'
+                                type="checkbox"
+                                onChange={(e) => checkUncheckRows(e.target.checked)}
                             />
                         </th>
                         <th className="p-2 text-left min-w-36">Name</th>
@@ -154,10 +163,10 @@ export default function PaymentsTable({
                     {rows.map(item => (
                         <tr className="hover:bg-slate-50" key={item?.id}>
                             <td className="p-2">
-                                <input 
-                                    className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500' 
-                                    id={item?.id} 
-                                    type="checkbox" 
+                                <input
+                                    className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+                                    id={item?.id}
+                                    type="checkbox"
                                 />
                             </td>
                             <td className="p-2">{item?.name || '-'} <span className='cursor-pointer' onClick={(e) => router.push(`/payments/${item.id}`)}>✏️</span></td>
@@ -177,24 +186,28 @@ export default function PaymentsTable({
                             </td>
                             <td className="p-2">{item?.label || '-'}</td>
                             <td
-                                onClick={() =>setBatchId(item?.batchId ?? '0')}
+                                onClick={() => setBatchId(item?.batchId ?? '0')}
                                 className={`p-2 ${(item?.batchName ?? '').length > 0 ? 'cursor-pointer hover:text-blue-500' : ''}`}
                                 title={(item?.batchName ?? '').length > 1 ? 'View Batch Details' : ''}
                             >
                                 {item?.batchName || '-'}
                             </td>
                             <td className="p-2">{item?.doj || '-'}</td>
-                            <td className="p-2 text-right">{item?.agreedPayment || '0'}</td>
-                            <td onClick={() => setCompletedInstallment({amount: item?.completedPayment || '0', id: item?.id })}
-                                className="p-2 cell-right amount-received cursor-pointer">
-                                {item?.completedPayment || '0'}
+                            <td className="p-2 text-right font-semibold">
+                                {formatAmountColumnData(item?.currency, item?.agreedPayment)}
                             </td>
-                            <td onClick={() => setPendingInstallment({amount: item?.pendingAmount || '0', id: item?.id })}
-                                className="p-2 cell-right amount-pending cursor-pointer">
-                                {item?.pendingAmount || '0'}
+                            <td onClick={() => setCompletedInstallment({ amount: item?.completedPayment || '0', id: item?.id })}
+                                className="p-2 cell-right amount-received cursor-pointer">
+                                {formatAmountColumnData(item?.currency, item?.completedPayment)}
+                            </td>
+                            <td onClick={() => setPendingInstallment({ amount: item?.pendingAmount || '0', id: item?.id })}
+                                className="p-2 cell-right amount-pending cursor-pointer font-semibold">
+                                <div className={((item?.pendingAmount ?? '0') !== "0") ? 'text-amber-500' : ''}>
+                                    {formatAmountColumnData(item?.currency, item?.pendingAmount)}
+                                </div>
                             </td>
                             <td className="p-2 text-right">
-                                <span className={((item?.pendingAmount || '0') !== "0") ? 'text-rose-500' : ''}>{item?.balance || '0'}</span>
+                                {formatAmountColumnData(item?.currency, item?.balance)}
                             </td>
                             <td className="p-2">{item?.remarks || '-'}</td>
                             <td className="p-2">{item?.source || '-'}</td>

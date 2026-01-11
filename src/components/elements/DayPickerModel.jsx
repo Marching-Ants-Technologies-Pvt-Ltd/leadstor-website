@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
@@ -6,20 +6,28 @@ export default function DayPickerModal({
     open,
     onConfirm,
     onClose,
-    currentDate = '',
 }) {
 
+    const [month, setMonth] = useState();
+
+    useEffect(() => {
+        if (open?.date) {
+            const parsed = parseDate(open.date);
+            setMonth(parsed);
+            console.log({ parsed, open });
+        }
+    }, [open]);
+
     if (!open) return null;
+    const selectedDate = open?.date ? parseDate(open.date) : undefined;
 
     const changeInDay = (e) => {
         onConfirm?.(e);
         onClose?.();
     }
 
-    function parseDateTime(dateTimeStr) {
-        if (!dateTimeStr || !dateTimeStr.trim()) return undefined;
-        const isoLike = dateTimeStr.replace(" ", "T");
-        return new Date(isoLike);
+    function parseDate(dateStr) {
+        return new Date(dateStr.replace(" ", "T"));
     }
 
 
@@ -35,12 +43,13 @@ export default function DayPickerModal({
             <div className="relative bg-white rounded-lg shadow-xl px-5 py-4">
                 <DayPicker
                     mode="single"
-                    selected={parseDateTime(currentDate)}
-                    defaultMonth={parseDateTime(currentDate)}
+                    selected={selectedDate}
+                    onMonthChange={setMonth}
+                    month={month}
                     onSelect={changeInDay}
                     numberOfMonths={1}
                     captionLayout="dropdown"
-                    fromYear={new Date().getFullYear() - 2}
+                    fromYear={new Date().getFullYear() - 4}
                     toYear={new Date().getFullYear()}
                     className="mx-auto"
                 />

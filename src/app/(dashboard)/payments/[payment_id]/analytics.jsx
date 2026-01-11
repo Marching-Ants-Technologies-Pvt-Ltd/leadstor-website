@@ -7,7 +7,8 @@ export default function JoineePaymentAnalytics({
     overdue = '0',
     currency = '?',
     onChat = () => {},
-    gotoNotes = () => {}
+    gotoNotes = () => {},
+    onSave = () => {}
 }) {
     return (
         <div className="bg-white border-b border-slate-200 px-5 py-4 flex justify-between items-center">
@@ -37,7 +38,7 @@ export default function JoineePaymentAnalytics({
             <div className="flex gap-2">
                 <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50" onClick={gotoNotes}>📝 Add Note</button>
                 <button className="px-4 py-2 text-sm rounded bg-green-500 text-white" onClick={onChat}>Chat On WhatsApp</button>
-                <button className="px-4 py-2 text-sm border border-blue-500 bg-blue-500 rounded text-white">Save Changes</button>
+                <button className="px-4 py-2 text-sm border border-blue-500 bg-blue-500 rounded text-white" onClick={onSave}>Save Changes</button>
             </div>
         </div>
 

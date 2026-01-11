@@ -91,8 +91,8 @@ export default function BatchInfoModel({ open, onClose }) {
                         </h3>
                         <p className="text-sm text-gray-600">{info?.batchName ?? 'Unnamed Batch Name'}</p>
                         <div className="flex gap-2 mt-3 border-t border-gray-300 pt-4">
-                            <div className="bg-green-600 text-white text-xs rounded-md py-1 px-3 font-medium">Progress {info?.batchProgress ?? '0'}%</div>
-                            <div className="border border-gray-400 text-xs font-medium text-gray-600 rounded-md py-1 px-3">{info?.status ?? 'Unknown Status'}</div>
+                            <div className="bg-blue-600 text-white text-xs rounded-sm py-1 px-3 font-medium">Progress {info?.batchProgress ?? '0'}%</div>
+                            <div className="border border-gray-400 text-xs font-medium text-gray-600 rounded-sm py-1 px-3">{info?.status ?? 'Unknown Status'}</div>
                         </div>
                         <p className="mt-3 text-base text-gray-700"><span className="font-medium">{info?.batchName ?? 'Unnamed Batch Name'}</span> batch {getDateStatus(info?.batchStartDate ?? '', 'start')} {info?.batchStartDate ?? ''}, with a capacity of {info?.batchTotalAllowedCount ?? 0} candidates. It {getDateStatus(info?.batchEndDate ?? '', 'end')} {info?.batchEndDate ?? ''}. This batch {getDateStatus(info?.batchEndDate ?? '', 'end').includes('was') ? 'was' : 'is'} scheduled between {info?.startTime ?? ''} and {info?.endTime ?? ''}.</p>
                     </div>
