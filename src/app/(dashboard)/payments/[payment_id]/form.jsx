@@ -375,7 +375,8 @@ export default function JoineePaymentForm({ payment_id }) {
     return (
         <div>
             <JoineePaymentAnalytics
-                agreed={candidate?.agreedPayment ?? '0'}
+                agreedPayment={candidate?.agreedPayment ?? '0'}
+                installments={candidate?.installments ?? {}}
                 currency={decodeHtml(currentCurrency)}
                 onChat={onWhatsappButtonClick}
                 gotoNotes={scrollToNotes}

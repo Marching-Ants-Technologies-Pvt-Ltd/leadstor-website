@@ -79,10 +79,11 @@ export default function JoineeInstallments({
 function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, status = '0', refNo = '', onDelete = (e) => { }, onEdit = (e) => { } }) {
 
     let statusText = STATUS?.[status] ?? 'Not Paid';
+    let statusInt = Number(status || 0);
     return (
         <div className="flex rounded-xl border bg-white overflow-hidden mt-2">
 
-            <div className={`group/item w-14 text-white flex flex-col items-center py-3 transition-colors has-[button:hover]:bg-red-500 ${(status === '0') ? 'bg-yellow-400' : 'bg-green-500'} `}>
+            <div className={`group/item w-14 text-white flex flex-col items-center py-3 transition-colors has-[button:hover]:bg-red-500 ${(statusInt < 1) ? 'bg-yellow-400' : (statusInt > 9) ? 'bg-blue-500' : 'bg-green-500'}`}>
                 <span className="font-bold">#{counter}</span>
                 <button className="mt-auto hover:scale-110 transition-transform" onClick={() => onDelete(counter)}>
                     <svg className="pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" color="#ffffff" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round">
@@ -107,7 +108,7 @@ function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, st
 
                 <div className="flex justify-between">
                     <span className="text-gray-500">Status</span>
-                    <span title='Click to edit' className={`font-medium cursor-pointer ${(status === '0') ? 'text-yellow-500' : 'text-green-500'}`}>
+                    <span title='Click to edit' className={`font-medium cursor-pointer ${(statusInt < 1) ? 'text-amber-500' : (statusInt > 9) ? 'text-blue-500' : 'text-green-500'}`}>
                         {statusText}
                     </span>
                 </div>
