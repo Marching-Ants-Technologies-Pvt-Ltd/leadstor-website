@@ -25,6 +25,7 @@ import {
   flexRender,
   ColumnDef,
 } from '@tanstack/react-table';
+import RelatedEnquiries from '@/components/dashboard/Lead/RelatedEnquiries';
 
 let setLeadsFn;
 
@@ -57,7 +58,8 @@ export default function LeadsTable({
     const [showTimeline, setShowTimeline] = useState(false);
     const [selectedLeadForTimeline, setSelectedLeadForTimeline] = useState(null);
     const [selectedLead, setSelectedLead] = useState({});
-
+    const [expandedRows, setExpandedRows] = useState({});
+    const [expandedRowId, setExpandedRowId] = useState(null);
     const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
     const [callerCandidate, setCallerCandidate] = useState(null);
 
@@ -529,6 +531,10 @@ export default function LeadsTable({
         };
     }, []);
 
+    const handleToggle = (rowId) => {
+        setExpandedRowId(prev => (prev === rowId ? null : rowId));
+    };
+
     /* =======================
      TANSTACK COLUMN DEFINITIONS
      ======================= */
@@ -536,9 +542,10 @@ export default function LeadsTable({
     const tableColumns = useMemo(() => {
         const cols = [];
 
-        // Checkbox column
+        // Checkbox + Expand column
         cols.push({
         id: 'select',
+        size: 60,
         header: () => (
             <input
             ref={selectAllRef}
@@ -554,20 +561,42 @@ export default function LeadsTable({
             }
             />
         ),
-        cell: ({ row }) => (
-            <input
-            type="checkbox"
-            checked={selectedLeadIds.includes(row.original.invitationId)}
-            onChange={(e) =>
-                setSelectedLeadIds(
-                e.target.checked
-                    ? [...selectedLeadIds, row.original.invitationId]
-                    : selectedLeadIds.filter(id => id !== row.original.invitationId)
-                )
-            }
-            />
-        ),
+        cell: ({ row }) => {
+            const isExpanded = row.getIsExpanded();
+
+            return (
+            <div className="flex items-center gap-2">
+                {/* Expand Icon */}
+                <button
+                type="button"
+                onClick={() => handleToggle(row.id)}
+                className="text-lg text-gray-500 hover:text-emerald-600 transition"
+                title={isExpanded ? "Collapse" : "Expand"}
+                >
+                {expandedRowId === row.id ? (
+                <i className="ri-subtract-line" />
+                ) : (
+                <i className="ri-add-line" />
+                )}
+                </button>
+
+                {/* Checkbox */}
+                <input
+                type="checkbox"
+                checked={selectedLeadIds.includes(row.original.invitationId)}
+                onChange={(e) =>
+                    setSelectedLeadIds(
+                    e.target.checked
+                        ? [...selectedLeadIds, row.original.invitationId]
+                        : selectedLeadIds.filter(id => id !== row.original.invitationId)
+                    )
+                }
+                />
+            </div>
+            );
+        },
         });
+
 
         columnOrder.forEach(col => {
         cols.push({
@@ -590,6 +619,7 @@ export default function LeadsTable({
             return r[col] ?? '-';
             }
         });
+        
         });
 
         return cols;
@@ -599,6 +629,11 @@ export default function LeadsTable({
         data: leads,
         columns: tableColumns,
         getCoreRowModel: getCoreRowModel(),
+        state: {
+            expanded: expandedRows,
+        },
+        onExpandedChange: setExpandedRows,
+        getRowId: (row) => row.invitationId,
     });
 
     return (
@@ -634,7 +669,7 @@ export default function LeadsTable({
                 >
                     <div className="flex flex-col items-center gap-2">
                     <i className="ri-search-line text-2xl text-slate-400" />
-                    <div className="font-medium">
+                    <div className="font-medium text-center">
                         No results found
                     </div>
                     {LeadSearch.value() && (
@@ -646,21 +681,43 @@ export default function LeadsTable({
                 </td>
                 </tr>
             ) : (
-                table.getRowModel().rows.map(row => (
-                <tr
-                    key={row.id}
-                    className="border-b hover:bg-slate-50 transition h-[44px] align-top"
-                >
-                    {row.getVisibleCells().map(cell => (
-                    <td key={cell.id} className="w-32 p-2">
-                        {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                        )}
-                    </td>
-                    ))}
-                </tr>
-                ))
+                table.getRowModel().rows.flatMap(row => {
+                    const rows = [];
+
+                    // MAIN ROW
+                    rows.push(
+                        <tr
+                        key={row.id}
+                        className="border-b hover:bg-slate-50 transition h-[44px] align-top"
+                        >
+                        {row.getVisibleCells().map(cell => (
+                            <td key={cell.id} className="w-32 p-2 align-top">
+                            {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                            )}
+                            </td>
+                        ))}
+                        </tr>
+                    );
+
+                    if (expandedRowId === row.id) {
+                        rows.push(
+                        <tr key={`${row.id}-expanded`}>
+                            <td colSpan={table.getAllColumns().length} className="p-0">
+                            <RelatedEnquiries
+                                testId={row.original.testId}
+                                emailId={row.original.emailId}
+                                mobile={row.original.mobile}
+                                invitationId={row.original.invitationId}
+                            />
+                            </td>
+                        </tr>
+                        );
+                    }
+
+                    return rows;
+                })
             )}
             </tbody>
 

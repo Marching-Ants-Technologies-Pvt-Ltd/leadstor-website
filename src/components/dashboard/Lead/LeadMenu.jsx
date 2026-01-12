@@ -305,7 +305,7 @@ export default function LeadsMenu({
         />
       )}
       {showBulkUpdateDrawer && (
-        <BulkUpdateDrawer open onClose={() => setShowBulkUpdateDrawer(false)} />
+        <BulkUpdateDrawer open onClose={() => setShowBulkUpdateDrawer(false)} selectedIds={selectedLeadIds}/>
       )}
       {dailyReport && <DailyReportModal isOpen onClose={() => setDailyReport(false)} />}
       {showExportModal && (

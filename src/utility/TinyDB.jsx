@@ -7,7 +7,6 @@ let LeadOwnersById = {};
 if (typeof window !== 'undefined') {
     try {
         CurrentSessionData = JSON.parse(localStorage.getItem('CurrentSessionData') ?? '{}');
-        console.log('bb');
         LeadOwnersById = JSON.parse(localStorage.getItem('LeadOwnersById') ?? '{}');
     } catch (e) {
         console.error(`Unable to parse current state of user`, e);
