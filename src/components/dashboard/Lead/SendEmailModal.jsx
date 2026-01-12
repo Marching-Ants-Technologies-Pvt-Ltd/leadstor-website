@@ -102,9 +102,19 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
   // Send email logic (matches legacy API)
   const handleSend = async () => {
     if (!allFieldsFilled) return;
+
     setIsSending(true);
+
+    const loadingToast = toast.loading("Sending emails to selected candidates...", {
+      position: "top-center",
+      autoClose: false,
+      closeOnClick: false,
+      pauseOnHover: false,
+      draggable: false,
+      hideProgressBar: true,
+    });
+
     try {
-      // Always use FormData for this endpoint, but use xFetch with isFormData like manualCandidate
       const formData = new FormData();
       formData.append('ids', Array.isArray(ids) ? ids.join(',') : ids);
       formData.append('type', 'Email');
@@ -114,52 +124,74 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
       formData.append('corporateId', Corporate?._id || '');
       formData.append('userId', User?._id || '');
       if (attachment) formData.append('attachment', attachment);
+
       let response;
       try {
         response = await xFetch({
           method: 'POST',
-          path: '/leadstorredirect/sendInviteNotification',
+          path: '/services/invite/sendEmailNotification',
           payload: formData,
-          isFormData: true
+          isFormData: true,
         });
-      } catch (error) {
-        // Defensive handling for invalid JSON or HTML error pages
-        if (error instanceof SyntaxError || (typeof error.message === 'string' && error.message.includes('Unexpected token'))) {
-          toast.error('Server error: Invalid response. Please contact support.');
-          return;
-        } else if (error.response && error.response.data) {
-          toast.error(error.response.data.message || 'Failed to send Email');
-          return;
+      } catch (fetchError) {
+        // Handle network / parsing errors gracefully
+        toast.dismiss(loadingToast);
+
+        if (fetchError instanceof SyntaxError || 
+            (typeof fetchError.message === 'string' && fetchError.message.includes('Unexpected token'))) {
+          toast.error('Server returned invalid response. Please contact support.', {
+            position: "top-center",
+          });
+        } else if (fetchError.response?.data?.message) {
+          toast.error(fetchError.response.data.message, { position: "top-center" });
         } else {
-          toast.error(error.message || 'Failed to send Email');
-          return;
+          toast.error(fetchError.message || 'Network error while sending emails', {
+            position: "top-center",
+          });
         }
+        return;
       }
-      if (response && response.status === 'Failed') {
-        toast.error(response.message || 'Failed to send Email');
-      } else if (response && (response.status === 'OK' || response.sent > 0)) {
-        toast.success('Email sent successfully to selected leads');
+
+      // Dismiss loading toast before showing result
+      toast.dismiss(loadingToast);
+
+      // Handle backend response
+      if (response?.status === 'Failed') {
+        toast.error('Failed to send emails.', {
+          position: "top-center",
+          autoClose: 5000,
+        });
+      } else if (response?.status === 'success') {
+        toast.success('Email sent successfully to selected leads', {
+          position: "top-center",
+          autoClose: 4000,
+        });
+
+        // Reset form fields
         setCc('');
         setSubject('');
         setMessage('Dear $firstName');
         setAttachment(null);
         setTemplateId('');
+        window.tableRefresh();
         onClose();
       } else {
-        toast.error('Failed to send Email');
+        toast.error('Failed to send emails - unexpected response from server', {
+          position: "top-center",
+        });
       }
     } catch (error) {
-      if (error.response && error.response.data) {
-        toast.error(error.response.data.message || 'Failed to send Email');
-      } else {
-        toast.error(error.message || 'Failed to send Email');
-      }
+      toast.dismiss(loadingToast);
+
+      toast.error(error.message || 'An unexpected error occurred while sending emails', {
+        position: "top-center",
+        autoClose: 6000,
+      });
     } finally {
       setIsSending(false);
     }
   };
 
-  
   const drawerStyle = {
     position: 'fixed',
     top: 0,
