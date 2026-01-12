@@ -1,316 +1,212 @@
 import React, { useState, useEffect } from 'react';
-import CustomSelect from '@/components/CustomSelect';
 import { toast } from 'react-toastify';
+import CustomSelect from '@/components/CustomSelect';
+import { UseFilterOptionsStore } from '@/utility/UseFilterOptionsStore';
+import { User } from '@/utility/TinyDB';
+import { xFetch } from '@/utility/xFetch';
 
-export default function BulkUpdateDrawer({ 
-  open, 
-  onClose, 
-  onUpdate, 
-  sourceOptions = [], 
-  ownerOptions = [], 
-  courseOptions = [], 
-  statusOptions = [], 
-  selectedIds = [] 
+export default function BulkUpdateDrawer({
+  open,
+  onClose,
+  selectedIds
 }) {
-  // State management
-  const [selectedSource, setSelectedSource] = useState('');
-  const [selectedOwner, setSelectedOwner] = useState('');
-  const [selectedCourse, setSelectedCourse] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
+  const [selectedOwner, setSelectedOwner] = useState('');
+  const [selectedProbability, setSelectedProbability] = useState('');
   const [loading, setLoading] = useState(false);
+  const {
+    status,
+    owner,
+    fetchFilterOptions,
+  } = UseFilterOptionsStore();
 
-  
+  useEffect(() => {
+      fetchFilterOptions();
+  }, [fetchFilterOptions]);
+
+  // Reset fields when drawer closes
   useEffect(() => {
     if (!open) {
-      setSelectedSource('');
       setSelectedOwner('');
-      setSelectedCourse('');
       setSelectedStatus('');
+      setSelectedProbability('');
     }
   }, [open]);
 
-  
   if (!open) return null;
 
-  
   const handleUpdate = async () => {
-    const hasSelection = selectedSource || selectedOwner || selectedCourse || selectedStatus;
+    const hasSelection =
+      selectedOwner || selectedStatus || selectedProbability;
+
     if (!hasSelection) {
-      toast.warn('Please select at least one field to update');
+      toast.warn('Please select at least one field to update', {
+        position: 'top-center',
+      });
       return;
     }
 
     if (selectedIds.length === 0) {
-      toast.warn('No leads selected for update');
+      toast.warn('No leads selected for update', {
+        position: 'top-center',
+      });
       return;
     }
 
     setLoading(true);
-    try {
-      const result = await onUpdate({
-        source: selectedSource,
-        owner: selectedOwner,
-        course: selectedCourse,
-        status: selectedStatus
-      }, selectedIds);
-      
-      // The parent function now handles all toast notifications and table refresh
-      // Just close the drawer on completion
-      onClose();
-    } catch (error) {
-      console.error('Bulk update error:', error);
-      toast.error('An error occurred while updating leads');
-    } finally {
+
+    let payload = {
+      invitationId: selectedIds,
+      status: selectedStatus,
+      owner: selectedOwner,
+      leadstatus: selectedProbability,
+      updatedBy: User?._id,
+    };
+    
+    xFetch({
+      path: `/services/invite/updateInvitestatus`,
+      method:  'POST',
+      payload,
+    })
+    .then((data) => {
+      toast.success('Successfully updated');
       setLoading(false);
-    }
+      window.tableRefresh?.();
+      onClose();
+    })
+    .catch((error) => {
+      console.error('Bulk update error:', error);
+      toast.error('Failed to update leads. Please try again.', {
+        position: 'top-center',
+      });
+    })
+    .finally(() => {
+    });
   };
 
-  
-  const isUpdateDisabled = loading || (!selectedSource && !selectedOwner && !selectedCourse && !selectedStatus);
-
-  
-  const overlayStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'rgba(0, 0, 0, 0.4)',
-    zIndex: 1000,
-    opacity: open ? 1 : 0,
-    visibility: open ? 'visible' : 'hidden',
-    transition: 'all 0.3s ease',
-  };
-
-  const drawerStyle = {
-    position: 'fixed',
-    top: 0,
-    right: open ? 0 : '-420px',
-    width: '420px',
-    height: '100vh',
-    background: '#ffffff',
-    zIndex: 1001,
-    transition: 'right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-    boxShadow: '-8px 0 32px rgba(0, 0, 0, 0.12)',
-    display: 'flex',
-    flexDirection: 'column',
-    borderLeft: '1px solid #e5e7eb'
-  };
-
-  const headerStyle = {
-    padding: '24px',
-    borderBottom: '1px solid #e5e7eb',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    background: '#ffffff',
-    minHeight: '72px'
-  };
-
-  const titleStyle = {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: 0,
-    lineHeight: '28px'
-  };
-
-  const closeButtonStyle = {
-    background: 'none',
-    border: 'none',
-    fontSize: '20px',
-    cursor: 'pointer',
-    color: '#6b7280',
-    padding: '8px',
-    width: '36px',
-    height: '36px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '6px',
-    transition: 'all 0.2s ease',
-    ':hover': {
-      background: '#f3f4f6',
-      color: '#374151'
-    }
-  };
-
-  const contentStyle = {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '32px 24px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '28px'
-  };
-
-  const fieldGroupStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
-  };
-
-  const labelStyle = {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
-    lineHeight: '20px'
-  };
-
-  const footerStyle = {
-    padding: '24px',
-    borderTop: '1px solid #e5e7eb',
-    display: 'flex',
-    gap: '12px',
-    background: '#fafbfc'
-  };
-
-  const cancelButtonStyle = {
-    padding: '12px 20px',
-    border: '1px solid #d1d5db',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: loading ? 'not-allowed' : 'pointer',
-    background: '#ffffff',
-    color: '#374151',
-    flex: 1,
-    transition: 'all 0.2s ease',
-    opacity: loading ? 0.6 : 1,
-    ':hover': !loading ? {
-      background: '#f9fafb',
-      borderColor: '#9ca3af'
-    } : {}
-  };
-
-  const updateButtonStyle = {
-    padding: '12px 20px',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: isUpdateDisabled ? 'not-allowed' : 'pointer',
-    background: isUpdateDisabled ? '#d1d5db' : '#10b981',
-    color: '#ffffff',
-    flex: 1,
-    transition: 'all 0.2s ease',
-    ':hover': !isUpdateDisabled ? {
-      background: '#059669'
-    } : {}
-  };
+  const isUpdateDisabled = loading || (!selectedOwner && !selectedStatus && !selectedProbability);
 
   return (
     <>
       {/* Overlay */}
-      <div style={overlayStyle} onClick={onClose} />
-      
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] transition-opacity duration-300"
+        style={{ opacity: open ? 1 : 0, visibility: open ? 'visible' : 'hidden' }}
+        onClick={onClose}
+      />
+
       {/* Drawer */}
-      <div style={drawerStyle}>
+      <div
+        className={`fixed top-0 right-0 w-[420px] h-full bg-white z-[1001] shadow-2xl transition-transform duration-500 ease-in-out flex flex-col
+          ${open ? 'translate-x-0' : 'translate-x-full'}`}
+      >
         {/* Header */}
-        <div style={headerStyle}>
-          <h2 style={titleStyle}>Bulk Update Leads</h2>
-          <button 
-            style={closeButtonStyle} 
+        <div className="p-5 border-b border-gray-200 flex items-center justify-between lead-header">
+          <h2 className="text-lg font-medium text-gray-800">Bulk Update Leads</h2>
+          <button
+            className="text-gray-600 hover:text-gray-800 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100"
             onClick={onClose}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#f3f4f6';
-              e.target.style.color = '#374151';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'none';
-              e.target.style.color = '#6b7280';
-            }}
           >
             ×
           </button>
         </div>
 
         {/* Content */}
-        <div style={contentStyle}>
-          {/* Source Field */}
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Source</label>
-            <CustomSelect
-              options={sourceOptions}
-              value={selectedSource}
-              onChange={setSelectedSource}
-              placeholder="Select Source"
-            />
+        <div className="flex-1 overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+          {/* Status */}
+          <div className="mb-6">
+            <label className="block font-medium text-gray-700 mb-2 text-sm">Status</label>
+            <select
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-800 
+                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none 
+                          transition shadow-sm hover:border-blue-400"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+              >
+                <option value="">-- Select Status --</option>
+                {status.map((opt, index) => (
+                    <option 
+                      key={index} 
+                      value={opt.key || opt.value}
+                      disabled={opt.disabled || false}
+                    >
+                      {opt.value || opt.label}
+                    </option>
+                  ))}
+              </select>
           </div>
 
-          {/* Owner Field */}
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Owner</label>
-            <CustomSelect
-              options={ownerOptions}
-              value={selectedOwner}
-              onChange={setSelectedOwner}
-              placeholder="Select Owner"
-            />
+          {/* Owner */}
+            <div className="mb-6">
+              <label className="block font-medium text-gray-700 mb-2 text-sm">Owner</label>
+         
+              <select
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-800 
+                          focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none 
+                          transition shadow-sm hover:border-blue-400"
+                value={selectedOwner}
+                onChange={(e) => setSelectedOwner(e.target.value)}
+              >
+                <option value="">-- Select Owner --</option>
+                {owner.map((opt, index) => (
+                    <option 
+                      key={index} 
+                      value={opt.key || opt.value}
+                      disabled={opt.disabled || false}
+                    >
+                      {opt.label}
+                    </option>
+                  ))}
+              </select>
           </div>
 
-          {/* Course Field */}
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Course</label>
-            <CustomSelect
-              options={courseOptions}
-              value={selectedCourse}
-              onChange={setSelectedCourse}
-              placeholder="Select Course"
-            />
-          </div>
-
-          {/* Status Field */}
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Status</label>
-            <CustomSelect
-              options={statusOptions}
-              value={selectedStatus}
-              onChange={setSelectedStatus}
-              placeholder="Select Status"
-            />
+          {/* Probability */}
+          <div className="mb-6">
+              <label className="block font-medium text-gray-700 mb-2 text-sm">Probability</label>
+              <select
+                value={selectedProbability}
+                onChange={(e) => setSelectedProbability(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none"
+              >
+                <option value="">Select Probability</option>
+                <option value="20">Low</option>
+                <option value="55">Medium</option>
+                <option value="85">High</option>
+              </select>
           </div>
         </div>
 
         {/* Footer */}
-        <div style={footerStyle}>
+        <div className="px-8 py-6 border-t border-gray-200 bg-white flex gap-4">
           <button
-            style={cancelButtonStyle}
             onClick={onClose}
             disabled={loading}
-            type="button"
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.background = '#f9fafb';
-                e.target.style.borderColor = '#9ca3af';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.background = '#ffffff';
-                e.target.style.borderColor = '#d1d5db';
-              }
-            }}
+            className="flex-1 py-3 px-6 border border-gray-300 rounded-xl text-gray-700 font-medium 
+                     hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
+
           <button
-            style={updateButtonStyle}
             onClick={handleUpdate}
             disabled={isUpdateDisabled}
-            type="button"
-            onMouseEnter={(e) => {
-              if (!isUpdateDisabled) {
-                e.target.style.background = '#059669';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isUpdateDisabled) {
-                e.target.style.background = '#10b981';
-              }
-            }}
+            className={`flex-1 py-3 px-6 rounded-xl text-white font-medium transition btn-primary-crm
+              ${isUpdateDisabled 
+                ? 'cursor-not-allowed' 
+                : 'hover:bg-emerald-700 active:bg-emerald-800'
+              }`}
           >
-            {loading ? 'Updating...' : 'Update'}
+            {loading ? (
+              <span className="flex items-center justify-center">
+                <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                </svg>
+                Updating...
+              </span>
+            ) : (
+              'Update Leads'
+            )}
           </button>
         </div>
       </div>

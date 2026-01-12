@@ -78,7 +78,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
     });
   };
 
-  const transformOwnerOptions = (owners) => {console.log("Owners Data:", owners);
+  const transformOwnerOptions = (owners) => {
     if (Object.keys(owners).length > 0) {
         return Object.entries(owners).map(([key, value]) => ({ key, value }));
       }
@@ -338,7 +338,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       if (window.tableRefresh) {
         window.tableRefresh();
       }
-console.log(filterOptions);
+
       setApplying(false);
       onClose?.();
   };
@@ -391,7 +391,7 @@ console.log(filterOptions);
       />
 
       <div
-        className={`fixed top-0 right-0 w-96 h-full bg-white z-[1001] shadow-2xl transition-transform duration-300 flex flex-col ${
+        className={`fixed top-0 right-0 w-[420px] h-full bg-white z-[1001] shadow-2xl transition-transform duration-300 flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
