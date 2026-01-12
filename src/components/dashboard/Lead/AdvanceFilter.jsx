@@ -413,7 +413,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
           ) : (
             <>
               {/* Multi-selects */}
-              {['status', 'course', 'source', 'location','owner'].map(type => (
+              {['status', 'course', 'source', 'location'].map(type => (
                 <div key={type} className="mb-6">
                   <label className="block font-medium text-gray-700 mb-2 text-sm">
                     {type.charAt(0).toUpperCase() + type.slice(1)}
