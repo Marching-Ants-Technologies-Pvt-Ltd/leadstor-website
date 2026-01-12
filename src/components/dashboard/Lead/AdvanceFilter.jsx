@@ -7,6 +7,7 @@ import { Corporate, User, Test, LeadFilters,LeadsCurrentPage } from '@/utility/T
 import DateInputPicker from "@/components/DateInputPicker/DateInputPicker";
 
 const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
+  const [resetKey, setResetKey] = useState(0);
   const [selectedFilters, setSelectedFilters] = useState({
     status: [],
     course: [],
@@ -30,6 +31,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       updatedDateFrom: '', updatedDateTo: '',
       followupDate: '', followupDate_end: '',
     });
+    setResetKey(prev => prev + 1);
   };
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [filterOptions, setFilterOptions] = useState({
@@ -518,6 +520,7 @@ console.log(filterOptions);
                 <label className="block font-medium text-gray-700 mb-2 text-sm">Enquiry Date</label>
                 <div className="flex items-center gap-3">
                   <DateInputPicker
+                    key={`enquiry-from-${resetKey}`}
                     value={selectedFilters.enquiryDateFrom}
                     onChange={date => updateSingleFilter('enquiryDateFrom', date)}
                     placeholder="From"
@@ -526,12 +529,61 @@ console.log(filterOptions);
                   />
                   <span className="text-gray-500 text-sm">to</span>
                   <DateInputPicker
+                    key={`enquiry-to-${resetKey}`}
                     value={selectedFilters.enquiryDateTo}
                     onChange={date => updateSingleFilter('enquiryDateTo', date)}
                     placeholder="To"
                     isTimeInterval={false}
                     className="flex-1"
                   />
+                </div>
+              </div>
+
+              {/* Modern Calendar for Updated Date */}
+              <div className="mb-6">
+                <label className="block font-medium text-gray-700 mb-2 text-sm">Updated Date</label>
+                <div className="flex items-center gap-3">
+                  <DateInputPicker
+                    key={`updated-from-${resetKey}`}
+                    value={selectedFilters.updatedDateFrom}
+                    onChange={date => updateSingleFilter('updatedDateFrom', date)}
+                    placeholder="From"
+                    isTimeInterval={false}
+                    className="flex-1"
+                  />
+                  <span className="text-gray-500 text-sm">to</span>
+                  <DateInputPicker
+                    key={`updated-to-${resetKey}`}
+                    value={selectedFilters.updatedDateTo}
+                    onChange={date => updateSingleFilter('updatedDateTo', date)}
+                    placeholder="To"
+                    isTimeInterval={false}
+                    className="flex-1"
+                />
+                </div>
+              </div>
+
+              {/* Modern Calendar for Pending Followup */}
+              <div className="mb-6">
+                <label className="block font-medium text-gray-700 mb-2 text-sm">Pending Followup Date</label>
+                <div className="flex items-center gap-3">
+                  <DateInputPicker
+                    key={`pending-from-${resetKey}`}
+                    value={selectedFilters.followupDate}
+                    onChange={date => updateSingleFilter('followupDate', date)}
+                    placeholder="From"
+                    isTimeInterval={false}
+                    className="flex-1"
+                />
+                  <span className="text-gray-500 text-sm">to</span>
+                  <DateInputPicker
+                    key={`pending-to-${resetKey}`}
+                    value={selectedFilters.followupDate_end}
+                    onChange={date => updateSingleFilter('followupDate_end', date)}
+                    placeholder="To"
+                    isTimeInterval={false}
+                    className="flex-1"
+                />
                 </div>
               </div>
 

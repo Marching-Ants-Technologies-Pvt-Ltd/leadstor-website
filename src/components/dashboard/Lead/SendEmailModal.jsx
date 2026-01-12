@@ -118,7 +118,7 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
       try {
         response = await xFetch({
           method: 'POST',
-          path: '/leadstorredirect/sendInviteNotification',
+          path: '/services/invite/sendEmailNotification',
           payload: formData,
           isFormData: true
         });
