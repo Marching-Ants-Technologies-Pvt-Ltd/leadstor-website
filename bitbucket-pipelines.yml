@@ -1,0 +1,14 @@
+image: node:18
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Deploy to Vercel (Production)
+          caches:
+            - node
+          script:
+            - npm install -g vercel
+            - vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+            - vercel build --prod --token=$VERCEL_TOKEN
+            - vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
