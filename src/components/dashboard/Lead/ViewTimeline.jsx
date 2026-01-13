@@ -209,9 +209,6 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
                       >
                         <Icon size={16} color={color} strokeWidth={2.5} />
                       </div>
-                      {!isLast && (
-                        <div className="absolute top-8 bottom-0 left-1/2 w-px -translate-x-1/2 bg-gray-200" />
-                      )}
                     </div>
 
                     {/* Compact card */}

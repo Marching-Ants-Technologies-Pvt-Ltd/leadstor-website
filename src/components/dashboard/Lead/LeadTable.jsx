@@ -59,7 +59,6 @@ export default function LeadsTable({
     const [selectedLeadForTimeline, setSelectedLeadForTimeline] = useState(null);
     const [selectedLead, setSelectedLead] = useState({});
     const [expandedRows, setExpandedRows] = useState({});
-    const [expandedRowId, setExpandedRowId] = useState(null);
     const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
     const [callerCandidate, setCallerCandidate] = useState(null);
 
@@ -531,10 +530,6 @@ export default function LeadsTable({
         };
     }, []);
 
-    const handleToggle = (rowId) => {
-        setExpandedRowId(prev => (prev === rowId ? null : rowId));
-    };
-
     /* =======================
      TANSTACK COLUMN DEFINITIONS
      ======================= */
@@ -563,21 +558,24 @@ export default function LeadsTable({
         ),
         cell: ({ row }) => {
             const isExpanded = row.getIsExpanded();
-
+  
             return (
             <div className="flex items-center gap-2">
                 {/* Expand Icon */}
                 <button
                 type="button"
-                onClick={() => handleToggle(row.id)}
+                onClick={(e) => {
+                        e.stopPropagation();
+                        row.toggleExpanded();
+                    }}
                 className="text-lg text-gray-500 hover:text-emerald-600 transition"
                 title={isExpanded ? "Collapse" : "Expand"}
                 >
-                {expandedRowId === row.id ? (
-                <i className="ri-subtract-line" />
-                ) : (
-                <i className="ri-add-line" />
-                )}
+                {row.getIsExpanded() ? (
+                        <i className="ri-subtract-line" />
+                    ) : (
+                        <i className="ri-add-line" />
+                    )}
                 </button>
 
                 {/* Checkbox */}
@@ -596,8 +594,7 @@ export default function LeadsTable({
             );
         },
         });
-
-
+        
         columnOrder.forEach(col => {
         cols.push({
             accessorKey: col,
@@ -629,6 +626,7 @@ export default function LeadsTable({
         data: leads,
         columns: tableColumns,
         getCoreRowModel: getCoreRowModel(),
+        getRowCanExpand: () => true,
         state: {
             expanded: expandedRows,
         },
@@ -669,7 +667,7 @@ export default function LeadsTable({
                 >
                     <div className="flex flex-col items-center gap-2">
                     <i className="ri-search-line text-2xl text-slate-400" />
-                    <div className="font-medium text-center">
+                    <div className="font-medium">
                         No results found
                     </div>
                     {LeadSearch.value() && (
@@ -681,43 +679,41 @@ export default function LeadsTable({
                 </td>
                 </tr>
             ) : (
-                table.getRowModel().rows.flatMap(row => {
-                    const rows = [];
-
-                    // MAIN ROW
-                    rows.push(
+                table.getRowModel().rows.map(row => (
+                    <>
+                        {/* Main row */}
                         <tr
-                        key={row.id}
-                        className="border-b hover:bg-slate-50 transition h-[44px] align-top"
+                            key={row.id}
+                            className="border-b hover:bg-slate-50 transition h-[44px] align-top"
                         >
-                        {row.getVisibleCells().map(cell => (
-                            <td key={cell.id} className="w-32 p-2 align-top">
-                            {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                            )}
-                            </td>
-                        ))}
+                            {row.getVisibleCells().map(cell => (
+                                <td key={cell.id} className="w-32 p-2 align-top">
+                                    {flexRender(
+                                        cell.column.columnDef.cell,
+                                        cell.getContext()
+                                    )}
+                                </td>
+                            ))}
                         </tr>
-                    );
 
-                    if (expandedRowId === row.id) {
-                        rows.push(
-                        <tr key={`${row.id}-expanded`}>
-                            <td colSpan={table.getAllColumns().length} className="p-0">
-                            <RelatedEnquiries
-                                testId={row.original.testId}
-                                emailId={row.original.emailId}
-                                mobile={row.original.mobile}
-                                invitationId={row.original.invitationId}
-                            />
-                            </td>
-                        </tr>
-                        );
-                    }
-
-                    return rows;
-                })
+                        {/* Expanded content row — only shown when expanded */}
+                        {row.getIsExpanded() && (
+                            <tr key={`${row.id}-expanded`}>
+                                <td colSpan={table.getAllColumns().length} className="p-0 bg-gray-50">
+                                    <div className="p-4">
+                                        <RelatedEnquiries
+                                            testId={row.original.testId}
+                                            emailId={row.original.emailId}
+                                            mobile={row.original.mobile}
+                                            invitationId={row.original.invitationId}
+                                        />
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
+                    </>
+                ))
+                
             )}
             </tbody>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Corporate, User, Owners, Test } from '@/utility/TinyDB';
+import { Corporate, User, Test } from '@/utility/TinyDB';
 import { xFetch } from '@/utility/xFetch';
 
 export default function DailyReportModal({ isOpen, onClose }) {
@@ -11,6 +11,24 @@ export default function DailyReportModal({ isOpen, onClose }) {
   const [userId, setUserId] = useState(null);
   const [userName, setUserName] = useState("");
   const [step, setStep] = useState("select");
+  const [owner, setOwner] = useState([]);
+
+  const fetchOwners = () => {
+    xFetch({
+          path: '/services/profile/getUsers',
+          payload: { basic: 1 }
+      })
+      .then(data => {
+        setOwner(data);
+      })
+      .catch(error => {
+          console.error(`An error occurred while fetching leads`, error);
+      });
+  }
+
+  useEffect(() => {
+    fetchOwners();
+  }, [owner]);
 
   useEffect(() => {
     if (User?._id === -1) {
@@ -25,7 +43,7 @@ export default function DailyReportModal({ isOpen, onClose }) {
 
   const handleConfirm = () => {
     if (selectedOwner) {
-      const ownerName = selectedOwner === "-1" ? "Admin" : Owners[selectedOwner] || "";
+      const ownerName = selectedOwner === "-1" ? "Admin" : owner[selectedOwner] || "";
       setUserId(selectedOwner);
       setUserName(ownerName);
       showDailyReport(selectedOwner, ownerName);
@@ -122,7 +140,7 @@ export default function DailyReportModal({ isOpen, onClose }) {
                 >
                   <option value="">-- Select Owner --</option>
                   <option value="-1">Admin</option>
-                  {Object.entries(Owners).map(([id, name]) => (
+                  {Object.entries(owner).map(([id, name]) => (
                     <option key={id} value={id}>
                       {name}
                     </option>
