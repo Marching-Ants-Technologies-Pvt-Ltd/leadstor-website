@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 export default function AssignPopup({
     open,
     title = "Assign User",
@@ -7,6 +9,7 @@ export default function AssignPopup({
     onAction,
     onClose
 }) {
+    const [search, setSearch] = useState('');
     if (!open) return null;
 
     let isListEmpty = (Object.entries(items).length < 1);
@@ -35,11 +38,26 @@ export default function AssignPopup({
                     </p>
                 )}
 
+                <div className="w-full p-2 border border-gray-300 mb-2 rounded-sm relative">
+                    <input
+                        type="text"
+                        value={search}
+                        placeholder="Search... or type @ to find assigned one"
+                        className='pl-6 w-full outline-none'
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                    <div className="absolute left-[9px] -top-[2px] text-3xl text-gray-400">⌕</div>
+                </div>
+
                 {!isListEmpty && (
 
                     <div>
                         <div className="max-h-[300px] overflow-y-auto border rounded">
-                            {Object.entries(items).map(([id, name]) => {
+                            {Object.entries(items).filter(([id, name]) => {
+                                return search.includes("@")
+                                    ? id === currentId
+                                    : name?.toLowerCase()?.includes(search.toLowerCase());
+                            }).map(([id, name]) => {
                                 const isActive = id === currentId;
 
                                 return (
