@@ -6,30 +6,6 @@ html, body, #__next {
   height: 100%;
 }
 
-/* Responsive font sizing for better readability on MacBooks */
-html {
-  font-size: 14px;          /* ← start smaller than default 16px */
-}
-
-@media (min-width: 1440px) {
-  html {
-    font-size: 13px;        /* even smaller on big external monitors */
-  }
-}
-
-@media (min-width: 2560px) {  /* 1440p / 4K territory */
-  html {
-    font-size: 12px;
-  }
-}
-
-/* OR even simpler – one line "Mac zoom out" feel */
-html {
-  font-size: calc(100vw / 100);   /* 1vw = 1% of viewport width */
-  /* This makes everything scale with window width like native apps */
-}
-/* END */
-
 /* Global Styles */
 html, body {
   scroll-behavior: smooth;

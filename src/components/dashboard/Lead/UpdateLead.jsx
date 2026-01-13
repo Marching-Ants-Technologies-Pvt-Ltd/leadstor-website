@@ -3,11 +3,12 @@ import React, { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { xFetch } from "@/utility/xFetch";
-import { Corporate, User, Test, Owners } from "@/utility/TinyDB";
+import { Corporate, User, Test } from "@/utility/TinyDB";
 import DateInputPicker from "@/components/DateInputPicker/DateInputPicker";
 import Timeline from "@/components/dashboard/Lead/ViewTimeline";
 
 export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
+  const [isInitializing, setIsInitializing] = useState(true);
   const [columns, setColumns] = useState([]);
   const [columnOrder, setColumnOrder] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -155,7 +156,8 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   };
 
   const renderOwnerSelect = (displayName) => {
-    if (!owner || owner.length === 0) return null;
+    
+    if (!owner || owner.length === 0) return { options: [] };
 
     let options = [];
 
@@ -338,23 +340,66 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           console.error("Error fetching AI Next Step:", error);
       }
   }
-
+  const fetchOwners = () => {
+    xFetch({
+          path: '/services/profile/getUsers',
+          payload: { basic: 1 }
+      })
+      .then(data => {
+        const ownerList = data;
+        if (Object.keys(ownerList).length > 0) {
+          setOwner(Object.entries(ownerList).map(([key, value]) => ({ key, value })));
+        }
+      })
+      .catch(error => {
+          console.error(`An error occurred while fetching leads`, error);
+      });
+  }
   useEffect(() => {
-    fetchAndSetColumns();
-    fetchLeadDropdowns();
+    let isMounted = true;
 
-    selectedLead.remarks = "";
-    setFields(selectedLead);
-    if (selectedLead.status === "Follow Up" || selectedLead.isFollowupType == '1') {
-      setShowDatePicker(true);
-    }
-    if (Object.keys(Owners).length > 0) {
-      setOwner(Object.entries(Owners).map(([key, value]) => ({ key, value })));
-    }
+    const initialize = async () => {
+      setIsInitializing(true);
+
+      selectedLead.remarks = "";
+      setFields(selectedLead);
+
+      if (selectedLead.status === "Follow Up" || selectedLead.isFollowupType === '1') {
+        setShowDatePicker(true);
+      }
+
+      try {
+        await Promise.all([
+          fetchAndSetColumns(),
+          fetchLeadDropdowns(),
+          fetchOwners(),
+        ]);
+      } catch (err) {
+        console.error("Initialization error:", err);
+        toast.error("Failed to load some data");
+      } finally {
+        if (isMounted) {
+          setIsInitializing(false);
+        }
+      }
+    };
+
+    initialize();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
     <>
+
+      {isInitializing && (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-gray-500">Loading lead data...</div>
+      </div>
+      )}
+
       {!showTimeline && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3">
           <ToastContainer position="bottom-right" autoClose={3000} />
