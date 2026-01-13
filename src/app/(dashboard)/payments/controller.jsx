@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import { useRouter } from 'next/navigation';
-import { xFetch, jsonToQueryParams } from '@/utility/xFetch';
+import { xFetch, jsonToQueryParams, xDownload } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
 import PaymentsTable from './table';
 import ReportDropdown from './reportMenu';
@@ -195,27 +195,22 @@ export default function PaymentsSectionController() {
     const exportReport = (data) => {
         data['corporateId'] = Corporate._id;
         let target = (data?.type ?? '' === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
-        let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/${target}.php?${jsonToQueryParams(data)}`;
-
-        window.open(link, '_blank', 'noopener,noreferrer');
+        xDownload(`/${target}.php?${jsonToQueryParams(data)}`);
 
     }
 
     const downloadJoineesReport = (type) => {
         if (!type) return;
         if (type === 'Joinee@Detailed_Download') {
-            let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`;
-            window.open(link, '_blank', 'noopener,noreferrer');
+            xDownload(`/services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
             return;
         }
 
-        let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/exportAllJoinees?corporateId=${Corporate._id}`;
-        window.open(link, '_blank', 'noopener,noreferrer');
+        xDownload(`/services/joinees/exportAllJoinees?corporateId=${Corporate._id}`);
     }
 
     const downloadPaymentReceipt = (payload) => {
-        let link = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/joinees/generateReceipt?${jsonToQueryParams(payload)}`;
-        window.open(link, '_blank', 'noopener,noreferrer');
+        xDownload(`/services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
     }
 
     const base64Encode = (str) => {
