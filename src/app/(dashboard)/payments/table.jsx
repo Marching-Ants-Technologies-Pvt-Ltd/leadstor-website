@@ -26,8 +26,10 @@ export default function PaymentsTable({
     const [completedInstallment, setCompletedInstallment] = useState(null);
     const [pendingInstallment, setPendingInstallment] = useState(null);
 
-    const formatAmountColumnData = (currency, amount) => {
-        if (!amount) return '0';
+    const formatAmountColumnData = (currency, amount, canBeZero = true) => {
+        if (!amount) return (canBeZero) ? '0' : '-';
+        if (!canBeZero && amount === '0') return '-';
+
         return (
             <div>
                 <span className='font-semibold'>{currency ?? ''}</span>&nbsp;{amount}
@@ -35,7 +37,9 @@ export default function PaymentsTable({
         );
     }
 
-    const getStatusFormatted = (value) => {
+    const getStatusFormatted = (value = "") => {
+        const normalized = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+
         const statusMap = {
             Active: "text-green-600",
             Defaulter: "text-red-600",
@@ -44,8 +48,8 @@ export default function PaymentsTable({
 
         return (
             <div className="font-semibold">
-                <span className={statusMap[value] || "text-gray-500"}>
-                    {value}
+                <span className={statusMap[normalized] || "text-gray-500"}>
+                    {normalized}
                 </span>
             </div>
         );
@@ -70,6 +74,23 @@ export default function PaymentsTable({
         if (type === 'counsellor') return counsellors[parsedId] ?? defaultValue;
         return defaultValue;
     }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isDateOlderThanToday = (dateStr, amount) => {
+        if (!dateStr || typeof dateStr !== "string") return false;
+        if (!amount || typeof amount !== "string" || amount === '' || amount === '0') return false;
+
+        const datePart = dateStr.trim().split(" ")[0];
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return false;
+
+        const inputDate = new Date(datePart);
+        if (isNaN(inputDate.getTime())) return false;
+
+        return inputDate < today;
+    }
+
 
     return (
         <>
@@ -150,6 +171,7 @@ export default function PaymentsTable({
                         <th className="p-2 text-center">Completed Installments</th>
                         <th className="p-2 text-center">Pending Installments</th>
                         <th className="p-2 text-center min-w-24">Total Balance</th>
+                        <th className="p-2 text-center">Discount</th>
                         <th className="p-2 text-left min-w-32">Remarks</th>
                         <th className="p-2 text-left min-w-32">Source</th>
                         <th className="p-2 text-left min-w-32">Counsellor</th>
@@ -161,7 +183,7 @@ export default function PaymentsTable({
 
                 <tbody className="divide-y">
                     {rows.map(item => (
-                        <tr className="hover:bg-slate-50" key={item?.id}>
+                        <tr className={`${(isDateOlderThanToday(item?.renewalDate, item?.pendingAmount)) ? 'bg-rose-50 hover:bg-rose-200' : 'hover:bg-slate-50'}`} key={item?.id}>
                             <td className="p-2">
                                 <input
                                     className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500'
@@ -193,21 +215,40 @@ export default function PaymentsTable({
                                 {item?.batchName || '-'}
                             </td>
                             <td className="p-2">{item?.doj || '-'}</td>
-                            <td className="p-2 text-right font-semibold">
-                                {formatAmountColumnData(item?.currency, item?.agreedPayment)}
+
+                            <td className="p-2 flex flex-row gap-1.5 justify-end items-center cursor-pointer group/item">
+                                {(item?.upcomingPaymentDate && (item?.upcomingPaymentAmount ?? '0') !== '0') &&
+                                    <div className='font-normal rounded-full bg-amber-500 w-2 h-2 relative top-[1px]'>
+                                        <div className='h-2 w-2 bg-amber-400 absolute rounded-full animate-ping'></div>
+                                        <div className='absolute top-5 -left-1.5 text-center bg-amber-50 border-2 border-amber-300 min-w-[180px] py-3 px-4 rounded-md shadow-lg transition-all opacity-0 invisible group-hover/item:opacity-100 group-hover/item:visible'>
+                                            <div className='h-3 w-3 bg-amber-300 absolute -top-2 left-1 rotate-[45deg]'></div>
+                                            <div className='font-bold text-black text-3xl'>{formatAmountColumnData(item?.currency, item?.upcomingPaymentAmount)}</div>
+                                            <p className='text-xs font-normal text-black border-t-2 border-amber-300 pt-2 mt-2'>Upcoming Payment</p>
+                                            <p className='text-sm font-medium text-black'>{item?.upcomingPaymentDate}</p>
+                                        </div>
+                                    </div>
+                                }
+                                <div className='font-semibold text-right'>{formatAmountColumnData(item?.currency, item?.agreedPayment)}</div>
                             </td>
+
                             <td onClick={() => setCompletedInstallment({ amount: item?.completedPayment || '0', id: item?.id })}
                                 className="p-2 cell-right amount-received cursor-pointer">
                                 {formatAmountColumnData(item?.currency, item?.completedPayment)}
                             </td>
                             <td onClick={() => setPendingInstallment({ amount: item?.pendingAmount || '0', id: item?.id })}
-                                className="p-2 cell-right amount-pending cursor-pointer font-semibold">
-                                <div className={((item?.pendingAmount ?? '0') !== "0") ? 'text-amber-500' : ''}>
+                                className="p-2 flex flex-row justify-end items-center gap-1 amount-pending cursor-pointer">
+                                <div className={`font-semibold ${((item?.pendingAmount ?? '0') !== "0") ? 'text-red-500' : ''}`}>
                                     {formatAmountColumnData(item?.currency, item?.pendingAmount)}
                                 </div>
+                                {(isDateOlderThanToday(item?.renewalDate, item?.pendingAmount)) &&
+                                    <div className='text-xs px-1.5 rounded-full text-white bg-rose-600 w-fit relative right-0 pb-0.5'>Overdue</div>
+                                }
                             </td>
                             <td className="p-2 text-right">
                                 {formatAmountColumnData(item?.currency, item?.balance)}
+                            </td>
+                            <td className="p-2 text-blue-500 font-medium">
+                                {formatAmountColumnData(item?.currency, item?.discount, false)}
                             </td>
                             <td className="p-2">{item?.remarks || '-'}</td>
                             <td className="p-2">{item?.source || '-'}</td>

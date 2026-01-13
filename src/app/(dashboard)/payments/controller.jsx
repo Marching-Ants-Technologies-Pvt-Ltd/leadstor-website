@@ -521,7 +521,7 @@ export default function PaymentsSectionController() {
                 </div>
 
                 {/* Table View */}
-                <div className="h-[calc(100vh-120px)] overflow-scroll show-scrollbar" >
+                <div className="h-[calc(100vh-120px)] overflow-scroll show-scrollbar pb-24">
                     <PaymentsTable
                         rows={leads?.rows || []}
                         router={router}
