@@ -33,25 +33,23 @@ export default function AssignPopup({
                 </h3>
 
                 {description && (
-                    <p className="text-sm text-gray-600 mb-4">
+                    <p className="text-sm text-gray-600 mb-2">
                         {description}
                     </p>
                 )}
 
-                <div className="w-full p-2 border border-gray-300 mb-2 rounded-sm relative">
-                    <input
-                        type="text"
-                        value={search}
-                        placeholder="Search... or type @ to find assigned one"
-                        className='pl-6 w-full outline-none'
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                    <div className="absolute left-[9px] -top-[2px] text-3xl text-gray-400">⌕</div>
-                </div>
-
                 {!isListEmpty && (
-
                     <div>
+                        <div className="w-full p-2 border border-gray-300 mb-2 rounded-sm relative">
+                            <input
+                                type="text"
+                                value={search}
+                                placeholder="Search... or type @ to find assigned one"
+                                className='pl-6 w-full outline-none'
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                            <div className="absolute left-[9px] -top-[2px] text-3xl text-gray-400">⌕</div>
+                        </div>
                         <div className="max-h-[300px] overflow-y-auto border rounded">
                             {Object.entries(items).filter(([id, name]) => {
                                 return search.includes("@")
