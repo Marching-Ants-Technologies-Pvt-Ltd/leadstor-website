@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {Corporate} from "@/utility/TinyDB";
+import { usePathname } from 'next/navigation';
 
 export default function Navbar({ collapsed, setCollapsed, data }) {
   const [open, setOpen] = useState(false);
@@ -10,6 +11,21 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
 
   const [openAnalytics, setOpenAnalytics] = useState(false);
   const dropdownRef = useRef(null);
+  const pathname = usePathname();
+  const pageTitles = {
+    '/leads': 'Lead Management',
+    '/payments': 'Payment Management',
+    '/placements': 'Placements',
+    '/batches': 'Batches',
+    '/invoices': 'Invoices',
+    '/branches': 'Branches',
+    '/expenses': 'Expenses',
+    '/': 'Dashboard',
+  };
+
+  const currentTitle = pageTitles[pathname] 
+    || Object.keys(pageTitles).find(p => pathname.startsWith(p + '/')) 
+    || 'Lead Management';
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -36,16 +52,16 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
 
 
   return (
-  <header className="h-14 flex items-center px-6 border-b bg-white">
+  <header className="h-14 flex items-center px-5 bg-white/80 backdrop-blur-md border-b border-transparent shadow-sm z-30 sticky">
 
     {/* LEFT */}
     <div className="flex items-center gap-4 h-full">
       <i
-        className="fa fa-bars cursor-pointer text-slate-500 hover:text-blue-600"
+        className="ri-menu-line cursor-pointer text-slate-500 hover:text-blue-600"
         onClick={() => setCollapsed(!collapsed)}
       />
       <span className="font-medium text-slate-800">
-        Lead Management
+        {currentTitle}
       </span>
     </div>
 
@@ -89,7 +105,6 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
                 className="dropdown-panel"
                 role="menu"
             >
-
               <div className="hidden md:block ml-5 leading-tight">
                 <div className="text-xs text-gray-600">{data.user.name} [{data.user.role}]</div>
                 <div className="text-xs text-gray-400"> {Corporate?.name}</div>
@@ -121,6 +136,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
         )}
 
       </div>
+      
 
       <style jsx>{`
         .nav-icon {

@@ -1,5 +1,4 @@
 'use client';
-import '@/app/style/table-style.css';
 import { HorizontalScroll } from '@/utility/TableControllers';
 import { xFetch } from '@/utility/xFetch';
 import { useEffect, useState } from 'react';
