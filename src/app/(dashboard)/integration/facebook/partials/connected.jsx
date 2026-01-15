@@ -37,12 +37,9 @@ export default function FacebookConnect({ token, user }) {
     }
 
     useEffect(() => {
-
         console.log('Loading Subscribed Forms', token);
         loadSubscribedPages();
-
-
-    }, []);
+    }, [loadSubscribedPages]);
 
     const renderSubscriptionForm = (pageId = '', formId = '', formTableId = '', subscriptionId = '', course = '', location = '') => {
 

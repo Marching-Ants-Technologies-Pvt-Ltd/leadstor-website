@@ -600,18 +600,18 @@ export default function LeadsTable({
                     || columns?.find(c => c.dataField === col)?.fieldName,
 
             cell: ({ row }) => {
-            const r = row.original;
+                const r = row.original;
 
-            if (col === 'firstName') return renderNameCell(r);
-            if (col === 'mobile') return renderMobileCell(r);
-            if (col === 'remarks') return renderRemarkCell(r);
-            if (col === 'status') return renderStatusTimelineCell(r);
-            if (col === 'leadProbability') return renderProbability(r);
-            if (col === 'aINextStep') return renderAINextStepCell(r);
+                if (col === 'firstName') return renderNameCell(r);
+                if (col === 'mobile') return renderMobileCell(r);
+                if (col === 'remarks') return renderRemarkCell(r);
+                if (col === 'status') return renderStatusTimelineCell(r);
+                if (col === 'leadProbability') return renderProbability(r);
+                if (col === 'aINextStep') return renderAINextStepCell(r);
 
-            if (dataFormatters[col]) return dataFormatters[col](r);
+                if (dataFormatters[col]) return dataFormatters[col](r);
 
-            return r[col] ?? '-';
+                return r[col] ?? '-';
             }
         });
         

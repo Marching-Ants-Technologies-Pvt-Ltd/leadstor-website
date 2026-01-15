@@ -118,7 +118,7 @@ export default function Profile() {
             toast.error('Unable to make api request! Try again later');
         }
 
-    }, [session]);
+    }, [router, session]);
 
     useEffect(() => {
         if (status === 'unauthenticated') router.push('/signin');

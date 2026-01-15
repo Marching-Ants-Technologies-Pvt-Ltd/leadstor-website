@@ -110,7 +110,7 @@ export default function AnalyticsDashboard() {
     loadAnalytics();
     loadWonTrend(durationWon);
     loadSalesTrend(durationRevenue);
-  }, [q]);
+  }, [q,durationWon,durationRevenue]);
 
   useEffect(() => {
     let from, to;
