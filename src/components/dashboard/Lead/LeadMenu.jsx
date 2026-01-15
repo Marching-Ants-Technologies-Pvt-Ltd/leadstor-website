@@ -144,20 +144,24 @@ export default function LeadsMenu({
       {/* TOP BAR */}
       <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
         {/* SEARCH */}
-        <div className="flex items-center gap-2 bg-slate-50 border rounded-lg px-3 py-2 w-[300px] ">
-          <i className="fa fa-search text-blue-400 text-sm" />
+        
+        <div className="relative w-80">
           <input
-            placeholder="Search by name / email / mobile"
+            type="text"
+            placeholder="Search by name, email, mobile..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent outline-none w-full text-sm"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none"
           />
+          <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
 
         {/* ACTIONS */}
         <div className="flex items-center gap-2" ref={menuRef}>
           <button onClick={handleAddLead} className="btn-primary-crm action-chip">
-            <i className="fa fa-user-plus" />
+            <i className="ri-user-add-line" />
             Add
           </button>
 
@@ -170,19 +174,19 @@ export default function LeadsMenu({
                 setOpenMenu(openMenu === 'export' ? null : 'export');
               }}
             >
-              <i className="fa fa-file-excel-o text-emerald-600" />
+              <i className="ri-file-excel-2-line text-emerald-600" />
               Export
-              <i className="fa fa-caret-down text-xs opacity-60" />
+              <i className="ri-arrow-down-s-line text-xs opacity-60" />
             </button>
 
             {openMenu === 'export' && (
               <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
                 <button className="drop-item" onClick={() => setDailyReport(true)}>
-                  <i className="fa fa-calendar text-blue-500" />
+                  <i className="ri-calendar-line text-blue-500" />
                   Daily report
                 </button>
                 <button className="drop-item" onClick={() => setShowExportModal(true)}>
-                  <i className="fa fa-download text-green-600" />
+                  <i className="ri-download-2-line text-green-600" />
                   Export enquiries
                 </button>
               </div>
@@ -198,24 +202,24 @@ export default function LeadsMenu({
                 setOpenMenu(openMenu === 'filter' ? null : 'filter');
               }}
             >
-              <i className="fa fa-filter text-indigo-600" />
+              <i className="ri-filter-3-line text-indigo-600" />
               Filter
-              <i className="fa fa-caret-down text-xs opacity-60" />
+              <i className="ri-arrow-down-s-line text-xs opacity-60" />
             </button>
 
             {openMenu === 'filter' && (
               <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
                 <button className="drop-item" onClick={handelFollowUpFilters}>
-                  <i className="fa fa-clock-o text-orange-500" />
+                  <i className="ri-time-line text-orange-500" />
                   Pending Follow-ups
                 </button>
                 <button className="drop-item" onClick={handelBookmarks}>
-                  <i className="fa fa-bookmark text-yellow-500" />
+                  <i className="ri-bookmark-line text-yellow-500" />
                   Bookmarks
                 </button>
                 <div className="dropdown-divider" />
                 <button className="drop-item" onClick={onOpenAdvanceFilter}>
-                  <i className="fa fa-sliders text-purple-500" />
+                  <i className="ri-equalizer-line text-purple-500" />
                   Advanced
                 </button>
               </div>
@@ -231,9 +235,9 @@ export default function LeadsMenu({
                 setOpenMenu(openMenu === 'actions' ? null : 'actions');
               }}
             >
-              <i className="fa fa-th-large text-sky-600" />
+              <i className="ri-apps-2-line text-sky-600" />
               Actions
-              <i className="fa fa-caret-down text-xs opacity-60" />
+              <i className="ri-arrow-down-s-line text-xs opacity-60" />
             </button>
 
             {openMenu === 'actions' && (
@@ -246,12 +250,12 @@ export default function LeadsMenu({
                       setOpenMenu(null);
                     }}
                   >
-                    <i className="fa fa-trash" />
+                    <i className="ri-delete-bin-line" />
                     Delete Invite ({selectedLeadIds.length})
                   </button>
                 )}
                 <button className="drop-item" onClick={() => setShowSendEmail(true)}>
-                  <i className="fa fa-envelope text-indigo-500" />
+                  <i className="ri-mail-line text-indigo-500" />
                   Send Email
                 </button>
                 <button
@@ -261,7 +265,7 @@ export default function LeadsMenu({
                     else setShowBulkUpdateDrawer(true);
                   }}
                 >
-                  <i className="fa fa-database text-purple-500" />
+                  <i className="ri-database-2-line text-purple-500" />
                   Bulk Update
                 </button>
               </div>
@@ -269,10 +273,13 @@ export default function LeadsMenu({
           </div>
 
           <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
-            <i className="fa fa-cog" />
+            <i className="ri-settings-3-line" title="Settings" />
           </button>
-          <button className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`} onClick={() => refreshLeadPage()}>
-            <i className="fa fa-refresh" />
+          <button 
+            className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`} 
+            onClick={() => refreshLeadPage()}
+          >
+            <i className="ri-refresh-line" title="Refresh" />
           </button>
         </div>
       </div>

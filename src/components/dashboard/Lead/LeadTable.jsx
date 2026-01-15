@@ -1,5 +1,4 @@
 'use client';
-import '@/app/style/table-style.css';
 import { showFullRemarks, HorizontalScroll } from '@/utility/TableControllers';
 import { useEffect, useState, useRef, useMemo  } from 'react';
 import AppliedFilters, { showAppliedFilter } from '@/components/dashboard/Lead/AppliedFilters';
@@ -561,23 +560,6 @@ export default function LeadsTable({
   
             return (
             <div className="flex items-center gap-2">
-                {/* Expand Icon */}
-                <button
-                type="button"
-                onClick={(e) => {
-                        e.stopPropagation();
-                        row.toggleExpanded();
-                    }}
-                className="text-lg text-gray-500 hover:text-emerald-600 transition"
-                title={isExpanded ? "Collapse" : "Expand"}
-                >
-                {row.getIsExpanded() ? (
-                        <i className="ri-subtract-line" />
-                    ) : (
-                        <i className="ri-add-line" />
-                    )}
-                </button>
-
                 {/* Checkbox */}
                 <input
                 type="checkbox"
@@ -590,6 +572,22 @@ export default function LeadsTable({
                     )
                 }
                 />
+                {/* Expand Icon */}
+                <button
+                type="button"
+                onClick={(e) => {
+                        e.stopPropagation();
+                        row.toggleExpanded();
+                    }}
+                className="text-lg text-gray-500 hover:text-emerald-600 transition"
+                title={isExpanded ? "Collapse" : "Related Enquiries"}
+                >
+                {row.getIsExpanded() ? (
+                        <i className="ri-subtract-line" />
+                    ) : (
+                        <i className="ri-add-line" />
+                    )}
+                </button>
             </div>
             );
         },

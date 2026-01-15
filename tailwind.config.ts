@@ -95,7 +95,7 @@ const config: Config = {
   		}
   	}
   },
-  plugins: [require("rippleui"), require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate")],
   darkMode: ['class', "class"],
 };
 export default config;
