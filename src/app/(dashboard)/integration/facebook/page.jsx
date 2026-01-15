@@ -4,7 +4,7 @@ import Image from 'next/image';
 import FbConnect from './partials/connect';
 import FbConnected from './partials/connected';
 import Spinner from '@/components/elements/Spinner';
-import {TinyDB} from '@/utility/TinyDB';
+import { Corporate } from '@/utility/TinyDB';
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
 
@@ -15,7 +15,7 @@ export default function FacebookIntegration() {
     const [userData, setUserData] = useState(null);
 
     useEffect(() => {
-        const data = TinyDB?.User || null;
+        const data = Corporate?.user || null;
         setUserData(JSON.parse(data));
     }, []);
 
@@ -34,7 +34,7 @@ export default function FacebookIntegration() {
 
             window.FB.getLoginStatus(statusChangeCallback);
         };
-    }, []);
+    }, [statusChangeCallback]);
 
 
     const statusChangeCallback = (response) => {

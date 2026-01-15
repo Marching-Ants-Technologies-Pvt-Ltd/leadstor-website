@@ -3,14 +3,10 @@
 import 'remixicon/fonts/remixicon.css';
 import Sidebar from '@/components/dashboard/Navbar/Sidebar';
 import Navbar from '@/components/dashboard/Navbar/Navbar';
-import RaiseTicketFav from '@/components/dashboard/RaiseTicketFav';
 import Loading from '@/components/elements/Loading';
-import { xFetch } from '@/utility/xFetch';
 
 import 'react-toastify/ReactToastify.min.css';
-import { Slide, ToastContainer } from 'react-toastify';
 
-import React from "react";
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
@@ -22,9 +18,6 @@ export default function ClientLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(true);
-  // CONSTANTS
-  const SIDEBAR_WIDTH = '64px';   // change once here if you want a different sidebar width
-  const HEADER_HEIGHT = '64px';   // header height used for spacing & alignment
 
   useEffect(() => {
     const fetchSession = async () => {
