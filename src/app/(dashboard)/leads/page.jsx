@@ -37,7 +37,7 @@ export default function Leads() {
         try {
             const data = await xFetch({ path: '/services/profile/columns' });
             const filteredColumns = data.filter(
-                c => c.dataField !== 'action' && c.dataField !== 'altMobile'
+                c => c.dataField !== 'altMobile'
             );
 
             setColumns(filteredColumns);
