@@ -4,9 +4,8 @@ import 'remixicon/fonts/remixicon.css';
 import Sidebar from '@/components/dashboard/Navbar/Sidebar';
 import Navbar from '@/components/dashboard/Navbar/Navbar';
 import Loading from '@/components/elements/Loading';
-
-import 'react-toastify/ReactToastify.min.css';
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
@@ -75,6 +74,7 @@ export default function ClientLayout({ children }) {
 
   return (
     <SessionProvider>
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex h-screen overflow-hidden bg-[#f5f6f8] font-[-apple-system,BlinkMacSystemFont,Segoe_UI,Arial]">
         {/* Sidebar */}
         <Sidebar collapsed={collapsed} setCollapsed={setCollapsed}  />

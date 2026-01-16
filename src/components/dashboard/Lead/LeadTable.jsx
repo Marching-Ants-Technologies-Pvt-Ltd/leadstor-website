@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useMemo  } from 'react';
 import AppliedFilters, { showAppliedFilter } from '@/components/dashboard/Lead/AppliedFilters';
 import { xFetch } from '@/utility/xFetch';
 import {
+    Corporate,
     getLeadOwnerById,
     getCurrentUserNameIfAdmin,
     Test,
@@ -25,9 +26,9 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import RelatedEnquiries from '@/components/dashboard/Lead/RelatedEnquiries';
+import RouteData from '@/components/dashboard/Lead/RouteData';
 
 let setLeadsFn;
-
 const dataFormatters = {
     assignedUserId: (row) => {
         let _id = parseInt(row['assignedUserId'] ?? "0");
@@ -60,7 +61,8 @@ export default function LeadsTable({
     const [expandedRows, setExpandedRows] = useState({});
     const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
     const [callerCandidate, setCallerCandidate] = useState(null);
-
+    const [showRouteData, setShowRouteData] = useState(false);
+    const [selectedLeadForRouteData, setSelectedLeadForRouteData] = useState(null);
     const isIndeterminate =
         leads.some(l => selectedLeadIds.includes(l.invitationId)) &&
         !leads.every(l => selectedLeadIds.includes(l.invitationId));
@@ -144,40 +146,10 @@ export default function LeadsTable({
        NAME + BOOKMARK
     ======================= */
     const renderNameCell = (row) => {
-        const isBookmarked = row.isBookmarked === 1;
-
-        const toggleBookmark = async (e) => {
-            e.stopPropagation();
-
-            await xFetch({
-            path: "/services/leads/bookmark",
-            payload: {
-                invitationId: row.invitationId,
-                bookmark: isBookmarked ? 0 : 1
-            }
-            });
-
-            setLeads(prev =>
-            prev.map(l =>
-                l.invitationId === row.invitationId
-                ? { ...l, isBookmarked: isBookmarked ? 0 : 1 }
-                : l
-            )
-            );
-        };
-
+        
         return (
             <div className="flex items-center gap-2">
                 <span className="font-medium text-slate-800">{row.firstName} 
-                    {/* Bookmark */}
-                    {/* <i
-                        className={`ri-bookmark-${
-                        isBookmarked ? "fill text-yellow-500" : "line text-gray-400"
-                        } cursor-pointer text-[15px]`}
-                        onClick={toggleBookmark}
-                        title="Bookmark"
-                    /> */}
-
                     {/* Edit */}
                     <i
                         className="ri-pencil-fill ml-1.5 text-amber-500 cursor-pointer text-[14px]"
@@ -227,6 +199,11 @@ export default function LeadsTable({
     const handleShowTimeline = (lead) => {
         setSelectedLeadForTimeline(lead);
         setShowTimeline(true);
+    };
+
+    const getSiblingForRouteData = (lead) => {
+        setSelectedLeadForRouteData(lead);
+        setShowRouteData(true);
     };
 
     const refreshLeads = () => {
@@ -519,6 +496,97 @@ export default function LeadsTable({
         );
     };
 
+    const renderActionCell = (row) => {
+        return (
+            <div className="action-column flex items-center">
+            {/* Route Data */}
+            <button
+                title="Route Data"
+                onClick={() =>
+                    getSiblingForRouteData(row)
+                }
+                className="p-1 rounded hover:bg-gray-100 transition"
+            >
+                <i className="ri-share-forward-line text-lg text-blue-600" />
+            </button>
+
+            {/* Bookmark */}
+
+            <button
+                title={row.bookmark === "1" ? 'Remove Bookmark' : 'Bookmark'}
+                onClick={() => toggleBookmark(row)}
+                className="p-1 rounded hover:bg-gray-100 transition"
+            >
+                <i
+                className={`text-lg ${
+                    row.bookmark === "1"
+                    ? 'ri-bookmark-fill text-yellow-500'
+                    : 'ri-bookmark-line text-gray-400'
+                }`}
+            />
+            </button>
+
+            {/* Extended Form */}
+            {[800, 100].includes(Corporate?.type) && (
+                <button
+                title="View Application Form Data"
+                onClick={() => showExtendedForm(row.invitationId)}
+                className="p-1 rounded hover:bg-gray-100 transition"
+                >
+                <i className="ri-file-list-3-line text-lg text-emerald-600" />
+                </button>
+            )}
+
+            {/* Corporate Type 800 */}
+            {Corporate?.type === 800 && (
+                <>
+                {/* University List */}
+                <button
+                    title="University List"
+                    onClick={() => universityList(row.invitationId)}
+                    className="p-1 rounded hover:bg-gray-100 transition"
+                >
+                    <i className="ri-school-line text-lg text-indigo-600" />
+                </button>
+
+                {/* Documents */}
+                <button
+                    title="Documents"
+                    onClick={() => uploadLeadDocs(row.invitationId)}
+                    className="p-1 rounded hover:bg-gray-100 transition"
+                >
+                    <i className="ri-folder-3-line text-lg text-sky-600" />
+                </button>
+                </>
+            )}
+            </div>
+        );
+    };
+
+    const toggleBookmark = (row) => {
+        xFetch({
+            path: "/services/invite/bookmark",
+            method: "POST",
+            payload: {
+            invitationId: row.invitationId
+            }
+        })
+        .then((data) => {
+        if (data.status === "success") {
+            setLeads((prev) =>
+            prev.map((l) =>
+                l.invitationId === row.invitationId
+                ? { ...l, bookmark: data.isBookmarked }
+                : l
+            )
+            );
+        }
+        })
+        .catch((error) => {
+            console.error("Bookmark toggle failed", error);
+        });
+    };
+
     useEffect(() => {
         LeadsCurrentPage.setValue(1); 
         xLeads();
@@ -608,6 +676,7 @@ export default function LeadsTable({
                 if (col === 'status') return renderStatusTimelineCell(r);
                 if (col === 'leadProbability') return renderProbability(r);
                 if (col === 'aINextStep') return renderAINextStepCell(r);
+                if (col === 'action') return renderActionCell(r);
 
                 if (dataFormatters[col]) return dataFormatters[col](r);
 
@@ -742,7 +811,16 @@ export default function LeadsTable({
             leadDetails={selectedLeadForTimeline}
             isOpen={showTimeline}
             onClose={() => setShowTimeline(false)}
-            xLeads={refreshLeads}           // ← most important fix!
+            xLeads={refreshLeads}
+            />
+        )}
+
+        {showRouteData && selectedLeadForRouteData && (
+            <RouteData
+            lead={selectedLeadForRouteData}
+            isOpen={showRouteData}
+            onClose={() => setShowRouteData(false)}
+            onSuccess={refreshLeads}
             />
         )}
         {/* STYLES */}
