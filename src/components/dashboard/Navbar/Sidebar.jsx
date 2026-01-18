@@ -33,8 +33,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
         {[
           { icon: 'ri-dashboard-line', label: 'Leads', href: '/leads' },
           { icon: 'ri-bank-card-line', label: 'Payments', href: '/payments' },
-          { icon: 'ri-briefcase-line', label: 'Placement', href: '/placements' },
           { icon: 'ri-stack-line', label: 'Batches', href: '/batches' },
+          { icon: 'ri-briefcase-line', label: 'Placement', href: '/placements' },
           { icon: 'ri-receipt-line', label: 'Invoices', href: '/invoices' },
           { icon: 'ri-building-line', label: 'Branches', href: '/branches' },
           { icon: 'ri-wallet-3-line', label: 'Expenses', href: '/expenses' },
