@@ -5,7 +5,7 @@ import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import { xFetch } from '@/utility/xFetch'
 import * as XLSX from 'xlsx'
-import LabelTable from './LabelTable'
+import LabelTable from './labelTable'
 
 export default function LabelController() {
   const [labels, setLabels] = useState([])
