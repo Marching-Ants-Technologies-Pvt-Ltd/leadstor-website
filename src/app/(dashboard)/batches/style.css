@@ -1,0 +1,40 @@
+.cell-right {
+  @apply text-right;
+}
+
+.amount-agreed {
+  @apply text-slate-900 font-semibold;
+}
+
+.amount-received {
+  @apply text-green-600 font-semibold;
+}
+
+.amount-pending {
+  @apply text-slate-500;
+}
+
+.amount-overdue {
+  @apply text-red-600 font-bold;
+}
+
+.amount-zero {
+  @apply text-slate-400;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold leading-none;
+}
+
+.badge-overdue {
+  @apply badge bg-red-100 text-red-700 border border-red-200;
+}
+
+.badge-warning {
+  @apply badge bg-amber-100 text-amber-700 border border-amber-200;
+}
+
+.badge-success {
+  @apply badge bg-green-100 text-green-700 border border-green-200;
+}
+
