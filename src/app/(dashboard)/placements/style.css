@@ -1,0 +1,19 @@
+.icon-btn {
+  @apply border border-gray-300 rounded-md px-2 py-1 text-gray-700 hover:bg-gray-100 transition;
+}
+
+.input-sm {
+  @apply border border-gray-300 rounded-md px-2 py-1 text-[13px] focus:outline-none focus:ring-1 focus:ring-blue-500;
+}
+
+.th {
+  @apply px-2 py-2 text-left font-medium text-gray-700 whitespace-nowrap;
+}
+
+.td {
+  @apply px-2 py-2 text-gray-800 whitespace-nowrap;
+}
+
+.page-btn {
+  @apply px-2 py-1 border rounded text-gray-600 hover:bg-gray-100;
+}

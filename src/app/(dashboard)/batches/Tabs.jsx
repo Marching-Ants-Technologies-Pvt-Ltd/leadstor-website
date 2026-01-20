@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import LabelController from './label/labelController';
 import BatchController from './batch/batchController';
+import { User } from '@/utility/TinyDB';
 
 export default function BatchesTabs() {
-  const [activeTab, setActiveTab] = useState('labels');
+  const [activeTab, setActiveTab] = useState('batches');
 
+  
   return (
     <div className="h-full flex flex-col bg-slate-50">
       {/* Tabs */}
