@@ -94,7 +94,7 @@ export default function BatchController() {
 
     const data = filtered.map(b => ({
       'Batch Name': b.batchName || '',
-      'Label Name': b.labelName || '',
+      'Course Name': b.labelName || '',
       'Start Date': b.batchStartDate || '',
       'End Date': b.batchEndDate || '',
       'From': b.startTime || '',

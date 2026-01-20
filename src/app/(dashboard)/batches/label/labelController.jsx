@@ -91,7 +91,7 @@ export default function LabelController() {
   const handleSave = async () => {
 
     if (!formLabelName.trim()) {
-      toast.error('Label name is required')
+      toast.error('Course name is required')
       return
     }
 
@@ -113,7 +113,7 @@ export default function LabelController() {
         payload,
       })
       .then(data => {
-          toast.success(modalMode === 'add' ? 'Label created' : 'Label updated')
+          toast.success(modalMode === 'add' ? 'Course created' : 'Course updated')
       })
       .catch(error => {
           console.error(`An error occurred. Please try again!`, error);
@@ -159,15 +159,15 @@ export default function LabelController() {
     if (filtered.length === 0) return toast.warn('No data to export')
 
     const data = filtered.map(l => ({
-      'Label ID': l.labelId,
-      'Label Name': l.labelName,
+      'Course ID': l.labelId,
+      'Course Name': l.labelName,
       Description: l.labelDescription || '',
       Active: l.active === '1' ? 'Yes' : 'No'
     }))
 
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Labels')
+    XLSX.utils.book_append_sheet(wb, ws, 'Courses')
     XLSX.writeFile(wb, `labels-export-${new Date().toISOString().slice(0,10)}.xlsx`)
 
     toast.success('Exported')
@@ -200,7 +200,7 @@ export default function LabelController() {
             onClick={openAddModal}
             className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
           >
-            <i className="ri-add-line"></i> Add Label
+            <i className="ri-add-line"></i> Add Course
           </button>
 
           <button
@@ -269,7 +269,7 @@ export default function LabelController() {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg font-semibold text-lg">
-              {modalMode === 'add' ? 'Add New Label' : 'Modify Label'}
+              {modalMode === 'add' ? 'Add New Course' : 'Modify Course'}
             </div>
 
             <div className="p-6 space-y-5">
@@ -293,7 +293,7 @@ export default function LabelController() {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Label Description <span className="text-red-600">*</span>
+                  Course Description <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   value={formDescription}
@@ -318,11 +318,11 @@ export default function LabelController() {
               >
                 {modalMode === 'add' ? (
                   <>
-                    <i className="ri-add-line"></i> Add Label
+                    <i className="ri-add-line"></i> Add Course
                   </>
                 ) : (
                   <>
-                    <i className="ri-save-line"></i> Modify Label
+                    <i className="ri-save-line"></i> Modify Course
                   </>
                 )}
               </button>

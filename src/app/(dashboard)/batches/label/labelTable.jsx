@@ -40,8 +40,8 @@ export default function LabelTable({ rows, selectedIds, onSelectChange, onEdit, 
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
             </th>
-            <th className="px-3 py-2 text-left font-medium">Label Name</th>
-            <th className="px-3 py-2 text-left font-medium">Label Description</th>
+            <th className="px-3 py-2 text-left font-medium">Course Name</th>
+            <th className="px-3 py-2 text-left font-medium">Course Description</th>
             <th className="px-3 py-2 w-24 text-center font-medium">Action</th>
           </tr>
         </thead>
