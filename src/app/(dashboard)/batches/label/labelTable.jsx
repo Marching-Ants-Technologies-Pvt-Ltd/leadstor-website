@@ -21,12 +21,18 @@ export default function LabelTable({ rows, selectedIds, onSelectChange, onEdit, 
     }
   }
 
+  const decodeHtml = (str = '') => {
+    const txt = document.createElement('textarea');
+    txt.innerHTML = str;
+    return txt.value;
+  };
+
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full border-collapse text-sm" id="labelTable">
-        <thead className="bg-slate-100 sticky top-0 z-10">
+      <table className="min-w-full text-[13px] border-collapse" id="labelTable">
+        <thead className="bg-slate-50 text-gray-700">
           <tr className="border-b">
-            <th className="px-4 py-3 w-12 text-center">
+            <th className="px-3 py-2 w-12 text-center">
               <input
                 type="checkbox"
                 checked={allSelected}
@@ -34,9 +40,9 @@ export default function LabelTable({ rows, selectedIds, onSelectChange, onEdit, 
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
             </th>
-            <th className="px-4 py-3 text-left font-medium">Label Name</th>
-            <th className="px-4 py-3 text-left font-medium">Label Description</th>
-            <th className="px-4 py-3 w-24 text-center font-medium">Action</th>
+            <th className="px-3 py-2 text-left font-medium">Course Name</th>
+            <th className="px-3 py-2 text-left font-medium">Course Description</th>
+            <th className="px-3 py-2 w-24 text-center font-medium">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -44,7 +50,7 @@ export default function LabelTable({ rows, selectedIds, onSelectChange, onEdit, 
             const isSelected = selectedIds.includes(row.labelId)
             return (
               <tr key={row.labelId} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-center">
+                <td className="px-3 py-2 text-center">
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -52,15 +58,15 @@ export default function LabelTable({ rows, selectedIds, onSelectChange, onEdit, 
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </td>
-                <td className="px-4 py-3 font-medium">{row.labelName || '—'}</td>
-                <td className="px-4 py-3 text-gray-600">{row.labelDescription || '—'}</td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-3 py-2 font-medium">{row.labelName || '—'}</td>
+                <td className="px-3 py-2 text-gray-600">{decodeHtml(row.labelDescription) || '—'}</td>
+                <td className="px-3 py-2 text-center">
                   <button
                     onClick={() => onEdit(row)}
                     title="Edit Label"
                     className="text-blue-600 hover:text-blue-800"
                   >
-                    <i className="ri-edit-line text-lg"></i>
+                    <i className="ri-edit-line text-base"></i>
                   </button>
                 </td>
               </tr>

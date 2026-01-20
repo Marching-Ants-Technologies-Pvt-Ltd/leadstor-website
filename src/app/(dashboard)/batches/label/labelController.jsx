@@ -12,23 +12,24 @@ export default function LabelController() {
   const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-
   const [selectedLabelIds, setSelectedLabelIds] = useState([])
-
+  const [page, setPage] = useState(1)
+  
   // Modal state
   const [showModal, setShowModal] = useState(false)
   const [modalMode, setModalMode] = useState('add' | 'edit')
   const [formLabelName, setFormLabelName] = useState('')
   const [formDescription, setFormDescription] = useState('')
   const [editingId, setEditingId] = useState(null)
-
+  const pageSize = 10
+  
   // Load labels + courses
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
       try {
         const [labelsRes, coursesRes] = await Promise.all([
-          xFetch({ path: '/services/attendance/getlabels' }),
+          xFetch({ path: '/services/attendance/getLabels' }),
           xFetch({ path: '/services/profile/getCourseAndFee' })
         ])
 
@@ -60,6 +61,15 @@ export default function LabelController() {
     )
   }, [labels, search])
 
+  const paginatedRows = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return filtered.slice(start, start + pageSize)
+  }, [filtered, page])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, labels])
+
   // ─── CRUD Handlers ────────────────────────────────────────
 
   const openAddModal = () => {
@@ -72,22 +82,23 @@ export default function LabelController() {
 
   const openEditModal = (label) => {
     setModalMode('edit')
-    setFormLabelName(label.labelName)
+    setFormLabelName(label.labelName)   
     setFormDescription(label.labelDescription || '')
     setEditingId(label.labelId)
     setShowModal(true)
   }
 
   const handleSave = async () => {
+
     if (!formLabelName.trim()) {
-      toast.error('Label name is required')
+      toast.error('Course name is required')
       return
     }
-  
+
     try {
       const payload = {
         labelName: formLabelName.trim(),
-        labelDescription: formDescription.trim(),
+        labelDescription: formDescription?.trim() || '',
       };
 
       if (modalMode === 'edit') {
@@ -102,7 +113,7 @@ export default function LabelController() {
         payload,
       })
       .then(data => {
-          toast.success(modalMode === 'add' ? 'Label created' : 'Label updated')
+          toast.success(modalMode === 'add' ? 'Course created' : 'Course updated')
       })
       .catch(error => {
           console.error(`An error occurred. Please try again!`, error);
@@ -110,7 +121,7 @@ export default function LabelController() {
       });
 
       // refresh
-      const fresh = await xFetch({ path: '/services/attendance/getlabels' })
+      const fresh = await xFetch({ path: '/services/attendance/getLabels' })
       if (Array.isArray(fresh)) setLabels(fresh)
 
       setShowModal(false)
@@ -118,7 +129,7 @@ export default function LabelController() {
       toast.error(err.message || 'Save failed')
     }
   }
-
+  
   const handleDeleteSelected = async () => {
     if (selectedLabelIds.length === 0) return
 
@@ -129,13 +140,13 @@ export default function LabelController() {
     try {
       for (const id of selectedLabelIds) {
         await xFetch({
-          path: `/services/attendance/deletelabel?LabelId=${id}`,
+          path: `/services/attendance/deleteLabel?LabelId=${id}`,
           method: 'GET'
         })
       }
       toast.success('Deleted successfully')
 
-      const fresh = await xFetch({ path: '/services/attendance/getlabels' })
+      const fresh = await xFetch({ path: '/services/attendance/getLabels' })
       if (Array.isArray(fresh)) setLabels(fresh)
 
       setSelectedLabelIds([])
@@ -148,15 +159,15 @@ export default function LabelController() {
     if (filtered.length === 0) return toast.warn('No data to export')
 
     const data = filtered.map(l => ({
-      'Label ID': l.labelId,
-      'Label Name': l.labelName,
+      'Course ID': l.labelId,
+      'Course Name': l.labelName,
       Description: l.labelDescription || '',
       Active: l.active === '1' ? 'Yes' : 'No'
     }))
 
     const ws = XLSX.utils.json_to_sheet(data)
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Labels')
+    XLSX.utils.book_append_sheet(wb, ws, 'Courses')
     XLSX.writeFile(wb, `labels-export-${new Date().toISOString().slice(0,10)}.xlsx`)
 
     toast.success('Exported')
@@ -178,7 +189,7 @@ export default function LabelController() {
           />
           <button
             onClick={exportExcel}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
           >
             <i className="ri-download-line"></i> Export Excel
           </button>
@@ -187,9 +198,9 @@ export default function LabelController() {
         <div className="flex gap-3">
           <button
             onClick={openAddModal}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"
           >
-            <i className="ri-add-line"></i> Add Label
+            <i className="ri-add-line"></i> Add Course
           </button>
 
           <button
@@ -207,22 +218,58 @@ export default function LabelController() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 p-6 overflow-auto">
-        <LabelTable
-          rows={filtered}
-          selectedIds={selectedLabelIds}
-          onSelectChange={setSelectedLabelIds}
-          onEdit={openEditModal}
-          checkUncheckRows={checkUncheckRows}
-        />
+      <div className="flex-1 p-4 overflow-hidden">
+        {/* Scrollable table */}
+        <div className="h-[calc(100vh-260px)] overflow-auto rounded-lg border bg-white">
+          <LabelTable
+            rows={paginatedRows}
+            selectedIds={selectedLabelIds}
+            onSelectChange={setSelectedLabelIds}
+            onEdit={openEditModal}
+            checkUncheckRows={checkUncheckRows}
+          />
+        </div>
+
+        {/* Pagination (OUTSIDE scroll) */}
+        {filtered.length > 0 && (
+          <div className="flex justify-between items-center mt-3 px-2 text-sm text-gray-600">
+            <span>
+              Showing {(page - 1) * pageSize + 1}–
+              {Math.min(page * pageSize, filtered.length)} of {filtered.length}
+            </span>
+
+            <div className="flex gap-2">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(p => p - 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
+              >
+                Prev
+              </button>
+
+              <span className="px-2 py-1">
+                Page {page} of {Math.ceil(filtered.length / pageSize)}
+              </span>
+
+              <button
+                disabled={page >= Math.ceil(filtered.length / pageSize)}
+                onClick={() => setPage(p => p + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
 
       {/* Add / Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg font-semibold text-lg">
-              {modalMode === 'add' ? 'Add New Label' : 'Modify Label'}
+              {modalMode === 'add' ? 'Add New Course' : 'Modify Course'}
             </div>
 
             <div className="p-6 space-y-5">
@@ -231,7 +278,7 @@ export default function LabelController() {
                   Choose a course <span className="text-red-600">*</span>
                 </label>
                 <select
-                  value={formLabelName}
+                  value={formLabelName} 
                   onChange={e => setFormLabelName(e.target.value)}
                   className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -246,7 +293,7 @@ export default function LabelController() {
 
               <div>
                 <label className="block text-sm font-medium mb-1">
-                  Label Description <span className="text-red-600">*</span>
+                  Course Description <span className="text-red-600">*</span>
                 </label>
                 <textarea
                   value={formDescription}
@@ -271,11 +318,11 @@ export default function LabelController() {
               >
                 {modalMode === 'add' ? (
                   <>
-                    <i className="ri-add-line"></i> Add Label
+                    <i className="ri-add-line"></i> Add Course
                   </>
                 ) : (
                   <>
-                    <i className="ri-save-line"></i> Modify Label
+                    <i className="ri-save-line"></i> Modify Course
                   </>
                 )}
               </button>
