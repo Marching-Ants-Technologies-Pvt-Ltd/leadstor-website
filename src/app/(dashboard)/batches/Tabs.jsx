@@ -3,12 +3,25 @@
 import { useState } from 'react';
 import LabelController from './label/labelController';
 import BatchController from './batch/batchController';
+import AttendanceController from './attendance/attendanceController';
 import { User } from '@/utility/TinyDB';
 
 export default function BatchesTabs() {
   const [activeTab, setActiveTab] = useState('batches');
 
-  
+  console.log(User);
+
+  // Trainer or Telecaller → show only Attendance Management (no tabs)
+  if (User?.role === 'Trainer' || User?.role === 'Telecaller') {
+    return (
+      <div className="h-full flex flex-col bg-slate-50">
+        <div className="flex-1 overflow-hidden">
+          <AttendanceController />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col bg-slate-50">
       {/* Tabs */}

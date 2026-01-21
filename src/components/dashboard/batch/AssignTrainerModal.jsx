@@ -85,11 +85,11 @@ export default function AssignTrainerModal({ batch, onClose, onSuccess }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl mx-4 overflow-hidden">
         {/* Header */}
-        <div className="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
+        <div className="lead-header px-6 py-4 flex justify-between items-center">
           <h2 className="text-lg font-semibold">
             Assign Trainer(s) - {batch.batchName}
           </h2>
-          <button onClick={onClose} className="text-white hover:text-gray-200 text-xl">
+          <button onClick={onClose} className="text-black hover:text-gray-200 text-xl">
             ×
           </button>
         </div>

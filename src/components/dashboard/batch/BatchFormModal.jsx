@@ -194,10 +194,13 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
-        <div className="bg-blue-600 text-white px-5 py-3.5">
+        <div className="lead-header px-5 py-3.5 flex justify-between items-center">
           <h2 className="text-base font-semibold">
             {isEdit ? 'Edit Batch' : 'Add New Batch'}
           </h2>
+          <button onClick={onClose} className="text-black hover:text-gray-200 text-xl">
+            &times;
+          </button>
         </div>
 
         {/* Form */}
@@ -254,7 +257,8 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
                 value={form.batchStartDate}
                 onChange={handleDateChange}
                 required
-                className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm"
+                onClick={(e) => e.currentTarget.showPicker?.()}
+                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm cursor-pointer focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -268,7 +272,8 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
                 onChange={handleDateChange}
                 min={form.batchStartDate || undefined}
                 required
-                className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm"
+                onClick={(e) => e.currentTarget.showPicker?.()}
+                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm cursor-pointer focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
