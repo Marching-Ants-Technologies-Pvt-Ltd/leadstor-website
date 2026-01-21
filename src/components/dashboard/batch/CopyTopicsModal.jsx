@@ -70,11 +70,11 @@ export default function CopyTopicsModal({ batch, onClose, onSuccess }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="bg-teal-600 text-white px-6 py-4 flex justify-between items-center">
+        <div className="lead-header px-6 py-4 flex justify-between items-center">
           <h2 className="text-lg font-semibold">
             Copy Topics - {batch?.batchName || 'Current Batch'}
           </h2>
-          <button onClick={onClose} className="text-white hover:text-gray-200 text-2xl">×</button>
+          <button onClick={onClose} className="text-black hover:text-gray-200 text-2xl">×</button>
         </div>
 
         {/* Form */}
@@ -112,7 +112,8 @@ export default function CopyTopicsModal({ batch, onClose, onSuccess }) {
                 type="date"
                 value={copyToStartDate}
                 onChange={e => setCopyToStartDate(e.target.value)}
-                className="w-full border rounded px-3 py-2 text-sm"
+                onClick={(e) => e.currentTarget.showPicker?.()}
+                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm cursor-pointer focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -124,7 +125,8 @@ export default function CopyTopicsModal({ batch, onClose, onSuccess }) {
                 value={copyToEndDate}
                 onChange={e => setCopyToEndDate(e.target.value)}
                 min={copyToStartDate}
-                className="w-full border rounded px-3 py-2 text-sm"
+                onClick={(e) => e.currentTarget.showPicker?.()}
+                className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md text-sm cursor-pointer focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
