@@ -207,6 +207,14 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     }
   }
 
+  const getOwnerIdByName = (name) => {
+    if (!name) return "";
+    const match = users.find(
+      (u) => u.name?.toLowerCase() === String(name).toLowerCase()
+    );
+    return match?.id || "";
+  };
+
   // hotColumns uses `data` keys so loading array-of-objects will work correctly
   const hotColumns = fields.map((f) => {
     const fld = {};
@@ -602,6 +610,11 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         const obj = {};
         fields.forEach((f) => {
           obj[f.dataField] = row[f.dataField] ?? "";
+
+          if (f.dataField === "assignedUserId") {
+            obj[f.dataField] = getOwnerIdByName(row[f.dataField] ?? "");
+          }
+
         });
         return obj;
       });
