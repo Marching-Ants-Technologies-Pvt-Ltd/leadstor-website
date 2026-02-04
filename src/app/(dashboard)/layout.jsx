@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
-import { LeadsCurrentPage } from '@/utility/TinyDB';
+import { LeadsCurrentPage,LeadFilters,LeadSearch } from '@/utility/TinyDB';
 
 
 export default function ClientLayout({ children }) {
@@ -57,18 +57,21 @@ export default function ClientLayout({ children }) {
 
   const pageInfo = getPageInfo(pathname);
 
-  useEffect(() => {
-    window.refreshLeadPage = () => {
+    useEffect(() => {
+      // 🔥 RESET filters on fresh load
+      LeadFilters.reset();
+      LeadSearch?.reset?.(); // if search is also persisted
       LeadsCurrentPage.setValue(1);
+
       window.refreshLeadMenu?.();
       window.tableRefresh?.();
       window.onTableRefresh?.();
-    };
 
-    return () => {
-      delete window.refreshLeadPage;
-    };
+      return () => {
+        delete window.tableRefresh;
+      };
   }, []);
+
   
   if (!session) return <Loading />;
 

@@ -16,6 +16,7 @@ export default function Leads() {
     const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
     const [isDrawerOpen, setDrawerOpen] = useState(false);
     const [leads, setLeads] = useState([]);
+    const [owners, setOwners] = useState([]);
     const [selectedLeadIds, setSelectedLeadIds] = useState([]);
 
     // Download notification state
@@ -58,6 +59,7 @@ export default function Leads() {
             if (typeof window !== "undefined") {
                 localStorage.setItem("LeadOwnersById", JSON.stringify(data));
             }
+            setOwners(data);
             fetchAndSetColumns();
         })
         .catch(error => {
@@ -187,6 +189,7 @@ export default function Leads() {
                             columnOrder={columnOrder}
                             setColumnOrder={setColumnOrder}
                             leads={leads}
+                            owners={owners}
                             setLeads={setLeads}
                             selectedLeadIds={selectedLeadIds}
                             setSelectedLeadIds={setSelectedLeadIds}

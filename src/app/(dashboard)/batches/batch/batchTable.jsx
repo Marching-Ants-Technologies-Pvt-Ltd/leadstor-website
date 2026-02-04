@@ -42,13 +42,13 @@ export default function BatchTable({
                 onChange={e => toggleAll(e.target.checked)}
                 />
             </th>
-            <th className="px-3 py-2.5 text-left font-medium">Label Name</th>
-            <th className="px-3 py-2.5 text-left font-medium">Batch Description</th>
+            <th className="px-3 py-2.5 text-left font-medium">Course Name</th>
+            <th className="px-3 py-2.5 text-left font-medium">Batch Name</th>
             <th className="px-3 py-2.5 text-left font-medium">From</th>
             <th className="px-3 py-2.5 text-left font-medium">To</th>
             <th className="px-3 py-2.5 text-left font-medium">Start Date</th>
             <th className="px-3 py-2.5 text-left font-medium">End Date</th>
-            <th className="px-3 py-2.5 text-left font-medium">Max Allowed</th>
+            <th className="px-3 py-2.5 text-left font-medium">Max Size</th>
             <th className="px-3 py-2.5 text-left font-medium">Status</th>
             <th className="px-3 py-2.5 text-left font-medium">Progress %</th>
             <th className="px-3 py-2.5 text-left font-medium">Fee Payment %</th>

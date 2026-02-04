@@ -352,6 +352,14 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
                 </div>
             )}
             <style jsx>{`
+
+                .dropdown-item {
+                    display: block;
+                    padding: 6px 8px;
+                    text-align: center;
+                    cursor: pointer;
+                }
+                    
                 .pagination {
                     display: flex;
                     align-items: center;

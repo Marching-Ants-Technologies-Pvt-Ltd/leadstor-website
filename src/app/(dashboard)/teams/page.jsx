@@ -1,14 +1,17 @@
 'use client';
-import React, { useState, useMemo, useEffect } from 'react';
+
+import { useEffect, useState, useMemo } from 'react';
+import { toast } from 'react-toastify';
+import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
-import { xFetch } from "@/utility/xFetch";
 import { Dialog } from '@headlessui/react';
-import Spinner from "@/components/common/Spinner";
+import Spinner from '@/components/common/Spinner';
 import 'remixicon/fonts/remixicon.css';
 
 export default function Teams() {
   const [members, setMembers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [managers, setManagers] = useState([]);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(new Set());
   const [showModal, setShowModal] = useState(false);
@@ -17,81 +20,114 @@ export default function Teams() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [managers, setManagers] = useState([]);
 
-  /** -----------------------------------------
-   *  FETCH FUNCTIONS (return promises)
-   * ---------------------------------------- */
+  // ─── Pagination States ───────────────────────────────────────
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(10); // default rows per page
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchRoles = () => {
-    return xFetch({
-      path: `/services/authentication/getRoles?corporateId=${Corporate?._id}&time=${Date.now()}`,
-      method: "GET"
-    })
-      .then((res) => setRoles(Array.isArray(res) ? res : []))
-      .catch(() => setRoles([]));
-  };
-
-  const fetchTeam = () => {
-    return xFetch({
-      path: `/services/profile/getUsers`,
-      payload: { corporateId: Corporate?._id }
-    })
-      .then((res) => setMembers(Array.isArray(res) ? res : []))
-      .catch(() => setMembers([]));
-  };
-
-  const fetchManagers = () => {
-    return xFetch({
-      path: `/services/profile/getUserManagers`,
-      payload: { corporateId: Corporate?._id }
-    })
-      .then((res) => setManagers(res || []))
-      .catch(() => setManagers([]));
-  };
-
-  /** -----------------------------------------
-   *  RUN ALL FETCHES TOGETHER
-   * ---------------------------------------- */
-  useEffect(() => {
+  // ─── Fetch Data ──────────────────────────────────────────────
+  const fetchData = async () => {
     if (!Corporate?._id) return;
 
     setLoading(true);
-    Promise.all([fetchTeam(), fetchRoles(), fetchManagers()])
-      .finally(() => setLoading(false));
+    try {
+      const [teamRes, rolesRes, managersRes] = await Promise.all([
+        xFetch({
+          path: `/services/profile/getUsers`,
+          payload: { corporateId: Corporate._id },
+        }),
+        xFetch({
+          path: `/services/authentication/getRoles?corporateId=${Corporate._id}&time=${Date.now()}`,
+          method: 'GET',
+        }),
+        xFetch({
+          path: `/services/profile/getUserManagers`,
+          payload: { corporateId: Corporate._id },
+        }),
+      ]);
+
+      setMembers(Array.isArray(teamRes) ? teamRes : []);
+      setRoles(Array.isArray(rolesRes) ? rolesRes : []);
+      setManagers(managersRes || []);
+    } catch (err) {
+      console.error('Fetch error:', err);
+      toast.error('Failed to load team data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
   }, [Corporate?._id]);
 
-  /** -----------------------------------------
-   *  SEARCH FILTER
-   * ---------------------------------------- */
+  // ─── Filtered Members ────────────────────────────────────────
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    return members.filter(m =>
-      (m.name || "").toLowerCase().includes(q) ||
-      (m.email || "").toLowerCase().includes(q) ||
-      ((m.roles || []).join(',').toLowerCase().includes(q))
+    return members.filter(
+      (m) =>
+        (m.name || '').toLowerCase().includes(q) ||
+        (m.email || '').toLowerCase().includes(q) ||
+        (m.roles || []).join(',').toLowerCase().includes(q)
     );
   }, [members, query]);
 
-  /** -----------------------------------------
-   *  TABLE SELECTION
-   * ---------------------------------------- */
-  const toggleSelect = (id) => {
-    const s = new Set(selected);
-    s.has(id) ? s.delete(id) : s.add(id);
-    setSelected(s);
+  // ─── Pagination Logic ────────────────────────────────────────
+  const paginatedMembers = useMemo(() => {
+    const start = (currentPage - 1) * limit;
+    const end = start + limit;
+    return filtered.slice(start, end);
+  }, [filtered, currentPage, limit]);
+
+  useEffect(() => {
+    const total = filtered.length;
+    const pages = Math.ceil(total / limit);
+    setTotalPages(pages);
+
+    // Reset to page 1 if current page is out of range
+    if (currentPage > pages && pages > 0) {
+      setCurrentPage(1);
+    }
+  }, [filtered, limit, currentPage]);
+
+  // Generate page numbers (1,2,3... or with ellipsis)
+  const pageNumbers = useMemo(() => {
+    const pages = [];
+    const maxPagesToShow = 5;
+    const half = Math.floor(maxPagesToShow / 2);
+
+    let start = Math.max(1, currentPage - half);
+    let end = Math.min(totalPages, start + maxPagesToShow - 1);
+
+    if (end - start + 1 < maxPagesToShow) {
+      start = Math.max(1, end - maxPagesToShow + 1);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  }, [currentPage, totalPages]);
+
+  // ─── Handlers ────────────────────────────────────────────────
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    setCurrentPage(1); // reset to first page
   };
 
-  /** -----------------------------------------
-   *  EDIT USER
-   * ---------------------------------------- */
+  const goToPage = (page) => {
+    if (page < 1 || page > totalPages) return;
+    setCurrentPage(page);
+  };
+
   const openEdit = (member) => {
     setEditMember(member);
-
-    const roleIds = (member.roles || []).map(r => {
-      if (typeof r === "object" && r.id) return parseInt(r.id);
+    const roleIds = (member.roles || []).map((r) => {
+      if (typeof r === 'object' && r.id) return parseInt(r.id);
       if (!isNaN(r)) return parseInt(r);
-      const match = roles.find(role => role.name === r);
+      const match = roles.find((role) => role.name === r);
       return match ? match.id : null;
     }).filter(Boolean);
 
@@ -99,120 +135,161 @@ export default function Teams() {
     setShowModal(true);
   };
 
-  /** -----------------------------------------
-   *  SAVE / UPDATE USER
-   * ---------------------------------------- */
-  const saveMember = async (newMember) => {
-    let corporateId = Corporate?._id;
-    const payload = {
-      ...newMember,
-      corporateId,
-      salary: newMember.salary,
-      roles: selectedRoles,
-      sign: btoa(newMember.signature || ""),
-      managers: newMember.managerId || ""
+  const fetchRoles = () => {
+      return xFetch({
+        path: `/services/authentication/getRoles?corporateId=${Corporate?._id}&time=${Date.now()}`,
+        method: "GET"
+      })
+        .then((res) => setRoles(Array.isArray(res) ? res : []))
+        .catch(() => setRoles([]));
     };
-
-    if (editMember?.id) payload.id = editMember.id;
-
-    try {
+  
+    const fetchTeam = () => {
+      return xFetch({
+        path: `/services/profile/getUsers`,
+        payload: { corporateId: Corporate?._id }
+      })
+        .then((res) => setMembers(Array.isArray(res) ? res : []))
+        .catch(() => setMembers([]));
+    };
+  
+    const fetchManagers = () => {
+      return xFetch({
+        path: `/services/profile/getUserManagers`,
+        payload: { corporateId: Corporate?._id }
+      })
+        .then((res) => setManagers(res || []))
+        .catch(() => setManagers([]));
+    };
+  
+    /** -----------------------------------------
+     *  RUN ALL FETCHES TOGETHER
+     * ---------------------------------------- */
+    useEffect(() => {
+      if (!Corporate?._id) return;
+  
+      setLoading(true);
+      Promise.all([fetchTeam(), fetchRoles(), fetchManagers()])
+        .finally(() => setLoading(false));
+    }, [Corporate?._id]);
+  
+    /** -----------------------------------------
+     *  TABLE SELECTION
+     * ---------------------------------------- */
+    const toggleSelect = (id) => {
+      const s = new Set(selected);
+      s.has(id) ? s.delete(id) : s.add(id);
+      setSelected(s);
+    };
+  
+    /** -----------------------------------------
+     *  SAVE / UPDATE USER
+     * ---------------------------------------- */
+    const saveMember = async (newMember) => {
+      let corporateId = Corporate?._id;
+      const payload = {
+        ...newMember,
+        corporateId,
+        salary: newMember.salary,
+        roles: selectedRoles,
+        sign: btoa(newMember.signature || ""),
+        managers: newMember.managerId || ""
+      };
+  
+      if (editMember?.id) payload.id = editMember.id;
+  
+      try {
+        await xFetch({
+          path: editMember ? `/services/profile/updateUserSettings` : `/services/profile/addUserSettings`,
+          payload,
+          method: "POST"
+        });
+  
+        fetchTeam();
+        setShowModal(false);
+      } catch (err) {
+        console.error("Save error", err);
+      }
+    };
+  
+    /** -----------------------------------------
+     *  DISABLE / ENABLE USER
+     * ---------------------------------------- */
+    const openDisableDialog = (user) => {
+      setSelectedUser(user);
+      setIsOpen(true);
+    };
+  
+    const handleDisableToggle = async () => {
+      if (!selectedUser) return;
+  
+      const disableValue = selectedUser.userDisabled == 1 ? 0 : 1;
+      try {
+        await xFetch({
+          path: `/services/profile/enableDisableUser`,
+          payload: { userId: selectedUser.id, disable: disableValue },
+          method: "POST",
+        });
+  
+        closeDialog();
+        fetchTeam();
+      } catch (err) {
+        console.error("Toggle Disable failed:", err);
+      }
+    };
+  
+    const closeDialog = () => {
+      setSelectedUser(null);
+      setIsOpen(false);
+    };
+  
+    /** -----------------------------------------
+     *  DELETE USER(S)
+     * ---------------------------------------- */
+    const handleDeleteUser = async (userId) => {
+      if (!confirm("Delete this user?")) return;
+  
       await xFetch({
-        path: editMember ? `/services/profile/updateUserSettings` : `/services/profile/addUserSettings`,
-        payload,
-        method: "POST"
-      });
-
-      fetchTeam();
-      setShowModal(false);
-    } catch (err) {
-      console.error("Save error", err);
-    }
-  };
-
-  /** -----------------------------------------
-   *  DISABLE / ENABLE USER
-   * ---------------------------------------- */
-  const openDisableDialog = (user) => {
-    setSelectedUser(user);
-    setIsOpen(true);
-  };
-
-  const handleDisableToggle = async () => {
-    if (!selectedUser) return;
-
-    const disableValue = selectedUser.userDisabled == 1 ? 0 : 1;
-    try {
-      await xFetch({
-        path: `/services/profile/enableDisableUser`,
-        payload: { userId: selectedUser.id, disable: disableValue },
+        path: `/services/profile/deleteUser`,
+        payload: { userId },
         method: "POST",
       });
-
-      closeDialog();
+  
       fetchTeam();
-    } catch (err) {
-      console.error("Toggle Disable failed:", err);
-    }
-  };
+    };
+  
+    const handleDeleteSelected = async () => {
+      if (selected.size === 0) return alert("Nothing selected");
+  
+      if (!confirm("Delete selected users?")) return;
+  
+      for (let id of selected) await handleDeleteUser(id);
+  
+      setSelected(new Set());
+    };
+  
+    /** -----------------------------------------
+     *  UI COMPONENTS
+     * ---------------------------------------- */
+    const RoleBadges = ({ roles }) => {
+      return (
+        <div className="flex flex-wrap gap-1">
+          {roles?.map((r, i) => {
+            const role = typeof r === "object" ? r : roles.find(ro => ro.id === r);
+            return (
+              <span key={i} className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                {role?.name || r}
+              </span>
+            );
+          })}
+        </div>
+      );
+    };
 
-  const closeDialog = () => {
-    setSelectedUser(null);
-    setIsOpen(false);
-  };
-
-  /** -----------------------------------------
-   *  DELETE USER(S)
-   * ---------------------------------------- */
-  const handleDeleteUser = async (userId) => {
-    if (!confirm("Delete this user?")) return;
-
-    await xFetch({
-      path: `/services/profile/deleteUser`,
-      payload: { userId },
-      method: "POST",
-    });
-
-    fetchTeam();
-  };
-
-  const handleDeleteSelected = async () => {
-    if (selected.size === 0) return alert("Nothing selected");
-
-    if (!confirm("Delete selected users?")) return;
-
-    for (let id of selected) await handleDeleteUser(id);
-
-    setSelected(new Set());
-  };
-
-  /** -----------------------------------------
-   *  UI COMPONENTS
-   * ---------------------------------------- */
-  const RoleBadges = ({ roles }) => {
-    return (
-      <div className="flex flex-wrap gap-1">
-        {roles?.map((r, i) => {
-          const role = typeof r === "object" ? r : roles.find(ro => ro.id === r);
-          return (
-            <span key={i} className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
-              {role?.name || r}
-            </span>
-          );
-        })}
-      </div>
-    );
-  };
-
-  /** -----------------------------------------
-   *  RENDER
-   * ---------------------------------------- */
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Team Management</h1>
-
+    <div className="min-h-screen bg-gray-50 p-4">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-3">
           <div className="relative">
             <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
@@ -244,78 +321,147 @@ export default function Teams() {
         </div>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white shadow rounded overflow-hidden">
+      {/* Table Container */}
+      <div className="bg-white shadow rounded relative">
         {loading ? (
-          <Spinner />
+          <div className="p-10 flex justify-center">
+            <Spinner />
+          </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-3"><input type="checkbox" /></th>
-                <th className="p-3 text-left">Name</th>
-                <th className="p-3 text-left">Email</th>
-                <th className="p-3">Mobile</th>
-                <th className="p-3">Password</th>
-                <th className="p-3">Salary</th>
-                <th className="p-3">Signature</th>
-                <th className="p-3">Roles</th>
-                <th className="p-3">Manager</th>
-                <th className="p-3 text-center">Actions</th>
-              </tr>
-            </thead>
+          <>
+            {/* SCROLL WRAPPER */}
+            <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
+              <table className="min-w-[1500px] w-full text-[13px] border-collapse">
+                <thead className="bg-gray-100 sticky top-0 z-10">
+                  <tr className="border-b border-gray-200">
+                    <th className="p-3 w-10 text-center">
+                      <input type="checkbox" />
+                    </th>
+                    <th className="p-3 text-left">Name</th>
+                    <th className="p-3 text-left">Email</th>
+                    <th className="p-3 text-left">Mobile</th>
+                    <th className="p-3 text-left">Password</th>
+                    <th className="p-3 text-left">Salary</th>
+                    <th className="p-3 text-left">Signature</th>
+                    <th className="p-3 text-left">Roles</th>
+                    <th className="p-3 text-left">Manager</th>
+                    <th className="p-3 text-left">Actions</th>
+                  </tr>
+                </thead>
 
-            <tbody>
-              {filtered.map((member) => (
-                <tr key={member.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3">
-                    <input
-                      type="checkbox"
-                      checked={selected.has(member.id)}
-                      onChange={() => toggleSelect(member.id)}
-                    />
-                  </td>
-                  <td className="p-3">{member.name}</td>
-                  <td className="p-3">{member.email}</td>
-                  <td className="p-3">{member.mobile}</td>
-                  <td className="p-3">{member.password}</td>
-                  <td className="p-3">{member.salary}</td>
-                  <td className="p-3">{member.signature || "-"}</td>
-                  <td className="p-3"><RoleBadges roles={member.roles} /></td>
-                  <td className="p-3">{member.managerName || "-"}</td>
+                <tbody>
+                  {paginatedMembers.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="p-8 text-center text-gray-500">
+                        No team members found
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedMembers.map((member) => (
+                      <tr key={member.id} className="border-t hover:bg-gray-50">
+                        <td className="p-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={selected.has(member.id)}
+                            onChange={() => toggleSelect(member.id)}
+                          />
+                        </td>
+                        <td className="p-3">{member.name}</td>
+                        <td className="p-3">{member.email}</td>
+                        <td className="p-3">{member.mobile}</td>
+                        <td className="p-3">{member.password}</td>
+                        <td className="p-3">{member.salary}</td>
+                        <td className="p-3">{member.signature || '-'}</td>
+                        <td className="p-3">
+                          <RoleBadges roles={member.roles} />
+                        </td>
+                        <td className="p-3">{member.managerName || '-'}</td>
+                        <td className="p-3 flex justify-center gap-3">
+                          <button onClick={() => openEdit(member)} className="text-blue-500 hover:text-blue-700">
+                            <i className="ri-edit-line text-lg"></i>
+                          </button>
 
-                  <td className="p-3 flex justify-center gap-3">
-                    <button onClick={() => openEdit(member)} className="text-blue-500 hover:text-blue-700">
-                      <i className="ri-edit-line text-lg"></i>
-                    </button>
+                          <button
+                            onClick={() => openDisableDialog(member)}
+                            className="transition hover:scale-110"
+                            title={member.userDisabled == 1 ? "Enable User Login" : "Disable User Login"}
+                          >
+                            {member.userDisabled == 1 ? (
+                              <i className="ri-user-follow-line text-green-600 text-xl"></i>
+                            ) : (
+                              <i className="ri-user-unfollow-line text-orange-600 text-xl"></i>
+                            )}
+                          </button>
 
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination Footer */}
+            <div className="border-t bg-white px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-600">
+              <div>
+                Showing {(currentPage - 1) * limit + 1} to{" "}
+                {Math.min(currentPage * limit, filtered.length)} of{" "}
+                {filtered.length} members
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span>Rows per page:</span>
+                <select
+                  value={limit}
+                  onChange={(e) => handleLimitChange(Number(e.target.value))}
+                  className="border rounded px-2 py-1"
+                >
+                  {[5, 10, 20, 50, 100].map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 border rounded disabled:opacity-50"
+                  >
+                    ‹
+                  </button>
+
+                  {pageNumbers.map((p) => (
                     <button
-                      onClick={() => openDisableDialog(member)}
-                      className="transition hover:scale-110"
-                      title={member.userDisabled == 1 ? "Enable User Login" : "Disable User Login"}
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`px-3 py-1 border rounded ${
+                        p === currentPage
+                          ? "bg-blue-600 text-white"
+                          : "hover:bg-gray-100"
+                      }`}
                     >
-                      {member.userDisabled == 1 ? (
-                        <i className="ri-user-follow-line text-green-600 text-xl"></i>
-                      ) : (
-                        <i className="ri-user-unfollow-line text-orange-600 text-xl"></i>
-                      )}
+                      {p}
                     </button>
+                  ))}
 
-                  </td>
-                </tr>
-              ))}
-
-              {filtered.length === 0 && (
-                <tr>
-                  <td className="p-5 text-center text-gray-500" colSpan="10">
-                    No members found
-                  </td>
-                </tr>
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 border rounded disabled:opacity-50"
+                  >
+                    ›
+                  </button>
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
+
 
       {/* ADD / EDIT MODAL */}
       <Dialog open={showModal} onClose={() => setShowModal(false)} className="fixed inset-0 z-50">
