@@ -58,7 +58,7 @@ function FacebookLoginButton({ onLoggedIn }) {
 }
 
 /* ---------- SDK loader hook ---------- */
-function useFacebookSDK(appId = "879546874736387", version = "v19.0") {
+function useFacebookSDK(appId = "354120981351314", version = "v19.0") {
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState(null);
 

@@ -48,7 +48,7 @@ export default function LeadsMenu({
     hotLeads: 0,
     conversions: 0,
   });
-  const [search, setSearch] = useState(LeadSearch.value());
+  const [search, setSearch] = useState('');
 
   /* ---------- CLICK OUTSIDE ---------- */
   useEffect(() => {

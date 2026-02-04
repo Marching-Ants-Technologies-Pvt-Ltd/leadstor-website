@@ -28,26 +28,19 @@ import {
 import RelatedEnquiries from '@/components/dashboard/Lead/RelatedEnquiries';
 import RouteData from '@/components/dashboard/Lead/RouteData';
 
-let setLeadsFn;
-const dataFormatters = {
-    assignedUserId: (row) => {
-        let _id = parseInt(row['assignedUserId'] ?? "0");
-        if (_id === -1) return getCurrentUserNameIfAdmin();
-        return getLeadOwnerById(_id);
-    },
-};
-
 export default function LeadsTable({
     columns,
     setColumns,
     columnOrder,
     setColumnOrder,
     leads,
+    owners,
     setLeads,
     selectedLeadIds,
     setSelectedLeadIds,
     onOpenAdvanceFilter
 }) {
+    let setLeadsFn;
     setLeadsFn = setLeads;
 
     const selectAllRef = useRef();
@@ -66,6 +59,18 @@ export default function LeadsTable({
     const isIndeterminate =
         leads.some(l => selectedLeadIds.includes(l.invitationId)) &&
         !leads.every(l => selectedLeadIds.includes(l.invitationId));
+    
+    const dataFormatters = {
+        assignedUserId: (row) => {
+            const id = Number(row?.assignedUserId);
+
+            // -1 = current admin
+            if (id === -1) return getCurrentUserNameIfAdmin();
+
+            // lookup from owners map
+            return owners?.[id] || '-';
+        }
+    };
 
     useEffect(() => {
         if (selectAllRef.current) {

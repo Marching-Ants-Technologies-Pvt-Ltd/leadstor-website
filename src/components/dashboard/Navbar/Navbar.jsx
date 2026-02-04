@@ -20,6 +20,8 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
     '/invoices': 'Invoices',
     '/branches': 'Branches',
     '/expenses': 'Expenses',
+    '/businessProfile': 'Business Profile',
+    '/teams': 'Teams',
     '/': 'Dashboard',
   };
 

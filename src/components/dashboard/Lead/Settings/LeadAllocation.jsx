@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Search, Trash2, X, Edit3, Plus, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { xFetch } from "@/utility/xFetch";
+import { Corporate } from "@/utility/TinyDB";
 import { Bounce, ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/ReactToastify.min.css';
 
-export default function LeadAllocation({ corporateId = 64 }) {
+export default function LeadAllocation() {
   const [data, setData] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
@@ -16,6 +17,7 @@ export default function LeadAllocation({ corporateId = 64 }) {
   const [selected, setSelected] = useState([]);
   const [page, setPage] = useState(1);
   const limit = 5;
+  const corporateId = Corporate?._id;
 
   const fetchData = () => {
     setLoading(true);

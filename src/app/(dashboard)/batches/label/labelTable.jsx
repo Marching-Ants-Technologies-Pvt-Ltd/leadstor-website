@@ -58,17 +58,17 @@ export default function LabelTable({ rows, selectedIds, onSelectChange, onEdit, 
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </td>
-                <td className="px-3 py-2 font-medium">{row.labelName || '—'}</td>
-                <td className="px-3 py-2 text-gray-600">{decodeHtml(row.labelDescription) || '—'}</td>
-                <td className="px-3 py-2 text-center">
-                  <button
+                <div className="flex items-center gap-2">
+                    {row.labelName || '—'}
+                    <button
                     onClick={() => onEdit(row)}
-                    title="Edit Label"
+                    title="Edit course"
                     className="text-blue-600 hover:text-blue-800"
-                  >
+                    >
                     <i className="ri-edit-line text-base"></i>
-                  </button>
-                </td>
+                    </button>
+                </div>
+                <td className="px-3 py-2 text-gray-600">{decodeHtml(row.labelDescription) || '—'}</td>
               </tr>
             )
           })}

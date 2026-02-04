@@ -244,7 +244,7 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
                       {item.remarks && (
                         <div className="mb-1">
                           <p className="text-sm text-gray-500">
-                            Renarks:{" "}
+                            Remarks:{" "}
                             <span className="font-medium text-gray-700">
                               {item.remarks}
                             </span>
