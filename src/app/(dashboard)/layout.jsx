@@ -71,19 +71,7 @@ export default function ClientLayout({ children }) {
       };
   }, []);
 
-  // useEffect(() => {
-  //   window.refreshLeadPage = () => {
-  //     LeadsCurrentPage.setValue(1);
-  //     window.refreshLeadMenu?.();
-  //     window.tableRefresh?.();
-  //     window.onTableRefresh?.();
-  //   };
-  //   return () => {
-  //       delete window.refreshLeadPage;
-  //   };
-  // }, []);
 
-  
   if (!session) return <Loading />;
 
   return (
