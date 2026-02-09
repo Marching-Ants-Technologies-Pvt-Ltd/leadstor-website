@@ -65,7 +65,7 @@ export default function LeadsTable({
             const id = Number(row?.assignedUserId);
 
             // -1 = current admin
-            if (id === -1) return getCurrentUserNameIfAdmin();
+            if (id === -1) return '-';
 
             // lookup from owners map
             return owners?.[id] || '-';

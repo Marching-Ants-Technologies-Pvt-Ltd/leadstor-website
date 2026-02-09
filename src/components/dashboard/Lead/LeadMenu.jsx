@@ -68,10 +68,18 @@ export default function LeadsMenu({
   };
   const [refreshing, setRefreshing] = useState(false);
 
-  const refreshLeadPage = () => {
+  const resetAndRefreshLeads = () => {
     if (refreshing) return;
     setRefreshing(true);
-    window.refreshLeadPage?.();
+
+    LeadFilters.reset();
+    LeadSearch?.reset?.();
+    LeadsCurrentPage.setValue(1);
+
+    window.refreshLeadMenu?.();
+    window.tableRefresh?.();
+    window.onTableRefresh?.();
+
     setTimeout(() => setRefreshing(false), 800);
   };
 
@@ -277,7 +285,7 @@ export default function LeadsMenu({
           </button>
           <button 
             className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`} 
-            onClick={() => refreshLeadPage()}
+            onClick={() => resetAndRefreshLeads()}
           >
             <i className="ri-refresh-line" title="Refresh" />
           </button>

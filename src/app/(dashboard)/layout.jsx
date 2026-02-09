@@ -58,7 +58,6 @@ export default function ClientLayout({ children }) {
   const pageInfo = getPageInfo(pathname);
 
     useEffect(() => {
-      // 🔥 RESET filters on fresh load
       LeadFilters.reset();
       LeadSearch?.reset?.(); // if search is also persisted
       LeadsCurrentPage.setValue(1);
@@ -71,6 +70,18 @@ export default function ClientLayout({ children }) {
         delete window.tableRefresh;
       };
   }, []);
+
+  // useEffect(() => {
+  //   window.refreshLeadPage = () => {
+  //     LeadsCurrentPage.setValue(1);
+  //     window.refreshLeadMenu?.();
+  //     window.tableRefresh?.();
+  //     window.onTableRefresh?.();
+  //   };
+  //   return () => {
+  //       delete window.refreshLeadPage;
+  //   };
+  // }, []);
 
   
   if (!session) return <Loading />;

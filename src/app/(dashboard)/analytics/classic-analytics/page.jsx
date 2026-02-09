@@ -15,18 +15,43 @@ import DonutChart from '@/components/charts/DonutChart';
 import { buildPieData } from '@/utility/ChartUtils';
 import { Corporate } from '@/utility/TinyDB';
 
-const StatCard = ({ icon, label, value, sub, color = 'text-slate-800' }) => (
-  <div className="bg-white rounded-2xl shadow-sm border p-4 flex gap-3">
-    <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center">
-      <i className={`${icon} text-xl`} />
+const StatCard = ({
+  title,
+  value,
+  subLabel,
+  subValue,
+  footer,
+  subColor = "text-green-600",
+}) => (
+  <div className="bg-white rounded-xl border px-6 py-5">
+    
+    {/* Title */}
+    <div className="text-sm text-slate-600 mb-3">
+      {title}
     </div>
-    <div className="flex-1">
-      <div className="text-xs text-slate-500">{label}</div>
-      <div className={`text-xl font-semibold ${color}`}>{value}</div>
-      {sub && <div className="text-xs text-slate-400">{sub}</div>}
+    <div className="text-sm text-slate-600 mb-3 text-center">
+    {/* Main Value */}
+    <div className="text-3xl font-semibold text-slate-900 mb-2">
+      {value}
+    </div>
+
+    {/* Sub metric */}
+    {subLabel && (
+      <div className={`text-sm ${subColor} mb-2`}>
+        {subLabel} <span className="font-medium">{subValue}</span>
+      </div>
+    )}
+
+    {/* Footer */}
+    {footer && (
+      <div className="text-xs text-slate-400">
+        {footer}
+      </div>
+    )}
     </div>
   </div>
 );
+
 
 export default function AnalyticsDashboard() {
 
@@ -42,6 +67,7 @@ export default function AnalyticsDashboard() {
   const [salesTrend, setSalesTrend] = useState([]);
   const [durationWon, setDurationWon] = useState(12);
   const [durationRevenue, setDurationRevenue] = useState(12);
+  const [courseTotal, setCourseTotal] = useState(0);
   const [sourceTotal, setSourceTotal] = useState(0);
   const [ownerTotal, setOwnerTotal] = useState(0);
   const [reportType, setReportType] = useState('');
@@ -132,6 +158,10 @@ export default function AnalyticsDashboard() {
         from = dayjs().startOf('month');
         to = dayjs().endOf('month');
         break;
+      case 'LAST_MONTH':
+        from = dayjs().subtract(1, 'month').startOf('month');
+        to = dayjs().subtract(1, 'month').endOf('month');
+        break;
       case 'CUSTOM':
         return;
     }
@@ -160,18 +190,9 @@ export default function AnalyticsDashboard() {
       totalJoined: res.totalJoined,
       pendingFollowUps: res.pendingFollowUps,
     });
-
-    setSourceTotal(
-      (res.source?.items || []).reduce(
-        (sum, i) => sum + Number(i.leadsCount), 0
-      )
-    );
-
-    setOwnerTotal(
-      (res.owner?.items || []).reduce(
-        (sum, i) => sum + Number(i.leadsCount), 0
-      )
-    );
+    setCourseTotal(course.length || 0);
+    setSourceTotal(source.length || 0);
+    setOwnerTotal(owner.length || 0);
   }
 
   async function loadWonTrend(months) {
@@ -207,6 +228,7 @@ export default function AnalyticsDashboard() {
         THIS_WEEK: 'current week',
         LAST_WEEK: 'last week',
         THIS_MONTH: 'current month',
+        LAST_MONTH: 'last month',
         CUSTOM: 'selected period',
       };
 
@@ -294,6 +316,7 @@ export default function AnalyticsDashboard() {
                     <option value="THIS_WEEK">Current Week</option>
                     <option value="LAST_WEEK">Last Week</option>
                     <option value="THIS_MONTH">Current Month</option>
+                    <option value="LAST_MONTH">Last Month</option>
                     <option value="CUSTOM">Custom</option>
                   </select>
                 </div>
@@ -383,27 +406,63 @@ export default function AnalyticsDashboard() {
           </div>
 
           {/* SUMMARY CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StatCard icon="ri-user-add-line" label="Leads" value={summary.totalLeads || 0}
-              sub={`Open ${summary.totalOpen || 0}`} />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <StatCard
+              title="Leads"
+              value={`${formatNumber(summary.totalLeads)}`}
+              subLabel="Open"
+              subValue={summary.totalOpen}
+              footer={`${formatNumber(summary.overallLeads)} Overall Leads`}
+            />
 
-            <StatCard icon="ri-refresh-line" label="Conversion" value={summary.totalJoined || 0}
-              sub={`Followups ${summary.totalFollowUp || 0}`} />
+            <StatCard
+              title="Conversion"
+              value={summary.totalJoined}
+              subLabel="FollowUp"
+              subValue={summary.totalFollowUp}
+              footer={`${summary.pendingFollowUps} Pending Followups`}
+            />
 
-            <StatCard icon="ri-money-rupee-circle-line"  label="Revenue" value={summary.totalAmount || 0}
-              sub={`Due ${summary.dueAmount || 0}`} />
+            <StatCard
+              title="Revenue"
+              value={`${formatNumber(summary.paidAmount)}`}
+              subLabel="Overdue"
+              subValue={`${formatNumber(summary.dueAmount)}`}
+              subColor="text-red-600"
+              footer={`${formatNumber(summary.totalAmount)} Total Sells`}
+            />
 
-            <StatCard icon="ri-wallet-3-line"  label="Collection" value={summary.collection || 0}
-              sub={`Invoices ${summary.invoices || 0}`} />
+            <StatCard
+              title="Collection"
+              value={`${formatNumber(summary.collection)}`}
+              subLabel="Invoices"
+              subValue={summary.invoices}
+              footer={`${summary.candidates || 0} Candidates`}
+            />
 
-            <StatCard icon="ri-book-open-line"  label="Courses" value={summary.course?.count || 0}
-              sub={`Total ${summary.totalLeads || 0}`} />
+            <StatCard
+              title="Courses"
+              value={`${formatNumber(summary.course?.count || 0)}`}
+              subLabel="Total"
+              subValue={courseTotal || 0}
+              footer={`Listed Courses`}
+            />
 
-            <StatCard icon="ri-links-line"  label="Sources" value={summary.source?.count || 0}
-              sub={`Total ${sourceTotal}`} />
+            <StatCard
+              title="Sources"
+              value={`${formatNumber(summary.source?.count || 0)}`}
+              subLabel="Total"
+              subValue={sourceTotal || 0}
+              footer={`Listed Sources`}
+            />
 
-            <StatCard icon="ri-user-star-line"  label="Counsellors" value={summary.owner?.count || 0}
-              sub={`Total ${ownerTotal}`} />
+            <StatCard
+              title="Counsellors"
+              value={`${formatNumber(summary.owner?.count || 0)}`}
+              subLabel="Total"
+              subValue={ownerTotal || 0}
+              footer={`Listed Counsellors`}
+            />
           </div>
 
           {/* CHARTS */}
