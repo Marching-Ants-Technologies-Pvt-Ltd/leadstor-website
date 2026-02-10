@@ -22,6 +22,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
     '/expenses': 'Expenses',
     '/businessProfile': 'Business Profile',
     '/teams': 'Teams',
+    '/analytics/classic-analytics': 'Analytics',
     '/': 'Dashboard',
   };
 

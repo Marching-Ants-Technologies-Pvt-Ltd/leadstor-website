@@ -14,6 +14,7 @@ import MultiSelectDropdown from '@/utility/MultiSelectDropdown';
 import DonutChart from '@/components/charts/DonutChart';
 import { buildPieData } from '@/utility/ChartUtils';
 import { Corporate } from '@/utility/TinyDB';
+import TabularModal from '@/utility/TabularModal';
 
 const StatCard = ({
   title,
@@ -72,6 +73,19 @@ export default function AnalyticsDashboard() {
   const [ownerTotal, setOwnerTotal] = useState(0);
   const [reportType, setReportType] = useState('');
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalData, setModalData] = useState([]);
+
+  const durationOptions = [
+    { label: 'Last 6 Months', value: 6 },
+    { label: 'Last 12 Months', value: 12 },
+    { label: 'Last 18 Months', value: 18 },
+    { label: 'Last 24 Months', value: 24 },
+    { label: 'Last 36 Months', value: 36 },
+    { label: 'Last 48 Months', value: 48 },
+  ];
+
   const [filters, setFilters] = useState({
     datePreset: 'THIS_WEEK',
     course: [],
@@ -119,6 +133,55 @@ export default function AnalyticsDashboard() {
     return range.from.startOf('day').isBefore(dayjs().startOf('day'));
   }, [range]);
 
+  const showTable = (title, data) => {
+    setModalTitle(title.replace('Graph', 'Table'));
+    setModalData(data);
+    setModalOpen(true);
+  };
+
+  const nameMap = owner;
+  const ownerMap = Object.fromEntries(
+    owner.map(item => [item.value, item.label])
+  );
+
+  const getOwnerName = (id) => {
+    if(id == -1) return 'Admin';
+    if (!id) return "Unknown";
+    return ownerMap[id] || "Unknown";
+  };
+
+  const leadsDistributionData = useMemo(() => {
+    return prepareOwnerLikeData(summary.owner?.items || [], nameMap, summary.totalLeads || 0);
+  }, [summary.owner?.items, nameMap, summary.totalLeads]);
+
+  const leadsConversionData = useMemo(() => {
+    const items = summary.joined?.items?.length ? summary.joined.items : summary.owner?.items || [];
+      return prepareOwnerLikeData(items, nameMap, summary.totalJoined || 0);
+    }, [summary.joined?.items, summary.owner?.items, nameMap, summary.totalJoined]);
+
+  const courseChartData = useMemo(() => {
+    return prepareSimpleData(summary.course?.items || [], summary.totalLeads || 0, 9, 'Admin');
+  }, [summary.course?.items, summary.totalLeads]);
+
+  const sourceChartData = useMemo(() => {
+    return prepareSimpleData(summary.source?.items || [], summary.totalLeads || 0, 9, 'Admin');
+  }, [summary.source?.items, summary.totalLeads]);
+
+  const statusChartData = useMemo(() => {
+    return prepareSimpleData(summary.status?.items || [], summary.totalLeads || 0, 9, 'Admin');
+  }, [summary.status?.items, summary.totalLeads]);
+
+  const followUpChartData = useMemo(() => {
+    const fu = Number(summary.totalFollowUp || 0);
+    const pfu = Number(summary.pendingFollowUps || 0);
+
+    if (fu === 0 && pfu === 0) return [];
+
+    return [
+      { label: 'FollowUp', value: fu },
+      { label: 'Pending FollowUp', value: pfu },
+    ];
+  }, [summary.totalFollowUp, summary.pendingFollowUps]);
 
   /* ---------------- EFFECTS ---------------- */
 
@@ -169,6 +232,30 @@ export default function AnalyticsDashboard() {
     setRange({ from, to });
     setCustomRange([from.toDate(), to.toDate()]);
   }, [filters.datePreset]);
+
+  useEffect(() => {
+    loadWonTrend(durationWon);
+    loadSalesTrend(durationRevenue);
+  }, [durationWon, durationRevenue]);
+
+  function DurationDropdown({ value, onChange, label }) {
+    return (
+      <div className="flex items-center gap-2">
+        <label className="text-sm font-medium text-slate-700">{label}</label>
+        <select
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="border border-slate-300 rounded-md px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          {durationOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
 
   /* ---------------- API CALLS ---------------- */
   async function loadAnalytics() {
@@ -250,15 +337,35 @@ export default function AnalyticsDashboard() {
       );
   }
 
-  function ChartCard({ title, subtitle, children }) {
-      return (
-        <div className="bg-white rounded-xl border p-5 mb-6">
-          <h3 className="text-base font-semibold text-slate-800">{title}</h3>
-          <p className="text-sm text-slate-500 mb-4">{subtitle}</p>
+  function ChartCard({ 
+    title, 
+    subtitle, 
+    data, 
+    children,
+    onShowTable 
+  }) {
+    return (
+      <div className="bg-white rounded-xl border p-5 relative">
+        <div className="flex justify-between items-start mb-3">  {/* reduced mb-4 → mb-3 */}
+          <div>
+            <h3 className="font-semibold text-slate-800 text-lg">{title}</h3>  {/* slightly smaller title */}
+            <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
+          </div>
+          {data?.length > 0 && (
+            <button
+              onClick={() => onShowTable?.(title, data)}
+              className="text-xs font-medium text-blue-600 hover:text-blue-800 px-3 py-1.5 rounded-md hover:bg-blue-50 transition"
+            >
+              Tabular
+            </button>
+          )}
+        </div>
+        <div className="h-[420px] md:h-[440px]">  {/* ← was 520/580, now smaller */}
           {children}
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
   async function downloadReport(type) {
     if (!type || !range?.from || !range?.to) return;
@@ -288,19 +395,101 @@ export default function AnalyticsDashboard() {
     })
   }
 
+    function prepareOwnerLikeData(
+      items,
+      nameMap,
+      total,
+      maxVisible = 9
+    ){
+      const data = [];
+
+      // Sort descending
+      const sorted = [...items].sort((a, b) => Number(b.leadsCount) - Number(a.leadsCount));
+
+      let remaining = Number(total);
+      // Visible slices
+      for (let i = 0; i < Math.min(maxVisible, sorted.length); i++) {
+        const item = sorted[i];
+        const count = Number(item.leadsCount);
+        const name = getOwnerName(item.title) ?? item.title ?? 'Unknown';
+        data.push({
+          label: name,
+          value: count,
+          originalTitle: item.title,
+        });
+
+        remaining -= count;
+      }
+
+      // Others (remaining items beyond maxVisible)
+      const othersFromSlice = sorted.slice(maxVisible);
+      let othersCount = othersFromSlice.reduce((sum, it) => sum + Number(it.leadsCount), 0);
+
+      // Still remaining after visible + sliced others?
+      othersCount += remaining;
+
+      if (othersCount > 0) {
+        data.push({
+          label: othersCount > 0 && data.length >= maxVisible ? `${othersFromSlice.length} Others` : 'Others',
+          value: othersCount,
+          isOthers: true,
+        });
+      }
+
+      return data;
+    }
+
+    function prepareSimpleData(
+      items,
+      total,
+      maxVisible = 6,
+      othersLabel = 'Admin'
+    ) {
+      const data = [];
+
+      const sorted = [...items].sort((a, b) => Number(b.leadsCount) - Number(a.leadsCount));
+
+      let remaining = Number(total);
+
+      for (let i = 0; i < Math.min(maxVisible, sorted.length); i++) {
+        const item = sorted[i];
+        const count = Number(item.leadsCount);
+
+        data.push({
+          label: item.title || 'Unknown',
+          value: count,
+          originalTitle: item.title,
+        });
+
+        remaining -= count;
+      }
+
+      const othersFromSlice = sorted.slice(maxVisible);
+      let othersCount = othersFromSlice.reduce((sum, it) => sum + Number(it.leadsCount), 0) + remaining;
+
+      if (othersCount > 0) {
+        data.push({
+          label: othersFromSlice.length > 0 && data.length >= maxVisible
+            ? `Admin`
+            : othersLabel,
+          value: othersCount,
+          isOthers: true,
+        });
+      }
+
+      return data;
+    }
+
   /* ---------------- UI ---------------- */
   return (
     <div className="min-h-screen bg-gray-50 overflow-y-auto">
       <div className="mx-auto">
         <div className="p-2 space-y-6 bg-slate-50 min-h-screen">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-xl font-semibold text-slate-800">Analytics</h1>
-
             <DateFilterMessage
               filters={filters}
               range={range}
             />
-
             <div className="bg-white border rounded-2xl p-4 shadow-sm">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
 
@@ -467,101 +656,111 @@ export default function AnalyticsDashboard() {
 
           {/* CHARTS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-white rounded-2xl border p-4">
-              <h3 className="font-semibold mb-2">Won Opportunities</h3>
-              <ResponsiveContainer width="100%" height={260}>
+            {/* Won Opportunities */}
+            <div className="bg-white rounded-2xl border p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                <h3 className="font-semibold text-slate-800">Won Opportunities</h3>
+                <DurationDropdown
+                  value={durationWon}
+                  onChange={setDurationWon}
+                  label="Duration"
+                />
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={wonTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Line dataKey="value" stroke="#2563eb" strokeWidth={2} />
+                  <Line dataKey="value" stroke="#f97316" strokeWidth={2} /> {/* orange like your screenshot */}
                 </LineChart>
               </ResponsiveContainer>
             </div>
 
-            <div className="bg-white rounded-2xl border p-4">
-              <h3 className="font-semibold mb-2">Sales Trend</h3>
-              <ResponsiveContainer width="100%" height={260}>
+            {/* Sales Trend */}
+            <div className="bg-white rounded-2xl border p-5 shadow-sm">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                <h3 className="font-semibold text-slate-800">Sales Trend</h3>
+                <DurationDropdown
+                  value={durationRevenue}
+                  onChange={setDurationRevenue}
+                  label="Duration"
+                />
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={salesTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
                   <Tooltip />
-                  <Area dataKey="value" stroke="#16a34a" fill="#86efac" />
+                  <Area dataKey="value" stroke="#16a34a" fill="#86efac" /> {/* green like before */}
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="space-y-8 mt-8">
-
-            {/* Leads Distribution */}
+          <div className="grid grid-cols-1 gap-8 mt-10">
             <ChartCard
               title="Leads Distribution Graph"
               subtitle="The graphical representation illustrates the distribution of leads among counsellors."
+              data={leadsDistributionData}
+              onShowTable={showTable}
             >
-              <DonutChart
-                data={buildPieData(summary.owner?.items)}
-              />
+              <DonutChart data={leadsDistributionData} />
             </ChartCard>
 
-            {/* Leads Conversion */}
             <ChartCard
               title="Leads Conversion Graph"
               subtitle="The graphical representation illustrates the conversion of leads done by counsellors."
+              data={leadsConversionData}
+              onShowTable={showTable}
             >
-              <DonutChart
-                data={buildPieData(
-                  summary.owner?.items?.filter(i => Number(i.leadsCount) > 0)
-                )}
-              />
+              <DonutChart data={leadsConversionData} />
             </ChartCard>
 
-            {/* Lead Source */}
             <ChartCard
               title="Lead-Source Graph"
               subtitle="The graphical representation illustrates the distribution of leads based on sources."
+              data={sourceChartData}
+              onShowTable={showTable}
             >
-              <DonutChart
-                data={buildPieData(summary.source?.items)}
-              />
+              <DonutChart data={sourceChartData} />
             </ChartCard>
 
-            {/* Lead Course */}
             <ChartCard
               title="Lead-Course Graph"
               subtitle="The graphical representation illustrates the distribution of leads based on courses."
+              data={courseChartData}
+              onShowTable={showTable}
             >
-              <DonutChart
-                data={buildPieData(summary.course?.items)}
-              />
+              <DonutChart data={courseChartData} />
             </ChartCard>
 
-            {/* Lead Status */}
             <ChartCard
               title="Lead-Status Graph"
               subtitle="The graphical representation illustrates the distribution of leads based on current status."
+              data={statusChartData}
+              onShowTable={showTable}
             >
-              <DonutChart
-                data={buildPieData(summary.status?.items)}
-              />
+              <DonutChart data={statusChartData} />
             </ChartCard>
 
-            {/* Follow Up */}
             <ChartCard
-              title="Lead Follow-Up Graph"
-              subtitle="The graphical representation illustrates the distribution of leads based on follow-up status."
+              title="Lead FollowUp Graph"
+              subtitle="The graphical representation illustrates the distribution of leads based on followUp status."
+              data={followUpChartData}
+              onShowTable={showTable}
             >
-              <DonutChart
-                data={[
-                  { label: 'Follow-Up', value: summary.totalFollowUp },
-                  { label: 'Pending Follow-Up', value: summary.pendingFollowUps },
-                ]}
-              />
+              <DonutChart data={followUpChartData} />
             </ChartCard>
-
           </div>
+
+          <TabularModal
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            title={modalTitle}
+            data={modalData}
+          />
         </div>
       </div>
     </div>
