@@ -58,7 +58,6 @@ export default function ClientLayout({ children }) {
   const pageInfo = getPageInfo(pathname);
 
     useEffect(() => {
-      // 🔥 RESET filters on fresh load
       LeadFilters.reset();
       LeadSearch?.reset?.(); // if search is also persisted
       LeadsCurrentPage.setValue(1);
@@ -72,7 +71,7 @@ export default function ClientLayout({ children }) {
       };
   }, []);
 
-  
+
   if (!session) return <Loading />;
 
   return (

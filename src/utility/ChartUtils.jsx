@@ -1,10 +1,12 @@
+import { getLeadOwnerById } from "@/utility/TinyDB";
+
 export function buildPieData(items = [], limit = 8) {
   const sorted = [...items].sort(
     (a, b) => Number(b.leadsCount) - Number(a.leadsCount)
   );
 
   const top = sorted.slice(0, limit).map(i => ({
-    label: i.title,
+    label: getLeadOwnerById(i.title),
     value: Number(i.leadsCount),
   }));
 

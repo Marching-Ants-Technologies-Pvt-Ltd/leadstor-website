@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import CustomSelect from '@/components/CustomSelect';
 import { Corporate, User, Test, LeadFilters,LeadsCurrentPage } from '@/utility/TinyDB';
 import DateInputPicker from "@/components/DateInputPicker/DateInputPicker";
 
@@ -15,7 +14,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
     location: [],
     owner: '',
     courseMode: '',
-    probability: '',
+    probability: [],
     enquiryDateFrom: '',
     enquiryDateTo: '',
     updatedDateFrom: '',
@@ -26,7 +25,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
   const resetDrawerForm = () => {
     setSelectedFilters({
       status: [], course: [], source: [], location: [], owner: '',
-      courseMode: '', probability: '',
+      courseMode: '', probability: [],
       enquiryDateFrom: '', enquiryDateTo: '',
       updatedDateFrom: '', updatedDateTo: '',
       followupDate: '', followupDate_end: '',
@@ -44,6 +43,11 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
     probability: []
   });
   const [loading, setLoading] = useState(false);
+  const probabilityOptions = [
+    { label: 'Low', value: '20' },
+    { label: 'Medium', value: '55' },
+    { label: 'High', value: '85' }
+  ];
 
   // Get session data
   const sessionData = useMemo(() => {
@@ -115,7 +119,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
           location: transformOptions(response.locations),
           owner: transformOwnerOptions(response.owners),
           courseMode: transformOptions(response.courseModes),
-          probability: transformOptions(response.probabilities)
+          probability: probabilityOptions
         });
       } catch (e) {
         console.error('Error fetching filter options:', e);
@@ -161,18 +165,29 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
 
   const getDisplayText = (type) => {
     const selected = selectedFilters[type];
+
     if (!selected || selected.length === 0) {
       return `Select ${type.charAt(0).toUpperCase() + type.slice(1)}`;
     }
-    if (selected.length === 1) {
-      return selected[0];
+
+    // build value → label map
+    const optionMap = Object.fromEntries(
+      (filterOptions[type] || []).map(opt => [opt.value, opt.label])
+    );
+
+    const labels = selected.map(v => optionMap[v] || v);
+
+    if (labels.length === 1) {
+      return labels[0];
     }
+
     return (
       <span>
-        {selected[0]} <span className="selected-count">+{selected.length - 1}</span>
+        {labels[0]} <span className="selected-count">+{labels.length - 1}</span>
       </span>
     );
   };
+
 
   const clearFilters = () => {
     resetDrawerForm();
@@ -253,16 +268,19 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
         query: 'courseModeFilter'
       });
     }
-    
-    if (selectedFilters.probability) {
+
+    if (selectedFilters.probability.length > 0) {
       filters.push({
         title: 'Probability',
-        value: selectedFilters.probability,
-        displayValue: selectedFilters.probability === '20' ? 'Low' : selectedFilters.probability === '55' ? 'Medium' : 'High',
+        value: selectedFilters.probability.join(','),
+        displayValue: selectedFilters.probability
+        .map(v =>
+          probabilityOptions.find(p => p.value === v)?.label || v
+        )
+        .join(', '),
         query: 'leadProbability'
       });
     }
-    
     
     if (selectedFilters.enquiryDateFrom || selectedFilters.enquiryDateTo) {
       if (selectedFilters.enquiryDateFrom) {
@@ -329,7 +347,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
       if (!hasAnyFilter) return;
       setApplying(true);
 
-      const filters = buildLeadFilters();console.log("Applied Filters:", filters);
+      const filters = buildLeadFilters();
       LeadFilters.setValue(filters);
 
       // Reset page when new filters are applied
@@ -413,7 +431,7 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
           ) : (
             <>
               {/* Multi-selects */}
-              {['status', 'course', 'source', 'location'].map(type => (
+              {['status', 'course', 'source', 'location','probability'].map(type => (
                 <div key={type} className="mb-6">
                   <label className="block font-medium text-gray-700 mb-2 text-sm">
                     {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -500,20 +518,77 @@ const FilterDrawer = ({ isOpen, onClose, onOpenAdvanceFilter }) => {
                 </select>
               </div>
 
-              {/* Probability */}
-              <div className="mb-6">
-                <label className="block font-medium text-gray-700 mb-2 text-sm">Probability</label>
-                <select
-                  value={selectedFilters.probability}
-                  onChange={e => updateSingleFilter('probability', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 outline-none"
-                >
-                  <option value="">Select Probability</option>
-                  <option value="20">Low</option>
-                  <option value="55">Medium</option>
-                  <option value="85">High</option>
-                </select>
-              </div>
+              {/* Probability – Multi Select */}
+              {/* <div className="mb-6">
+                <label className="block font-medium text-gray-700 mb-2 text-sm">
+                  Probability
+                </label>
+
+                <div className="relative multi-select">
+                  <div
+                    className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-sm cursor-pointer flex items-center justify-between hover:border-gray-400 transition ${
+                      activeDropdown === 'probability'
+                        ? 'border-blue-500 ring-1 ring-blue-200'
+                        : ''
+                    }`}
+                    onClick={() => toggleMultiSelect('probability')}
+                  >
+                    <span className="text-gray-700 truncate">
+                      {getDisplayText('probability')}
+                    </span>
+
+                    <svg
+                      className="w-4 h-4 text-gray-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </div>
+
+                  {activeDropdown === 'probability' && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-b-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                      {filterOptions.probability?.length > 0 ? (
+                        filterOptions.probability.map(option => (
+                          <div
+                            key={option.value}
+                            className={`px-4 py-2.5 text-sm flex items-center gap-3 cursor-pointer hover:bg-blue-50 transition ${
+                              selectedFilters.probability.includes(option.value)
+                                ? 'bg-blue-50 text-blue-700'
+                                : 'text-gray-700'
+                            }`}
+                            onClick={() =>
+                              selectMultiOption('probability', option.value)
+                            }
+                          >
+                            <div
+                              className={`w-4 h-4 border rounded-sm flex items-center justify-center text-white text-xs ${
+                                selectedFilters.probability.includes(option.value)
+                                  ? 'bg-blue-600 border-blue-600'
+                                  : 'border-gray-300'
+                              }`}
+                            >
+                              {selectedFilters.probability.includes(option.value) && '✓'}
+                            </div>
+
+                            <span>{option.label}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="px-4 py-3 text-gray-400 text-sm">
+                          No options
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div> */}
 
               {/* Date Pickers */}
               <div className="mb-6">

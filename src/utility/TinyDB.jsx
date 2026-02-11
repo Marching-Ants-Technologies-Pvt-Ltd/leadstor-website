@@ -33,6 +33,10 @@ export function getLeadOwnerById(id, defaultValue = '') {
         return defaultValue;
     }
 
+    if (parsedId === -1) {
+        return 'Admin';
+    }
+
     return LeadOwnersById[parsedId] ?? defaultValue;
 }
 
