@@ -20,8 +20,8 @@ export default function ExpenseTable({
   const allSelected = rows.length > 0 && rows.every(r => selectedIds.includes(r.id));
 
   const getPaidStatus = status => {
-    if (status === 1) return <span className="text-green-700 font-medium">Paid</span>;
-    if (status === 2) return <span className="text-red-700 font-medium">Not Paid</span>;
+    if (status === "1") return <span className="text-green-700 font-medium">Paid</span>;
+    if (status === "2") return <span className="text-red-700 font-medium">Not Paid</span>;
     return '—';
   };
 

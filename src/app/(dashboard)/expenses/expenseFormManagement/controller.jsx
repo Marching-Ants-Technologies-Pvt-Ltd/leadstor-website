@@ -91,6 +91,7 @@ export default function ExpenseFormFieldController({}) {
 
     try {
       const payload = {
+        id: "-1",
         expenseHead: formExpenseHead.trim(),
         expenseType: formExpenseType.trim(),
         frequency: formFrequency.trim(),
@@ -119,34 +120,6 @@ export default function ExpenseFormFieldController({}) {
       setShowModal(false)
     } catch (err) {
       toast.error('Save failed – please try again')
-    }
-  }
-
-  const handleDeleteSelected = async () => {
-    if (!selectedIds.length) return
-    if (!confirm(`Delete ${selectedIds.length} field(s)?`)) return
-
-    try {
-      // Note: adjust endpoint if your backend has a different delete path
-      for (const id of selectedIds) {
-        await xFetch({
-          path: `/services/expense/deleteExpenseFormField`,
-          method: 'POST',
-          payload: { id },
-        })
-      }
-
-      toast.success('Selected fields deleted')
-
-      const freshData = await xFetch({
-        path: '/services/expense/getExpenseHeadsType',
-        payload: { corporateId },
-      })
-      if (Array.isArray(freshData)) setFields(freshData)
-
-      setSelectedIds([])
-    } catch {
-      toast.error('Delete failed')
     }
   }
 
@@ -193,19 +166,6 @@ export default function ExpenseFormFieldController({}) {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded shadow-sm"
           >
             <i className="ri-add-line"></i> Add Field
-          </button>
-
-          <button
-            onClick={handleDeleteSelected}
-            disabled={!selectedIds.length}
-            className={`flex items-center gap-2 px-4 py-2 text-sm rounded shadow-sm ${
-              selectedIds.length
-                ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            <i className="ri-delete-bin-line"></i>
-            Delete {selectedIds.length ? `(${selectedIds.length})` : ''}
           </button>
         </div>
       </div>

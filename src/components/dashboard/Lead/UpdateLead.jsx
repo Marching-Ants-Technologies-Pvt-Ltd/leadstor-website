@@ -20,6 +20,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [owner, setOwner] = useState([]);
   const [originalFields, setOriginalFields] = useState({ ...selectedLead });
   const [showTimeline, setShowTimeline] = useState(false);
+  const [displayRemarks, setDisplayRemarks] = useState("");
   const FIELD_GROUPS = {
     leadDetails: ['mobile', 'firstName', 'emailId', 'location'],
     salesUpdate: ['status', 'leadProbability'],
@@ -104,8 +105,11 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           <label className="label-crm">{item.displayName || item.fieldName}</label>
           <textarea
             rows="3"
-            value={value}
-            onChange={(e) => handleChange(item.dataField, e.target.value)}
+            value={displayRemarks}
+            onChange={(e) => {
+              setDisplayRemarks(e.target.value);
+              handleChange(item.dataField, e.target.value); 
+            }}
             className="input-crm resize-none"
           />
         </div>
@@ -211,8 +215,8 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       payload,
     })
       .then((data) => {
-        console.log("Lead Data:", data);
         setFields(data);
+        setDisplayRemarks("");
         if (data.status === "Follow Up" || data.isFollowupType == '1') {
           setShowDatePicker(true);
         }
