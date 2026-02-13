@@ -465,9 +465,14 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                       <div className="mt-4 max-w-sm">
                         <label className="label-crm">Follow-up Date</label>
                         <DateInputPicker
-                          value={fields.followupDate}
-                          onChange={(date) => handleChange("followupDate", date)}
-                          isTimeInterval
+                          value={fields.followupDate ? new Date(fields.followupDate) : null}
+                          onChange={(selectedDate) => {
+                            if (selectedDate) {
+                              handleChange("followupDate", selectedDate.toISOString());
+                            } else {
+                              handleChange("followupDate", "");
+                            }
+                          }}
                         />
                       </div>
                     )}
