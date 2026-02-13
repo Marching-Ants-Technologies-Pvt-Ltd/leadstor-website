@@ -7,7 +7,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { xFetch } from '@/utility/xFetch';         
 import { Corporate } from '@/utility/TinyDB';
 import ExpenseTable from './table';
-//import ExpenseFormModal from '@/components/expense/ExpenseFormModal';  // create this
+import ExpenseFormModal from '@/components/expense/ExpenseFormModal';
 
 export default function ExpenseManagement({}) {
   const [expenses, setExpenses] = useState([]);
@@ -226,25 +226,18 @@ export default function ExpenseManagement({}) {
         )}
       </div>
 
-      {/* Modals */}
-      {/* {modalOpen === 'add' && (
+      {modalOpen && (
         <ExpenseFormModal
-          mode="add"
+          mode={modalOpen}
           corporateId={corporateId}
-          onClose={() => setModalOpen(null)}
+          expense={selectedExpense}
+          onClose={() => {
+            setModalOpen(null);
+            setSelectedExpense(null);
+          }}
           onSuccess={handleSuccess}
         />
       )}
-
-      {modalOpen === 'edit' && selectedExpense && (
-        <ExpenseFormModal
-          mode="edit"
-          expense={selectedExpense}
-          corporateId={corporateId}
-          onClose={() => setModalOpen(null)}
-          onSuccess={handleSuccess}
-        />
-      )} */}
     </div>
   );
 }
