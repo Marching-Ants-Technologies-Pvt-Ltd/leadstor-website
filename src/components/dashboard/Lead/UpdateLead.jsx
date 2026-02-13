@@ -200,7 +200,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
 
-  async function xLead() {
+  const xLead = async () => {
     let payload = {
       invitationId: selectedLead.invitationId,
       testType: Test.type,
@@ -216,6 +216,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         if (data.status === "Follow Up" || data.isFollowupType == '1') {
           setShowDatePicker(true);
         }
+        
       })
       .catch((error) => {
         console.error(`An error occurred while fetching leads`, error);
@@ -230,7 +231,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     if (onCancel) onCancel();
   };
 
-  const handleChange = (field, value, isFollowupType) => {console.log(field),console.log(value);console.log(isFollowupType);
+  const handleChange = (field, value, isFollowupType) => {
     setFields((prev) => ({ ...prev, [field]: value }));
     if (field == "status") {
       if (value === "Follow Up" || isFollowupType == '1') {
@@ -370,9 +371,10 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
       try {
         await Promise.all([
+          xLead(),
           fetchAndSetColumns(),
           fetchLeadDropdowns(),
-          fetchOwners(),
+          fetchOwners()
         ]);
       } catch (err) {
         console.error("Initialization error:", err);
@@ -385,6 +387,8 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     };
 
     initialize();
+
+    console.log(fields.followupDate ? new Date(fields.followupDate) : null);
 
     return () => {
       isMounted = false;

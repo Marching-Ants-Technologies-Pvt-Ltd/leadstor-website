@@ -92,11 +92,8 @@ export default function DateInputPicker({ value, onChange, placeholder = "Select
         minuteIncrement: 5,
         closeOnSelect: false,          // ← very important: don't auto-close
         allowInput: false,             // prevents strange close-on-type behavior
-        static: true,                  // better positioning in modals
         onReady: addButtons,           // add buttons when calendar is created
         onOpen: addButtons,            // also add if reopened
-        yearSelectorType: "dropdown", // ensures month dropdown too
-        minDate: "today"
       }}
       className="input-crm w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
       placeholder={placeholder}
