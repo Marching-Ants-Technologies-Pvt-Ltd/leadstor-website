@@ -637,7 +637,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         const toDefer = totalSent > 600;
 
         const formData = new FormData();
-        formData.append("contacts", JSON.stringify(chunk));
+        formData.append("contacts", btoa(JSON.stringify(chunk)));
         formData.append("testId", testId || "");
         formData.append("manual", true);
         formData.append("toDefer", toDefer);

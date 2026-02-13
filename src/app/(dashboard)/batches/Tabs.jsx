@@ -8,9 +8,7 @@ import { User } from '@/utility/TinyDB';
 
 export default function BatchesTabs() {
   const [activeTab, setActiveTab] = useState('batches');
-
-  console.log(User);
-
+  
   // Trainer or Telecaller → show only Attendance Management (no tabs)
   if (User?.role === 'Trainer' || User?.role === 'Telecaller') {
     return (
