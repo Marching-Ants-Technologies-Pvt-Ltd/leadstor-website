@@ -149,12 +149,37 @@ export default function InvoiceCreateEditModal({
 
     setLoading(true);
 
-    const payload = {
-      ...form,
-      corporateId,
-      subTotal,
-      total,
-    };
+    // Build FormData with invoice parameter as nested form fields
+    // This matches PHP's expected format: invoice[corporateId], invoice[client][name], etc.
+    const formData = new FormData();
+    formData.append('invoice[corporateId]', corporateId);
+    formData.append('invoice[invoiceNo]', form.invoiceNo);
+    formData.append('invoice[subTotal]', Number(subTotal));
+    formData.append('invoice[total]', Number(total));
+    formData.append('invoice[discount]', Number(form.discount));
+    formData.append('invoice[discountUnit]', form.discountUnit);
+    formData.append('invoice[gstPercentage]', Number(form.gstPercentage));
+    formData.append('invoice[paid]', Number(form.paid));
+    formData.append('invoice[desc]', form.desc || '');
+
+    // Client data
+    formData.append('invoice[client][name]', form.client.name);
+    formData.append('invoice[client][email]', form.client.email || '');
+    formData.append('invoice[client][mobile]', form.client.mobile || '');
+    formData.append('invoice[client][add]', form.client.add || '');
+
+    // Items data
+    form.items.forEach((item, index) => {
+      formData.append(`invoice[items][${index}][desc]`, item.desc);
+      formData.append(`invoice[items][${index}][qty]`, Number(item.qty));
+      formData.append(`invoice[items][${index}][rate]`, Number(item.rate));
+    });
+
+    // Add clientId for edit mode
+    if (isEdit && invoice?.id) {
+      formData.append('invoice[id]', invoice.id);
+      formData.append('invoice[clientId]', invoice.clientId);
+    }
 
     const path = isEdit
       ? '/services/invoice/updateInvoice'
@@ -164,18 +189,18 @@ export default function InvoiceCreateEditModal({
       const res = await xFetch({
         method: 'POST',
         path,
-        payload,
+        payload: formData,
+        isFormData: true,
       });
 
       if (res?.status) {
         toast.success(isEdit ? "Invoice updated successfully" : "Invoice created successfully");
-        onSuccess?.();
         onClose();
       } else {
         toast.error(res?.message || "Failed to save invoice");
       }
     } catch (err) {
-      console.error(err);
+      console.error('Save error:', err);
       toast.error("Server error while saving invoice");
     } finally {
       setLoading(false);

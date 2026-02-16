@@ -67,14 +67,14 @@ export default function JobPostingFormModal({
         description: initialData.description || '',
         companyName: initialData.companyName || '',
         jobTags: preSelectedTags,           // ← now uses IDs like ["2"]
-        minExp: initialData.minExp || '',
-        maxExp: initialData.maxExp || '',
+        minExp: initialData.minExp !== null && initialData.minExp !== undefined ? String(initialData.minExp) : '',
+        maxExp: initialData.maxExp !== null && initialData.maxExp !== undefined ? String(initialData.maxExp) : '',
         locations: Array.isArray(initialData.locations)
             ? initialData.locations.join(', ')
             : initialData.locations || '',
         positionType: initialData.positionType || '',
-        minSal: initialData.minSal || '',
-        maxSal: initialData.maxSal || '',
+        minSal: initialData.minSal !== null && initialData.minSal !== undefined ? String(initialData.minSal) : '',
+        maxSal: initialData.maxSal !== null && initialData.maxSal !== undefined ? String(initialData.maxSal) : '',
         contact_name: initialData.contact_name || '',
         contact_email: initialData.contact_email || '',
         contact_phone: initialData.contact_phone || '',
@@ -112,12 +112,12 @@ export default function JobPostingFormModal({
         ...(mode === 'edit' && initialData?.id && { jobId: String(initialData.id) }),
         jobTitle: formData.title?.trim() || '',
         companyName: formData.companyName?.trim() || '',
-        minExp: formData.minExp ? String(Number(formData.minExp)) : '',
-        maxExp: formData.maxExp ? String(Number(formData.maxExp)) : '',
+        minExp: formData.minExp !== '' && formData.minExp !== null && formData.minExp !== undefined ? String(Number(formData.minExp)) : '',
+        maxExp: formData.maxExp !== '' && formData.maxExp !== null && formData.maxExp !== undefined ? String(Number(formData.maxExp)) : '',
         jobLocation: formData.locations?.trim() || '',
         positionType: formData.positionType?.trim() || '',
-        minSal: formData.minSal ? String(Number(formData.minSal)) : '',
-        maxSal: formData.maxSal ? String(Number(formData.maxSal)) : '',
+        minSal: formData.minSal !== '' && formData.minSal !== null && formData.minSal !== undefined ? String(Number(formData.minSal)) : '',
+        maxSal: formData.maxSal !== '' && formData.maxSal !== null && formData.maxSal !== undefined ? String(Number(formData.maxSal)) : '',
         contact_name: formData.contact_name?.trim() || '',
         contact_email: formData.contact_email?.trim() || '',
         contact_phone: formData.contact_phone?.trim() || '',
@@ -509,8 +509,19 @@ export default function JobPostingFormModal({
                     toolbar: true,
                     buttons: 'bold,italic,underline,|,ul,ol,|,link,|,source',
                     placeholder: 'Enter detailed job description here...',
+                    events: {
+                      paste: function (e) {
+                        // Allow content to be pasted normally
+                        setTimeout(() => {
+                          setFormData((prev) => ({ ...prev, description: this.value }));
+                        }, 10);
+                      }
+                    }
                   }}
                   onBlur={(newContent) => {
+                    setFormData((prev) => ({ ...prev, description: newContent }));
+                  }}
+                  onChange={(newContent) => {
                     setFormData((prev) => ({ ...prev, description: newContent }));
                   }}
                 />
