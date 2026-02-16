@@ -18,6 +18,7 @@ export default function SendToPlacementReady({
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Preview modal state
   const [showPreview, setShowPreview] = useState(false);
@@ -27,11 +28,24 @@ export default function SendToPlacementReady({
   // Pagination (client-side)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-  const totalPages = Math.ceil(candidates.length / itemsPerPage);
-
+  
+  // Filter candidates based on search term
+  const filteredCandidates = candidates.filter(candidate => {
+    const searchTermLower = searchTerm.toLowerCase();
+    return (
+      candidate.branchName?.toLowerCase().includes(searchTermLower) ||
+      candidate.jobTags?.some(tag => tag.toLowerCase().includes(searchTermLower)) ||
+      candidate.name?.toLowerCase().includes(searchTermLower) ||
+      candidate.email?.toLowerCase().includes(searchTermLower) ||
+      candidate.mobile?.toLowerCase().includes(searchTermLower) ||
+      candidate.qualification?.toLowerCase().includes(searchTermLower)
+    );
+  });
+  
+  const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentCandidates = candidates.slice(indexOfFirstItem, indexOfLastItem);
+  const currentCandidates = filteredCandidates.slice(indexOfFirstItem, indexOfLastItem);
 
   useEffect(() => {
     loadCandidates();
@@ -58,11 +72,6 @@ export default function SendToPlacementReady({
 
   // ── PREVIEW FUNCTION ──────────────────────────────────────────────────────
   const handlePreview = async () => {
-    if (!interviewDate) {
-      alert('Please select interview date/time first');
-      return;
-    }
-
     setPreviewLoading(true);
     setShowPreview(true);
 
@@ -71,7 +80,7 @@ export default function SendToPlacementReady({
         path: '/services/job/sendJobEmailPreview',
         payload: {
           jobId: jobId,
-          interviewDate,
+          interviewDate: interviewDate || null, // Pass null if no date selected
         },
       });
 
@@ -89,16 +98,12 @@ export default function SendToPlacementReady({
   };
 
   const handleSend = async () => {
-    if (!interviewDate) {
-      alert('Please select interview date/time');
-      return;
-    }
     if (selectedIds.length === 0) {
       alert('Please select at least one candidate');
       return;
     }
 
-    if (!confirm(`Send interview details to ${selectedIds.length} candidate(s)?`)) {
+    if (!confirm(`Send job details to ${selectedIds.length} candidate(s)?`)) {
       return;
     }
 
@@ -110,7 +115,7 @@ export default function SendToPlacementReady({
         method: 'POST',
         payload: {
           jobId,
-          interviewDate,
+          interviewDate: interviewDate || null, // Make interview date optional
           candidates: selectedIds.join(','),
           corporateId: String(corporateId),
         },
@@ -178,14 +183,30 @@ export default function SendToPlacementReady({
                 onChange={(e) => setInterviewDate(e.target.value)}
                 min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
                 className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                required
               />
+            </div>
+
+            {/* Search Input */}
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search candidates by name, email, branch, qualification..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1); // Reset to first page when searching
+                  }}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+              </div>
             </div>
 
             <div className="flex gap-3 sm:ml-auto">
               <button
                 onClick={handlePreview}
-                disabled={!interviewDate || sending || loading || previewLoading}
+                disabled={sending || loading || previewLoading}
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium"
               >
                 <Eye size={16} />
@@ -194,7 +215,7 @@ export default function SendToPlacementReady({
 
               <button
                 onClick={handleSend}
-                disabled={sending || selectedIds.length === 0 || !interviewDate || loading}
+                disabled={sending || selectedIds.length === 0 || loading}
                 className="inline-flex items-center gap-1.5 px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm font-medium shadow-sm"
               >
                 {sending ? (
@@ -307,9 +328,9 @@ export default function SendToPlacementReady({
                 <div>
                   Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
                   <span className="font-medium">
-                    {Math.min(indexOfLastItem, candidates.length)}
+                    {Math.min(indexOfLastItem, filteredCandidates.length)}
                   </span>{' '}
-                  of <span className="font-medium">{candidates.length}</span> candidates
+                  of <span className="font-medium">{filteredCandidates.length}</span> candidates
                 </div>
 
                 <div className="flex items-center gap-3">

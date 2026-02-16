@@ -6,13 +6,31 @@ import { xFetch } from '@/utility/xFetch' // Adjust import path as needed
 
 export default function PlacementReportView({ corporateId, onBack }) {
   const [reportData, setReportData] = useState([])
+  const [originalReportData, setOriginalReportData] = useState([])
   const [reportTotal, setReportTotal] = useState(0)
   const [reportPage, setReportPage] = useState(1)
   const [reportLoading, setReportLoading] = useState(false)
   const [expandedRows, setExpandedRows] = useState(new Set())
+  const [searchTerm, setSearchTerm] = useState('')
 
   const limit = 15 // Increased slightly for better screen fit
-  const totalPages = Math.ceil(reportTotal / limit)
+  
+  // Filter report data based on search term
+  const filteredReportData = originalReportData.filter(row => {
+    const searchTermLower = searchTerm.toLowerCase();
+    return (
+      row.candidateId?.toString().toLowerCase().includes(searchTermLower) ||
+      row.name?.toLowerCase().includes(searchTermLower) ||
+      row.email?.toLowerCase().includes(searchTermLower) ||
+      row.mobile?.toLowerCase().includes(searchTermLower)
+    );
+  });
+  
+  const totalPages = Math.ceil(filteredReportData.length / limit);
+  const currentReportData = filteredReportData.slice(
+    (reportPage - 1) * limit,
+    reportPage * limit
+  );
 
   // Load main report data
   const loadReportData = async () => {
@@ -29,7 +47,8 @@ export default function PlacementReportView({ corporateId, onBack }) {
       })
 
       const rows = response?.rows || response?.data || response || []
-      setReportData(rows)
+      setOriginalReportData(rows) // Store original data for filtering
+      setReportData(rows) // Also update reportData for backward compatibility if needed
       setReportTotal(response?.total || rows.length || 0)
     } catch (err) {
       console.error('Report load error:', err)
@@ -100,7 +119,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Compact Toolbar - no main menu items */}
-      <div className="bg-white border-b px-4 py-2 flex items-center justify-between text-sm">
+      <div className="bg-white border-b px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-sm">
         <button
           onClick={onBack}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 hover:bg-gray-50 rounded text-gray-700 text-[13px]"
@@ -108,6 +127,22 @@ export default function PlacementReportView({ corporateId, onBack }) {
           <i className="ri-arrow-left-line"></i>
           Back
         </button>
+
+        <div className="flex-1 max-w-md">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by candidate ID, name, email, or mobile..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setReportPage(1); // Reset to first page when searching
+              }}
+              className="w-full pl-10 pr-4 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+          </div>
+        </div>
 
         <button
           onClick={exportReport}
@@ -148,7 +183,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {reportData.map(row => (
+                  {currentReportData.map(row => (
                     <React.Fragment key={row.candidateId}>
                       <tr className="hover:bg-gray-50 transition-colors">
                         <td className="px-3 py-2 text-center">
@@ -217,8 +252,8 @@ export default function PlacementReportView({ corporateId, onBack }) {
             <div className="px-4 py-3 border-t bg-white flex flex-col sm:flex-row justify-between items-center gap-3 text-[13px] text-gray-600">
               <div>
                 Showing <strong>{(reportPage - 1) * limit + 1}</strong>–
-                <strong>{Math.min(reportPage * limit, reportTotal)}</strong> of{' '}
-                <strong>{reportTotal.toLocaleString()}</strong>
+                <strong>{Math.min(reportPage * limit, filteredReportData.length)}</strong> of{' '}
+                <strong>{filteredReportData.length.toLocaleString()}</strong> {searchTerm && `(filtered from ${reportTotal})`}
               </div>
 
               <div className="flex items-center gap-1 flex-wrap">

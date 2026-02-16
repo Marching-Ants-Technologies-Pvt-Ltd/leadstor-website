@@ -155,63 +155,63 @@ export default function JobPostingsController() {
       !showScheduledStatus ? (
         <>
           {/* ── Toolbar ──────────────────────────────────────────────────────── */}
-          <div className="bg-white/90 backdrop-blur-md border-b border-gray-200/80 px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
-            <div className="flex flex-wrap gap-3">
+          <div className="bg-white border-b border-gray-200 px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={openAddModal}
-                className="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                <i className="ri-add-circle-line text-lg transition-transform group-hover:rotate-90 duration-300"></i>
+                <i className="ri-add-circle-line text-base"></i>
                 Add Job
               </button>
 
               <button
                 onClick={handleBulkDelete}
                 disabled={!selectedIds.length}
-                className={`group inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl shadow-lg transition-all duration-200 ${
+                className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${
                   selectedIds.length
-                    ? 'bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white hover:shadow-xl transform hover:-translate-y-0.5'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-sm'
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                <i className="ri-delete-bin-2-line text-lg transition-transform group-hover:scale-110 duration-200"></i>
+                <i className="ri-delete-bin-2-line text-base"></i>
                 Delete {selectedIds.length ? `(${selectedIds.length})` : ''}
               </button>
 
               <button
                 onClick={() => setShowNotifications(true)}
-                className="group inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
               >
-                <i className="ri-notification-3-line text-lg transition-transform group-hover:scale-110 duration-200"></i>
+                <i className="ri-notification-3-line text-base"></i>
                 Job Notifications
               </button>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:flex-none">
                 <input
-                  className="w-full sm:w-80 pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-200"
-                  placeholder="Search job title, company, location..."
+                  className="w-full sm:w-64 pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Search jobs..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               </div>
 
               <button
                 onClick={reloadJobs}
-                className="p-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:shadow-md shadow-sm transition-all duration-200"
+                className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 title="Refresh"
               >
-                <i className="ri-refresh-line text-xl text-gray-700 transition-transform hover:rotate-180 duration-500"></i>
+                <i className="ri-refresh-line text-lg text-gray-600"></i>
               </button>
 
               <button
                 onClick={handleExport}
-                className="p-3 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:shadow-md shadow-sm transition-all duration-200"
-                title="Export to Excel"
+                className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Export"
               >
-                <i className="ri-download-2-line text-xl text-gray-700"></i>
+                <i className="ri-download-2-line text-lg text-gray-600"></i>
               </button>
             </div>
           </div>
@@ -251,11 +251,48 @@ export default function JobPostingsController() {
               )}
             </div>
 
-            {/* Pagination placeholder – add your real pagination here */}
+            {/* Pagination controls */}
             {!loading && total > 0 && (
               <div className="mt-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-600 px-2">
-                {/* Your pagination UI */}
-                <div>Showing page {page} of {Math.ceil(total / limit)}</div>
+                <div>
+                  Showing <strong>{(page - 1) * limit + 1}</strong>–
+                  <strong>{Math.min(page * limit, total)}</strong> of{' '}
+                  <strong>{total.toLocaleString()}</strong>
+                </div>
+                
+                <div className="flex items-center gap-1 flex-wrap justify-center">
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+
+                  {Array.from({ length: Math.min(Math.ceil(total / limit), 7) }, (_, i) => {
+                    const num = page - 3 + i;
+                    if (num < 1 || num > Math.ceil(total / limit)) return null;
+                    return (
+                      <button
+                        key={num}
+                        onClick={() => setPage(num)}
+                        className={`px-3 py-1 border rounded min-w-[32px] ${
+                          num === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    disabled={page >= Math.ceil(total / limit)}
+                    onClick={() => setPage(p => p + 1)}
+                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
           </div>
