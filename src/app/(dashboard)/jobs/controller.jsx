@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
@@ -40,7 +40,7 @@ export default function JobPostingsController() {
   const [activeJob, setActiveJob] = useState(null); // shared for send, log, manage
 
   // ─── Fetch Jobs ──────────────────────────────────────────────────────────
-  const reloadJobs = async () => {
+  const reloadJobs = useCallback(async () => {
     setLoading(true);
     try {
       const offset = (page - 1) * limit;
@@ -59,13 +59,13 @@ export default function JobPostingsController() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, search, corporateId]);
 
   useEffect(() => {
     if (!showNotifications && !showSendToPlacement && !showManageCandidates && !showScheduledStatus ) {
       reloadJobs();
     }
-  }, [page, limit, search, showNotifications, showSendToPlacement, showManageCandidates, showScheduledStatus]);
+  }, [page, limit, search, showNotifications, showSendToPlacement, showManageCandidates, showScheduledStatus, reloadJobs]);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   const openAddModal = () => {

@@ -503,12 +503,13 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return subscribed || [];
-    return (subscribed || []).filter((r) => (r.form_name || "").toLowerCase().includes(q) || (r.page_name || "").toLowerCase().includes(q));
+    const subArray = Array.isArray(subscribed) ? subscribed : [];
+    if (!q) return subArray;
+    return subArray.filter((r) => (r.form_name || "").toLowerCase().includes(q) || (r.page_name || "").toLowerCase().includes(q));
   }, [search, subscribed]);
 
-  const totalPages = Math.max(1, Math.ceil((filtered || []).length / pageSize));
-  const pageItems = (filtered || []).slice((pageIdx - 1) * pageSize, pageIdx * pageSize);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageItems = filtered.slice((pageIdx - 1) * pageSize, pageIdx * pageSize);
 
   return (
     <div className="p-4">

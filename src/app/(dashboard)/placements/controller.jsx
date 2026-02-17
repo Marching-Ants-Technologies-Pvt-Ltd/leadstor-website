@@ -5,6 +5,7 @@ import { ToastContainer, toast, Bounce } from 'react-toastify'
 import { xFetch } from '@/utility/xFetch'
 import { Corporate } from '@/utility/TinyDB'
 import * as XLSX from 'xlsx'
+import { Plus, Trash2, Filter, FileText, Search, RefreshCw, Download, BarChart3 } from 'lucide-react'
 import PlacementReadyTable from './table'
 import CandidateFormModal from '@/components/dashboard/placement/CandidateFormModal'
 import FilterModal from '@/components/dashboard/placement/FilterModal'
@@ -146,7 +147,7 @@ export default function PlacementReadyController() {
 
         const data = await xFetch({
             path: '/services/job/getCandidates',
-            payload: params,  
+            payload: params,
         })
 
         const list = Array.isArray(data) ? data : (data?.rows || data?.data || [])
@@ -272,7 +273,7 @@ export default function PlacementReadyController() {
         setReportLoading(false)
       }
     }
-    
+
     // Load main list or report based on view
     useEffect(() => {
       if (showReportView) {
@@ -316,7 +317,7 @@ export default function PlacementReadyController() {
     }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-gray-100">
       <ToastContainer theme="light" transition={Bounce} position="top-right" autoClose={2200} />
 
       {showReportView ? (
@@ -327,103 +328,113 @@ export default function PlacementReadyController() {
         ) : (
           <>
 
-          {/* Toolbar */}
-          <div className="bg-white border-b px-5 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-2.5">
-              <button
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded shadow-sm transition-colors"
-                onClick={openAddModal}
-              >
-                Add Candidate
-              </button>
-
-              <button
-                onClick={handleBulkDelete}
-                disabled={!selectedIds.length}
-                className={`inline-flex items-center gap-2 px-3 py-2 text-sm font-medium rounded shadow-sm transition-colors ${
-                  selectedIds.length
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                }`}
-              >
-                <i className="ri-delete-bin-line text-lg"></i>
-                Delete {selectedIds.length ? `(${selectedIds.length})` : ''}
-              </button>
-            
-            <button
-                onClick={() => setShowFilterModal(true)}
-                className={`
-                    inline-flex items-center gap-2 px-4 py-2 border text-sm rounded shadow-sm transition-all
-                    ${filterSummary 
-                    ? 'bg-blue-600 text-white border-blue-700 hover:bg-blue-700 shadow-md' 
-                    : 'border-gray-300 hover:bg-gray-100 text-gray-700'}
-                `}
+          {/* Toolbar - Modern Lead Page Style with Blue Theme */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
+                  onClick={openAddModal}
                 >
-                <i className="ri-filter-3-line text-lg"></i>
-                Filter
-                {filterSummary && (
+                  <Plus size={16} />
+                  Add Candidate
+                </button>
+
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={!selectedIds.length}
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-full shadow-md transition-all hover:-translate-y-0.5 ${
+                    selectedIds.length
+                      ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white hover:shadow-lg'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  <Trash2 size={16} />
+                  Delete {selectedIds.length ? `(${selectedIds.length})` : ''}
+                </button>
+
+                <button
+                  onClick={() => setShowFilterModal(true)}
+                  className={`
+                    inline-flex items-center gap-2 px-4 py-2.5 border text-sm font-semibold rounded-full shadow-sm transition-all hover:-translate-y-0.5
+                    ${filterSummary
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-700 hover:shadow-md'
+                    : 'border-gray-300 hover:bg-gray-100 text-gray-700 hover:shadow-md'}
+                  `}
+                >
+                  <Filter size={16} />
+                  Filter
+                  {filterSummary && (
                     <span className="ml-1 bg-white bg-opacity-20 px-2 py-0.5 rounded-full text-xs">
-                    Active
+                      Active
                     </span>
-                )}
-            </button>
-              
-            <button onClick={() => setShowReportView(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 hover:bg-gray-100 text-sm rounded shadow-sm transition-colors">
-                <i className="ri-file-list-3-line text-lg"></i>
-                Report
-              </button>
+                  )}
+                </button>
+
+                <button 
+                  onClick={() => setShowReportView(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 text-sm font-semibold rounded-full shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <BarChart3 size={16} />
+                  Report
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-none">
+                  <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    className="w-full sm:w-72 pl-10 pr-4 py-2.5 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm hover:shadow-md transition-all"
+                    placeholder="Search name, email, mobile..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+
+                <button
+                  onClick={reloadCandidates}
+                  className="p-2.5 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 rounded-full shadow-sm transition-all hover:shadow-md"
+                  title="Refresh"
+                >
+                  <RefreshCw size={18} className="text-gray-600" />
+                </button>
+
+                <button
+                  onClick={handleExport}
+                  className="p-2.5 border border-gray-300 hover:bg-blue-50 hover:border-blue-300 rounded-full shadow-sm transition-all hover:shadow-md"
+                  title="Export to Excel"
+                >
+                  <Download size={18} className="text-gray-600" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <input
-                className="border border-gray-300 rounded-md p-2.5 text-sm w-full sm:w-72 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Search name, email, mobile..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-
-              <button
-                onClick={reloadCandidates}
-                className="p-2.5 border border-gray-300 hover:bg-gray-100 rounded shadow-sm transition-colors"
-                title="Refresh"
-              >
-                <i className="ri-refresh-line text-xl"></i>
-              </button>
-
-              <button
-                onClick={handleExport}
-                className="p-2.5 border border-gray-300 hover:bg-gray-100 rounded shadow-sm transition-colors"
-                title="Export to Excel"
-              >
-                <i className="ri-download-2-line text-xl"></i>
-              </button>
-            </div>
+            {/* Filter summary */}
+            {filterSummary && (
+              <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-4 rounded-r-lg flex items-center justify-between">
+                <div className="text-sm text-blue-800 font-medium flex items-center gap-2">
+                  <Filter size={16} />
+                  {filterSummary}
+                </div>
+                <button
+                  onClick={clearFilters}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-semibold hover:underline"
+                >
+                  Clear Filter ×
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Filter summary */}
-          {filterSummary && (
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-3 mx-5 mt-3 flex items-center justify-between">
-              <div className="text-sm text-blue-800">
-                <i className="ri-filter-fill mr-2"></i>
-                {filterSummary}
-              </div>
-              <button
-                onClick={clearFilters}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                Clear Filter ×
-              </button>
-            </div>
-          )}
-
           {/* Table Area */}
-          <div className="flex-1 flex flex-col min-h-0 px-5 pb-5 overflow-hidden">
-              <div className="flex-1 overflow-auto border border-gray-200 rounded-lg bg-white shadow-sm">
+          <div className="flex-1 flex flex-col min-h-0 px-6 pb-6 overflow-hidden">
+              <div className="flex-1 overflow-auto border border-gray-200 rounded-xl bg-white shadow-lg">
                 {loading ? (
                   <div className="flex items-center justify-center h-64 text-gray-500">
-                    <div className="animate-spin h-6 w-6 border-4 border-blue-500 border-t-transparent rounded-full mr-3"></div>
-                    Loading placement ready candidates...
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                      <span className="font-medium">Loading placement ready candidates...</span>
+                    </div>
                   </div>
                 ) : (
                   <PlacementReadyTable
@@ -432,7 +443,7 @@ export default function PlacementReadyController() {
                       onSelectionChange={setSelectedIds}
                       onEdit={openEditModal}
                       onStatusChange={(id, status) => {
-                          toast.info(`Change status for ID ${id} from ${status}`)
+                          reloadCandidates()
                       }}
                       onDelete={(id) => {
                           if (window.confirm('Delete this candidate?')) {
@@ -447,17 +458,18 @@ export default function PlacementReadyController() {
                           }).catch(() => toast.error('Delete failed'))
                       }
                       }}
+                      corporateId={corporateId}
                   />
                 )}
               </div>
 
-              {/* Pagination + Rows per page dropdown */}
+              {/* Pagination + Rows per page dropdown - Modern Style with Blue Theme */}
               {!loading && total > 0 && (
-                <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-600">
+                <div className="mt-4 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-600 bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <span>
-                      Showing <strong>{(page - 1) * limit + 1}</strong>–
-                      <strong>{Math.min(page * limit, total)}</strong> of <strong>{total.toLocaleString()}</strong>
+                    <span className="font-medium">
+                      Showing <strong className="text-blue-600">{(page - 1) * limit + 1}</strong>–
+                      <strong className="text-blue-600">{Math.min(page * limit, total)}</strong> of <strong className="text-blue-600">{total.toLocaleString()}</strong>
                     </span>
 
                     <select
@@ -466,7 +478,7 @@ export default function PlacementReadyController() {
                         setLimit(Number(e.target.value))
                         setPage(1) // reset to first page
                       }}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="border border-gray-300 rounded-full px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
                     >
                       <option value={10}>10</option>
                       <option value={25}>25</option>
@@ -475,17 +487,17 @@ export default function PlacementReadyController() {
                       <option value={500}>500</option>
                     </select>
 
-                    <span>per page</span>
+                    <span className="font-medium">per page</span>
                   </div>
 
                   {/* Page navigation */}
-                  <div className="flex items-center gap-1 flex-wrap">
+                  <div className="flex items-center gap-2">
                     <button
                       disabled={page === 1}
                       onClick={() => setPage(p => Math.max(1, p - 1))}
-                      className="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40 transition-colors"
+                      className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
                     >
-                      Prev
+                      Previous
                     </button>
 
                     {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
@@ -494,10 +506,10 @@ export default function PlacementReadyController() {
                         <button
                           key={pageNum}
                           onClick={() => setPage(pageNum)}
-                          className={`px-3 py-1.5 border rounded min-w-[36px] transition-colors ${
+                          className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
                             page === pageNum
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'border-gray-300 hover:bg-gray-100'
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
+                              : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
                           }`}
                         >
                           {pageNum}
@@ -507,13 +519,13 @@ export default function PlacementReadyController() {
 
                     {totalPages > 10 && (
                       <>
-                        <span className="px-2">...</span>
+                        <span className="px-2 text-gray-400">...</span>
                         <button
                           onClick={() => setPage(totalPages)}
-                          className={`px-3 py-1.5 border rounded min-w-[36px] transition-colors ${
+                          className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
                             page === totalPages
-                              ? 'bg-blue-600 text-white border-blue-600'
-                              : 'border-gray-300 hover:bg-gray-100'
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
+                              : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
                           }`}
                         >
                           {totalPages}
@@ -524,7 +536,7 @@ export default function PlacementReadyController() {
                     <button
                       disabled={page >= totalPages}
                       onClick={() => setPage(p => p + 1)}
-                      className="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-40 transition-colors"
+                      className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
                     >
                       Next
                     </button>

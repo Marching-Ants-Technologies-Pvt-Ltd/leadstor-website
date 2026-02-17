@@ -3,8 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
-import { Calendar, X, Loader2, Eye } from 'lucide-react';
+import { Calendar, X, Loader2, Eye, Send, Search, ChevronLeft, ChevronRight, Mail, Users, CheckCircle } from 'lucide-react';
 import { xFetch } from '@/utility/xFetch';
+import { toast } from 'react-toastify';
 
 export default function SendToPlacementReady({
   jobId,
@@ -28,7 +29,7 @@ export default function SendToPlacementReady({
   // Pagination (client-side)
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-  
+
   // Filter candidates based on search term
   const filteredCandidates = candidates.filter(candidate => {
     const searchTermLower = searchTerm.toLowerCase();
@@ -41,7 +42,7 @@ export default function SendToPlacementReady({
       candidate.qualification?.toLowerCase().includes(searchTermLower)
     );
   });
-  
+
   const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -70,7 +71,6 @@ export default function SendToPlacementReady({
     }
   };
 
-  // ── PREVIEW FUNCTION ──────────────────────────────────────────────────────
   const handlePreview = async () => {
     setPreviewLoading(true);
     setShowPreview(true);
@@ -80,7 +80,7 @@ export default function SendToPlacementReady({
         path: '/services/job/sendJobEmailPreview',
         payload: {
           jobId: jobId,
-          interviewDate: interviewDate || null, // Pass null if no date selected
+          interviewDate: interviewDate || null,
         },
       });
 
@@ -99,7 +99,7 @@ export default function SendToPlacementReady({
 
   const handleSend = async () => {
     if (selectedIds.length === 0) {
-      alert('Please select at least one candidate');
+      toast.warn('Please select at least one candidate');
       return;
     }
 
@@ -115,18 +115,21 @@ export default function SendToPlacementReady({
         method: 'POST',
         payload: {
           jobId,
-          interviewDate: interviewDate || null, // Make interview date optional
+          interviewDate: interviewDate || null,
           candidates: selectedIds.join(','),
           corporateId: String(corporateId),
         },
       });
 
-      alert('Notifications sent successfully');
+      toast.success(`Shared to ${selectedIds.length} candidate(s)!`, {
+        className: 'bg-green-600 text-white',
+        iconClassName: 'text-white',
+      });
+
       onSuccess?.();
-      onClose();
     } catch (err) {
       console.error('Send failed', err);
-      alert('Failed to send notifications');
+      toast.error('Failed to send notifications');
     } finally {
       setSending(false);
     }
@@ -159,55 +162,66 @@ export default function SendToPlacementReady({
   return (
     <>
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="bg-indigo-600 text-white px-5 py-3.5 flex items-center justify-between">
-            <h2 className="text-lg font-semibold tracking-tight">
-              Send Details to Placement Ready Candidates
-            </h2>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] flex flex-col overflow-hidden border border-gray-200">
+          {/* Header - Modern Lead Page Style */}
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white px-6 py-4 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <Mail size={20} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">Send to Placement Ready Candidates</h2>
+                <p className="text-xs text-emerald-100 flex items-center gap-1">
+                  <Users size={12} />
+                  {candidates.length} candidates available
+                </p>
+              </div>
+            </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-indigo-700 p-1.5 rounded-full"
+              className="text-white hover:bg-white/20 p-2 rounded-full transition-all hover:rotate-90"
+              title="Close"
             >
               <X size={20} />
             </button>
           </div>
 
-          {/* Toolbar */}
-          <div className="border-b px-5 py-3 bg-gray-50/70 flex flex-col sm:flex-row sm:items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2.5">
-              <Calendar size={18} className="text-gray-600" />
+          {/* Toolbar - Lead Page Modern Style */}
+          <div className="border-b border-gray-200 px-6 py-3 bg-gradient-to-r from-gray-50 via-white to-gray-50 flex flex-wrap items-center gap-3">
+            {/* Interview Date - Pill Style */}
+            <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-4 py-2 shadow-sm hover:shadow-md transition-shadow">
+              <Calendar size={16} className="text-emerald-600" />
+              <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Interview:</span>
               <input
                 type="datetime-local"
                 value={interviewDate}
                 onChange={(e) => setInterviewDate(e.target.value)}
                 min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
-                className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="text-sm border-none focus:outline-none focus:ring-0 text-gray-700 font-medium"
               />
             </div>
 
-            {/* Search Input */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search candidates by name, email, branch, qualification..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1); // Reset to first page when searching
-                  }}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-                <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
-              </div>
+            {/* Search - Modern Input */}
+            <div className="relative flex-1 min-w-[300px] max-w-md">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search candidates..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent shadow-sm hover:shadow-md transition-all"
+              />
             </div>
 
-            <div className="flex gap-3 sm:ml-auto">
+            {/* Action Buttons - Lead Page Style */}
+            <div className="flex items-center gap-2.5 ml-auto">
               <button
                 onClick={handlePreview}
                 disabled={sending || loading || previewLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-full hover:from-indigo-700 hover:to-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
               >
                 <Eye size={16} />
                 Preview
@@ -216,7 +230,7 @@ export default function SendToPlacementReady({
               <button
                 onClick={handleSend}
                 disabled={sending || selectedIds.length === 0 || loading}
-                className="inline-flex items-center gap-1.5 px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm font-medium shadow-sm"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-full hover:from-emerald-700 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
               >
                 {sending ? (
                   <>
@@ -224,60 +238,69 @@ export default function SendToPlacementReady({
                     Sending...
                   </>
                 ) : (
-                  'Send'
+                  <>
+                    <Send size={16} />
+                    Send Now
+                  </>
                 )}
               </button>
             </div>
           </div>
 
-          {/* Table & Pagination – same as before */}
+          {/* Table - Modern Design */}
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             <div className="flex-1 overflow-auto">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0 z-10">
+                <thead className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 sticky top-0 z-10 backdrop-blur-sm">
                   <tr>
-                    <th className="px-4 py-3 w-12">
+                    <th className="px-4 py-3.5 w-12">
                       <input
                         type="checkbox"
                         checked={currentCandidates.length > 0 && selectedIds.length === currentCandidates.length}
                         onChange={toggleSelectAll}
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       />
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Branch
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tags
+                    <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Job Tags
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
+                    <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Candidate Name
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
+                    <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Email ID
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                    <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Mobile
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                    <th className="px-4 py-3.5 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Qualification
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-100">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                        <div className="flex justify-center items-center gap-3">
-                          <Loader2 size={20} className="animate-spin text-indigo-600" />
-                          Loading candidates...
+                      <td colSpan={7} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center justify-center gap-3">
+                          <Loader2 size={32} className="animate-spin text-emerald-600" />
+                          <span className="text-gray-600 font-semibold">Loading candidates...</span>
                         </div>
                       </td>
                     </tr>
                   ) : currentCandidates.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-16 text-center text-gray-500">
-                        No matching records found
+                      <td colSpan={7} className="px-6 py-20 text-center">
+                        <div className="flex flex-col items-center gap-3 text-gray-500">
+                          <div className="p-4 bg-gray-100 rounded-full">
+                            <Search size={40} className="text-gray-400" />
+                          </div>
+                          <span className="font-semibold text-lg">No candidates found</span>
+                          <span className="text-sm">Try adjusting your search criteria</span>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -286,33 +309,56 @@ export default function SendToPlacementReady({
                       return (
                         <tr
                           key={candidate.id}
-                          className={isSelected ? 'bg-indigo-50' : 'hover:bg-gray-50'}
+                          className={`transition-all ${
+                            isSelected 
+                              ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-l-4 border-emerald-500' 
+                              : 'hover:bg-gray-50 border-l-4 border-transparent'
+                          }`}
                         >
-                          <td className="px-4 py-4">
+                          <td className="px-4 py-4 align-top">
                             <input
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => toggleSelectOne(candidate.id)}
-                              className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                              className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer mt-0.5"
                             />
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-900">
-                            {candidate.branchName || '-'}
+                          <td className="px-4 py-4 text-sm align-top">
+                            <span className="font-semibold text-gray-900">{candidate.branchName || '-'}</span>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-600">
-                            {candidate.jobTags?.join(', ') || '-'}
+                          <td className="px-4 py-4 align-top">
+                            {candidate.jobTags?.length ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {candidate.jobTags.map((tag, i) => (
+                                  <span
+                                    key={i}
+                                    className="inline-flex items-center px-2.5 py-1 bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 text-xs font-semibold rounded-full border border-emerald-200"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400 text-sm">-</span>
+                            )}
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-900">
-                            {candidate.name || '-'}
+                          <td className="px-4 py-4 align-top">
+                            <div className="font-bold text-gray-900 text-base">{candidate.name || '-'}</div>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-600">
-                            {candidate.email || '-'}
+                          <td className="px-4 py-4 text-sm text-gray-600 align-top">
+                            <a href={`mailto:${candidate.email}`} className="hover:text-emerald-600 hover:underline transition-colors">
+                              {candidate.email || '-'}
+                            </a>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-600">
-                            {candidate.mobile || '-'}
+                          <td className="px-4 py-4 text-sm text-gray-600 align-top">
+                            <a href={`tel:${candidate.mobile}`} className="hover:text-emerald-600 hover:underline transition-colors">
+                              {candidate.mobile || '-'}
+                            </a>
                           </td>
-                          <td className="px-4 py-4 text-sm text-gray-600">
-                            {candidate.qualification || '-'}
+                          <td className="px-4 py-4 text-sm text-gray-600 align-top">
+                            <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-full">
+                              {candidate.qualification || '-'}
+                            </span>
                           </td>
                         </tr>
                       );
@@ -322,62 +368,102 @@ export default function SendToPlacementReady({
               </table>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination - Lead Page Modern Style */}
             {!loading && candidates.length > 0 && (
-              <div className="bg-white border-t border-gray-200 px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm text-gray-600">
-                <div>
-                  Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
-                  <span className="font-medium">
-                    {Math.min(indexOfLastItem, filteredCandidates.length)}
-                  </span>{' '}
-                  of <span className="font-medium">{filteredCandidates.length}</span> candidates
-                </div>
+              <div className="bg-gradient-to-r from-gray-50 via-white to-gray-50 border-t border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-sm">
+                    <CheckCircle size={16} className="text-emerald-600" />
+                    <span className="text-gray-600">
+                      Showing <span className="font-bold text-emerald-600">{indexOfFirstItem + 1}</span> to{' '}
+                      <span className="font-bold text-emerald-600">
+                        {Math.min(indexOfLastItem, filteredCandidates.length)}
+                      </span>{' '}
+                      of <span className="font-bold text-emerald-600">{filteredCandidates.length}</span> candidates
+                    </span>
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={goToPrevPage}
-                    disabled={currentPage === 1}
-                    className="p-2 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={goToPrevPage}
+                      disabled={currentPage === 1}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-gray-700 transition-all hover:shadow-md"
+                    >
+                      <ChevronLeft size={16} />
+                      Previous
+                    </button>
 
-                  <span className="font-medium">
-                    Page {currentPage} of {totalPages}
-                  </span>
+                    <div className="flex items-center gap-1.5">
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
 
-                  <button
-                    onClick={goToNextPage}
-                    disabled={currentPage === totalPages}
-                    className="p-2 rounded border border-gray-300 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-9 h-9 rounded-full text-sm font-bold transition-all ${
+                              pageNum === currentPage
+                                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg scale-110'
+                                : 'hover:bg-emerald-50 text-gray-700 hover:scale-105'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full hover:bg-emerald-50 hover:border-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold text-gray-700 transition-all hover:shadow-md"
+                    >
+                      Next
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
           {sending && (
-            <div className="p-3 bg-red-50 text-red-700 text-center font-medium border-t border-red-100">
-              Please wait while sending notifications...
+            <div className="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 border-t border-emerald-200">
+              <div className="flex items-center justify-center gap-3">
+                <Loader2 size={20} className="animate-spin text-emerald-600" />
+                <span className="text-emerald-800 font-semibold">Sending notifications to candidates...</span>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── PREVIEW MODAL ─────────────────────────────────────────────────────── */}
+      {/* Preview Modal */}
       {showPreview && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
             {/* Preview Header */}
-            <div className="bg-gray-800 text-white px-6 py-2 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Email Preview</h3>
+            <div className="bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+                  <Eye size={18} className="text-emerald-400" />
+                </div>
+                <h3 className="text-lg font-bold">Email Preview</h3>
+              </div>
               <button
                 onClick={() => setShowPreview(false)}
-                className="text-gray-300 hover:text-white p-1.5 rounded-full hover:bg-gray-700"
+                className="text-gray-300 hover:text-white hover:bg-white/20 p-2 rounded-full transition-all"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
@@ -385,16 +471,15 @@ export default function SendToPlacementReady({
             <div className="flex-1 overflow-auto p-6 bg-gray-50">
               {previewLoading ? (
                 <div className="flex justify-center items-center h-64">
-                  <Loader2 size={32} className="animate-spin text-indigo-600" />
+                  <Loader2 size={32} className="animate-spin text-emerald-600" />
                 </div>
               ) : (
                 <div
-                  className="prose prose-sm max-w-none"
+                  className="prose prose-sm max-w-none bg-white p-6 rounded-xl border border-gray-200 shadow-sm"
                   dangerouslySetInnerHTML={{ __html: previewHtml }}
                 />
               )}
             </div>
-
           </div>
         </div>
       )}

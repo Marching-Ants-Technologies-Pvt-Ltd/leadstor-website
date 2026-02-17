@@ -44,13 +44,13 @@ export default function JobPostingsTable({
           </th>
           <th className="p-3 text-left min-w-20">Job ID</th>
           <th className="p-3 text-left min-w-30">Job Title</th>
-          <th className="p-3 text-left min-w-30">Job Description</th>
+          <th className="p-3 text-left w-64">Job Description</th>
           <th className="p-3 text-left min-w-30">Company</th>
           <th className="p-3 text-left min-w-30">Location(s)</th>
-          <th className="p-3 text-center min-w-20">Min Sal (LPA)</th>
-          <th className="p-3 text-center min-w-20">Max Sal (LPA)</th>
-          <th className="p-3 text-center min-w-20">Min Exp</th>
-          <th className="p-3 text-center min-w-20">Max Exp</th>
+          <th className="p-3 text-center min-w-16 whitespace-nowrap">Min Sal<br/>(LPA)</th>
+          <th className="p-3 text-center min-w-16 whitespace-nowrap">Max Sal<br/>(LPA)</th>
+          <th className="p-3 text-center min-w-16 whitespace-nowrap">Min Exp</th>
+          <th className="p-3 text-center min-w-16 whitespace-nowrap">Max Exp</th>
           <th className="p-3 text-left min-w-20">Position Type</th>
           <th className="p-3 text-left min-w-30">Contact Person</th>
           <th className="p-3 text-left min-w-20">Email</th>
@@ -60,14 +60,14 @@ export default function JobPostingsTable({
           <th className="p-3 text-center w-28">Actions</th>
           <th className="p-3 text-left min-w-40">Tags</th>
           <th className="p-3 text-left min-w-44">Last Updated</th>
-          
+
         </tr>
       </thead>
 
-      <tbody className="divide-y divide-slate-100">
+      <tbody className="divide-y divide-slate-200 align-top">
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={18} className="text-center py-12 text-slate-500">
+            <td colSpan={18} className="text-center py-12 text-slate-500 align-top">
               No job postings found
             </td>
           </tr>
@@ -80,7 +80,7 @@ export default function JobPostingsTable({
                 key={job.id}
                 className={`hover:bg-slate-50 transition-colors ${isSelected ? 'bg-blue-50' : ''}`}
               >
-                <td className="p-3 text-center">
+                <td className="p-3 text-center align-top">
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -89,7 +89,7 @@ export default function JobPostingsTable({
                   />
                 </td>
 
-                <td className="p-3">{job.id || '-'}
+                <td className="p-3 align-top">{job.id || '-'}
                     <button
                         onClick={() => onEdit?.(job)}
                         className="text-blue-600 hover:text-blue-800 ml-2"
@@ -98,21 +98,21 @@ export default function JobPostingsTable({
                     <i className="ri-pencil-line"></i>
                   </button>
                 </td>
-                <td className="p-3 font-medium">{job.title || '-'}</td>
-                <td className="p-3 font-medium" dangerouslySetInnerHTML={{
+                <td className="p-3 font-medium align-top">{job.title || '-'}</td>
+                <td className="p-3 font-medium align-top" dangerouslySetInnerHTML={{
                     __html: job.description || '-',
                 }}/>
-                <td className="p-3">{job.companyName || '-'}</td>
-                <td className="p-3">{Array.isArray(job.locations) ? job.locations.join(', ') : job.locations || '-'}</td>
-                <td className="p-3 text-center">{job.minSal || '-'}</td>
-                <td className="p-3 text-center">{job.maxSal || '-'}</td>
-                <td className="p-3 text-center">{job.minExp || '-'}</td>
-                <td className="p-3 text-center">{job.maxExp || '-'}</td>
-                <td className="p-3">{job.positionType || '-'}</td>
-                <td className="p-3">{job.contact_name || '-'}</td>
-                <td className="p-3">{job.contact_email || '-'}</td>
-                <td className="p-3">{job.contact_phone || '-'}</td>
-                <td className="p-3">{job.owner || '-'}</td>
+                <td className="p-3 align-top">{job.companyName || '-'}</td>
+                <td className="p-3 align-top">{Array.isArray(job.locations) ? job.locations.join(', ') : job.locations || '-'}</td>
+                <td className="p-3 text-center align-top">{job.minSal || '-'}</td>
+                <td className="p-3 text-center align-top">{job.maxSal || '-'}</td>
+                <td className="p-3 text-center align-top">{job.minExp || '-'}</td>
+                <td className="p-3 text-center align-top">{job.maxExp || '-'}</td>
+                <td className="p-3 align-top">{job.positionType || '-'}</td>
+                <td className="p-3 align-top">{job.contact_name || '-'}</td>
+                <td className="p-3 align-top">{job.contact_email || '-'}</td>
+                <td className="p-3 align-top">{job.contact_phone || '-'}</td>
+                <td className="p-3 align-top">{job.owner || '-'}</td>
                 <td className="p-3">
                   <span
                     className={`inline-block px-2.5 py-0.5 text-xs font-medium rounded-full ${
@@ -126,7 +126,7 @@ export default function JobPostingsTable({
                     {job.status || 'Open'}
                   </span>
                 </td>
-                <td className="p-3 flex justify-center gap-4 text-lg">
+                <td className="p-3 flex justify-center gap-2 text-base">
                   <button
                     onClick={() => onDelete?.(job.id)}
                     className="text-red-600 hover:text-red-800"
@@ -137,26 +137,26 @@ export default function JobPostingsTable({
 
                   <button
                     onClick={() => onSendToPlacement(job)}
-                    className="p-1.5 text-green-600 hover:bg-green-50 rounded"
+                    className="p-1 text-green-600 hover:bg-green-50 rounded"
                     title="Send details to candidates"
                     >
-                    <Send size={18} />
+                    <Send size={16} />
                     </button>
 
                     <button
                         onClick={() => onManageCandidates?.(job)}
-                        className="p-1.5 text-teal-600 hover:bg-teal-50 rounded-full transition-colors"
+                        className="p-1 text-teal-600 hover:bg-teal-50 rounded-full transition-colors"
                         title="Manage candidates for this job"
                         >
-                        <Users size={18} /> {/* lucide-react Users icon */}
+                        <Users size={16} /> {/* lucide-react Users icon */}
                     </button>
 
                     <button
                     onClick={() => onCheckScheduledStatus?.(job)}
-                    className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-full transition-colors"
+                    className="p-1 text-amber-600 hover:bg-amber-50 rounded-full transition-colors"
                     title="Check scheduled email status"
                     >
-                    <Clock size={18} />
+                    <Clock size={16} />
                     </button>
                 </td>
                 <td className="p-3">
