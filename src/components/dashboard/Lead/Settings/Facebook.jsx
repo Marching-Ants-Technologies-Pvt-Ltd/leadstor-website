@@ -427,7 +427,6 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
   const { loaded, status } = useFacebookSDK();
   const [pages, setPages] = useState([]);
   const [subscribed, setSubscribed] = useState([]);
-  const [tokenExpired, setTokenExpired] = useState(false);
 
   const [search, setSearch] = useState("");
   const [pageIdx, setPageIdx] = useState(1);
@@ -436,95 +435,30 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
 
-  const handleLogout = () => {
-    if (window.FB) {
-      window.FB.logout((response) => {
-        setTokenExpired(false);
-        setPages([]);
-        setSubscribed([]);
-        toast.info("Logged out successfully. Please login again.");
-        window.location.reload();
-      });
-    } else {
-      setTokenExpired(false);
-      setPages([]);
-      setSubscribed([]);
-      toast.info("Session cleared. Please login again.");
-      window.location.reload();
-    }
-  };
-
-  const checkTokenValidity = async (accessToken) => {
-    try {
-      const response = await fetch(`https://graph.facebook.com/debug_token?input_token=${accessToken}&access_token=354120981351314|b718f752a6f897792912b96b07b65e88`);
-      const data = await response.json();
-      return data.data && data.data.is_valid;
-    } catch (error) {
-      console.error("Token validation error:", error);
-      return false;
-    }
-  };
-
   useEffect(() => {
-    if (!loaded) return;
-    
+    if (!loaded) return;console.log(`loaded`+status);
     if (status && status.status === "connected") {
-      let userAccessToken = status.authResponse.accessToken;
-      
-      // Check if token is valid
-      checkTokenValidity(userAccessToken).then((isValid) => {
-        if (!isValid) {
-          setTokenExpired(true);
-          toast.error("Your Facebook session has expired. Please login again.");
-          return;
-        }
-
-        facebookApi
-          .getExtendedToken(userAccessToken)
-          .then((data) => {
-            if (data && data.access_token) userAccessToken = data.access_token;
-            window.FB.api(`/me/accounts?access_token=${userAccessToken}`, function (response) {
-              if (response && response.error) {
-                // Token expired or invalid
-                if (response.error.code === 190 || response.error.subcode === 460) {
-                  setTokenExpired(true);
-                  toast.error("Your Facebook session has expired. Please login again.");
-                  return;
-                }
-                const p = (response && response.data) || [];
-                setPages(p);
-                facebookApi.fetchSubscribedForms(corporateId, p).then((d) => setSubscribed(d || []));
-              } else {
-                const p = (response && response.data) || [];
-                setPages(p);
-                facebookApi.fetchSubscribedForms(corporateId, p).then((d) => setSubscribed(d || []));
-              }
-            });
-          })
-          .catch((err) => {
-            console.error(err);
-            // Check if error is token-related
-            if (err && err.message && (err.message.includes("OAuth") || err.message.includes("token"))) {
-              setTokenExpired(true);
-              toast.error("Your Facebook session has expired. Please login again.");
-              return;
-            }
-            if (window.FB) {
-              window.FB.api(`/me/accounts?access_token=${status.authResponse.accessToken}`, function (response) {
-                if (response && response.error) {
-                  if (response.error.code === 190 || response.error.subcode === 460) {
-                    setTokenExpired(true);
-                    toast.error("Your Facebook session has expired. Please login again.");
-                    return;
-                  }
-                }
-                const p = (response && response.data) || [];
-                setPages(p);
-                facebookApi.fetchSubscribedForms(corporateId, p).then((d) => setSubscribed(d || []));
-              });
-            }
+      let userAccessToken = status.authResponse.accessToken;console.log(`userAccessToken`+userAccessToken);
+      facebookApi
+        .getExtendedToken(userAccessToken)
+        .then((data) => {
+          if (data && data.access_token) userAccessToken = data.access_token;
+          window.FB.api(`/me/accounts?access_token=${userAccessToken}`, function (response) {
+            const p = (response && response.data) || [];
+            setPages(p);
+            facebookApi.fetchSubscribedForms(corporateId, p).then((d) => setSubscribed(d || []));
           });
-      });
+        })
+        .catch((err) => {
+          console.error(err);
+          if (window.FB) {
+            window.FB.api(`/me/accounts?access_token=${status.authResponse.accessToken}`, function (response) {
+              const p = (response && response.data) || [];
+              setPages(p);
+              facebookApi.fetchSubscribedForms(corporateId, p).then((d) => setSubscribed(d || []));
+            });
+          }
+        });
     }
   }, [loaded, status]);
 
@@ -581,54 +515,12 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
     <div className="p-4">
       <ToastContainer position="top-right" />
 
-      {/* Token Expired Banner */}
-      {tokenExpired && (
-        <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-red-500">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-red-800 font-semibold">Facebook Session Expired</h3>
-                <p className="text-red-700 text-sm">Your Facebook access token has expired. Please login again to continue.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm font-medium"
-              >
-                Logout & Re-login
-              </button>
-              <button
-                onClick={() => setTokenExpired(false)}
-                className="text-red-400 hover:text-red-600"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <button onClick={openSubscribe} className="px-3 py-2 bg-blue-600 text-white rounded">+ Subscribe</button>
           <button onClick={refreshList} className="px-3 py-2 border rounded">Refresh</button>
         </div>
-        <div className="flex items-center gap-3">
-          <FacebookLoginButton onLoggedIn={() => window.location.reload()} />
-          <button
-            onClick={handleLogout}
-            className="px-3 py-2 border border-red-300 text-red-600 rounded hover:bg-red-50 transition text-sm"
-            title="Logout from Facebook"
-          >
-            Logout
-          </button>
-        </div>
+        <FacebookLoginButton onLoggedIn={() => window.location.reload()} />
         <div className="relative">
             <Search className="absolute left-2 top-2.5 text-gray-400 w-4 h-4" />
             <input
