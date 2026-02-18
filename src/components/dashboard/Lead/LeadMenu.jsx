@@ -27,7 +27,10 @@ export default function LeadsMenu({
   onDownloadCancel,
   setCancelExportFunction,
   setOpenAddLead,
-  onDeleteSelected
+  onDeleteSelected,
+  branchId,
+  onBackToBranches,
+  onViewPayments
 }) {
   const router = useRouter();
 
@@ -168,6 +171,24 @@ export default function LeadsMenu({
 
         {/* ACTIONS */}
         <div className="flex items-center gap-2" ref={menuRef}>
+          {branchId && (
+            <>
+              <button 
+                onClick={onViewPayments} 
+                className="px-3 py-1.5 text-xs border border-blue-300 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center gap-1.5 transition-all"
+              >
+                <i className="ri-bank-card-line text-[14px]" />
+                View Payments
+              </button>
+              <button 
+                onClick={onBackToBranches} 
+                className="px-3 py-1.5 text-xs border border-gray-300 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center gap-1.5 transition-all"
+              >
+                <i className="ri-arrow-left-line text-[14px]" />
+                Back to Branches
+              </button>
+            </>
+          )}
           <button onClick={handleAddLead} className="btn-primary-crm action-chip">
             <i className="ri-user-add-line" />
             Add

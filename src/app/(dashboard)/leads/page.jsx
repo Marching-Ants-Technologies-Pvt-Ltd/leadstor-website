@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LeadsTable from '@/components/dashboard/Lead/LeadTable';
@@ -9,8 +10,15 @@ import LeadsTablePagination from '@/components/dashboard/Lead/Pagination';
 import FilterDrawer from '@/components/dashboard/Lead/AdvanceFilter';
 import { xFetch } from '@/utility/xFetch';
 import AddLead from '@/components/dashboard/Lead/AddLead';
+import { Corporate, Test as SessionTest } from '@/utility/TinyDB';
 
 export default function Leads() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const branchCorporateId = searchParams.get('corporateId');
+    const branchTestId = searchParams.get('testId');
+    const branchTestType = searchParams.get('testType');
+
     const [columns, setColumns] = useState([]);
     const [columnOrder, setColumnOrder] = useState([]);
     const [showPerPageDropdown, setShowPerPageDropdown] = useState(false);
@@ -18,6 +26,8 @@ export default function Leads() {
     const [leads, setLeads] = useState([]);
     const [owners, setOwners] = useState([]);
     const [selectedLeadIds, setSelectedLeadIds] = useState([]);
+    const [branchId, setBranchId] = useState(null);
+    const [testInfo, setTestInfo] = useState({ testId: null, testType: null });
 
     // Download notification state
     const [downloadNotification, setDownloadNotification] = useState({
@@ -32,6 +42,21 @@ export default function Leads() {
 
     // ⭐ NEW STATE: WILL CONTROL ADD LEAD PANEL
     const [openAddLead, setOpenAddLead] = useState(false);
+
+    // Set branch ID and test info from query params
+    useEffect(() => {
+        if (branchCorporateId) {
+            setBranchId(branchCorporateId);
+        } else {
+            setBranchId(null);
+        }
+
+        if (branchTestId && branchTestType) {
+            setTestInfo({ testId: branchTestId, testType: branchTestType });
+        } else {
+            setTestInfo({ testId: null, testType: null });
+        }
+    }, [branchCorporateId, branchTestId, branchTestType]);
 
     // Fetch and apply custom column names and order
     const fetchAndSetColumns = async () => {
@@ -157,12 +182,23 @@ export default function Leads() {
         }
     };
 
-    
+    const handleBackToBranches = () => {
+        router.push('/branches');
+    };
+
+    const handleViewPayments = () => {
+        const testParams = testInfo.testId && testInfo.testType 
+            ? `&testId=${testInfo.testId}&testType=${testInfo.testType}` 
+            : '';
+        router.push(`/payments?corporateId=${branchId}${testParams}`);
+    };
+
+
 
     return (
         <div className="flex-1 overflow-hidden flex flex-col">
             <ToastContainer position="top-right" />
-            
+
             {openAddLead ? (
                 <AddLead onClose={() => setOpenAddLead(false)} />
             ) : (
@@ -180,6 +216,9 @@ export default function Leads() {
                         setCancelExportFunction={setCancelExportFunction}
                         setOpenAddLead={setOpenAddLead}
                         onDeleteSelected={handleDeleteSelected}
+                        branchId={branchId}
+                        onBackToBranches={handleBackToBranches}
+                        onViewPayments={handleViewPayments}
                     />
                     {/* NORMAL LEADS TABLE */}
                     <div className="flex-1 flex flex-col px-4 gap-3 overflow-hidden">
@@ -194,6 +233,8 @@ export default function Leads() {
                             selectedLeadIds={selectedLeadIds}
                             setSelectedLeadIds={setSelectedLeadIds}
                             onOpenAdvanceFilter={() => setDrawerOpen(true)}
+                            branchId={branchId}
+                            testInfo={testInfo}
                         />
 
                         {/* PAGINATION */}
@@ -208,6 +249,7 @@ export default function Leads() {
                             downloadNotification={downloadNotification}
                             toggleDownloadCard={toggleDownloadCard}
                             onDownloadCancel={handleDownloadCancel}
+                            branchId={branchId}
                         />
                     </div>
 
