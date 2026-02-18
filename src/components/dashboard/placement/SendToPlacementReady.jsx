@@ -126,7 +126,6 @@ export default function SendToPlacementReady({
         iconClassName: 'text-white',
       });
 
-      onSuccess?.();
     } catch (err) {
       console.error('Send failed', err);
       toast.error('Failed to send notifications');

@@ -59,6 +59,7 @@ export default function ManageCandidatesForJob({
 
   const loadCandidates = async () => {
     setLoading(true);
+    setSelectedIds([]);
     try {
       const data = await xFetch({
         path: '/services/job/getManageCandidates',
@@ -113,10 +114,18 @@ export default function ManageCandidatesForJob({
     setSharingToHr(true);
 
     try {
+      const params = new URLSearchParams();
+      params.append('jobId', jobId); 
+
+      selectedIds.forEach(id => {
+        params.append('candidates[]', id);
+      });
+
       const response = await xFetch({
         path: '/services/job/sendCandidateResumeToHr',
         method: 'POST',
-        payload: { jobId, candidates: selectedIds },
+        payload: params,                
+        isFormData: true,       
       });
 
       if (response === 'success' || response?.success) {
@@ -315,6 +324,14 @@ export default function ManageCandidatesForJob({
     }
   };
 
+  // Helper function to strip HTML tags
+  const stripHtmlTags = (html) => {
+    if (!html) return '';
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
   useEffect(() => {
     if (showTimelineModal && selectedCandidateIndex !== null) {
       refreshTimelineForCurrentCandidate();
@@ -465,8 +482,8 @@ export default function ManageCandidatesForJob({
                   </tr>
                 ) : (
                   paginatedCandidates.map((candidate, idx) => (
-                    <tr key={candidate.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-3 py-2">
+                    <tr key={candidate.id} className="hover:bg-gray-50 transition-colors align-top">
+                      <td className="px-3 py-2 align-top">
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(candidate.id)}
@@ -474,13 +491,13 @@ export default function ManageCandidatesForJob({
                           className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2 align-top">
                         <div className="font-medium text-gray-900">{candidate.name || '-'}</div>
                       </td>
-                      <td className="px-3 py-2 text-gray-900">{candidate.email || '-'}</td>
-                      <td className="px-3 py-2 text-gray-900">{candidate.mobile || '-'}</td>
-                      <td className="px-3 py-2">
-                        <div className="flex items-center gap-1.5">
+                      <td className="px-3 py-2 align-top text-gray-900">{candidate.email || '-'}</td>
+                      <td className="px-3 py-2 align-top text-gray-900">{candidate.mobile || '-'}</td>
+                      <td className="px-3 py-2 align-top">
+                        <div className="flex items-start gap-1.5">
                           <button
                             onClick={() => showInstituteCandidateTimeLine(idx)}
                             className="p-0.5 hover:bg-gray-200 rounded"
@@ -505,8 +522,8 @@ export default function ManageCandidatesForJob({
                           </span>
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-gray-600 max-w-xs truncate">{candidate.remarks || '-'}</td>
-                      <td className="px-3 py-2">
+                      <td className="px-3 py-2 align-top text-gray-600 max-w-xs truncate">{candidate.remarks || '-'}</td>
+                      <td className="px-3 py-2 align-top">
                         {candidate.resume ? (
                           <button
                             onClick={() => handleDownloadResume(candidate.resume, candidate.resumeName)}
@@ -519,30 +536,30 @@ export default function ManageCandidatesForJob({
                           <span className="text-gray-400 text-xs">-</span>
                         )}
                       </td>
-                      <td className="px-3 py-2 text-gray-900">{candidate.course || '-'}</td>
-                      <td className="px-3 py-2 text-gray-900">{candidate.courseStartDate || '-'}</td>
-                      <td className="px-3 py-2 text-gray-900">{candidate.courseEndDate || '-'}</td>
-                      <td className="px-3 py-2 text-center text-gray-900">
+                      <td className="px-3 py-2 align-top text-gray-900">{candidate.course || '-'}</td>
+                      <td className="px-3 py-2 align-top text-gray-900">{candidate.courseStartDate || '-'}</td>
+                      <td className="px-3 py-2 align-top text-gray-900">{candidate.courseEndDate || '-'}</td>
+                      <td className="px-3 py-2 align-top text-center text-gray-900">
                         {candidate.totalExperience ? `${candidate.totalExperience} yrs` : '-'}
                       </td>
-                      <td className="px-3 py-2 text-center text-gray-500">
+                      <td className="px-3 py-2 align-top text-center text-gray-500">
                         {candidate.relevantExperience ? `${candidate.relevantExperience} yrs` : '-'}
                       </td>
-                      <td className="px-3 py-2 text-gray-900">{candidate.lastDesignation || '-'}</td>
-                      <td className="px-3 py-2 text-gray-900">{candidate.expectedDesignation || '-'}</td>
-                      <td className="px-3 py-2 text-center text-gray-900">
+                      <td className="px-3 py-2 align-top text-gray-900">{candidate.lastDesignation || '-'}</td>
+                      <td className="px-3 py-2 align-top text-gray-900">{candidate.expectedDesignation || '-'}</td>
+                      <td className="px-3 py-2 align-top text-center text-gray-900">
                         {candidate.lastCTC ? `₹${candidate.lastCTC} L` : '-'}
                       </td>
-                      <td className="px-3 py-2 text-center text-gray-900">
+                      <td className="px-3 py-2 align-top text-center text-gray-900">
                         {candidate.expectedCTC ? `₹${candidate.expectedCTC} L` : '-'}
                       </td>
-                      <td className="px-3 py-2 text-center text-gray-900">
-                        {candidate.pending_payment ? `₹${candidate.pending_payment}` : '-'}
+                      <td className="px-3 py-2 align-top text-center text-gray-900">
+                        {candidate.pending_payment ? stripHtmlTags(candidate.pending_payment) : '-'}
                       </td>
-                      <td className="px-3 py-2 text-gray-500">
+                      <td className="px-3 py-2 align-top text-gray-500">
                         {candidate.updatedDate ? new Date(candidate.updatedDate).toLocaleString() : '-'}
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="px-3 py-2 align-top text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() => openEditStatusModal(idx)}
