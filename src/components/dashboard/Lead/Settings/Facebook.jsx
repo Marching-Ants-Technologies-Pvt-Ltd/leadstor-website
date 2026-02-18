@@ -1,16 +1,10 @@
-// FacebookLeadManager.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { xFetch } from "@/utility/xFetch";
 import { Search } from "lucide-react";
-/**
- * Single-file React module replacing the old jQuery/PHP Facebook leadgen UI.
- * - Use: import FacebookLeadManager and render it.
- * - Adjust styling and paths to xFetch if needed.
- */
 
-/* ---------- API endpoints (kept same as original) ---------- */
+/* ---------- API endpoints ---------- */
 const API = {
   getSubscribedForms: "/services/facebook/getSubscribedForms",
   getConceptNinjasFields: "/services/facebook/conceptninjasFields",
@@ -21,6 +15,7 @@ const API = {
   getExtendedUserToken: "/services/facebook/getExtendedUserToken",
 };
 
+/* ---------- Facebook Login Button ---------- */
 function FacebookLoginButton({ onLoggedIn }) {
   const [loading, setLoading] = useState(false);
 
@@ -100,100 +95,87 @@ function useFacebookSDK(appId = "354120981351314", version = "v19.0") {
   return { loaded, status, getStatus };
 }
 
-/* ---------- Small wrapper around xFetch ---------- */
+/* ---------- API wrappers ---------- */
 const facebookApi = {
-  fetchSubscribedForms: (corporateId, pages) => {
-    return xFetch({
+  fetchSubscribedForms: (corporateId, pages) =>
+    xFetch({
       path: API.getSubscribedForms,
       method: "POST",
-      payload: { pages }
-    })
-      .then(res => res)
-      .catch(err => {
-        console.error("Error: fetchSubscribedForms", err);
-        throw err;
-      });
-  },
+      payload: { pages },
+    }).catch((err) => {
+      console.error("fetchSubscribedForms error:", err);
+      throw err;
+    }),
 
-  fetchCNFields: () => {
-    return xFetch({
+  fetchCNFields: () =>
+    xFetch({
       path: API.getConceptNinjasFields,
       method: "GET",
-    })
-      .then(res => res)
-      .catch(err => {
-        console.error("Error: fetchCNFields", err);
-        throw err;
-      });
-  },
+    }).catch((err) => {
+      console.error("fetchCNFields error:", err);
+      throw err;
+    }),
 
-  subscribe: (payload) => {
-    return xFetch({
+  subscribe: (payload) =>
+    xFetch({
       path: API.subscribeFBPage,
       method: "POST",
-      payload: payload,
-    })
-      .then(res => res)
-      .catch(err => {
-        console.error("Error: subscribe", err);
-        throw err;
-      });
-  },
+      payload,
+    }).catch((err) => {
+      console.error("subscribe error:", err);
+      throw err;
+    }),
 
-  updateSubscription: (payload) => {
-    return xFetch({
+  updateSubscription: (payload) =>
+    xFetch({
       path: API.updateSubscription,
       method: "POST",
-      payload: payload,
-    })
-      .then(res => res)
-      .catch(err => {
-        console.error("Error: updateSubscription", err);
-        throw err;
-      });
-  },
+      payload,
+    }).catch((err) => {
+      console.error("updateSubscription error:", err);
+      throw err;
+    }),
 
-  deleteSubscription: (formTableId) => {
-    return xFetch({
+  deleteSubscription: (formTableId) =>
+    xFetch({
       path: API.deleteSubscribeForm,
       method: "POST",
       payload: { form_table_id: formTableId },
-    })
-      .then(res => res)
-      .catch(err => {
-        console.error("Error: deleteSubscription", err);
-        throw err;
-      });
-  },
+    }).catch((err) => {
+      console.error("deleteSubscription error:", err);
+      throw err;
+    }),
 
-  getMappedFields: (corporateId, pageId, formId) => {
-    return xFetch({
+  getMappedFields: (corporateId, pageId, formId) =>
+    xFetch({
       path: API.getMappedFields,
       method: "POST",
       payload: { corporateId, pageId, formId },
-    })
-      .then(res => res)
-      .catch(err => {
-        console.error("Error: getMappedFields", err);
-        throw err;
-      });
-  },
+    }).catch((err) => {
+      console.error("getMappedFields error:", err);
+      throw err;
+    }),
 
-  getExtendedToken: (userToken) => {
-    return xFetch({
+  getExtendedToken: (userToken) =>
+    xFetch({
       path: `${API.getExtendedUserToken}?userToken=${userToken}`,
       method: "GET",
-    })
-      .then(res => res)
-      .catch(err => {
-        console.error("Error: getExtendedToken", err);
-        throw err;
-      });
-  },
+    }).catch((err) => {
+      console.error("getExtendedToken error:", err);
+      throw err;
+    }),
 };
 
-/* ---------- Subscribe / Update Modal ---------- */
-function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporateId, corporateType, onSaved }) {
+/* ---------- Subscribe / Edit Modal ---------- */
+function SubscribeModal({
+  isOpen,
+  onClose,
+  fbPages = [],
+  initialData = null,
+  corporateId,
+  corporateType,
+  onSaved,
+}) {
   const [pageSelection, setPageSelection] = useState("");
   const [formsForPage, setFormsForPage] = useState([]);
   const [formSelection, setFormSelection] = useState("");
@@ -203,41 +185,50 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
   const [targetLocation, setTargetLocation] = useState("");
   const [loadingFields, setLoadingFields] = useState(false);
 
+  // Load CN fields once
+  useEffect(() => {
+    facebookApi
+      .fetchCNFields()
+      .then((d) => setCnFields(Array.isArray(d) ? d : []))
+      .catch(() => setCnFields([]));
+  }, []);
+
+  // Reset & load initial data
   useEffect(() => {
     if (!isOpen) return;
-    setCnFields([]);
+
+    setPageSelection("");
+    setFormSelection("");
     setFormsForPage([]);
     setFieldMap({});
     setCourse("");
     setTargetLocation("");
-    setPageSelection("");
-    setFormSelection("");
+    setLoadingFields(false);
 
     if (initialData) {
       const { pageId, pageAccessToken, formId, course: c, target_location } = initialData;
       setCourse(c || "");
       setTargetLocation(target_location || "");
-      setPageSelection(pageId + "_" + pageAccessToken);
-      // load forms then fields
-      loadFormsForPage(pageId + "_" + pageAccessToken).then(() => {
-        setFormSelection(pageId + "_" + pageAccessToken + "_" + formId);
-        updateFields(pageId + "_" + pageAccessToken + "_" + formId, formId, initialData.subscriptionId, initialData.formTableId, c, target_location);
+      const pageVal = `${pageId}_${pageAccessToken}`;
+      setPageSelection(pageVal);
+
+      // Load forms → then select form → then load mapped fields
+      loadFormsForPage(pageVal).then(() => {
+        const formVal = `${pageVal}_${formId}`;
+        setFormSelection(formVal);
+        updateFields(formVal, formId, initialData.subscriptionId, initialData.formTableId, c, target_location);
       });
     }
-  }, [isOpen]);
-
-  useEffect(() => {
-    // fetch CN fields once
-    facebookApi.fetchCNFields().then((d) => setCnFields(d || [])).catch((e) => console.error(e));
-  }, []);
+  }, [isOpen, initialData]);
 
   const loadFormsForPage = async (val) => {
-    if (!val) return;
+    if (!val) return [];
     const [pageId, pageAccessToken] = val.split("_");
-    if (!window.FB) return;
+    if (!window.FB) return [];
+
     return new Promise((resolve) => {
-      window.FB.api(`/${pageId}/leadgen_forms?access_token=${pageAccessToken}&limit=200`, function (response) {
-        const list = (response && response.data) || [];
+      window.FB.api(`/${pageId}/leadgen_forms?access_token=${pageAccessToken}&limit=200`, (response) => {
+        const list = (response && Array.isArray(response.data) ? response.data : []);
         setFormsForPage(list);
         resolve(list);
       });
@@ -248,41 +239,48 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
     if (!val) return;
     const [pageId, pageAccessToken, formId] = val.split("_");
     setLoadingFields(true);
-    window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, function (response) {
-      const questions = response.questions || [];
+
+    window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, (response) => {
+      const questions = (response && Array.isArray(response.questions) ? response.questions : []);
       const defaultMap = {};
-      questions.forEach((q) => (defaultMap[q.key] = ""));
+      questions.forEach((q) => {
+        if (q.key) defaultMap[q.key] = "";
+      });
       setFieldMap(defaultMap);
       setLoadingFields(false);
     });
   };
 
-  const updateFields = (formVal, formId, subscriptionId, formTableId, courseVal, targetLocationVal) => {
-    if (!formVal) return;
+  const updateFields = async (formVal, formId, subscriptionId, formTableId, courseVal, targetLocationVal) => {
+    if (!formVal || !formId) return;
     const [pageId, pageAccessToken] = formVal.split("_");
+
     setLoadingFields(true);
-    facebookApi
-      .getMappedFields(corporateId, pageId, formId)
-      .then((mapped) => {
-        window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, function (response) {
-          const questions = response.questions || [];
-          const defaultMap = {};
-          questions.forEach((q) => (defaultMap[q.key] = ""));
-          // Ensure mapped is an array before iterating
-          const mappedArray = Array.isArray(mapped) ? mapped : (mapped?.data && Array.isArray(mapped.data) ? mapped.data : []);
-          mappedArray.forEach((m) => {
-            if (m.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
-              defaultMap[m.form_field_key] = String(m.cn_field_id);
-            }
-          });
-          setFieldMap(defaultMap);
-          setLoadingFields(false);
+
+    try {
+      const mapped = await facebookApi.getMappedFields(corporateId, pageId, formId);
+      const mappedArray = Array.isArray(mapped) ? mapped : (mapped?.data || []);
+
+      window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, (response) => {
+        const questions = (response && Array.isArray(response.questions) ? response.questions : []);
+        const defaultMap = {};
+        questions.forEach((q) => {
+          if (q.key) defaultMap[q.key] = "";
         });
-      })
-      .catch((err) => {
+
+        mappedArray.forEach((m) => {
+          if (m.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
+            defaultMap[m.form_field_key] = String(m.cn_field_id || "");
+          }
+        });
+
+        setFieldMap(defaultMap);
         setLoadingFields(false);
-        console.error(err);
       });
+    } catch (err) {
+      console.error(err);
+      setLoadingFields(false);
+    }
   };
 
   const onPageChange = (e) => {
@@ -311,6 +309,7 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
 
     const [pageId, pageToken] = pageSelection.split("_");
     const [, , formId] = formSelection.split("_");
+
     const payload = {
       corporateId,
       pageId,
@@ -318,18 +317,23 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
       formId,
       course,
       target_location: targetLocation,
-      mapped: Object.keys(fieldMap).map((k) => ({ form_field_key: k, cn_field_id: fieldMap[k] })),
+      mapped: Object.keys(fieldMap).map((k) => ({
+        form_field_key: k,
+        cn_field_id: fieldMap[k],
+      })),
     };
 
     try {
-      const result = initialData ? await facebookApi.updateSubscription(payload) : await facebookApi.subscribe(payload);
+      const result = initialData
+        ? await facebookApi.updateSubscription(payload)
+        : await facebookApi.subscribe(payload);
 
       if (result && result.status === "OK") {
         toast.success(initialData ? "Subscription updated" : "Subscribed successfully");
         onSaved && onSaved();
         onClose();
       } else {
-        toast.error((result && result.msg) || "Something went wrong");
+        toast.error(result?.msg || "Something went wrong");
       }
     } catch (err) {
       console.error(err);
@@ -341,57 +345,97 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="w-full max-w-3xl bg-white rounded shadow-xl p-6">
+      <div className="w-full max-w-3xl bg-white rounded shadow-xl p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Facebook Form Subscribe</h3>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-800">✕</button>
+          <h3 className="text-lg font-semibold">Facebook Form Subscribe</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-xl">
+            ×
+          </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* Page Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Page</label>
-            <select value={pageSelection} onChange={onPageChange} className="mt-1 block w-full border rounded px-3 py-2 bg-white">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Page</label>
+            <select
+              value={pageSelection}
+              onChange={onPageChange}
+              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">Select Page</option>
-              {fbPages.map((p) => (
-                <option key={p.id} value={`${p.id}_${p.access_token}`}>{p.name}</option>
-              ))}
+              {Array.isArray(fbPages) && fbPages.length > 0 ? (
+                fbPages.map((p) => (
+                  <option key={p.id} value={`${p.id}_${p.access_token}`}>
+                    {p.name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No pages available</option>
+              )}
             </select>
           </div>
 
+          {/* Form Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Form</label>
-            <select value={formSelection} onChange={onFormChange} className="mt-1 block w-full border rounded px-3 py-2 bg-white">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Form</label>
+            <select
+              value={formSelection}
+              onChange={onFormChange}
+              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={!pageSelection}
+            >
               <option value="">Select Form</option>
-              {formsForPage.map((f) => (
-                <option key={f.id} value={`${pageSelection}_${f.id}`}>{f.name}</option>
-              ))}
+              {Array.isArray(formsForPage) && formsForPage.length > 0 ? (
+                formsForPage.map((f) => (
+                  <option key={f.id} value={`${pageSelection}_${f.id}`}>
+                    {f.name}
+                  </option>
+                ))
+              ) : (
+                <option disabled>{pageSelection ? "No forms found" : "Select page first"}</option>
+              )}
             </select>
           </div>
 
+          {/* Field Mapping */}
           <div>
-            <h4 className="text-sm font-medium">Fields</h4>
-            <div className="mt-2 border rounded p-3 bg-gray-50 max-h-56 overflow-auto">
+            <h4 className="text-sm font-medium mb-2">Field Mapping</h4>
+            <div className="border rounded p-3 bg-gray-50 max-h-60 overflow-auto">
               {loadingFields ? (
-                <div>Loading fields...</div>
+                <div className="text-center py-4">Loading fields...</div>
+              ) : Object.keys(fieldMap).length === 0 ? (
+                <div className="text-center py-4 text-gray-500">No fields loaded</div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
-                    <tr>
-                      <th className="text-left py-1">Field Key</th>
-                      <th className="text-left py-1">Mapped Field</th>
+                    <tr className="border-b">
+                      <th className="text-left py-2">Field Key</th>
+                      <th className="text-left py-2">Mapped To</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.keys(fieldMap).length === 0 && <tr><td colSpan={2} className="py-2">No fields loaded</td></tr>}
                     {Object.keys(fieldMap).map((k) => (
                       <tr key={k} className="border-t">
-                        <td className="py-1">{k}</td>
-                        <td className="py-1">
-                          <select value={fieldMap[k]} onChange={(e) => onFieldMapChange(k, e.target.value)} className="w-full bg-white border rounded px-2 py-1 text-sm">
+                        <td className="py-2 pr-4">{k}</td>
+                        <td className="py-2">
+                          <select
+                            value={fieldMap[k] || ""}
+                            onChange={(e) => onFieldMapChange(k, e.target.value)}
+                            className="w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
                             <option value="">Select Field</option>
-                            {cnFields.map((f) => (
-                              <option key={f.id || f.fieldId || f} value={f.id || f.fieldId || f}>{f.name || f}</option>
-                            ))}
+                            {Array.isArray(cnFields) && cnFields.length > 0 ? (
+                              cnFields.map((f) => (
+                                <option
+                                  key={f.id || f.fieldId || f}
+                                  value={f.id || f.fieldId || f}
+                                >
+                                  {f.name || f}
+                                </option>
+                              ))
+                            ) : (
+                              <option disabled>No fields available</option>
+                            )}
                           </select>
                         </td>
                       </tr>
@@ -402,21 +446,41 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
             </div>
           </div>
 
-          {(corporateType == 100 || corporateType == 500 || corporateType == 800) && (
+          {/* Optional fields */}
+          {(corporateType === 100 || corporateType === 500 || corporateType === 800) && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Course (Optional)</label>
-              <input value={course} onChange={(e) => setCourse(e.target.value)} className="mt-1 block w-full border rounded px-3 py-2 bg-white" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Course (Optional)</label>
+              <input
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Location (Optional)</label>
-            <input value={targetLocation} onChange={(e) => setTargetLocation(e.target.value)} className="mt-1 block w-full border rounded px-3 py-2 bg-white" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Location (Optional)</label>
+            <input
+              value={targetLocation}
+              onChange={(e) => setTargetLocation(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
-          <div className="flex justify-end gap-3">
-            <button onClick={onClose} className="px-4 py-2 rounded border">Cancel</button>
-            <button onClick={submit} className="px-4 py-2 rounded bg-blue-600 text-white">{initialData ? "Update" : "Subscribe"}</button>
+          {/* Buttons */}
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              onClick={onClose}
+              className="px-5 py-2 border border-gray-300 rounded hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={submit}
+              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              {initialData ? "Update Subscription" : "Subscribe"}
+            </button>
           </div>
         </div>
       </div>
@@ -424,49 +488,59 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
   );
 }
 
-/* ---------- Main manager component ---------- */
+/* ---------- Main Component ---------- */
 export default function FacebookLeadManager({ corporateId = 64, corporateType = 100 }) {
   const { loaded, status } = useFacebookSDK();
   const [pages, setPages] = useState([]);
   const [subscribed, setSubscribed] = useState([]);
-
   const [search, setSearch] = useState("");
   const [pageIdx, setPageIdx] = useState(1);
   const pageSize = 10;
-
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
 
   useEffect(() => {
-    if (!loaded) return;console.log(`loaded`+status);
-    if (status && status.status === "connected") {
-      let userAccessToken = status.authResponse.accessToken;console.log(`userAccessToken`+userAccessToken);
+    if (!loaded) return;
+
+    if (status?.status === "connected") {
+      let userAccessToken = status.authResponse.accessToken;
+
       facebookApi
         .getExtendedToken(userAccessToken)
         .then((data) => {
-          if (data && data.access_token) userAccessToken = data.access_token;
-          window.FB.api(`/me/accounts?access_token=${userAccessToken}`, function (response) {
-            const p = (response && response.data) || [];
+          if (data?.access_token) userAccessToken = data.access_token;
+
+          window.FB.api(`/me/accounts?access_token=${userAccessToken}`, (response) => {
+            const p = Array.isArray(response?.data) ? response.data : [];
             setPages(p);
-            facebookApi.fetchSubscribedForms(corporateId, p).then((d) => setSubscribed(d || []));
+
+            facebookApi
+              .fetchSubscribedForms(corporateId, p)
+              .then((d) => setSubscribed(Array.isArray(d) ? d : []))
+              .catch(() => setSubscribed([]));
           });
         })
-        .catch((err) => {
-          console.error(err);
-          if (window.FB) {
-            window.FB.api(`/me/accounts?access_token=${status.authResponse.accessToken}`, function (response) {
-              const p = (response && response.data) || [];
-              setPages(p);
-              facebookApi.fetchSubscribedForms(corporateId, p).then((d) => setSubscribed(d || []));
-            });
-          }
+        .catch(() => {
+          // Fallback without extended token
+          window.FB.api(`/me/accounts?access_token=${status.authResponse.accessToken}`, (response) => {
+            const p = Array.isArray(response?.data) ? response.data : [];
+            setPages(p);
+
+            facebookApi
+              .fetchSubscribedForms(corporateId, p)
+              .then((d) => setSubscribed(Array.isArray(d) ? d : []))
+              .catch(() => setSubscribed([]));
+          });
         });
     }
-  }, [loaded, status]);
+  }, [loaded, status, corporateId]);
 
   const refreshList = () => {
-    facebookApi.fetchSubscribedForms(corporateId, pages).then((d) => setSubscribed(d || [])).catch(console.error);
-    toast.info("Refreshing list...");
+    facebookApi
+      .fetchSubscribedForms(corporateId, pages)
+      .then((d) => setSubscribed(Array.isArray(d) ? d : []))
+      .catch(() => toast.error("Refresh failed"));
+    toast.info("Refreshing subscriptions...");
   };
 
   const openSubscribe = () => {
@@ -488,26 +562,30 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
   };
 
   const doDelete = async (row) => {
-    if (!confirm("Are you sure you want to delete this subscription?")) return;
+    if (!confirm("Delete this subscription?")) return;
+
     try {
       const res = await facebookApi.deleteSubscription(row.form_table_id);
-      if (res && res.msg === "success") {
-        toast.success("Deleted");
+      if (res?.msg === "success") {
+        toast.success("Subscription deleted");
         refreshList();
       } else {
-        toast.error("Delete failed");
+        toast.error(res?.msg || "Delete failed");
       }
     } catch (err) {
-      console.error(err);
       toast.error("Network error while deleting");
     }
   };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const subArray = Array.isArray(subscribed) ? subscribed : [];
-    if (!q) return subArray;
-    return subArray.filter((r) => (r.form_name || "").toLowerCase().includes(q) || (r.page_name || "").toLowerCase().includes(q));
+    const subs = Array.isArray(subscribed) ? subscribed : [];
+    if (!q) return subs;
+    return subs.filter(
+      (r) =>
+        (r.form_name || "").toLowerCase().includes(q) ||
+        (r.page_name || "").toLowerCase().includes(q)
+    );
   }, [search, subscribed]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -515,64 +593,118 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
 
   return (
     <div className="p-4">
-      <ToastContainer position="top-right" />
+      <ToastContainer position="top-right" autoClose={3000} />
 
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <button onClick={openSubscribe} className="px-3 py-2 bg-blue-600 text-white rounded">+ Subscribe</button>
-          <button onClick={refreshList} className="px-3 py-2 border rounded">Refresh</button>
+      {/* Controls */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={openSubscribe}
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+          >
+            + Subscribe New Form
+          </button>
+          <button
+            onClick={refreshList}
+            className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition"
+          >
+            Refresh List
+          </button>
         </div>
+
         <FacebookLoginButton onLoggedIn={() => window.location.reload()} />
-        <div className="relative">
-            <Search className="absolute left-2 top-2.5 text-gray-400 w-4 h-4" />
-            <input
-                type="text"
-                placeholder="Search..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 pr-3 py-2 border rounded-lg text-sm bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="Search subscriptions..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPageIdx(1);
+            }}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
         </div>
       </div>
 
-      <div className="bg-white border rounded shadow">
+      {/* Table */}
+      <div className="bg-white border rounded-lg shadow overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-2 text-left">#</th>
-              <th className="p-2 text-left">Page Name</th>
-              <th className="p-2 text-left">Form Id</th>
-              <th className="p-2 text-left">Form Name</th>
-              <th className="p-2 text-left">Actions</th>
+              <th className="p-3 text-left">#</th>
+              <th className="p-3 text-left">Page Name</th>
+              <th className="p-3 text-left">Form ID</th>
+              <th className="p-3 text-left">Form Name</th>
+              <th className="p-3 text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {pageItems.map((row, i) => (
-              <tr key={row.form_table_id || i} className="border-t">
-                <td className="p-2">{(pageIdx - 1) * pageSize + i + 1}</td>
-                <td className="p-2">{row.page_name}</td>
-                <td className="p-2">{row.form_id}</td>
-                <td className="p-2">{row.form_name}</td>
-                <td className="p-2 flex gap-2">
-                  <button onClick={() => openEdit(row)} className="px-2 py-1 text-sm border rounded">Edit</button>
-                  <button onClick={() => doDelete(row)} className="px-2 py-1 text-sm border rounded text-red-600">Delete</button>
+            {pageItems.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-gray-500">
+                  No subscriptions found
                 </td>
               </tr>
-            ))}
-            {pageItems.length === 0 && <tr><td colSpan={5} className="p-4">No records found</td></tr>}
+            ) : (
+              pageItems.map((row, i) => (
+                <tr key={row.form_table_id || i} className="border-t hover:bg-gray-50">
+                  <td className="p-3">{(pageIdx - 1) * pageSize + i + 1}</td>
+                  <td className="p-3">{row.page_name || "—"}</td>
+                  <td className="p-3">{row.form_id || "—"}</td>
+                  <td className="p-3">{row.form_name || "—"}</td>
+                  <td className="p-3 text-center">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={() => openEdit(row)}
+                        className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => doDelete(row)}
+                        className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
 
-        <div className="flex items-center justify-between p-3">
-          <div>Showing {filtered.length} results</div>
-          <div className="flex items-center gap-2">
-            <button disabled={pageIdx === 1} onClick={() => setPageIdx((p) => Math.max(1, p - 1))} className="px-2 py-1 border rounded">Prev</button>
-            <div>Page {pageIdx} / {totalPages}</div>
-            <button disabled={pageIdx === totalPages} onClick={() => setPageIdx((p) => Math.min(totalPages, p + 1))} className="px-2 py-1 border rounded">Next</button>
+        {/* Pagination */}
+        {filtered.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t text-sm text-gray-600">
+            <div>Showing {pageItems.length} of {filtered.length}</div>
+            <div className="flex gap-2">
+              <button
+                disabled={pageIdx === 1}
+                onClick={() => setPageIdx((p) => Math.max(1, p - 1))}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Prev
+              </button>
+              <span className="px-3 py-1 font-medium">
+                Page {pageIdx} of {Math.ceil(filtered.length / pageSize)}
+              </span>
+              <button
+                disabled={pageIdx >= Math.ceil(filtered.length / pageSize)}
+                onClick={() => setPageIdx((p) => p + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
+      {/* Modal */}
       {modalOpen && (
         <SubscribeModal
           isOpen={modalOpen}
@@ -581,7 +713,7 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
           initialData={editData}
           corporateId={corporateId}
           corporateType={corporateType}
-          onSaved={() => refreshList()}
+          onSaved={refreshList}
         />
       )}
     </div>
