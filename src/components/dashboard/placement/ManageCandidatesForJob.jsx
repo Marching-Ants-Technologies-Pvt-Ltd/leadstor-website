@@ -34,6 +34,7 @@ export default function ManageCandidatesForJob({
   const [editStatus, setEditStatus] = useState('');
   const [editRemarks, setEditRemarks] = useState('');
   const [editInterviewDate, setEditInterviewDate] = useState('');
+  const [highlightedNoResume, setHighlightedNoResume] = useState([]);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -98,46 +99,94 @@ export default function ManageCandidatesForJob({
   };
 
   const handleShareToHR = async () => {
-    if (selectedIds.length === 0) return toast.warn('No candidates selected');
-
-    const candidatesWithoutResume = selectedIds.filter(id => {
-      const candidate = candidates.find(c => c.id === id);
-      return !candidate?.resume;
-    });
-
-    if (candidatesWithoutResume.length > 0) {
-      if (!confirm(`Some selected candidates don't have resumes. Continue?`)) {
-        return;
-      }
+    if (selectedIds.length === 0) {
+      toast.warn('No candidates selected');
+      return;
     }
 
     setSharingToHr(true);
+    setHighlightedNoResume([]); // reset previous highlights
 
     try {
-      const params = new URLSearchParams();
-      params.append('jobId', jobId); 
-
+      // Step 1: Get real candidate IDs (management IDs → candidate IDs)
+      const idsFormData = new FormData();
       selectedIds.forEach(id => {
-        params.append('candidates[]', id);
+        idsFormData.append('ids[]', id); // or 'ids' if backend expects comma-separated
       });
 
-      const response = await xFetch({
+      const candidateIdsRes = await xFetch({
+        path: '/services/job/getCandidateIdsByManagemnet',
+        method: 'POST',
+        payload: idsFormData,
+        isFormData: true,
+      });
+
+      // Extract real candidate IDs (adjust key if needed after console.log)
+      let realCandidateIds = Array.isArray(candidateIdsRes)
+        ? candidateIdsRes
+        : candidateIdsRes?.candidate_ids ||
+          candidateIdsRes?.data ||
+          candidateIdsRes?.ids ||
+          [];
+
+      if (!realCandidateIds?.length) {
+        toast.error('No valid candidate IDs returned');
+        return;
+      }
+
+      // Step 2: Validate (check resumes)
+      const validationFormData = new FormData();
+      realCandidateIds.forEach(id => {
+        validationFormData.append('candidate_ids[]', id);
+      });
+      validationFormData.append('job_id', jobId);
+
+      const validationRes = await xFetch({
+        path: '/services/job/validationResumeShare',
+        method: 'POST',
+        payload: validationFormData,
+        isFormData: true,
+      });
+
+      // If validation returns a message → warn & highlight rows → stop
+      if (validationRes?.message && validationRes.message.trim() !== '') {
+        toast.warn(validationRes.message);
+
+        const noResumeIds = validationRes.noResumeId || [];
+        if (noResumeIds.length > 0) {
+          setHighlightedNoResume(noResumeIds.map(String)); // highlight these rows
+        }
+
+        return; // stop here like old code "return false"
+      }
+
+      // Step 3: Send real candidate IDs to HR
+      const sendFormData = new FormData();
+      sendFormData.append('jobId', jobId);
+
+      realCandidateIds.forEach(id => {
+        sendFormData.append('candidates[]', id);
+      });
+
+      const finalRes = await xFetch({
         path: '/services/job/sendCandidateResumeToHr',
         method: 'POST',
-        payload: params,                
-        isFormData: true,       
+        payload: sendFormData,
+        isFormData: true,
       });
 
-      if (response === 'success' || response?.success) {
-        toast.success('Resumes shared with HR');
+      if (finalRes === 'success' || finalRes?.success) {
+        toast.success('An email has been sent to HR');
+        setSelectedIds([]); // clear checkboxes
+        setHighlightedNoResume([]); // clear highlights
         setTimeout(() => {
-          loadCandidates();
-        }, 500);
+          loadCandidates(); // refresh list
+        }, 400);
       } else {
-        toast.error(response?.message || 'Failed to share resumes');
+        toast.error(finalRes || 'Failed to share resumes');
       }
     } catch (err) {
-      console.error('Error sharing resumes:', err);
+      console.error('Share resumes error:', err);
       toast.error('Share failed: ' + (err.message || 'Unknown error'));
     } finally {
       setSharingToHr(false);
@@ -327,8 +376,10 @@ export default function ManageCandidatesForJob({
   // Helper function to strip HTML tags
   const stripHtmlTags = (html) => {
     if (!html) return '';
+    // Replace Font Awesome INR icon with actual ₹ symbol before stripping
+    let cleanHtml = html.replace(/<i\s+class="fa fa-inr"[^>]*><\/i>/gi, '₹');
     const tmp = document.createElement('div');
-    tmp.innerHTML = html;
+    tmp.innerHTML = cleanHtml;
     return tmp.textContent || tmp.innerText || '';
   };
 
@@ -482,7 +533,14 @@ export default function ManageCandidatesForJob({
                   </tr>
                 ) : (
                   paginatedCandidates.map((candidate, idx) => (
-                    <tr key={candidate.id} className="hover:bg-gray-50 transition-colors align-top">
+                      <tr
+                          key={candidate.id}
+                          className={`
+                            hover:bg-gray-50 transition-colors align-top
+                            ${highlightedNoResume.includes(String(candidate.id)) ? 'bg-red-100 !important' : ''}
+                            ${selectedIds.includes(candidate.id) ? 'bg-blue-50' : ''}
+                          `}
+                        >
                       <td className="px-3 py-2 align-top">
                         <input
                           type="checkbox"
@@ -553,8 +611,22 @@ export default function ManageCandidatesForJob({
                       <td className="px-3 py-2 align-top text-center text-gray-900">
                         {candidate.expectedCTC ? `₹${candidate.expectedCTC} L` : '-'}
                       </td>
-                      <td className="px-3 py-2 align-top text-center text-gray-900">
-                        {candidate.pending_payment ? stripHtmlTags(candidate.pending_payment) : '-'}
+                      <td className="px-3 py-2 align-top text-center text-gray-900 whitespace-pre-wrap">
+                        {candidate.pending_payment ? (
+                          <div className="text-sm leading-tight">
+                            {candidate.pending_payment.split(/<br\s*\/?>/i).map((line, i) => {
+                              // Clean each line individually
+                              const cleanLine = stripHtmlTags(line.trim());
+                              return cleanLine ? (
+                                <div key={i} className="py-0.5">
+                                  {cleanLine}
+                                </div>
+                              ) : null;
+                            })}
+                          </div>
+                        ) : (
+                          '-'
+                        )}
                       </td>
                       <td className="px-3 py-2 align-top text-gray-500">
                         {candidate.updatedDate ? new Date(candidate.updatedDate).toLocaleString() : '-'}

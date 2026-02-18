@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
-import { useRouter } from 'next/navigation';
 import { xFetch, jsonToQueryParams, xDownload } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
+import { Users, ArrowLeft } from 'lucide-react';
 import PaymentsTable from './table';
 import ReportDropdown from './reportMenu';
 import DatePickerModal from '@/components/elements/DatePickerModal';
@@ -13,9 +14,13 @@ import FilterPopup from './filterPopup';
 import PaymentAnalyticsOfTheDay from './analytics';
 
 export default function PaymentsSectionController() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const branchCorporateId = searchParams.get('corporateId');
+    const branchTestId = searchParams.get('testId');
+    const branchTestType = searchParams.get('testType');
 
     const corporateId = Corporate?._id;
-    const router = useRouter();
     let totalPages = 0;
     let currentPage = 0;
 
@@ -31,14 +36,41 @@ export default function PaymentsSectionController() {
     const [downloadReport, setDownloadReport] = useState(false);
     const [limitPopup, setLimitPopup] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [branchTestInfo, setBranchTestInfo] = useState({ testId: null, testType: null });
+
+    // Fetch test info for branch if coming from branch
+    useEffect(() => {
+        if (branchCorporateId && !branchTestId) {
+            // Fetch test list for this corporate
+            xFetch({
+                path: '/services/profile/getTestList',
+                payload: { corporateId: branchCorporateId }
+            }).then(testData => {
+                if (testData && testData.length > 0) {
+                    setBranchTestInfo({ 
+                        testId: testData[0].id || testData[0]._id, 
+                        testType: testData[0].testType || 'S' 
+                    });
+                }
+            }).catch(() => {
+                setBranchTestInfo({ testId: null, testType: null });
+            });
+        } else if (branchTestId && branchTestType) {
+            setBranchTestInfo({ testId: branchTestId, testType: branchTestType });
+        } else {
+            setBranchTestInfo({ testId: null, testType: null });
+        }
+    }, [branchCorporateId, branchTestId, branchTestType]);
 
     const [query, setQuery] = useState({
-        corporateId: Corporate._id,
+        corporateId: branchCorporateId || Corporate._id,
         search: '',
         order: 'asc',
         offset: 0,
         limit: 50
     });
+
+    // No need for this useEffect anymore since we're using branchCorporateId directly in the API call
 
     const [appliedFilters, setAppliedFilters] = useState({
         selected: {},
@@ -296,17 +328,20 @@ export default function PaymentsSectionController() {
         setLoading(true);
         xFetch({
             path: '/services/joinees/admissions',
-            payload: query
+            payload: {
+                ...query,
+                corporateId: branchCorporateId || Corporate._id
+            }
         })
             .then(data => {
                 setLeads(data);
                 setLoading(false);
             })
             .catch(error => {
-                console.error(`An error occurred while fetching leads`, error);
+                console.error(`An error occurred while fetching admissions`, error);
                 toast.error('Server error occurred, Try again');
             });
-    }, [query, setLeads])
+    }, [query, branchCorporateId])
 
     return (
         <div>
@@ -403,6 +438,29 @@ export default function PaymentsSectionController() {
                 <PaymentAnalyticsOfTheDay />
 
                 <div className="flex gap-2">
+                    {branchCorporateId && (
+                        <>
+                            <button
+                                className="px-3 py-1.5 text-xs border border-indigo-300 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center gap-1.5 transition-all"
+                                onClick={() => {
+                                    const testParams = branchTestInfo.testId && branchTestInfo.testType 
+                                        ? `&testId=${branchTestInfo.testId}&testType=${branchTestInfo.testType}` 
+                                        : '';
+                                    router.push(`/leads?corporateId=${branchCorporateId}${testParams}`);
+                                }}
+                            >
+                                <Users size={14} />
+                                View Leads
+                            </button>
+                            <button
+                                className="px-3 py-1.5 text-xs border border-gray-300 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center gap-1.5 transition-all"
+                                onClick={() => router.push('/branches')}
+                            >
+                                <ArrowLeft size={14} />
+                                Back to Branches
+                            </button>
+                        </>
+                    )}
                     <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50">🔗‍️ Send Payment Link</button>
                     <button className="px-4 py-2 text-sm border border-slate-300 rounded bg-slate-50">📝 Add Note</button>
                     <button className="px-4 py-2 text-sm rounded bg-blue-600 text-white">Payment Analytics</button>

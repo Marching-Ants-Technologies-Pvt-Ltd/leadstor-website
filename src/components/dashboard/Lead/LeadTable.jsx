@@ -38,7 +38,9 @@ export default function LeadsTable({
     setLeads,
     selectedLeadIds,
     setSelectedLeadIds,
-    onOpenAdvanceFilter
+    onOpenAdvanceFilter,
+    branchId,
+    testInfo
 }) {
     let setLeadsFn;
     setLeadsFn = setLeads;
@@ -59,7 +61,7 @@ export default function LeadsTable({
     const isIndeterminate =
         leads.some(l => selectedLeadIds.includes(l.invitationId)) &&
         !leads.every(l => selectedLeadIds.includes(l.invitationId));
-    
+
     const dataFormatters = {
         assignedUserId: (row) => {
             const id = Number(row?.assignedUserId);
@@ -95,8 +97,8 @@ export default function LeadsTable({
         let filters = LeadFilters.value();
         offset = Math.max(0, offset);
         let payload = {
-            testId: Test._id,
-            testType: Test.type,
+            testId: testInfo?.testId || Test._id,
+            testType: testInfo?.testType || Test.type,
             owner: User._id,
             isTelecaller: User.telecaller ? 1 : 0,
             order: "asc",
@@ -104,6 +106,11 @@ export default function LeadsTable({
             limit,
             search: LeadSearch.value()
         };
+
+        // Add branchId (corporateId) to payload if provided
+        if (branchId) {
+            payload.corporateId = branchId;
+        }
 
         if (filters.length > 0) {
             // Show the applied filters bar with proper clear handler
@@ -593,14 +600,14 @@ export default function LeadsTable({
     };
 
     useEffect(() => {
-        LeadsCurrentPage.setValue(1); 
+        LeadsCurrentPage.setValue(1);
         xLeads();
         window.tableRefresh = () => xLeads();
         HorizontalScroll();
         return () => {
             delete window.tableRefresh;
         };
-    }, []);
+    }, [testInfo]);
 
     /* =======================
      TANSTACK COLUMN DEFINITIONS

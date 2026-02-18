@@ -268,7 +268,9 @@ function SubscribeModal({ isOpen, onClose, fbPages, initialData = null, corporat
           const questions = response.questions || [];
           const defaultMap = {};
           questions.forEach((q) => (defaultMap[q.key] = ""));
-          (mapped || []).forEach((m) => {
+          // Ensure mapped is an array before iterating
+          const mappedArray = Array.isArray(mapped) ? mapped : (mapped?.data && Array.isArray(mapped.data) ? mapped.data : []);
+          mappedArray.forEach((m) => {
             if (m.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
               defaultMap[m.form_field_key] = String(m.cn_field_id);
             }
