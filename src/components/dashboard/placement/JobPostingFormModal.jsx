@@ -500,31 +500,25 @@ export default function JobPostingFormModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Job Description <span className="text-red-500">*</span>
                 </label>
-                <JoditEditor
-                  ref={editor}
-                  value={formData.description}
-                  config={{
-                    readonly: false,
-                    height: 300,
-                    toolbar: true,
-                    buttons: 'bold,italic,underline,|,ul,ol,|,link,|,source',
-                    placeholder: 'Enter detailed job description here...',
-                    events: {
-                      paste: function (e) {
-                        // Allow content to be pasted normally
-                        setTimeout(() => {
-                          setFormData((prev) => ({ ...prev, description: this.value }));
-                        }, 10);
-                      }
-                    }
-                  }}
-                  onBlur={(newContent) => {
-                    setFormData((prev) => ({ ...prev, description: newContent }));
-                  }}
-                  onChange={(newContent) => {
-                    setFormData((prev) => ({ ...prev, description: newContent }));
-                  }}
-                />
+                <div className="relative z-[60] isolate rounded border border-gray-200 shadow-sm">
+                  <JoditEditor
+                      ref={editor}
+                      value={formData.description}
+                      config={{
+                        height: 420,
+                        readonly: false,
+                        toolbarAdaptive: false,
+                        toolbarSticky: false,
+                        buttons: "bold,italic,underline,|,ul,ol,|,link,image,table,|,source",
+                        askBeforePasteHTML: false,
+                        askBeforePasteFromWord: false,
+                        processPasteHTML: true,
+                      }}
+                      onBlur={(newContent) => {
+                        setFormData((prev) => ({ ...prev, description: newContent }));
+                      }}
+                    />
+                </div>
               </div>
 
               {/* Sticky Footer */}
@@ -556,6 +550,22 @@ export default function JobPostingFormModal({
           )}
         </div>
       </div>
+      <style>{`
+          .jodit-container,
+          .jodit-wysiwyg,
+          .jodit-workplace {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            pointer-events: auto !important;
+          }
+          .jodit-popup,
+          .jodit-dialog__box,
+          .jodit-dialog__box,
+          .jodit-dialog__content {
+            z-index: 99999 !important;   /* higher than your modal z-50 */
+          }
+            
+      `}</style>
     </div>
   );
 }
