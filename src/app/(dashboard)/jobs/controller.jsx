@@ -20,9 +20,8 @@ export default function JobPostingsController() {
   const recruiterId = Corporate?.recruiterId || corporateId;
 
   // ─── Job List States ─────────────────────────────────────────────────────
-  const [jobs, setJobs] = useState([]);
+  const [allJobs, setAllJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [page, setPage] = useState(1);
@@ -43,29 +42,35 @@ export default function JobPostingsController() {
   const reloadJobs = useCallback(async () => {
     setLoading(true);
     try {
-      const offset = (page - 1) * limit;
       const params = {
         corporateId: String(corporateId),
-        offset: String(offset),
-        limit: String(limit),
         search: search.trim() || undefined,
       };
       const data = await xFetch({ path: '/services/job/getJobs', payload: params });
       const list = Array.isArray(data) ? data : data?.rows || data?.data || [];
-      setJobs(list);
-      setTotal(data?.total || list.length || 0);
+      setAllJobs(list);
     } catch (err) {
       toast.error('Failed to load job postings');
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, corporateId]);
+  }, [search, corporateId]);
+
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
 
   useEffect(() => {
     if (!showNotifications && !showSendToPlacement && !showManageCandidates && !showScheduledStatus ) {
       reloadJobs();
     }
-  }, [page, limit, search, showNotifications, showSendToPlacement, showManageCandidates, showScheduledStatus, reloadJobs]);
+  }, [search, showNotifications, showSendToPlacement, showManageCandidates, showScheduledStatus, reloadJobs]);
+
+  // ─── Client-side Pagination ──────────────────────────────────────────────
+  const total = allJobs.length;
+  const totalPages = Math.ceil(total / limit);
+  const jobs = allJobs.slice((page - 1) * limit, page * limit);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   const openAddModal = () => {
