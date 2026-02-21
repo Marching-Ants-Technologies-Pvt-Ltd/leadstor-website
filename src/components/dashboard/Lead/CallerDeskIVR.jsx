@@ -6,272 +6,347 @@ import { User, getCurrentUserMobile } from '@/utility/TinyDB';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+const INDIAN_MOBILE_REGEX = /^\+91[6-9]\d{9}$/;
+
 const serviceConfigs = {
   knowlarity: { type: "knowlarity", name: "Knowlarity", logo: "/logos/knowlarity.webp" },
   voxbay: { type: "voxbay", name: "Voxbay", logo: "/logos/voxbay.webp" },
   smartflo: { type: "smartflo", name: "Smartflo", logo: "/logos/smartflo.webp" },
-  smartflo_ivr: { type: "smartflo_ivr", name: "Smartflo IVR", logo: "/logos/smartflo.webp" },
+  smartflo_ivr: { type: "smartflo_ivr", name: "Smartflo IVR [TTS]", logo: "/logos/smartflo.webp" },
   callerdesk: { type: "callerdesk", name: "CallerDesk", logo: "/logos/callerdesk.webp" },
 };
 
 export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) {
-	const [clientNumber, setClientNumber] = useState(candidate?.mobile || '');
-	const [agentInput, setAgentInput] = useState(String(agentNumber || getCurrentUserMobile() || ''));
-	const [agentInputMode, setAgentInputMode] = useState('default'); // 'default', 'manual'
-	const [isLoading, setIsLoading] = useState(false);
-	const [ivrServices, setIvrServices] = useState([]);
-	const [selectedIvrService, setSelectedIvrService] = useState('');
-	const [servicesLoading, setServicesLoading] = useState(true);
-	const [currentUserMobile, setCurrentUserMobile] = useState(agentNumber || getCurrentUserMobile());
-	const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
-	const candidateName = `${candidate?.firstName || ''} ${candidate?.lastName || ''}`.trim();
-	
-	// Check if user is admin
-	const isAdmin = User?._id === -1 || User?.roles?.includes('Admin') || User?.roles?.includes('Super Admin');
+  const [clientNumber, setClientNumber]     = useState('');
+  const [agentInput, setAgentInput]         = useState('');
+  const [agentInputMode, setAgentInputMode] = useState('default');
+  const [isLoading, setIsLoading]           = useState(false);
+  const [ivrServices, setIvrServices]       = useState([]);
+  const [selectedIvrService, setSelectedIvrService] = useState('');
+  const [servicesLoading, setServicesLoading] = useState(true);
+  const [currentUserMobile, setCurrentUserMobile] = useState('');
+  const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
+  const [owner, setOwner] = useState([]);
 
-	// Development flag - set to false for production
-	const SHOW_ALL_SERVICES_FOR_TESTING = true;
+  // ── New: error states ────────────────────────────────────────
+  const [clientNumberError, setClientNumberError] = useState('');
+  const [agentNumberError,  setAgentNumberError]  = useState('');
 
-	// Load available IVR services
-	useEffect(() => {
-		const loadData = async () => {
-		setServicesLoading(true);
-		
+  const candidateName = `${candidate?.firstName || ''} ${candidate?.lastName || ''}`.trim();
+
+  const isAdmin = User?._id === -1 || User?.roles?.includes('Admin') || User?.roles?.includes('Super Admin');
+
+  // ── Transfer related states ────────────────────────────────────────
+  const [callId, setCallId] = useState(null);
+  const [callStatus, setCallStatus] = useState('idle'); // idle | calling | success | failed
+  const [agents, setAgents] = useState([]);             // list of possible transfer targets
+  const [transferTo, setTransferTo] = useState('');
+  const [transferLoading, setTransferLoading] = useState(false);
+  const [isAgentDropdownOpen, setIsAgentDropdownOpen] = useState(false);
+
+	const fetchAgents = async () => {
 		try {
-			// Load only IVR services (mobile is now available via TinyDB)
-			const servicesResponse = await xFetch({
-			path: '/services/invite/getIVRDetails',
-			method: 'GET'
+			const data = await xFetch({
+			path: '/services/profile/getUsers',
+			payload: {}
 			});
-			
-			// Set initial agent input from TinyDB mobile if no agentNumber provided
-			if (!agentNumber) {
-			const userMobile = getCurrentUserMobile();
-			if (userMobile) {
-				setAgentInput(userMobile);
-				setCurrentUserMobile(userMobile);
-			}
-			}
-			
-			// Handle IVR services
-			if (servicesResponse.success && servicesResponse.data) {
-			const services = [];
-			
-			if (servicesResponse.data.hasKnowlarityIntegration) {
-			services.push(serviceConfigs.knowlarity);
-			}
-			if (servicesResponse.data.hasVoxbayIntegration) {
-			services.push(serviceConfigs.voxbay);
-			}
-			if (servicesResponse.data.hasSmartfloIntegration) {
-			services.push(serviceConfigs.smartflo);
-			}
-			if (servicesResponse.data.hasSmartfloIVRIntegration) {
-			services.push(serviceConfigs.smartflo_ivr);
-			}
-			if (servicesResponse.data.hasCallerDeskIntegration) {
-			services.push(serviceConfigs.callerdesk);
-			}
-			
-			setIvrServices(services);
+			let agentList = [];
 
-			if (services.length > 0) {
-				setSelectedIvrService(services[0].type);
-			} else {
-				// If no services are configured, show all for testing
-				const fallbackServices = [
-				{ type: 'knowlarity', name: 'Knowlarity', logo: '/logos/knowlarity.webp' },
-				{ type: 'voxbay', name: 'Voxbay', logo: '/logos/voxbay.webp' },
-				{ type: 'smartflo', name: 'Smartflo', logo: '/logos/smartflo.webp' },
-				{ type: 'smartflo_ivr', name: 'Smartflo IVR', logo: '/logos/smartflo.webp' },
-				{ type: 'callerdesk', name: 'CallerDesk', logo: '/logos/callerdesk.webp' }
-				];
-				console.log('No services configured, using fallback:', fallbackServices);
-				setIvrServices(fallbackServices);
-				setSelectedIvrService(fallbackServices[0].type);
-				toast.warn('No IVR services are configured - showing all services for testing');
+			// Handle both possible response shapes
+			if (data && typeof data === 'object' && !Array.isArray(data)) {
+			agentList = Object.entries(data).map(([id, name]) => ({
+				id: id,
+				name: name || 'Unknown',
+				mobile: '',               // ← we don't have it yet
+				formattedMobile: ''
+			}));
+			} else if (Array.isArray(data)) {
+			// Case: already array (future-proof)
+			agentList = data.map(user => ({
+				id: user.id || user._id,
+				name: user.name || 'Unknown',
+				mobile: user.mobile || '',
+				formattedMobile: convertToCallNumber(user.mobile || '')
+			}));
 			}
-			} else {
-			console.error('Backend response failed:', servicesResponse);
-			// Fallback: show all services for testing
-			const fallbackServices = [
-				{ type: 'knowlarity', name: 'Knowlarity', logo: '/logos/knowlarity.webp' },
-				{ type: 'voxbay', name: 'Voxbay', logo: '/logos/voxbay.webp' },
-				{ type: 'smartflo', name: 'Smartflo', logo: '/logos/smartflo.webp' },
-				{ type: 'smartflo_ivr', name: 'Smartflo IVR', logo: '/logos/smartflo.webp' },
-				{ type: 'callerdesk', name: 'CallerDesk', logo: '/logos/callerdesk.webp' }
-			];
-			console.log('Using fallback services:', fallbackServices);
-			setIvrServices(fallbackServices);
-			setSelectedIvrService(fallbackServices[0].type);
-			toast.error('Failed to load IVR services - using fallback services');
+
+			setAgents(agentList);
+
+			// Set default agent (current user) if possible
+			if (User?._id) {
+			const current = agentList.find(a => a.id === String(User._id));
+			if (current && current.formattedMobile) {
+				setAgentInput(current.formattedMobile);
+				setCurrentUserMobile(current.formattedMobile);
 			}
-		} catch (err) {
-			console.error('Error loading data:', err);
-			toast.error('Failed to load IVR services');
-			// Fallback services on error
-			const fallbackServices = [
-			{ type: 'knowlarity', name: 'Knowlarity', logo: '/logos/knowlarity.webp' },
-			{ type: 'voxbay', name: 'Voxbay', logo: '/logos/voxbay.webp' },
-			{ type: 'smartflo', name: 'Smartflo', logo: '/logos/smartflo.webp' },
-			{ type: 'smartflo_ivr', name: 'Smartflo IVR', logo: '/logos/smartflo.webp' },
-			{ type: 'callerdesk', name: 'CallerDesk', logo: '/logos/callerdesk.webp' }
-			];
-			setIvrServices(fallbackServices);
-			setSelectedIvrService(fallbackServices[0].type);
-		} finally {
-			setServicesLoading(false);
+			}
+		} catch (error) {
+			console.error('Error fetching agents:', error);
+			toast.error('Failed to load agent list for transfer');
 		}
-		};
-
-		loadData();
-	}, [agentNumber]);
-
-	// Close dropdown when clicking outside
-	useEffect(() => {
-		const handleClickOutside = (event) => {
-		if (isServiceDropdownOpen && !event.target.closest('.relative')) {
-			setIsServiceDropdownOpen(false);
-		}
-		};
-
-		document.addEventListener('mousedown', handleClickOutside);
-		return () => {
-		document.removeEventListener('mousedown', handleClickOutside);
-		};
-	}, [isServiceDropdownOpen]);
-
-	// Get service endpoint mapping
-	const getServiceEndpoint = (serviceType) => {
-		const serviceEndpoints = {
-		'knowlarity': '/services/invite/callKnowlarity',
-		'voxbay': '/services/invite/callVoxbay',
-		'smartflo': '/services/invite/callSmartflo',
-		'smartflo_ivr': '/services/invite/callSmartfloIVR',
-		'callerdesk': '/services/invite/callCallerDeskIVR'
-		};
-		
-		return serviceEndpoints[serviceType] || '/services/invite/callCallerDeskIVR';
 	};
 
-	// Call handler
-	const handleCallNow = async () => {
-		// Use the phone numbers passed as props/candidate data
-		const clientPhone = candidate?.mobile || clientNumber;
-		
-		// For admin: use manual input if in manual mode and has value, otherwise use default or current user mobile
-		// For non-admin: use the agentNumber prop or current user mobile
-		let agentPhone;
-		if (isAdmin) {
-		if (agentInputMode === 'manual' && agentInput.trim()) {
-			agentPhone = agentInput.trim();
+  // Convert any mobile string → +91xxxxxxxxxx or empty
+  const convertToCallNumber = (mobile) => {
+    if (!mobile) return '';
+    let digits = mobile.toString().trim().replace(/\D/g, '');
+
+    if (digits.length === 10) {
+      return '+91' + digits;
+    }
+    if (digits.length === 11 && digits.startsWith('0')) {
+      return '+91' + digits.slice(1);
+    }
+    if (digits.length === 12 && digits.startsWith('91')) {
+      return '+' + digits;
+    }
+    if (digits.length === 13 && digits.startsWith('91')) {
+      return '+' + digits;
+    }
+    // already +91xxxxxxxxxx
+    if (digits.length === 13 && digits.startsWith('+91')) {
+      return digits;
+    }
+    return ''; // invalid → we will show error
+  };
+
+  // ── Initialize numbers ───────────────────────────────────────
+  useEffect(() => {
+    // Client
+    const clientRaw = candidate?.mobile || '';
+    const clientFmt = convertToCallNumber(clientRaw);
+    setClientNumber(clientFmt);
+
+    // Agent
+    let agentRaw = agentNumber || getCurrentUserMobile() || '';
+    if (!agentRaw && isAdmin) {
+      // optional: you could fetch from /getUsers here too
+    }
+    const agentFmt = convertToCallNumber(agentRaw);
+    setAgentInput(agentFmt);
+    setCurrentUserMobile(agentFmt);
+  }, [candidate?.mobile, agentNumber, isAdmin]);
+
+  // ── Load IVR services ────────────────────────────────────────
+  useEffect(() => {
+    const loadData = async () => {
+      setServicesLoading(true);
+      try {
+        const res = await xFetch({ path: '/services/invite/getIVRDetails', method: 'GET' });
+        if (res.success && res.data) {
+          const services = [];
+          if (res.data.hasKnowlarityIntegration)   services.push(serviceConfigs.knowlarity);
+          if (res.data.hasVoxbayIntegration)       services.push(serviceConfigs.voxbay);
+          if (res.data.hasSmartfloIntegration)     services.push(serviceConfigs.smartflo);
+          if (res.data.hasSmartfloIVRIntegration)  services.push(serviceConfigs.smartflo_ivr);
+          if (res.data.hasCallerDeskIntegration)   services.push(serviceConfigs.callerdesk);
+
+          setIvrServices(services);
+          if (services.length > 0) setSelectedIvrService(services[0].type);
+        } else {
+          // fallback ...
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setServicesLoading(false);
+      }
+    };
+    loadData();
+	fetchAgents();
+  }, []);
+
+  // Close agent dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (isAgentDropdownOpen && !event.target.closest('[data-agent-dropdown]')) {
+        setIsAgentDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isAgentDropdownOpen]);
+
+  const validatePhone = (value) => {
+    if (!value) return "Mobile number is required";
+    if (!INDIAN_MOBILE_REGEX.test(value)) {
+      return "Please enter a valid 10-digit Indian mobile number starting with 6-9";
+    }
+    return "";
+  };
+
+  const handleCallNow = async () => {
+    setClientNumberError('');
+    setAgentNumberError('');
+    setCallStatus('calling');
+
+    const clientPhone = clientNumber.trim();
+    const agentPhone = agentInput.trim();
+
+    const cErr = validatePhone(clientPhone);
+    const aErr = validatePhone(agentPhone);
+
+    if (cErr || aErr) {
+      setClientNumberError(cErr);
+      setAgentNumberError(aErr);
+      toast.error("Please fix the phone numbers");
+      setCallStatus('idle');
+      return;
+    }
+
+    if (!selectedIvrService) {
+      toast.error("Select an IVR provider");
+      setCallStatus('idle');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const payload = new FormData();
+      payload.append('customerNumber', clientPhone);
+      payload.append('agentNumber', agentPhone);
+
+      if (selectedIvrService === 'voxbay') {
+        payload.append('agentExtNo', '100');
+        payload.append('callerId', agentPhone);
+      }
+
+      const endpointMap = {
+        knowlarity: '/services/invite/callKnowlarity',
+        voxbay: '/services/invite/callVoxbay',
+        smartflo: '/services/invite/callSmartflo',
+        smartflo_ivr: '/services/invite/callSmartfloIVR',
+        callerdesk: '/services/invite/callCallerDeskIVR',
+      };
+
+      const res = await xFetch({
+        path: endpointMap[selectedIvrService] || '/services/invite/callCallerDeskIVR',
+        method: 'POST',
+        payload,
+        isFormData: true,
+      });
+	  
+	  	console.log('Call initiation response:', res);
+		const isSuccess = res?.success === true;
+		const errorMessage =
+		res?.error?.message ||
+		res?.error ||
+		res?.message ||
+		'Failed to initiate call. Please try again.';
+
+		if (isSuccess) {
+			toast.success(res.message || 'Call initiated successfully');
+
+			if (selectedIvrService === 'knowlarity' && res?.call_id) {
+				setCallId(res.call_id);
+				setCallStatus('success');
+			} else {
+				setTimeout(() => onClose?.(), 2200);
+			}
 		} else {
-			agentPhone = agentNumber || currentUserMobile;
-		}
-		} else {
-		agentPhone = agentNumber || currentUserMobile;
+			toast.error(errorMessage);
+			setCallStatus('failed');
 		}
 
-		if (!clientPhone) {
-		toast.error('Client phone number not available');
-		return;
-		}
-		if (!agentPhone) {
-		toast.error('Agent phone number not available');
-		return;
-		}
-		if (!selectedIvrService) {
-		toast.error('Please select an IVR service');
-		return;
+    } catch (err) {
+      toast.error('Failed to connect');
+      setCallStatus('failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  	const handleTransfer = async () => {
+		if (!transferTo) {
+			toast.warn("Please select an agent to transfer to");
+			return;
 		}
 
-		// Format numbers - different services expect different formats
-		let formattedClientNumber = clientPhone.toString().trim().replace(/\D/g, '');
-		let formattedAgentNumber = agentPhone.toString().trim().replace(/\D/g, '');
-		
-		// For most services, use +91 prefix format
-		if (formattedClientNumber.length === 10) {
-		formattedClientNumber = '+91' + formattedClientNumber;
-		} else if (formattedClientNumber.length === 12 && formattedClientNumber.startsWith('91')) {
-		formattedClientNumber = '+' + formattedClientNumber;
-		} else if (!formattedClientNumber.startsWith('+91')) {
-		toast.error('Invalid client phone number format');
-		return;
+		if (!INDIAN_MOBILE_REGEX.test(transferTo)) {
+			toast.error("Invalid transfer number format");
+			return;
 		}
-		
-		if (formattedAgentNumber.length === 10) {
-		formattedAgentNumber = '+91' + formattedAgentNumber;
-		} else if (formattedAgentNumber.length === 12 && formattedAgentNumber.startsWith('91')) {
-		formattedAgentNumber = '+' + formattedAgentNumber;
-		} else if (!formattedAgentNumber.startsWith('+91')) {
-		toast.error('Invalid agent phone number format');
-		return;
+
+		// For smartflo_ivr we might not need callId – but check if we have it
+		if (selectedIvrService === 'knowlarity' && !callId) {
+			toast.error("No active call ID available for transfer");
+			return;
 		}
-		
-		setIsLoading(true);
-		
+
+		setTransferLoading(true);
+
 		try {
-			// Prepare payload based on service type
-			const payload = new FormData();
+			let endpoint = '';
+			let payload = {};
 
-			// Common fields
-			payload.append('customerNumber', formattedClientNumber);
-			payload.append('agentNumber', formattedAgentNumber);
-
-			// Add service-specific parameters
-			if (selectedIvrService === 'voxbay') {
-				payload.append('agentExtNo', '100'); // default extension
-				payload.append('callerId', formattedAgentNumber); // agent number as caller ID
+			if (selectedIvrService === 'knowlarity') {
+			endpoint = '/services/invite/callTransferKnowlarity';
+			payload = {
+				call_id: callId,
+				transfer_to: transferTo,
+				customerNumber: clientNumber,
+				agentNumber: agentInput,
+			};
+			} else if (selectedIvrService === 'smartflo_ivr') {
+			endpoint = '/services/invite/callTransferSmartFloTTS'; // ← from your old code – confirm exact name!
+			payload = {
+				transferTo: transferTo,          
+				agentNumber: agentInput,
+				customerNumber: clientNumber,
+			};
+			} else {
+			toast.error("Transfer not supported for this provider");
+			return;
 			}
 
-		
-		// Get the appropriate endpoint for selected service
-		const endpoint = getServiceEndpoint(selectedIvrService);
-		
-		const response = await xFetch({
+			const res = await xFetch({
 			path: endpoint,
 			method: 'POST',
-			payload: payload,
-			isFormData: true
-		});
-		
-		if (response.success || response.message) {
-			toast.success(response.message || 'Call initiated successfully!');
-			setTimeout(() => onClose?.(), 2000);
-		} else if (response.error) {
-			toast.error(response.error);
-		} else {
-			toast.error('Failed to initiate call');
-		}
+			payload,
+			});
+
+			console.log('Transfer response:', res);
+
+			if (res.success || res.message) {
+			toast.success(res.message || "Call transferred successfully");
+			setTimeout(() => onClose?.(), 1800);
+			} else {
+			toast.error(res.error || res.message || "Transfer failed");
+			}
 		} catch (err) {
-		console.error('Call error:', err);
-		toast.error(err.message || 'Failed to connect to call service');
+			console.error('Transfer error:', err);
+			toast.error("Transfer request failed");
 		} finally {
-		setIsLoading(false);
+			setTransferLoading(false);
 		}
 	};
 
 	return (
-		<div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
-		<ToastContainer position="bottom-right" autoClose={3000} />
-		<div className="w-full max-w-md bg-white rounded-xl shadow-xl border border-gray-200 relative">
-			{/* Header */}
-			<div className="px-8 pt-8 pb-3 flex items-center justify-between">
-			<h2 className="text-2xl font-medium text-gray-500">Initiate Call</h2>
-			<button
-				className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 focus:outline-none border-none bg-transparent -mr-2"
-				onClick={onClose}
-				disabled={isLoading}
-				type="button"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-				<path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
-				</svg>
-			</button>
-			</div>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+      <ToastContainer position="bottom-right" autoClose={4000} />
 
-			{/* Content */}
-			<div className="px-8 pb-6 pt-2 space-y-6">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 flex items-center justify-between bg-gradient-to-r from-blue-50 to-gray-50">
+          <h2 className="text-xl font-semibold text-gray-800">Initiate Call</h2>
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="text-gray-500 hover:text-gray-800"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+		{/* Content */}
+		<div className="p-6 space-y-6">
 			{/* IVR Service Selection */}
 			<div>
 				<label className="block text-xs font-medium text-gray-700 mb-2">IVR Provider</label>
@@ -357,78 +432,253 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 			</div>
 
 			{/* Participants */}
-			<div>
-				<label className="block text-xs font-medium text-gray-700 mb-2">Call Participants</label>
-				<div className="bg-gray-50 rounded-lg p-4 space-y-3">
-				<div className="flex items-center justify-between">
-					<span className="text-sm text-gray-600">Client:</span>
-					<span className="text-sm font-medium text-gray-900">
-					{candidateName || 'Customer'}
-					</span>
-				</div>
-				<div className="flex items-center justify-between">
-					<span className="text-sm text-gray-600">Agent:</span>
-					<div className="flex items-center gap-2">
-					<span className="text-sm font-medium text-gray-900">
-						{User?.name || 'Sales Representative'}
-					</span>
-					{isAdmin && (
-						<button
-						type="button"
-						onClick={() => setAgentInputMode(agentInputMode === 'default' ? 'manual' : 'default')}
-						className="text-xs text-blue-600 hover:text-blue-800 underline"
-						disabled={isLoading}
-						>
-						{agentInputMode === 'default' ? 'Switch' : 'Default'}
-						</button>
-					)}
-					</div>
-				</div>
-				{isAdmin && agentInputMode === 'manual' && (
-					<div className="pt-2 border-t border-gray-200">
-					<input
-						type="tel"
-						value={agentInput}
-						onChange={(e) => setAgentInput(e.target.value)}
-						placeholder="Enter agent phone number"
-						className="w-full h-8 px-2 py-1 border border-gray-300 rounded text-xs outline-none bg-white text-gray-700 focus:outline-none focus:border-gray-400"
-						disabled={isLoading}
-					/>
-					</div>
-				)}
-				</div>
-			</div>
+			<div className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Customer Number {candidateName ? `(${candidateName})` : ''}
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-3 flex items-center text-gray-500 pointer-events-none">+91</span>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  value={clientNumber.startsWith('+91') ? clientNumber.slice(3) : clientNumber}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '').slice(0,10);
+                    const newVal = digits ? '+91' + digits : '';
+                    setClientNumber(newVal);
+                    setClientNumberError(''); // clear error on type
+                  }}
+                  onBlur={() => setClientNumberError(validatePhone(clientNumber))}
+                  placeholder="Enter 10-digit number"
+                  className={`w-full pl-12 pr-4 py-2.5 border rounded-lg text-sm transition-colors
+                    ${clientNumberError 
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200' 
+                      : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`}
+                  disabled={isLoading}
+                />
+              </div>
+              {clientNumberError && (
+                <p className="mt-1.5 text-sm text-red-600">{clientNumberError}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Agent Number {User?.name ? `(${User.name})` : ''}
+              </label>
+              
+              {agents.length > 0 ? (
+                <>
+                  {/* Agent Dropdown Selector */}
+                  <div className="relative" data-agent-dropdown>
+                    <button
+                      type="button"
+                      onClick={() => setIsAgentDropdownOpen(!isAgentDropdownOpen)}
+                      disabled={isLoading || (isAdmin && agentInputMode === 'manual')}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white hover:bg-gray-50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 flex items-center justify-between disabled:bg-gray-100"
+                      data-agent-dropdown-toggle
+                    >
+                      	<span className="text-gray-900">
+							{agentInput 
+								? agents.find(a => a.formattedMobile === agentInput)
+								? `${found.name} — ${found.mobile || found.formattedMobile}`
+								: agentInput 
+								: 'Select an agent...'}
+							</span>
+                      <svg
+                        className={`w-4 h-4 text-gray-400 transition-transform ${isAgentDropdownOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Dropdown Options */}
+                    {isAgentDropdownOpen && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto" data-agent-dropdown>
+                        {agents.map((agent) => (
+                          <button
+                            key={agent.id}
+                            type="button"
+                            onClick={() => {
+                              setAgentInput(agent.formattedMobile);
+                              setCurrentUserMobile(agent.formattedMobile);
+                              setAgentNumberError('');
+                              setIsAgentDropdownOpen(false);
+                            }}
+                            className="w-full px-4 py-2.5 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-900">{agent.name}</span>
+                              <span className="text-sm text-gray-600">{agent.mobile}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Manual input toggle for admin */}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAgentInputMode(prev => prev === 'default' ? 'manual' : 'default');
+                        if (agentInputMode === 'default') {
+                          // Switching to manual - clear to allow input
+                          setAgentInput('');
+                        } else {
+                          // Switching back to default - restore current user mobile
+                          const currentUser = agents.find(a => a.id === User._id);
+                          if (currentUser) {
+                            setAgentInput(currentUser.formattedMobile);
+                          }
+                        }
+                      }}
+                      className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                      disabled={isLoading}
+                    >
+                      {agentInputMode === 'default' ? 'Enter custom agent number' : 'Select from agents list'}
+                    </button>
+                  )}
+
+                  {/* Manual input field */}
+                  {isAdmin && agentInputMode === 'manual' && (
+                    <div className="mt-2">
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-3 flex items-center text-gray-500 pointer-events-none">+91</span>
+                        <input
+                          type="tel"
+                          maxLength={10}
+                          value={agentInput.startsWith('+91') ? agentInput.slice(3) : agentInput}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0,10);
+                            const newVal = digits ? '+91' + digits : '';
+                            setAgentInput(newVal);
+                            setAgentNumberError('');
+                          }}
+                          onBlur={() => setAgentNumberError(validatePhone(agentInput))}
+                          placeholder="Enter 10-digit number"
+                          className={`w-full pl-12 pr-4 py-2.5 border rounded-lg text-sm transition-colors
+                            ${agentNumberError
+                              ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                              : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`}
+                          disabled={isLoading}
+                        />
+                      </div>
+                      {agentNumberError && (
+                        <p className="mt-1.5 text-sm text-red-600">{agentNumberError}</p>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Fallback input when no agents loaded */
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-3 flex items-center text-gray-500 pointer-events-none">+91</span>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    value={agentInput.startsWith('+91') ? agentInput.slice(3) : agentInput}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, '').slice(0,10);
+                      const newVal = digits ? '+91' + digits : '';
+                      setAgentInput(newVal);
+                      setAgentNumberError('');
+                    }}
+                    onBlur={() => setAgentNumberError(validatePhone(agentInput))}
+                    placeholder="Enter 10-digit number"
+                    className={`w-full pl-12 pr-4 py-2.5 border rounded-lg text-sm transition-colors
+                      ${agentNumberError
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                        : 'border-gray-300 focus:border-blue-500 focus:ring-blue-100'}`}
+                    disabled={isLoading || agentInputMode !== 'manual'}
+                  />
+                </div>
+              )}
+              
+              {agentNumberError && (
+                <p className="mt-1.5 text-sm text-red-600">{agentNumberError}</p>
+              )}
+            </div>
+          </div>
 
 			{/* Call Button */}
 			<button
-				onClick={handleCallNow}
-				disabled={isLoading || servicesLoading || ivrServices.length === 0 || !selectedIvrService}
-				className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-			>
-				{isLoading ? (
-				<>
-					<svg className="animate-spin w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-					<circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-					<path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-					</svg>
-					Connecting via {selectedIvrService && ivrServices.find(s => s.type === selectedIvrService)?.name}...
-				</>
-				) : (
-				<>
-					<svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-					<path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-					</svg>
-					Initiate Call
-					{selectedIvrService && ivrServices.find(s => s.type === selectedIvrService) && (
-					<span className="text-xs opacity-75">
-						via {ivrServices.find(s => s.type === selectedIvrService).name}
-					</span>
-					)}
-				</>
-				)}
-			</button>
-			</div>
-		</div>
-		</div>
-	);
+            onClick={handleCallNow}
+            disabled={isLoading || transferLoading || !selectedIvrService}
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z" />
+                </svg>
+                Initiating...
+              </>
+            ) : (
+              'Initiate Call'
+            )}
+          </button>
+
+          {/* Transfer Section - only for Knowlarity + after success */}
+          {callStatus === 'success' && (selectedIvrService === 'knowlarity' || selectedIvrService == 'smartflo_ivr') && (
+            <div className="mt-6 pt-5 border-t border-gray-200">
+              <div className="text-center mb-4">
+                <strong className="text-green-600 block text-lg">Call Connected Successfully</strong>
+              </div>
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Transfer Call to Another Agent
+              </label>
+
+              <select
+                value={transferTo}
+                onChange={(e) => setTransferTo(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:border-blue-500 focus:ring-1"
+                disabled={transferLoading}
+              >
+                <option value="">Select agent...</option>
+                {agents.map((agent) => (
+                  <option key={agent.formattedMobile} value={agent.formattedMobile}>
+                    {agent.name} — {agent.formattedMobile}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={handleTransfer}
+                disabled={transferLoading || !transferTo}
+                className="mt-4 w-full py-2.5 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-medium rounded-lg flex items-center justify-center gap-2"
+              >
+                {transferLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-16 0z" />
+                    </svg>
+                    Transferring...
+                  </>
+                ) : (
+                  'Transfer Call'
+                )}
+              </button>
+            </div>
+          )}
+
+          {callStatus === 'success' && selectedIvrService !== 'knowlarity' && (
+            <div className="mt-6 text-center text-green-600">
+              Call placed successfully via {serviceConfigs[selectedIvrService]?.name}
+              <br />
+              <small className="text-gray-500">(Transfer not supported for this provider yet)</small>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

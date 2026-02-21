@@ -130,10 +130,10 @@ export default function StatusTemplateMapping() {
   // Add mapping
   async function handleAddMapping() {
     // validation
-    if (!form.statusName) return alert('Please select Status');
-    if (!form.courseName) return alert('Please select Course');
+    if (!form.statusName) return toast.error('Please select Status');
+    if (!form.courseName) return toast.error('Please select Course');
     if (!form.emailTemplateId)
-      return alert('Please select Email template');
+      return toast.error('Please select Email template');
 
     const attributeValue = `${form.statusName}::${form.courseName}`;
 
@@ -157,7 +157,6 @@ export default function StatusTemplateMapping() {
       console.error('Error adding mapping', err);
       toast.error('Failed to add mapping');
     } finally {
-      toast.success('Mapping added successfully');
       setLoading(false);
     }
   }
@@ -174,6 +173,7 @@ export default function StatusTemplateMapping() {
           rid: id,
         },
       });
+      toast.success('Mapping deleted successfully');
       await fetchMappings();
     } catch (err) {
       console.error('Error deleting mapping', err);
@@ -185,7 +185,7 @@ export default function StatusTemplateMapping() {
 
   // bulk delete
   async function handleBulkDelete() {
-    if (selectedIds.length === 0) return alert('No mappings selected');
+    if (selectedIds.length === 0) return toast.error('No mappings selected');
     if (!window.confirm(`Delete ${selectedIds.length} mapping(s)?`)) return;
     try {
       setLoading(true);
@@ -203,8 +203,8 @@ export default function StatusTemplateMapping() {
       }
       setSelectedIds([]);
       await fetchMappings();
+      toast.success('Selected mappings deleted successfully');
     } finally {
-      toast.success('Selected mappings deleted');
       setLoading(false);
     }
   }
@@ -240,6 +240,7 @@ export default function StatusTemplateMapping() {
 
   return (
     <div className="p-6">
+      <ToastContainer />
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl ">Status (Course Wise) - Template Mapping</h2>
 

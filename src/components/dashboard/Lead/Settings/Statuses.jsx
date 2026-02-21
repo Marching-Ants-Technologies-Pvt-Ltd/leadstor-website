@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { xFetch } from "@/utility/xFetch";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { Search, Trash2, X, Edit3, Plus, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -100,6 +100,7 @@ export default function Statuses() {
 
   return (
     <div className="p-6 space-y-4">
+      <ToastContainer position="top-right" autoClose={3000} />
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Statuses</h2>

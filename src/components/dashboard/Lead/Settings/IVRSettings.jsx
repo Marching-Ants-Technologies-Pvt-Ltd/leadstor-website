@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { xFetch } from "@/utility/xFetch";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/ReactToastify.min.css";
 import Image from "next/image";
 
 export default function KnowlaritySettings() {
@@ -84,7 +85,7 @@ export default function KnowlaritySettings() {
 
   return (
     <div className="flex gap-10 p-6">
-      
+      <ToastContainer position="top-right" autoClose={3000} />
       {/* LEFT BANNER */}
       <div className="w-[330px]">
         <Image
