@@ -3,6 +3,8 @@ import { xFetch } from "@/utility/xFetch";
 import { useEffect, useState } from "react";
 import { Search, Trash2, X, Edit3, Plus, Check , ChevronLeft, ChevronRight  } from "lucide-react";
 import { Corporate } from "@/utility/TinyDB";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/ReactToastify.min.css";
 
 export default function CoursesAndFee() {
   const [data, setData] = useState([]);
@@ -72,7 +74,7 @@ export default function CoursesAndFee() {
     if (Object.keys(newErrors).length > 0) return;
 
     if (form.maximumDiscount && (form.maximumDiscount < 1 || form.maximumDiscount > 100)) {
-      return alert("Maximum discount must be between 1 and 100");
+      return toast.error("Maximum discount must be between 1 and 100");
     }
 
     const url = editing
@@ -91,6 +93,7 @@ export default function CoursesAndFee() {
       payload,
     })
       .then(() => {
+        toast.success(editing ? "Course updated successfully" : "Course added successfully");
         setShowModal(false);
         setErrors({});
         setForm({ id: null, course: "", standardFee: "", maximumDiscount: "" });
@@ -98,7 +101,10 @@ export default function CoursesAndFee() {
         setMaxDiscountAmount(null);
         fetchData();
       })
-      .catch((error) => console.error(`Error saving course`, error))
+      .catch((error) => {
+        console.error(`Error saving course`, error);
+        toast.error("Failed to save course");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -110,18 +116,25 @@ export default function CoursesAndFee() {
       method: "POST",
       payload,
     })
-      .then(() => fetchData())
-      .catch((error) => console.error(`Error deleting course`, error))
+      .then(() => {
+        toast.success("Course deleted successfully");
+        fetchData();
+      })
+      .catch((error) => {
+        console.error(`Error deleting course`, error);
+        toast.error("Failed to delete course");
+      })
       .finally(() => setLoading(false));
   };
 
   const handleBulkDelete = async () => {
-    if (selected.length === 0) return alert("No courses selected");
+    if (selected.length === 0) return toast.error("No courses selected");
     if (!window.confirm("Delete selected courses?")) return;
     for (const id of selected) {
       await handleDelete(id);
     }
     setSelected([]);
+    toast.success("Selected courses deleted successfully");
   };
 
   const toggleSelect = (id) => {
@@ -132,6 +145,7 @@ export default function CoursesAndFee() {
 
   return (
     <div className="p-4">
+      <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex flex-wrap justify-between items-center mb-4">
         <h2 className="text-xl">Courses & Fees</h2>
 

@@ -182,13 +182,20 @@ export default function CalendlySettings() {
         isFormData: true,
     })
     .then((res) => {
-        toast.success("Saved Successfully");
+      if (res.status === true || res.status === 1) {
+        toast.success("Saved successfully");
         setMethod("update");
+      } else {
+        toast.error("Unable to save");
+      }
     })
     .catch ((e) => {
+      console.error("Save error", e);
       toast.error("Unable to save");
     })
-    setLoadingSave(false);
+    .finally(() => {
+      setLoadingSave(false);
+    });
   };
 
   return (

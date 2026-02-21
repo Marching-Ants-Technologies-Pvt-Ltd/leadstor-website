@@ -14,6 +14,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
   const pathname = usePathname();
   const pageTitles = {
     '/leads': 'Lead Management',
+    '/leads/settings': 'Lead Settings',
     '/payments': 'Payment Management',
     '/placements': 'Placements',
     '/jobs': 'Job Postings',

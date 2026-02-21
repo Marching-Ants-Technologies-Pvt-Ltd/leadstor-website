@@ -14,6 +14,7 @@ export default function Preferences({ corporateId = 64 }) {
   });
 
   const [loading, setLoading] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -39,12 +40,14 @@ export default function Preferences({ corporateId = 64 }) {
         ...prev,
         [field]: prev[field] == 1 ? 0 : 1,
     }));
-    };
+    setHasChanges(true);
+  };
 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setSettings((prev) => ({ ...prev, [name]: value }));
+    setHasChanges(true);
   };
 
   const handleSave = async () => {
@@ -54,7 +57,10 @@ export default function Preferences({ corporateId = 64 }) {
       method: "POST",
       payload: { ...settings},
     })
-    .then((res) => toast.success("Profile updated successfully!"))
+    .then((res) => {
+      toast.success("Preferences updated successfully!");
+      setHasChanges(false);
+    })
     .catch((error) => {
         toast.error("Something went wrong, please try again.");
     })
@@ -63,6 +69,7 @@ export default function Preferences({ corporateId = 64 }) {
 
     return (
         <div className="w-full bg-white shadow-lg rounded-2xl p-8 border border-gray-200">
+            <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="light" transition={Bounce} />
 
             <h2 className="text-xl mb-6 text-gray-800">
             Preferences

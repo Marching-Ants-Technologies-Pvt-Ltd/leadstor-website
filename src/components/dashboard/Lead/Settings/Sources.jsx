@@ -2,6 +2,8 @@
 import { xFetch } from "@/utility/xFetch";
 import { useEffect, useState } from "react";
 import { Search, Trash2, X, Edit3, Plus, Check , ChevronLeft, ChevronRight  } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/ReactToastify.min.css";
 
 export default function Sources() {
   const [data, setData] = useState([]);
@@ -70,13 +72,17 @@ export default function Sources() {
       payload,
     })
       .then(() => {
+        toast.success(editing ? "Source updated successfully" : "Source added successfully");
         setShowModal(false);
         setErrors({});
         setForm({ id: null, source: "" });
         setEditing(false);
         fetchData();
       })
-      .catch((error) => console.error("Error saving source", error))
+      .catch((error) => {
+        console.error("Error saving source", error);
+        toast.error("Failed to save source");
+      })
       .finally(() => setLoading(false));
   };
 
@@ -87,18 +93,25 @@ export default function Sources() {
       method: "POST",
       payload,
     })
-      .then(() => fetchData())
-      .catch((error) => console.error("Error deleting source", error))
+      .then(() => {
+        toast.success("Source deleted successfully");
+        fetchData();
+      })
+      .catch((error) => {
+        console.error("Error deleting source", error);
+        toast.error("Failed to delete source");
+      })
       .finally(() => setLoading(false));
   };
 
   const handleBulkDelete = async () => {
-    if (selected.length === 0) return alert("No sources selected");
+    if (selected.length === 0) return toast.error("No sources selected");
     if (!window.confirm("Delete selected sources?")) return;
     for (const id of selected) {
       await handleDelete(id);
     }
     setSelected([]);
+    toast.success("Selected sources deleted successfully");
   };
 
   const toggleSelect = (id) => {
@@ -109,6 +122,7 @@ export default function Sources() {
 
   return (
     <div className="p-4">
+      <ToastContainer position="top-right" autoClose={3000} />
       {/* Header Section */}
       <div className="flex flex-wrap justify-between items-center mb-4">
         <h2 className="text-xl">Sources</h2>
