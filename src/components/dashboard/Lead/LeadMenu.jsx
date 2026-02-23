@@ -52,6 +52,7 @@ export default function LeadsMenu({
     conversions: 0,
   });
   const [search, setSearch] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   /* ---------- CLICK OUTSIDE ---------- */
   useEffect(() => {
@@ -141,32 +142,82 @@ export default function LeadsMenu({
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => {
+    // Optional: skip if search is same as last saved value
+    if (search === LeadSearch.value()) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      // Update store
       LeadSearch.setValue(search);
       LeadsCurrentPage.setValue(1);
-      window.tableRefresh?.();
-    }, 400);
 
-    return () => clearTimeout(t);
-  }, [search]);
+      // Show spinner
+      setIsSearching(true);
+
+      let callbackCalled = false;
+
+      const stopSearching = () => {
+        if (!callbackCalled) {
+          callbackCalled = true;
+          setIsSearching(false);
+        }
+      };
+
+      // Try to use real refresh with callback
+      if (window.tableRefresh) {
+        window.tableRefresh(() => {
+          stopSearching();
+          console.log("[Search] tableRefresh callback executed");
+        });
+
+        // Safety net: force stop after 8 seconds if something hangs
+        const safetyTimeout = setTimeout(() => {
+          if (!callbackCalled) {
+            console.warn("[Search] tableRefresh callback never fired — forcing stop");
+            stopSearching();
+          }
+        }, 8000);
+
+        // Cleanup safety timeout
+        return () => clearTimeout(safetyTimeout);
+      } else {
+        // Fallback when tableRefresh is missing
+        console.warn("[Search] window.tableRefresh not found — using fallback timer");
+        setTimeout(stopSearching, 1800);
+      }
+    }, 650); // slightly faster debounce — feels more responsive
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [search]); // only depends on search — clean
 
   return (
     <>
       {/* TOP BAR */}
       <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
         {/* SEARCH */}
-        
+
         <div className="relative w-80">
           <input
             type="text"
             placeholder="Search by name, email, mobile..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none"
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-500 outline-none"
           />
           <svg className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
+          {isSearching && (
+            <div className="absolute right-3 top-2.5">
+              <svg className="animate-spin h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          )}
         </div>
 
         {/* ACTIONS */}
