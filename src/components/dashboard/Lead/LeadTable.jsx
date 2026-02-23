@@ -27,6 +27,7 @@ import {
 } from '@tanstack/react-table';
 import RelatedEnquiries from '@/components/dashboard/Lead/RelatedEnquiries';
 import RouteData from '@/components/dashboard/Lead/RouteData';
+import ExtendedFormModal from '@/components/dashboard/Lead/ExtendedFormModal';
 
 export default function LeadsTable({
     columns,
@@ -61,6 +62,9 @@ export default function LeadsTable({
     const isIndeterminate =
         leads.some(l => selectedLeadIds.includes(l.invitationId)) &&
         !leads.every(l => selectedLeadIds.includes(l.invitationId));
+
+    const [showExtendedFormModal, setShowExtendedFormModal] = useState(false);
+    const [extendedFormInvitationId, setExtendedFormInvitationId] = useState(null);
 
     const dataFormatters = {
         assignedUserId: (row) => {
@@ -167,6 +171,12 @@ export default function LeadsTable({
                 if (typeof window.onTableRefresh === 'function') window.onTableRefresh();
             });
     }
+
+    const handleShowExtendedForm = (invitationId) => {
+        // Optional: check google drive linked here (you can move isGoogleDriveLinked logic)
+        setExtendedFormInvitationId(invitationId);
+        setShowExtendedFormModal(true);
+    };
 
     /* =======================
        NAME + BOOKMARK
@@ -556,7 +566,7 @@ export default function LeadsTable({
             {[800, 100].includes(Corporate?.type) && (
                 <button
                 title="View Application Form Data"
-                onClick={() => showExtendedForm(row.invitationId)}
+                onClick={() => handleShowExtendedForm(row.invitationId)}
                 className="p-1 rounded hover:bg-gray-100 transition"
                 >
                 <i className="ri-file-list-3-line text-lg text-emerald-600" />
@@ -847,6 +857,18 @@ export default function LeadsTable({
             isOpen={showRouteData}
             onClose={() => setShowRouteData(false)}
             onSuccess={refreshLeads}
+            />
+        )}
+
+        {showExtendedFormModal && extendedFormInvitationId && (
+            <ExtendedFormModal
+                invitationId={extendedFormInvitationId}
+                isOpen={showExtendedFormModal}
+                onClose={() => {
+                setShowExtendedFormModal(false);
+                setExtendedFormInvitationId(null);
+                }}
+                onRefresh={refreshLeads}   // optional
             />
         )}
         {/* STYLES */}
