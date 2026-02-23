@@ -38,7 +38,8 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 
   // ── Transfer related states ────────────────────────────────────────
   const [callId, setCallId] = useState(null);
-  const [callStatus, setCallStatus] = useState('idle'); // idle | calling | success | failed
+  const [callStatus, setCallStatus] = useState('idle'); // idle | calling | success | failed | transferring
+  const [callStatusMessage, setCallStatusMessage] = useState('');
   const [agents, setAgents] = useState([]);             // list of possible transfer targets
   const [transferTo, setTransferTo] = useState('');
   const [transferLoading, setTransferLoading] = useState(false);
@@ -182,6 +183,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
     setClientNumberError('');
     setAgentNumberError('');
     setCallStatus('calling');
+    setCallStatusMessage('Initiating call... Please wait.');
 
     const clientPhone = clientNumber.trim();
     const agentPhone = agentInput.trim();
@@ -192,15 +194,17 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
     if (cErr || aErr) {
       setClientNumberError(cErr);
       setAgentNumberError(aErr);
+	  setCallStatusMessage('Invalid phone number(s). Please correct and try again.');
       toast.error("Please fix the phone numbers");
       setCallStatus('idle');
       return;
     }
 
     if (!selectedIvrService) {
-      toast.error("Select an IVR provider");
-      setCallStatus('idle');
-      return;
+		setCallStatusMessage('Please select an IVR provider.');
+      	toast.error("Select an IVR provider");
+      	setCallStatus('idle');
+      	return;
     }
 
     setIsLoading(true);
@@ -230,31 +234,35 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
         isFormData: true,
       });
 	  
-	  	console.log('Call initiation response:', res);
 		const isSuccess = res?.success === true;
 		const errorMessage =
 		res?.error?.message ||
 		res?.error ||
 		res?.message ||
 		'Failed to initiate call. Please try again.';
-
+		setCallStatus('success');
+		setCallStatusMessage(`Call connected successfully via ${serviceConfigs[selectedIvrService]?.name}`);
 		if (isSuccess) {
 			toast.success(res.message || 'Call initiated successfully');
 
 			if (selectedIvrService === 'knowlarity' && res?.call_id) {
 				setCallId(res.call_id);
 				setCallStatus('success');
+				setCallStatusMessage(`Call connected successfully via ${serviceConfigs[selectedIvrService]?.name}`);
 			} else {
 				setTimeout(() => onClose?.(), 2200);
 			}
 		} else {
-			toast.error(errorMessage);
 			setCallStatus('failed');
+			setCallStatusMessage(errorMessage);
+			toast.error(errorMessage);
 		}
 
     } catch (err) {
-      toast.error('Failed to connect');
+	  console.error(err);
       setCallStatus('failed');
+      setCallStatusMessage('Network error. Failed to connect.');
+      toast.error('Failed to connect');
     } finally {
       setIsLoading(false);
     }
@@ -278,6 +286,8 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 		}
 
 		setTransferLoading(true);
+		setCallStatus('transferring');
+    	setCallStatusMessage('Transferring call... Please wait.');
 
 		try {
 			let endpoint = '';
@@ -292,7 +302,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 				agentNumber: agentInput,
 			};
 			} else if (selectedIvrService === 'smartflo_ivr') {
-			endpoint = '/services/invite/callTransferSmartFloTTS'; // ← from your old code – confirm exact name!
+			endpoint = '/services/invite/callTransferSmartFloTTS';
 			payload = {
 				transferTo: transferTo,          
 				agentNumber: agentInput,
@@ -312,13 +322,20 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 			console.log('Transfer response:', res);
 
 			if (res.success || res.message) {
-			toast.success(res.message || "Call transferred successfully");
-			setTimeout(() => onClose?.(), 1800);
+				setCallStatus('success');
+				setCallStatusMessage('Call transferred successfully!');
+				toast.success(res.message || "Call transferred successfully");
+				setTimeout(() => onClose?.(), 2200);
 			} else {
-			toast.error(res.error || res.message || "Transfer failed");
+				setCallStatus('failed');
+				const msg = res.error || res.message || "Transfer failed";
+				setCallStatusMessage(msg);
+				toast.error(msg);
 			}
 		} catch (err) {
-			console.error('Transfer error:', err);
+			console.error(err);
+			setCallStatus('failed');
+			setCallStatusMessage('Transfer failed. Please try again.');
 			toast.error("Transfer request failed");
 		} finally {
 			setTransferLoading(false);
@@ -480,12 +497,11 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
                       data-agent-dropdown-toggle
                     >
                       	<span className="text-gray-900">
-							{agentInput 
-								? agents.find(a => a.formattedMobile === agentInput)
-								? `${found.name} — ${found.mobile || found.formattedMobile}`
-								: agentInput 
-								: 'Select an agent...'}
-							</span>
+							{(() => {
+								const agent = agentInput ? agents.find(a => a.formattedMobile === agentInput) : null;
+								return agent ? `${agent.name} — ${agent.mobile || agent.formattedMobile}` : (agentInput || 'Select an agent...');
+							})()}
+						</span>
                       <svg
                         className={`w-4 h-4 text-gray-400 transition-transform ${isAgentDropdownOpen ? 'rotate-180' : ''}`}
                         fill="none"
@@ -606,10 +622,21 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
             </div>
           </div>
 
+		  {/* Call Status Message */}
+          {callStatus !== 'idle' && (
+            <div className={`p-4 rounded-lg text-center text-sm font-medium ${
+              callStatus === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+              callStatus === 'failed' ? 'bg-red-50 text-red-700 border border-red-200' :
+              'bg-blue-50 text-blue-700 border border-blue-200'
+            }`}>
+              {callStatusMessage}
+            </div>
+          )}
+
 			{/* Call Button */}
 			<button
             onClick={handleCallNow}
-            disabled={isLoading || transferLoading || !selectedIvrService}
+            disabled={isLoading || transferLoading || !selectedIvrService || callStatus === 'success'}
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-medium rounded-lg flex items-center justify-center gap-2"
           >
             {isLoading ? (
@@ -625,13 +652,9 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
             )}
           </button>
 
-          {/* Transfer Section - only for Knowlarity + after success */}
+          {/* Transfer Section - only for Knowlarity + Smartflo tata tele service after success */}
           {callStatus === 'success' && (selectedIvrService === 'knowlarity' || selectedIvrService == 'smartflo_ivr') && (
-            <div className="mt-6 pt-5 border-t border-gray-200">
-              <div className="text-center mb-4">
-                <strong className="text-green-600 block text-lg">Call Connected Successfully</strong>
-              </div>
-
+            <div className="mt-6 pt-3 border-t border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Transfer Call to Another Agent
               </label>
@@ -670,13 +693,6 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
             </div>
           )}
 
-          {callStatus === 'success' && selectedIvrService !== 'knowlarity' && (
-            <div className="mt-6 text-center text-green-600">
-              Call placed successfully via {serviceConfigs[selectedIvrService]?.name}
-              <br />
-              <small className="text-gray-500">(Transfer not supported for this provider yet)</small>
-            </div>
-          )}
         </div>
       </div>
     </div>
