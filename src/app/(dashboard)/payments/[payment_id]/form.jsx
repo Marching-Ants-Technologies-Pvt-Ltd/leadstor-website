@@ -404,6 +404,8 @@ export default function JoineePaymentForm({ payment_id }) {
                 transition={Bounce}
             />
 
+            <div className='w-full h-20'></div>
+
             {showInfo && (
                 <div className='max-w-[1400px] mx-auto p-6'>
                     <div className='border border-blue-300 bg-blue-50 -mb-6 p-3 rounded-md flex items-center gap-2 shadow-md'>
