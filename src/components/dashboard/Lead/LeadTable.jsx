@@ -80,7 +80,15 @@ export default function LeadsTable({
         }
     }, [isIndeterminate]);
 
-    async function xLeads() {
+    // Expose refresh function with callback support
+    useEffect(() => {
+        window.tableRefresh = (callback) => xLeads(callback);
+        return () => {
+            delete window.tableRefresh;
+        };
+    }, []);
+
+    async function xLeads(callback) {
         let limit = LeadsPerPage.value();
         let total = TotalLeads.value() || 0;
 
@@ -118,7 +126,7 @@ export default function LeadsTable({
                 // This is called when user clicks × in AppliedFilters
                 LeadFilters.reset();
                 LeadsCurrentPage.setValue(1);
-                xLeads(); // refresh immediately
+                xLeads(callback); // refresh immediately - pass callback
             });
 
             // Apply filters to payload
@@ -143,11 +151,17 @@ export default function LeadsTable({
                     !LeadSearch.value()
                     ) {
                     LeadsCurrentPage.setValue(1);
-                    xLeads();
+                    xLeads(callback); // recursive call - pass callback
                     return;
                 }
                 setLeadsFn(rows);
                 TotalLeads.setValue(total);
+                if (callback) callback();
+            })
+            .catch(err => {
+                console.error('Error loading leads:', err);
+                // Still call callback to stop loading indicator even on error
+                if (callback) callback();
             })
             .finally(() => {
                 if (typeof window.onTableRefresh === 'function') window.onTableRefresh();

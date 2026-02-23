@@ -234,24 +234,40 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
         isFormData: true,
       });
 	  
-		const isSuccess = res?.success === true;
-		const errorMessage =
-		res?.error?.message ||
-		res?.error ||
-		res?.message ||
-		'Failed to initiate call. Please try again.';
-		setCallStatus('success');
-		setCallStatusMessage(`Call connected successfully via ${serviceConfigs[selectedIvrService]?.name}`);
-		if (isSuccess) {
-			toast.success(res.message || 'Call initiated successfully');
+		let isSuccess = false;
+		let successMessage = '';
+		let callIdFromResponse = null;
+		let errorMessage = 'Failed to initiate call. Please try again.';
 
-			if (selectedIvrService === 'knowlarity' && res?.call_id) {
-				setCallId(res.call_id);
-				setCallStatus('success');
-				setCallStatusMessage(`Call connected successfully via ${serviceConfigs[selectedIvrService]?.name}`);
-			} else {
-				setTimeout(() => onClose?.(), 2200);
+		// Knowlarity nested structure
+		if (res?.success && typeof res.success === 'object') {
+			isSuccess = res.success.status === 'success' || !!res.success.message;
+			successMessage = res.success.message || 'Call successfully placed via Knowlarity';
+			callIdFromResponse = res.success.call_id;
+		}
+		// Flat structure (most other providers)
+		else if (res?.success === true || res?.message) {
+			isSuccess = true;
+			successMessage = res.message || 'Call initiated successfully';
+		}
+		// Error cases
+		else if (res?.error) {
+			errorMessage = res.error?.message || res.error || 'Call failed';
+		} else if (res?.message && !isSuccess) {
+			errorMessage = res.message;
+		}
+
+		if (isSuccess) {
+			setCallStatus('success');
+			setCallStatusMessage(successMessage || `Call connected successfully via ${serviceConfigs[selectedIvrService]?.name}`);
+
+			toast.success(successMessage || 'Call placed successfully');
+
+			// Save call_id only for knowlarity
+			if (selectedIvrService === 'knowlarity' && callIdFromResponse) {
+				setCallId(callIdFromResponse);
 			}
+
 		} else {
 			setCallStatus('failed');
 			setCallStatusMessage(errorMessage);
