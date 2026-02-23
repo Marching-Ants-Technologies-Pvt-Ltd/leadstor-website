@@ -74,6 +74,9 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
     }
 
     async function handelPaging() {
+        // STOP loader FIRST before any calculations
+        setIsLoading(false);
+
         let currentPage = LeadsCurrentPage.value();
         let maxLeads = TotalLeads.value();
         let limit = LeadsPerPage.value();
@@ -82,9 +85,6 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
         }
         const totalPages = Math.ceil(maxLeads / limit);
 
-        // STOP loader once paging is calculated
-        setIsLoading(false);
-
         // No leads case
         if (maxLeads < 1) {
             setPagingX([]);                 // clear pagination
@@ -92,7 +92,7 @@ export default function LeadsTablePagination({ columns, setColumns, columnOrder,
             setSummaryX('No leads found!');
             return;
         }
-        
+
         const pages = await getPageNumbers(currentPage, totalPages);
         setPagingX(pages);
         LeadsLastPage.setValue(totalPages);
