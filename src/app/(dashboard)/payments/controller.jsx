@@ -224,23 +224,24 @@ export default function PaymentsSectionController() {
 
     const exportReport = (data) => {
         data['corporateId'] = Corporate._id;
-        let target = (data?.type ?? '' === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
-        xDownload(`/${target}.php?${jsonToQueryParams(data)}`);
+        let target = ((data?.type ?? '') === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
+        
+        xDownload(`${target}.php?${jsonToQueryParams(data)}`);
 
     }
 
     const downloadJoineesReport = (type) => {
         if (!type) return;
         if (type === 'Joinee@Detailed_Download') {
-            xDownload(`/services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
+            xDownload(`services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
             return;
         }
 
-        xDownload(`/services/joinees/exportAllJoinees?corporateId=${Corporate._id}`);
+        xDownload(`services/joinees/exportAllJoinees?corporateId=${Corporate._id}`);
     }
 
     const downloadPaymentReceipt = (payload) => {
-        xDownload(`/services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
+        xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
     }
 
     const base64Encode = (str) => {
