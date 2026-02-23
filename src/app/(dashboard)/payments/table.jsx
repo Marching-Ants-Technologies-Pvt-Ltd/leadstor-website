@@ -191,7 +191,7 @@ export default function PaymentsTable({
                                     type="checkbox"
                                 />
                             </td>
-                            <td className="p-2">{item?.name || '-'} <span className='cursor-pointer' onClick={(e) => router.push(`/payments/${item.id}`)}>✏️</span></td>
+                            <td className="p-2"><span className='cursor-pointer' onClick={(e) => router.push(`/payments/${item.id}`)}>✏️</span> {item?.name || '-'}</td>
                             <td className="p-2">{item?.email || '-'}</td>
                             <td className="p-2">
                                 <div className='flex justify-left align-middle gap-2'>
