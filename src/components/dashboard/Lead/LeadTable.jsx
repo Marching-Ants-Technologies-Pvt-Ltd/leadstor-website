@@ -158,17 +158,22 @@ export default function LeadsTable({
                     xLeads(callback); // recursive call - pass callback
                     return;
                 }
+                // Update state
                 setLeadsFn(rows);
                 TotalLeads.setValue(total);
+                
+                // Call onTableRefresh FIRST to update pagination and stop its spinner
+                if (typeof window.onTableRefresh === 'function') window.onTableRefresh();
+                
+                // Then call callback to stop any other spinners (e.g., LeadMenu search spinner)
                 if (callback) callback();
             })
             .catch(err => {
                 console.error('Error loading leads:', err);
-                // Still call callback to stop loading indicator even on error
-                if (callback) callback();
-            })
-            .finally(() => {
+                // Call onTableRefresh FIRST to stop pagination spinner
                 if (typeof window.onTableRefresh === 'function') window.onTableRefresh();
+                // Then call callback to stop other spinners
+                if (callback) callback();
             });
     }
 
