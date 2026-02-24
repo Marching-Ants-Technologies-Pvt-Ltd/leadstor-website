@@ -265,7 +265,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   /* ---------- Utilities ---------- */
 
-  const getHeaderNames = () => fields.map((f) => f.displayName ?? f.fieldName ?? f.dataField);
+  const getHeaderNames = () => fields.map((f) => f.fieldName ?? f.displayName);
   const getFieldOrder = () => fields.map((f) => f.dataField);
 
   const findIndexForHeader = (names, predicate) => {
