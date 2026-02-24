@@ -3,6 +3,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { xFetch } from "@/utility/xFetch";
 import { Search } from "lucide-react";
+import { Corporate } from "@/utility/TinyDB";
 
 /* ---------- API endpoints ---------- */
 const API = {
@@ -24,7 +25,7 @@ function FacebookLoginButton({ onLoggedIn }) {
       toast.error("Facebook SDK not loaded");
       return;
     }
-
+    console.log("Calling FB.login – FB object:", window.FB);
     setLoading(true);
 
     window.FB.login(
@@ -52,25 +53,102 @@ function FacebookLoginButton({ onLoggedIn }) {
   );
 }
 
+/* ---------- Facebook Login + Logout Button ---------- */
+function FacebookAuthButton({ status, onLoggedIn, onLoggedOut }) {
+  const [loading, setLoading] = useState(false);
+
+  const login = () => {
+    if (!window.FB) {
+      toast.error("Facebook SDK not loaded");
+      return;
+    }
+    console.log("Calling FB.login – FB object:", window.FB);
+    setLoading(true);
+
+    window.FB.login(
+      function (response) {
+        setLoading(false);
+        if (response.status === "connected") {
+          toast.success("Logged in successfully");
+          onLoggedIn && onLoggedIn(response);
+        } else {
+          toast.error("Login cancelled or failed");
+        }
+      },
+      { scope: "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval" }
+    );
+  };
+
+  const logout = () => {
+    if (!window.FB) return;
+    setLoading(true);
+
+    window.FB.logout(function (response) {
+      setLoading(false);
+      toast.info("Logged out from Facebook");
+      onLoggedOut && onLoggedOut();
+    });
+  };
+
+  const isConnected = status?.status === "connected";
+
+  if (isConnected) {
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-700 font-medium">
+          Connected to Facebook
+        </span>
+        <button
+          onClick={logout}
+          disabled={loading}
+          className="px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700 transition disabled:opacity-50"
+        >
+          {loading ? "Logging out..." : "Logout"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      className="px-4 py-2 bg-[#1877F2] text-white rounded shadow hover:bg-[#145FCC] transition"
+      onClick={login}
+      disabled={loading}
+    >
+      {loading ? "Connecting..." : "Continue with Facebook"}
+    </button>
+  );
+}
+
 /* ---------- SDK loader hook ---------- */
 function useFacebookSDK(appId = "354120981351314", version = "v19.0") {
   const [loaded, setLoaded] = useState(false);
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
+
     if (window.FB) {
+      console.log("FB already exists", window.FB);
       setLoaded(true);
       return;
     }
 
     window.fbAsyncInit = function () {
-      window.FB.init({
-        appId,
-        autoLogAppEvents: true,
-        xfbml: true,
-        version,
-      });
+      console.log("fbAsyncInit fired!");
+      try {
+        window.FB.init({
+          appId,
+          autoLogAppEvents: true,
+          xfbml: true,
+          version,
+        });
+        console.log("FB.init() succeeded");
+      } catch (err) {
+        console.error("FB.init failed", err);
+      }
+
       window.FB.getLoginStatus(function (resp) {
+        console.log("getLoginStatus:", resp);
         setStatus(resp);
       });
       setLoaded(true);
@@ -80,7 +158,7 @@ function useFacebookSDK(appId = "354120981351314", version = "v19.0") {
     if (document.getElementById(id)) return;
     const js = document.createElement("script");
     js.id = id;
-    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    js.src = "https://connect.facebook.net/en_EB/sdk.js";
     document.getElementsByTagName("head")[0].appendChild(js);
   }, [appId, version]);
 
@@ -489,7 +567,7 @@ function SubscribeModal({
 }
 
 /* ---------- Main Component ---------- */
-export default function FacebookLeadManager({ corporateId = 64, corporateType = 100 }) {
+export default function FacebookLeadManager({}) {
   const { loaded, status } = useFacebookSDK();
   const [pages, setPages] = useState([]);
   const [subscribed, setSubscribed] = useState([]);
@@ -498,6 +576,7 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
   const pageSize = 10;
   const [modalOpen, setModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
+  const corporateId = Corporate?._id || "";
 
   useEffect(() => {
     if (!loaded) return;
@@ -535,11 +614,62 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
     }
   }, [loaded, status, corporateId]);
 
-  const refreshList = () => {
+  // Fetch pages + subscriptions when connected
+  const fetchFacebookData = () => {
+    if (!loaded || status?.status !== "connected") return;
+
+    let userAccessToken = status.authResponse?.accessToken;
+
+    const loadPagesAndSubs = (token) => {
+      window.FB.api(`/me/accounts?access_token=${token}`, (response) => {
+        const p = Array.isArray(response?.data) ? response.data : [];
+        setPages(p);
+
+        facebookApi
+          .fetchSubscribedForms(corporateId, p)
+          .then((d) => setSubscribed(Array.isArray(d) ? d : []))
+          .catch(() => setSubscribed([]));
+      });
+    };
+
     facebookApi
-      .fetchSubscribedForms(corporateId, pages)
-      .then((d) => setSubscribed(Array.isArray(d) ? d : []))
-      .catch(() => toast.error("Refresh failed"));
+      .getExtendedToken(userAccessToken)
+      .then((data) => {
+        if (data?.access_token) {
+          loadPagesAndSubs(data.access_token);
+        } else {
+          loadPagesAndSubs(userAccessToken);
+        }
+      })
+      .catch(() => {
+        // Fallback
+        loadPagesAndSubs(userAccessToken);
+      });
+  };
+
+  useEffect(() => {
+    if (loaded && status) {
+      fetchFacebookData();
+    }
+  }, [loaded, status?.status, status?.authResponse?.accessToken, corporateId]);
+
+  const handleLoginSuccess = () => {
+    // Re-check login status and fetch data (no page reload)
+    getStatus((resp) => {
+      if (resp?.status === "connected") {
+        fetchFacebookData();
+      }
+    });
+  };
+
+  const handleLogout = () => {
+    setPages([]);
+    setSubscribed([]);
+    // Optional: you can also reset other states if needed
+  };
+
+  const refreshList = () => {
+    fetchFacebookData();
     toast.info("Refreshing subscriptions...");
   };
 
@@ -601,18 +731,24 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
           <button
             onClick={openSubscribe}
             className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            disabled={status?.status !== "connected"}
           >
             + Subscribe New Form
           </button>
           <button
             onClick={refreshList}
             className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition"
+            disabled={status?.status !== "connected"}
           >
             Refresh List
           </button>
         </div>
 
-        <FacebookLoginButton onLoggedIn={() => window.location.reload()} />
+        <FacebookAuthButton
+          status={status}
+          onLoggedIn={handleLoginSuccess}
+          onLoggedOut={handleLogout}
+        />
 
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
@@ -628,6 +764,13 @@ export default function FacebookLeadManager({ corporateId = 64, corporateType = 
           />
         </div>
       </div>
+
+      {/* Optional: show message when not logged in */}
+      {loaded && status?.status !== "connected" && (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+          Please connect your Facebook account to view and manage form subscriptions.
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white border rounded-lg shadow overflow-hidden">
