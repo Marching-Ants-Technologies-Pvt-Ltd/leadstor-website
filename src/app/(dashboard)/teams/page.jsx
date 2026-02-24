@@ -200,13 +200,17 @@ export default function Teams() {
      * ---------------------------------------- */
     const saveMember = async (newMember) => {
       let corporateId = Corporate?._id;
+      let managersValue = "";
+      if (editMember) {
+        managersValue = newMember.managerId ? newMember.managerId : "-1";
+      }
       const payload = {
         ...newMember,
         corporateId,
         salary: newMember.salary ? Number(newMember.salary) : 0,
         roles: selectedRoles.length > 0 ? selectedRoles : [],
         sign: btoa(newMember.signature || ""),
-        managers: newMember.managerId || ""
+        managers: managersValue
       };
 
       if (editMember?.id) payload.id = editMember.id;
