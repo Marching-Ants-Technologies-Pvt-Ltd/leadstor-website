@@ -26,21 +26,46 @@ export default function DailyReportModal({ isOpen, onClose }) {
       });
   }
 
+  // Load owners list (only needed for admin)
   useEffect(() => {
-    fetchOwners();
-  }, [owner]);
+    if (isOpen) {
+      fetchOwners();
+    }
+  }, [isOpen]);
 
+  // Auto-load report for normal users + reset on modal open
   useEffect(() => {
-    if (User?._id === -1) {
+    if (!isOpen) return;
+
+    // Reset state when modal opens
+    setReportData([]);
+    setTotalCall(0);
+    setStep("select");
+    setSelectedOwner("");
+    setUserId(null);
+    setUserName("");
+
+    if (User?._id == null || User?._id === "") {
+      // strange case — treat as select
+      setStep("select");
+      return;
+    }
+
+    if (User._id === -1) {
+      // Admin → show selector
       setStep("select");
     } else {
+      // Normal user → auto load their own report
+      const uid = User._id;
+      const uname = User?.name || "User";
+      setUserId(uid);
+      setUserName(uname);
+      setSelectedOwner(uid);
       setStep("report");
-      setSelectedOwner(User?._id);
-      setUserId(User?._id);
-      setUserName(User?.name || "");
+      showDailyReport(uid, uname);
     }
-  }, [User]);
-
+  }, [isOpen, User?._id, User?.name]);
+  
   const handleConfirm = () => {
     if (selectedOwner) {
       const ownerName = selectedOwner === "-1" ? "Admin" : owner[selectedOwner] || "";

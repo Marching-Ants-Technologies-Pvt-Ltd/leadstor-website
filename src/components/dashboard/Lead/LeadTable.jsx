@@ -47,6 +47,14 @@ export default function LeadsTable({
     setLeadsFn = setLeads;
 
     const selectAllRef = useRef();
+    const setSelectedLeadIdsRef = useRef(setSelectedLeadIds);
+    const selectedLeadIdsRef = useRef(selectedLeadIds);
+
+    // Keep refs updated with latest values
+    useEffect(() => {
+        setSelectedLeadIdsRef.current = setSelectedLeadIds;
+        selectedLeadIdsRef.current = selectedLeadIds;
+    }, [setSelectedLeadIds, selectedLeadIds]);
 
     const [showUpdatePopup, setShowUpdatePopup] = useState(false);
     const [selectedCandidate, setSelectedCandidate] = useState(null);
@@ -84,6 +92,23 @@ export default function LeadsTable({
         }
     }, [isIndeterminate]);
 
+    // Clear selected leads when leads data changes (on refresh)
+    useEffect(() => {
+        if (selectedLeadIds.length > 0 && leads.length > 0) {
+            // Check if any selected IDs are still in the current data
+            const currentIds = new Set(leads.map(l => l.invitationId));
+            const stillSelected = selectedLeadIds.filter(id => currentIds.has(id));
+            
+            // If none of the selected IDs are in current data, clear selection
+            if (stillSelected.length === 0) {
+                setSelectedLeadIds([]);
+            } else if (stillSelected.length !== selectedLeadIds.length) {
+                // Some selections are gone, update to only keep valid ones
+                setSelectedLeadIds(stillSelected);
+            }
+        }
+    }, [leads]);
+
     // Expose refresh function with callback support
     useEffect(() => {
         window.tableRefresh = (callback) => xLeads(callback);
@@ -93,6 +118,11 @@ export default function LeadsTable({
     }, []);
 
     async function xLeads(callback) {
+        // Clear selected leads when table refreshes (use ref to avoid stale closure)
+        if (selectedLeadIdsRef.current.length > 0) {
+            setSelectedLeadIdsRef.current([]);
+        }
+
         let limit = LeadsPerPage.value();
         let total = TotalLeads.value() || 0;
 
@@ -385,55 +415,55 @@ export default function LeadsTable({
     };
 
     const renderRemarkCell = (row) => {
-        let content = row.remarks || "";
-        let audioLink = "";
 
-        if (content.includes("<audio")) {
-            const match = content.match(/src="([^"]+)"/);
-            audioLink = match?.[1] || "";
-            content = content.split("<audio")[0];
+        let remarksText = row.remarks || "";
+        let audioSrc = "";
+
+        // Extract audio src if present
+        const audioMatch = remarksText.match(/<audio[^>]*src=["']([^"']+)["'][^>]*>/i);
+        if (audioMatch) {
+            audioSrc = audioMatch[1];
+            // Remove the whole <audio> tag from text (safer than split)
+            remarksText = remarksText.replace(/<audio[^>]*>.*?<\/audio>/gi, '').trim();
         }
 
+        // Clean text (remove html if you don't want it rendered)
         const div = document.createElement("div");
-        div.innerText = content;
-        let safeText = div.innerHTML;
+        div.innerHTML = remarksText;
+        let safeText = div.textContent || div.innerText || "";
 
         if (row.latestRemarksDate) {
             safeText = `${row.latestRemarksDate}: ${safeText}`;
         }
 
-        let finalText = "";
+        let displayText = safeText;
 
+        // Truncate logic (your existing code)
         if (safeText.length > 120) {
-            const shortText = safeText.substring(0, 120);
-
-            finalText = `
+            const short = safeText.substring(0, 120);
+            displayText = `
                 <div style="min-width:155px;">
                     <div>
-                        ${shortText}
+                        ${short}
                         <span style="cursor:pointer;color:#1976d2;" 
-                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
-                                    this.parentElement.style.display='none';">
+                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block'; this.parentElement.style.display='none';">
                             ...(view)
                         </span>
                     </div>
-
                     <div class="full-text" style="display:none;">
                         ${safeText}
                         <span style="cursor:pointer;color:red;margin-left:6px;"
-                            onclick="this.parentElement.style.display='none';
-                                    this.parentElement.parentElement.querySelector('div').style.display='block';">
+                            onclick="this.parentElement.style.display='none'; this.parentElement.parentElement.querySelector('div').style.display='block';">
                             (hide)
                         </span>
                     </div>
                 </div>
             `;
-        } else {
-            finalText = safeText;
         }
 
+        // Additional info
         if (row.additionalInfo?.length > 0) {
-            finalText += `
+            displayText += `
                 <br/>
                 <span style="color:green;">
                     <i class="ri-user-fill"></i> ${row.additionalInfo}
@@ -441,39 +471,33 @@ export default function LeadsTable({
             `;
         }
 
-        if (!finalText || finalText === "null") {
-            return "-";
+        if ((!displayText || displayText.trim() === "") && !audioSrc) {
+            return <div>-</div>;
         }
 
         const textStyles = {
             whiteSpace: "normal",
-            wordBreak: "normal",
+            wordBreak: "break-word",
             overflowWrap: "break-word",
             maxWidth: "480px",
             lineHeight: "20px",
         };
 
-        if (audioLink) {
-            return (
-                <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                    <audio controls style={{ width: "140px" }}>
-                        <source src={audioLink} />
-                    </audio>
-
-                    <span
-                        style={textStyles}
-                        dangerouslySetInnerHTML={{ __html: finalText }}
-                    />
-                </div>
-            );
-        }
-
         return (
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <span
-                    style={textStyles}
-                    dangerouslySetInnerHTML={{ __html: finalText }}
-                />
+                {audioSrc && (
+                    <audio controls style={{ width: "140px", minWidth: "140px" }}>
+                        <source src={audioSrc} type="audio/mpeg" />
+                        Your browser does not support the audio element.
+                    </audio>
+                )}
+
+                {displayText && (
+                    <span
+                        style={textStyles}
+                        dangerouslySetInnerHTML={{ __html: displayText }}
+                    />
+                )}
             </div>
         );
     };
@@ -705,6 +729,7 @@ export default function LeadsTable({
         columnOrder.forEach(col => {
         cols.push({
             accessorKey: col,
+            size: col === 'remarks' ? 200 : undefined,
             header: columns?.find(c => c.dataField === col)?.displayName
                     || columns?.find(c => c.dataField === col)?.fieldName,
 
@@ -724,7 +749,7 @@ export default function LeadsTable({
                 return r[col] ?? '-';
             }
         });
-        
+
         });
 
         return cols;
@@ -755,6 +780,14 @@ export default function LeadsTable({
                     <th
                         key={header.id}
                         className="p-2 text-left font-semibold border-b whitespace-nowrap"
+                        style={{ 
+                            width: header.column.columnDef.size 
+                                ? `${header.column.columnDef.size}px` 
+                                : undefined,
+                            minWidth: header.column.columnDef.size 
+                                ? `${header.column.columnDef.size}px` 
+                                : undefined
+                        }}
                     >
                         {flexRender(
                         header.column.columnDef.header,
@@ -795,7 +828,18 @@ export default function LeadsTable({
                             className="border-b hover:bg-slate-50 transition h-[44px] align-top"
                         >
                             {row.getVisibleCells().map(cell => (
-                                <td key={cell.id} className="w-32 p-2 align-top">
+                                <td 
+                                    key={cell.id} 
+                                    className="p-2 align-top"
+                                    style={{ 
+                                        width: cell.column.columnDef.size 
+                                            ? `${cell.column.columnDef.size}px` 
+                                            : undefined,
+                                        minWidth: cell.column.columnDef.size 
+                                            ? `${cell.column.columnDef.size}px` 
+                                            : undefined
+                                    }}
+                                >
                                     {flexRender(
                                         cell.column.columnDef.cell,
                                         cell.getContext()
