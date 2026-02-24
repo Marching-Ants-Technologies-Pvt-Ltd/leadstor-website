@@ -103,7 +103,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     try {
       const [src, crs, sts, usrs] = await Promise.all([
         xFetch({ path: `/services/profile/getSources?corporateId=${corporateId}` }),
-        xFetch({ path: `/services/profile/getCourses?corporateId=${corporateId}` }),
+        xFetch({ path: `/services/profile/getCourseAndFee?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getStatuses?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getUsers?corporateId=${corporateId}` }),
       ]);
@@ -245,7 +245,8 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   );
   /* ---------- Helpers: validators like old code ---------- */
 
-  const emailRegex = /.+@.+/;
+  // More robust email validation
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const makeMobileRegex = () => {
     const cc = corporate?.country_code || "IN";
     if (cc !== "IN") {
@@ -256,9 +257,10 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   };
 
   const isValidEmail = (v) => {
-    if (!v && v !== "") return false;
-    if (v === "" || v == null) return true;
-    return emailRegex.test(String(v));
+    if (!v || v === "") return true; // empty is allowed (will be caught by duplicate check if both email & mobile empty)
+    const trimmed = String(v).trim();
+    if (trimmed.length > 254) return false;
+    return emailRegex.test(trimmed);
   };
 
   /* ---------- Utilities ---------- */
@@ -352,32 +354,55 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   // Normalize mobile: remove whitespace, parentheses, dashes, dots; keep leading + if present
   const normalizeMobile = (raw) => {
     if (!raw) return "";
-    return String(raw).replace(/[\s\-\.\(\)]/g, "").trim();
+    const trimmed = String(raw).trim();
+    if (!trimmed) return "";
+    // Remove all non-digit characters except leading +
+    const hasPlus = trimmed.startsWith("+");
+    let digits = trimmed.replace(/[^\d]/g, "");
+    // Remove leading 0 if present (for Indian numbers)
+    if (digits.startsWith("0") && digits.length > 10) {
+      digits = digits.slice(1);
+    }
+    return hasPlus ? "+" + digits : digits;
   };
 
   const isValidMobile = (raw, countryCode = "IN") => {
-    const v = normalizeMobile(raw);
-    if (v === "") return true; // empty allowed
+    const original = String(raw).trim();
+    if (original === "") return true; // empty allowed
 
+    // Remove all formatting characters
+    let digits = original.replace(/[\s\-\.\(\)]/g, "");
+    
     // Handle + prefix
-    let digits = v.startsWith("+") ? v.slice(1) : v;
+    const hasPlus = digits.startsWith("+");
+    if (hasPlus) {
+      digits = digits.slice(1);
+    }
 
-    // Must be digits only
+    // Must be digits only after removing +
     if (!/^\d+$/.test(digits)) return false;
 
-    if (countryCode === "IN") {
-      if (digits.startsWith("91") && digits.length === 12) {
-        const local = digits.slice(2);
-        return local.length === 10;
-      }
-      if (digits.startsWith("0") && digits.length === 11) {
-        const local = digits.slice(1);
-        return local.length === 10;
-      }
-      if (digits.length === 10) return true;
-      return false;
+    // Remove leading 0 for length check (common in Indian numbers)
+    let significantDigits = digits;
+    if (significantDigits.startsWith("0")) {
+      significantDigits = significantDigits.slice(1);
     }
-    return digits.length >= 7 && digits.length <= 15;
+
+    // Remove leading 91 for Indian numbers (country code)
+    if (countryCode === "IN") {
+      if (significantDigits.startsWith("91") && significantDigits.length >= 12) {
+        significantDigits = significantDigits.slice(2);
+      }
+    }
+
+    // Validate length based on country
+    if (countryCode === "IN") {
+      // Indian numbers: exactly 10 digits
+      return significantDigits.length === 10 && /^[6-9]\d{9}$/.test(significantDigits);
+    }
+    
+    // International: 7-15 digits (E.164 standard)
+    return significantDigits.length >= 7 && significantDigits.length <= 15;
   };
 
   /* ---------- Validation + Duplicate check + Upload ---------- */
@@ -389,7 +414,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     const headerNames = getHeaderNames();
 
     const emailCol = findIndexForHeader(headerNames, (t) => t.includes("mail"));
-    const mobileCol = findIndexForHeader(headerNames, (t) => t.includes("mobile"));
+    const mobileCol = findIndexForHeader(headerNames, (t) => t.includes("mobile") || t.includes("phone"));
     const courseCol = findIndexForHeader(headerNames, (t) => t.includes("course") || t.includes("service") || t.includes("preferred course"));
     const sourceCol = findIndexForHeader(headerNames, (t) => t.includes("source"));
     const ownerCol = findIndexForHeader(headerNames, (t) => t.includes("owner"));
@@ -413,6 +438,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
     let emails = [];
     let phones = [];
+    const cc = (corporate?.country_code || "IN").toUpperCase();
 
     for (let r = 0; r < raw.length; r++) {
       const row = raw[r];
@@ -433,38 +459,58 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         }
       }
 
-      // EMAIL VALIDATION
-      if (emailCol >= 0) {
-        const email = getCellValue(row, emailCol);
-        if (!isValidEmail(email)) {
+      // Check: at least one of email or mobile must be provided
+      const emailVal = emailCol >= 0 ? getCellValue(row, emailCol) : "";
+      const mobileVal = mobileCol >= 0 ? getCellValue(row, mobileCol) : "";
+
+      if (!emailVal && !mobileVal) {
+        // Highlight both columns
+        if (emailCol >= 0) hot.setCellMeta(r, emailCol, "className", "htInvalid");
+        if (mobileCol >= 0) hot.setCellMeta(r, mobileCol, "className", "htInvalid");
+        hot.render();
+        return {
+          ok: false,
+          message: `Row ${r + 1}: Either Email or Mobile must be provided`,
+        };
+      }
+
+      // EMAIL VALIDATION (if provided)
+      if (emailCol >= 0 && emailVal) {
+        if (!isValidEmail(emailVal)) {
           hot.setCellMeta(r, emailCol, "className", "htInvalid");
           hot.render();
           return {
             ok: false,
-            message: `Invalid Email '${email}' in row ${r + 1}`,
+            message: `Invalid Email '${emailVal}' in row ${r + 1}`,
           };
         }
-        if (email) emails.push(email);
+        emails.push(emailVal.toLowerCase());
       }
 
-      // MOBILE VALIDATION
-      if (mobileCol >= 0) {
-        const rawMobile = getCellValue(row, mobileCol);
-        const cleanedMobile = normalizeMobile(rawMobile);
-        const cc = (corporate?.country_code || "IN").toUpperCase();
-
-        if (!isValidMobile(cleanedMobile, cc)) {
+      // MOBILE VALIDATION (if provided)
+      if (mobileCol >= 0 && mobileVal) {
+        const cleanedMobile = normalizeMobile(mobileVal);
+        
+        if (!isValidMobile(mobileVal, cc)) {
           hot.setCellMeta(r, mobileCol, "className", "htInvalid");
           hot.render();
           return {
             ok: false,
-            message: `Invalid Mobile '${rawMobile}' in row ${r + 1}`,
+            message: `Invalid Mobile '${mobileVal}' in row ${r + 1}. For India, enter 10-digit number (6-9xxxxxxxx)`,
           };
         }
 
-        if (cleanedMobile) {
-          phones.push(cleanedMobile.replace(/^\+/, "").replace(/\D/g, ""));
+        // Normalize for duplicate check: remove country code and non-digits
+        let normalizedForCheck = cleanedMobile.replace(/\D/g, "");
+        // Remove leading 91 if present
+        if (normalizedForCheck.startsWith("91") && normalizedForCheck.length === 12) {
+          normalizedForCheck = normalizedForCheck.slice(2);
         }
+        // Remove leading 0 if present
+        if (normalizedForCheck.startsWith("0")) {
+          normalizedForCheck = normalizedForCheck.slice(1);
+        }
+        phones.push(normalizedForCheck);
       }
 
       // SOURCE VALIDATION
@@ -528,14 +574,50 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       return { ok: true, message: "Nothing to check", items: [] };
     }
     try {
-      const payload = { emails: emails.join(","), phones: phones.join(","), testId: testId || "" };
-      const res = await xFetch({ method: "POST", path: "/services/invite/checkDuplicatesOnManualImport", payload });
-      if (!res) return { ok: false, message: "Duplicate check failed", items: [] };
-      if (res.error) return { ok: false, message: res.error || "Duplicates error", items: res.items || [] };
-      return { ok: true, message: res.message || "Checked", items: res.items || [] };
+      // Normalize phones: ensure all are 10-digit format for consistent duplicate checking
+      const normalizedPhones = phones.map(p => {
+        let digits = String(p).replace(/\D/g, "");
+        // Remove leading 91 if present
+        if (digits.startsWith("91") && digits.length === 12) {
+          digits = digits.slice(2);
+        }
+        // Remove leading 0 if present
+        if (digits.startsWith("0")) {
+          digits = digits.slice(1);
+        }
+        return digits;
+      });
+
+      const payload = { 
+        emails: emails.join(","), 
+        phones: normalizedPhones.join(","), 
+        testId: testId || "" 
+      };
+      
+      const res = await xFetch({ 
+        method: "POST", 
+        path: "/services/invite/checkDuplicatesOnManualImport", 
+        payload 
+      });
+      
+      if (!res) {
+        return { ok: false, message: "Duplicate check failed - no response from server", items: [] };
+      }
+      
+      if (res.error) {
+        return { ok: false, message: res.error || "Duplicates error", items: res.items || [] };
+      }
+      
+      return { 
+        ok: true, 
+        message: res.message || "Duplicates checked", 
+        items: res.items || [],
+        duplicateEmails: res.duplicateEmails || [],
+        duplicatePhones: res.duplicatePhones || []
+      };
     } catch (err) {
       console.error("Duplicate check failed", err);
-      return { ok: false, message: "Unable to check duplicates", items: [] };
+      return { ok: false, message: "Unable to check duplicates - server error", items: [] };
     }
   }
 
@@ -546,17 +628,43 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     let matched = 0;
     const raw = hot.getData();
 
+    // Create a Set for faster lookup
+    const duplicateSet = new Set(duplicates.map(d => String(d).toLowerCase()));
+
     for (let r = 0; r < raw.length; r++) {
       const row = raw[r];
-      const email = emailColIndex >= 0 ? (typeof row === "object" && !Array.isArray(row) ? String(row[fields[emailColIndex]?.dataField] ?? "").trim() : String(row[emailColIndex] ?? "").trim()) : "";
-      const phone = phoneColIndex >= 0 ? (typeof row === "object" && !Array.isArray(row) ? String(row[fields[phoneColIndex]?.dataField] ?? "").replace(/\D/g, "") : String(row[phoneColIndex] ?? "").replace(/\D/g, "")) : "";
-      if (email && duplicates.includes(email)) {
-        matched++;
-        if (emailColIndex >= 0) hot.setCellMeta(r, emailColIndex, "className", "htInvalid");
+      
+      // Check email
+      if (emailColIndex >= 0) {
+        const email = typeof row === "object" && !Array.isArray(row) 
+          ? String(row[fields[emailColIndex]?.dataField] ?? "").trim().toLowerCase()
+          : String(row[emailColIndex] ?? "").trim().toLowerCase();
+        
+        if (email && duplicateSet.has(email)) {
+          matched++;
+          hot.setCellMeta(r, emailColIndex, "className", "htInvalid");
+        }
       }
-      if (phone && duplicates.includes(phone)) {
-        matched++;
-        if (phoneColIndex >= 0) hot.setCellMeta(r, phoneColIndex, "className", "htInvalid");
+      
+      // Check phone
+      if (phoneColIndex >= 0) {
+        const rawPhone = typeof row === "object" && !Array.isArray(row)
+          ? String(row[fields[phoneColIndex]?.dataField] ?? "")
+          : String(row[phoneColIndex] ?? "");
+        
+        // Normalize phone for comparison
+        let phoneDigits = String(rawPhone).replace(/\D/g, "");
+        if (phoneDigits.startsWith("91") && phoneDigits.length === 12) {
+          phoneDigits = phoneDigits.slice(2);
+        }
+        if (phoneDigits.startsWith("0")) {
+          phoneDigits = phoneDigits.slice(1);
+        }
+        
+        if (phoneDigits && duplicateSet.has(phoneDigits)) {
+          matched++;
+          hot.setCellMeta(r, phoneColIndex, "className", "htInvalid");
+        }
       }
     }
     hot.render();
@@ -691,10 +799,15 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       const phoneCol = findIndexForHeader(headerNames, (t) => t.includes("bile") || t.includes("hone"));
 
       const { emails = [], phones = [], raw } = validation;
+      
+      // Always run duplicate check if we have emails or phones
       const dupRes = await checkDuplicatesBackend(emails, phones);
+      
       if (!dupRes.ok) {
+        // Server error or validation failed
         const duplicates = dupRes.items || [];
         if (duplicates.length > 0) {
+          // Duplicates found - highlight and ask user
           const matchedCount = highlightDuplicateInTable(duplicates, emailCol, phoneCol);
           const msg = dupRes.message || `${matchedCount} duplicate(s) found.`;
           const ok = window.confirm(`${msg} Would you like to proceed and import anyway?`);
@@ -703,6 +816,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
             return;
           }
         } else {
+          // Actual error - no duplicates but check failed
           toast.error(dupRes.message || "Duplicate check failed");
           return;
         }

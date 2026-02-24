@@ -143,7 +143,7 @@ export default function Teams() {
         .then((res) => setRoles(Array.isArray(res) ? res : []))
         .catch(() => setRoles([]));
     };
-  
+
     const fetchTeam = () => {
       return xFetch({
         path: `/services/profile/getUsers`,
@@ -152,7 +152,7 @@ export default function Teams() {
         .then((res) => setMembers(Array.isArray(res) ? res : []))
         .catch(() => setMembers([]));
     };
-  
+
     const fetchManagers = () => {
       return xFetch({
         path: `/services/profile/getUserManagers`,
@@ -161,17 +161,30 @@ export default function Teams() {
         .then((res) => setManagers(res || []))
         .catch(() => setManagers([]));
     };
-  
+
     /** -----------------------------------------
      *  RUN ALL FETCHES TOGETHER
      * ---------------------------------------- */
     useEffect(() => {
       if (!Corporate?._id) return;
-  
+
       setLoading(true);
       Promise.all([fetchTeam(), fetchRoles(), fetchManagers()])
         .finally(() => setLoading(false));
     }, [Corporate?._id]);
+
+    // Initialize selectedRoles when editing and roles are loaded
+    useEffect(() => {
+      if (editMember && roles.length > 0) {
+        const roleIds = (editMember.roles || []).map((r) => {
+          if (typeof r === 'object' && r.id) return parseInt(r.id);
+          if (!isNaN(r)) return parseInt(r);
+          const match = roles.find((role) => role.name === r);
+          return match ? match.id : null;
+        }).filter(Boolean);
+        setSelectedRoles(roleIds);
+      }
+    }, [editMember, roles]);
   
     /** -----------------------------------------
      *  TABLE SELECTION
@@ -190,25 +203,27 @@ export default function Teams() {
       const payload = {
         ...newMember,
         corporateId,
-        salary: newMember.salary,
-        roles: selectedRoles,
+        salary: newMember.salary ? Number(newMember.salary) : 0,
+        roles: selectedRoles.length > 0 ? selectedRoles : [],
         sign: btoa(newMember.signature || ""),
         managers: newMember.managerId || ""
       };
-  
+
       if (editMember?.id) payload.id = editMember.id;
-  
+
       try {
         await xFetch({
           path: editMember ? `/services/profile/updateUserSettings` : `/services/profile/addUserSettings`,
           payload,
           method: "POST"
         });
-  
+
+        toast.success(editMember ? "User updated successfully" : "User added successfully");
         fetchTeam();
         setShowModal(false);
       } catch (err) {
         console.error("Save error", err);
+        toast.error("Failed to save user");
       }
     };
   
@@ -247,25 +262,29 @@ export default function Teams() {
      *  DELETE USER(S)
      * ---------------------------------------- */
     const handleDeleteUser = async (userId) => {
-      if (!confirm("Delete this user?")) return;
-  
       await xFetch({
         path: `/services/profile/deleteUser`,
         payload: { userId },
         method: "POST",
       });
-  
-      fetchTeam();
     };
-  
+
     const handleDeleteSelected = async () => {
       if (selected.size === 0) return alert("Nothing selected");
-  
-      if (!confirm("Delete selected users?")) return;
-  
-      for (let id of selected) await handleDeleteUser(id);
-  
-      setSelected(new Set());
+
+      if (!confirm(`Delete ${selected.size} selected user(s)? This cannot be undone.`)) return;
+
+      try {
+        for (let id of selected) {
+          await handleDeleteUser(id);
+        }
+        toast.success(`Deleted ${selected.size} user(s) successfully`);
+        setSelected(new Set());
+        fetchTeam();
+      } catch (err) {
+        console.error("Delete error", err);
+        toast.error("Failed to delete users");
+      }
     };
   
     /** -----------------------------------------
@@ -366,7 +385,12 @@ export default function Teams() {
                             onChange={() => toggleSelect(member.id)}
                           />
                         </td>
-                        <td className="p-3">{member.name}</td>
+                        <td className="p-3 flex items-center gap-2">
+                          <span>{member.name}</span>
+                          <button onClick={() => openEdit(member)} className="text-blue-500 hover:text-blue-700" title="Edit user">
+                            <i className="ri-edit-line text-sm"></i>
+                          </button>
+                        </td>
                         <td className="p-3">{member.email}</td>
                         <td className="p-3">{member.mobile}</td>
                         <td className="p-3">{member.password}</td>
@@ -377,10 +401,6 @@ export default function Teams() {
                         </td>
                         <td className="p-3">{member.managerName || '-'}</td>
                         <td className="p-3 flex justify-center gap-3">
-                          <button onClick={() => openEdit(member)} className="text-blue-500 hover:text-blue-700">
-                            <i className="ri-edit-line text-lg"></i>
-                          </button>
-
                           <button
                             onClick={() => openDisableDialog(member)}
                             className="transition hover:scale-110"
@@ -491,12 +511,12 @@ export default function Teams() {
             >
               {/* INPUTS */}
               {[
-                { name: "name", icon: "ri-user-line", placeholder: "Name" },
-                { name: "email", icon: "ri-mail-line", placeholder: "Email" },
-                { name: "mobile", icon: "ri-phone-line", placeholder: "Mobile" },
-                { name: "password", icon: "ri-lock-line", placeholder: "Password" },
-                { name: "salary", icon: "ri-money-rupee-circle-line", placeholder: "Salary" },
-                { name: "signature", icon: "ri-edit-line", placeholder: "Signature" },
+                { name: "name", icon: "ri-user-line", placeholder: "Name", required: true },
+                { name: "email", icon: "ri-mail-line", placeholder: "Email", required: true },
+                { name: "mobile", icon: "ri-phone-line", placeholder: "Mobile", required: false },
+                { name: "password", icon: "ri-lock-line", placeholder: "Password", required: !editMember },
+                { name: "salary", icon: "ri-money-rupee-circle-line", placeholder: "Salary (Optional)", required: false },
+                { name: "signature", icon: "ri-edit-line", placeholder: "Signature", required: false },
               ].map((f) => (
                 <div key={f.name} className="border rounded px-3 py-2 bg-gray-50 flex items-center">
                   <i className={`${f.icon} text-gray-500 mr-2`}></i>
@@ -504,6 +524,7 @@ export default function Teams() {
                     name={f.name}
                     defaultValue={editMember?.[f.name]}
                     placeholder={f.placeholder}
+                    required={f.required}
                     className="w-full bg-transparent outline-none"
                   />
                 </div>
