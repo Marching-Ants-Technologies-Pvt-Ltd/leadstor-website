@@ -405,168 +405,178 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     return significantDigits.length >= 7 && significantDigits.length <= 15;
   };
 
-  /* ---------- Validation + Duplicate check + Upload ---------- */
-
+  /**
+ * Validates all rows in the Handsontable grid before submission.
+ * - Checks required fields (e.g., First Name)
+ * - Ensures at least one of Email or Mobile is provided and valid
+ * - Validates format of Email and Mobile
+ * - Validates dropdown/autocomplete fields against allowed values
+ * - Highlights invalid cells with red background
+ * 
+ * @returns {Promise<{ ok: boolean, message?: string, emails: string[], phones: string[], raw: any[] }>}
+ */
   const validateHotData = async () => {
     const hot = tableRef.current?.hotInstance;
-    if (!hot) return { ok: false, message: "Table not ready" };
+    if (!hot) {
+      return { ok: false, message: "Table instance not ready" };
+    }
 
-    const headerNames = getHeaderNames();
+    const headerNames = getHeaderNames(); // array of display names / field names
 
-    const emailCol = findIndexForHeader(headerNames, (t) => t.includes("mail"));
-    const mobileCol = findIndexForHeader(headerNames, (t) => t.includes("mobile") || t.includes("phone"));
-    const courseCol = findIndexForHeader(headerNames, (t) => t.includes("course") || t.includes("service") || t.includes("preferred course"));
-    const sourceCol = findIndexForHeader(headerNames, (t) => t.includes("source"));
-    const ownerCol = findIndexForHeader(headerNames, (t) => t.includes("owner"));
-    const statusCol = findIndexForHeader(headerNames, (t) => t.includes("status"));
-    const firstNameCol = findIndexForHeader(headerNames, (t) => t.includes("first"));
-
-    const raw = hot.getSourceData();
-
-    const getCellValue = (rowData, colIndex) => {
-      const key = fields[colIndex]?.dataField;
-      return String(rowData?.[key] ?? "").trim();
+    // Robust column index detection (case-insensitive partial matching)
+    const findCol = (keywords) => {
+      const lowerKeywords = keywords.map(k => k.toLowerCase());
+      return findIndexForHeader(headerNames, (t) =>
+        lowerKeywords.some(kw => t.toLowerCase().includes(kw))
+      );
     };
 
-    // CLEAR OLD HIGHLIGHTS
+    const emailCol   = findCol(["email", "mail", "e-mail"]);
+    const mobileCol  = findCol(["mobile", "phone", "contact", "number", "cell", "whatsapp"]);
+    const firstNameCol = findCol(["first name", "firstname", "first"]);
+    const lastNameCol  = findCol(["last name", "lastname", "last"]);
+    const sourceCol    = findCol(["source"]);
+    const courseCol    = findCol(["course", "service", "program", "preferred course"]);
+    const ownerCol     = findCol(["owner", "assigned", "assigned user", "user"]);
+    const statusCol    = findCol(["status"]);
+
+    const raw = hot.getSourceData(); // array of objects (since data is array-of-objects)
+
+    // Clear all previous validation highlights
     for (let r = 0; r < raw.length; r++) {
-      for (let c = 0; c < headerNames.length; c++) {
+      for (let c = 0; c < fields.length; c++) {
         hot.setCellMeta(r, c, "className", "");
       }
     }
     hot.render();
 
-    let emails = [];
-    let phones = [];
-    const cc = (corporate?.country_code || "IN").toUpperCase();
+    const emails = [];
+    const phones = [];
+    const countryCode = (corporate?.country_code || "IN").toUpperCase();
 
     for (let r = 0; r < raw.length; r++) {
       const row = raw[r];
 
-      // SKIP completely empty row
-      if (Object.values(row).every((v) => !String(v).trim())) continue;
+      // Skip completely empty rows
+      if (Object.values(row).every(v => !String(v ?? "").trim())) {
+        continue;
+      }
 
-      // FIRST NAME REQUIRED
+      // 1. First Name is required (if column exists)
       if (firstNameCol >= 0) {
-        const firstName = getCellValue(row, firstNameCol);
+        const firstName = String(row[fields[firstNameCol]?.dataField] ?? "").trim();
         if (!firstName) {
           hot.setCellMeta(r, firstNameCol, "className", "htInvalid");
           hot.render();
           return {
             ok: false,
-            message: `First Name is required in row ${r + 1}`,
+            message: `Row ${r + 1}: First Name is required`,
           };
         }
       }
 
-      // Check: at least one of email or mobile must be provided
-      const emailVal = emailCol >= 0 ? getCellValue(row, emailCol) : "";
-      const mobileVal = mobileCol >= 0 ? getCellValue(row, mobileCol) : "";
+      // 2. Get raw values
+      const emailRaw  = emailCol  >= 0 ? String(row[fields[emailCol]?.dataField]  ?? "").trim() : "";
+      const mobileRaw = mobileCol >= 0 ? String(row[fields[mobileCol]?.dataField] ?? "").trim() : "";
 
-      if (!emailVal && !mobileVal) {
-        // Highlight both columns
-        if (emailCol >= 0) hot.setCellMeta(r, emailCol, "className", "htInvalid");
+      // Normalize mobile early
+      const mobileNorm = normalizeMobile(mobileRaw);
+
+      const hasValidEmail  = emailRaw !== "" && isValidEmail(emailRaw);
+      const hasValidMobile = mobileNorm !== "" && isValidMobile(mobileNorm, countryCode);
+
+      // 3. At least one of email or mobile must be valid
+      if (!hasValidEmail && !hasValidMobile) {
+        if (emailCol  >= 0) hot.setCellMeta(r, emailCol,  "className", "htInvalid");
         if (mobileCol >= 0) hot.setCellMeta(r, mobileCol, "className", "htInvalid");
         hot.render();
         return {
           ok: false,
-          message: `Row ${r + 1}: Either Email or Mobile must be provided`,
+          message: `Row ${r + 1}: Either a valid Email or a valid Mobile number must be provided`,
         };
       }
 
-      // EMAIL VALIDATION (if provided)
-      if (emailCol >= 0 && emailVal) {
-        if (!isValidEmail(emailVal)) {
-          hot.setCellMeta(r, emailCol, "className", "htInvalid");
-          hot.render();
-          return {
-            ok: false,
-            message: `Invalid Email '${emailVal}' in row ${r + 1}`,
-          };
-        }
-        emails.push(emailVal.toLowerCase());
+      // 4. If email is provided → must be valid
+      if (emailRaw !== "" && !isValidEmail(emailRaw)) {
+        hot.setCellMeta(r, emailCol, "className", "htInvalid");
+        hot.render();
+        return {
+          ok: false,
+          message: `Row ${r + 1}: Invalid Email format → ${emailRaw}`,
+        };
       }
 
-      // MOBILE VALIDATION (if provided)
-      if (mobileCol >= 0 && mobileVal) {
-        const cleanedMobile = normalizeMobile(mobileVal);
-        
-        if (!isValidMobile(mobileVal, cc)) {
-          hot.setCellMeta(r, mobileCol, "className", "htInvalid");
-          hot.render();
-          return {
-            ok: false,
-            message: `Invalid Mobile '${mobileVal}' in row ${r + 1}. For India, enter 10-digit number (6-9xxxxxxxx)`,
-          };
-        }
-
-        // Normalize for duplicate check: remove country code and non-digits
-        let normalizedForCheck = cleanedMobile.replace(/\D/g, "");
-        // Remove leading 91 if present
-        if (normalizedForCheck.startsWith("91") && normalizedForCheck.length === 12) {
-          normalizedForCheck = normalizedForCheck.slice(2);
-        }
-        // Remove leading 0 if present
-        if (normalizedForCheck.startsWith("0")) {
-          normalizedForCheck = normalizedForCheck.slice(1);
-        }
-        phones.push(normalizedForCheck);
+      // 5. If mobile is provided → must be valid
+      if (mobileRaw !== "" && !isValidMobile(mobileRaw, countryCode)) {
+        hot.setCellMeta(r, mobileCol, "className", "htInvalid");
+        hot.render();
+        return {
+          ok: false,
+          message: `Row ${r + 1}: Invalid Mobile format → ${mobileRaw}\n(For India: 10 digits starting with 6-9)`,
+        };
       }
 
-      // SOURCE VALIDATION
+      // Collect valid values for duplicate check
+      if (hasValidEmail)  emails.push(emailRaw.toLowerCase());
+      if (hasValidMobile) phones.push(mobileNorm);
+
+      // 6. Optional: Validate dropdown / autocomplete fields
       if (sourceCol >= 0) {
-        const val = getCellValue(row, sourceCol);
-        if (val && !sources.some((s) => s.source?.toLowerCase() === val.toLowerCase())) {
+        const val = String(row[fields[sourceCol]?.dataField] ?? "").trim();
+        if (val && !sources.some(s => s.source?.toLowerCase() === val.toLowerCase())) {
           hot.setCellMeta(r, sourceCol, "className", "htInvalid");
           hot.render();
           return {
             ok: false,
-            message: `Invalid Source '${val}' in row ${r + 1}`,
+            message: `Row ${r + 1}: Invalid Source → ${val}`,
           };
         }
       }
 
-      // COURSE VALIDATION
       if (courseCol >= 0) {
-        const val = getCellValue(row, courseCol);
-        if (val && !courses.some((c) => c.course?.toLowerCase() === val.toLowerCase())) {
+        const val = String(row[fields[courseCol]?.dataField] ?? "").trim();
+        if (val && !courses.some(c => c.course?.toLowerCase() === val.toLowerCase())) {
           hot.setCellMeta(r, courseCol, "className", "htInvalid");
           hot.render();
           return {
             ok: false,
-            message: `Invalid Course '${val}' in row ${r + 1}`,
+            message: `Row ${r + 1}: Invalid Course → ${val}`,
           };
         }
       }
 
-      // OWNER VALIDATION
       if (ownerCol >= 0) {
-        const val = getCellValue(row, ownerCol);
-        if (val && !users.some((u) => u.name?.toLowerCase() === val.toLowerCase())) {
+        const val = String(row[fields[ownerCol]?.dataField] ?? "").trim();
+        if (val && !users.some(u => u.name?.toLowerCase() === val.toLowerCase())) {
           hot.setCellMeta(r, ownerCol, "className", "htInvalid");
           hot.render();
           return {
             ok: false,
-            message: `Invalid Owner '${val}' in row ${r + 1}`,
+            message: `Row ${r + 1}: Invalid Assigned User / Owner → ${val}`,
           };
         }
       }
 
-      // STATUS VALIDATION
       if (statusCol >= 0) {
-        const val = getCellValue(row, statusCol);
-        if (val && !statuses.some((s) => s.status?.toLowerCase() === val.toLowerCase())) {
+        const val = String(row[fields[statusCol]?.dataField] ?? "").trim();
+        if (val && !statuses.some(s => s.status?.toLowerCase() === val.toLowerCase())) {
           hot.setCellMeta(r, statusCol, "className", "htInvalid");
           hot.render();
           return {
             ok: false,
-            message: `Invalid Status '${val}' in row ${r + 1}`,
+            message: `Row ${r + 1}: Invalid Status → ${val}`,
           };
         }
       }
     }
 
-    return { ok: true, emails, phones, raw };
+    // All rows passed validation
+    return {
+      ok: true,
+      emails,
+      phones,
+      raw,
+    };
   };
 
   async function checkDuplicatesBackend(emails = [], phones = []) {
