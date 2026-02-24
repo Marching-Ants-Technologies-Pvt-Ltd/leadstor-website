@@ -294,7 +294,7 @@ export async function xFetch({
 }
 
 // Export xDownload with auth handling
-export async function xDownload(nextTarget, duration = 2000) {
+export async function xDownload(nextTarget, duration = 10000) {
   if (typeof window === 'undefined') return;
 
   const token = localStorage.getItem('access_token');

@@ -47,9 +47,9 @@ export default function PaymentsSectionController() {
                 payload: { corporateId: branchCorporateId }
             }).then(testData => {
                 if (testData && testData.length > 0) {
-                    setBranchTestInfo({ 
-                        testId: testData[0].id || testData[0]._id, 
-                        testType: testData[0].testType || 'S' 
+                    setBranchTestInfo({
+                        testId: testData[0].id || testData[0]._id,
+                        testType: testData[0].testType || 'S'
                     });
                 }
             }).catch(() => {
@@ -69,8 +69,6 @@ export default function PaymentsSectionController() {
         offset: 0,
         limit: 50
     });
-
-    // No need for this useEffect anymore since we're using branchCorporateId directly in the API call
 
     const [appliedFilters, setAppliedFilters] = useState({
         selected: {},
@@ -226,23 +224,24 @@ export default function PaymentsSectionController() {
 
     const exportReport = (data) => {
         data['corporateId'] = Corporate._id;
-        let target = (data?.type ?? '' === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
-        xDownload(`/${target}.php?${jsonToQueryParams(data)}`);
+        let target = ((data?.type ?? '') === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
+        
+        xDownload(`${target}.php?${jsonToQueryParams(data)}`);
 
     }
 
     const downloadJoineesReport = (type) => {
         if (!type) return;
         if (type === 'Joinee@Detailed_Download') {
-            xDownload(`/services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
+            xDownload(`services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
             return;
         }
 
-        xDownload(`/services/joinees/exportAllJoinees?corporateId=${Corporate._id}`);
+        xDownload(`services/joinees/exportAllJoinees?corporateId=${Corporate._id}`);
     }
 
     const downloadPaymentReceipt = (payload) => {
-        xDownload(`/services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
+        xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
     }
 
     const base64Encode = (str) => {
@@ -443,8 +442,8 @@ export default function PaymentsSectionController() {
                             <button
                                 className="px-3 py-1.5 text-xs border border-indigo-300 rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 flex items-center gap-1.5 transition-all"
                                 onClick={() => {
-                                    const testParams = branchTestInfo.testId && branchTestInfo.testType 
-                                        ? `&testId=${branchTestInfo.testId}&testType=${branchTestInfo.testType}` 
+                                    const testParams = branchTestInfo.testId && branchTestInfo.testType
+                                        ? `&testId=${branchTestInfo.testId}&testType=${branchTestInfo.testType}`
                                         : '';
                                     router.push(`/leads?corporateId=${branchCorporateId}${testParams}`);
                                 }}

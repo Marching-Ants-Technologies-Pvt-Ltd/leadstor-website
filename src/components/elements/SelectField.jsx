@@ -172,8 +172,8 @@ export function SelectFieldTypeArrayOfObject({
                                 setOpen(false);
                             }}
                             className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 ${opt.id === selected
-                                    ? "bg-gray-100 font-medium"
-                                    : ""
+                                ? "bg-gray-100 font-medium"
+                                : ""
                                 }`}
                         >
                             {opt.value}
@@ -281,7 +281,7 @@ export function MultiSelectField({
                     {filteredOptions.map(opt => (
                         <label
                             key={opt.id}
-                            className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm cursor-pointer hover:bg-gray-100"
                         >
                             <input
                                 type="checkbox"
@@ -289,7 +289,10 @@ export function MultiSelectField({
                                 onChange={() => toggleOption(opt.id)}
                                 className="cursor-pointer"
                             />
-                            <span className="truncate">{opt.value}</span>
+                            <div>
+                                <div className="truncate font-normal">{opt.value}</div>
+                                <div className="truncate text-xs text-gray-500">{opt?.tag ?? ''}</div>
+                            </div>
                         </label>
                     ))}
                 </div>
@@ -365,8 +368,8 @@ export function SelectFieldDefault({
                                 setOpen(false);
                             }}
                             className={`px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 ${opt.id === selected
-                                    ? "bg-gray-100 font-medium"
-                                    : ""
+                                ? "bg-gray-100 font-medium"
+                                : ""
                                 }`}
                         >
                             {opt.value}

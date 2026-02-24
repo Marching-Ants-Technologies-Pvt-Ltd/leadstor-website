@@ -404,6 +404,8 @@ export default function JoineePaymentForm({ payment_id }) {
                 transition={Bounce}
             />
 
+            <div className='w-full h-20'></div>
+
             {showInfo && (
                 <div className='max-w-[1400px] mx-auto p-6'>
                     <div className='border border-blue-300 bg-blue-50 -mb-6 p-3 rounded-md flex items-center gap-2 shadow-md'>
@@ -482,7 +484,7 @@ export default function JoineePaymentForm({ payment_id }) {
                             <div className='relative'>
                                 <SelectFieldTypeArray
                                     label="Course / Program"
-                                    options={Object.values(filterParams?.labels || {})}
+                                    options={courseFee.map(item => item.course)}
                                     selected={candidate?.label || 'Not Selected'}
                                     cbOnChange={onInfoChange}
                                     fieldName='label'
@@ -503,10 +505,11 @@ export default function JoineePaymentForm({ payment_id }) {
 
                             <MultiSelectField
                                 label="Batch / Intake"
-                                options={Object.entries(filterParams?.batchNames || {}).map(
-                                    ([key, value]) => ({
-                                        id: key,
-                                        value: value
+                                options={batch.map(
+                                    (item) => ({
+                                        id: item.batchId,
+                                        value: item.labelName,
+                                        tag: item.batchName,
                                     })
                                 )}
                                 selected={candidate?.batchId ?? []}
