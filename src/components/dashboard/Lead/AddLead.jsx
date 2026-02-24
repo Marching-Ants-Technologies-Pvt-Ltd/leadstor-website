@@ -422,7 +422,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     }
 
     const headerNames = getHeaderNames(); // array of display names / field names
-
+      console.log(headerNames);
     // Robust column index detection (case-insensitive partial matching)
     const findCol = (keywords) => {
       const lowerKeywords = keywords.map(k => k.toLowerCase());
@@ -495,7 +495,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           message: `Row ${r + 1}: Either a valid Email or a valid Mobile number must be provided`,
         };
       }
-
+      console.log({ emailRaw, mobileRaw, mobileNorm, hasValidEmail, hasValidMobile });
       // 4. If email is provided → must be valid
       if (emailRaw !== "" && !isValidEmail(emailRaw)) {
         hot.setCellMeta(r, emailCol, "className", "htInvalid");
