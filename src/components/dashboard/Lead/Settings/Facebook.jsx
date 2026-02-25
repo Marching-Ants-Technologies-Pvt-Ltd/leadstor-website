@@ -508,7 +508,7 @@ function SubscribeModal({
                   <div className="text-center py-6 text-amber-700 bg-amber-50 rounded">
                     <p className="font-medium">No questions found in this lead form</p>
                     <p className="text-sm mt-2">
-                      This form might have no fields configured, or Facebook isn't returning questions.<br />
+                      This form might have no fields configured, or Facebook isn&apos;t returning questions.<br />
                       <strong>Check in Ads Manager:</strong> Page → Publishing Tools → Instant Forms → edit the form → ensure it has at least Name/Email/Phone.
                     </p>
                     <p className="text-xs mt-3 text-gray-600">
@@ -596,7 +596,6 @@ function SubscribeModal({
       </div>
     </div>
   );
-  return { loaded, status, refreshStatus };
 }
 
 /* ---------- Main Component ---------- */
