@@ -21,6 +21,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [originalFields, setOriginalFields] = useState({ ...selectedLead });
   const [showTimeline, setShowTimeline] = useState(false);
   const [displayRemarks, setDisplayRemarks] = useState("");
+  const [aiNextStep, setAiNextStep] = useState("");
   const FIELD_GROUPS = {
     leadDetails: ['mobile', 'firstName', 'emailId', 'location'],
     salesUpdate: ['status', 'leadProbability'],
@@ -220,7 +221,11 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         if (data.status === "Follow Up" || data.isFollowupType == '1') {
           setShowDatePicker(true);
         }
-        
+        // Only update aiNextStep if API returns a non-empty value
+        if (data.aINextStep && data.aINextStep.trim() !== "") {
+          setAiNextStep(data.aINextStep);
+        }
+
       })
       .catch((error) => {
         console.error(`An error occurred while fetching leads`, error);
@@ -362,12 +367,14 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   }
   useEffect(() => {
     let isMounted = true;
+    // Store the initial aiNextStep from selectedLead to preserve it
+    const initialAiNextStep = selectedLead.aINextStep || "";
 
     const initialize = async () => {
       setIsInitializing(true);
 
-      selectedLead.remarks = "";
-      setFields(selectedLead);
+      setFields({ ...selectedLead, remarks: "" });
+      setAiNextStep(initialAiNextStep);
 
       if (selectedLead.status === "Follow Up" || selectedLead.isFollowupType === '1') {
         setShowDatePicker(true);
@@ -486,12 +493,12 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                     )}
 
                     {/* AI NEXT STEP */}
-                    {fields.aINextStep && (
+                    {aiNextStep && (
                       <div className="ai-card">
                         <span className="ai-icon">✨</span>
                         <div>
                           <div className="ai-title">AI Next Best Action</div>
-                          <p>{fields.aINextStep}</p>
+                          <p>{aiNextStep}</p>
                         </div>
                       </div>
                     )}

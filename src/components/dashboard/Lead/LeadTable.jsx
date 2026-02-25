@@ -415,89 +415,75 @@ export default function LeadsTable({
     };
 
     const renderRemarkCell = (row) => {
-
         let remarksText = row.remarks || "";
         let audioSrc = "";
 
-        // Extract audio src if present
+        // Extract audio src safely
         const audioMatch = remarksText.match(/<audio[^>]*src=["']([^"']+)["'][^>]*>/i);
         if (audioMatch) {
             audioSrc = audioMatch[1];
-            // Remove the whole <audio> tag from text (safer than split)
-            remarksText = remarksText.replace(/<audio[^>]*>.*?<\/audio>/gi, '').trim();
+            // Remove audio tag from text
+            remarksText = remarksText.replace(/<audio[^>]*>.*?<\/audio>/gi, "").trim();
         }
 
-        // Clean text (remove html if you don't want it rendered)
-        const div = document.createElement("div");
-        div.innerHTML = remarksText;
-        let safeText = div.textContent || div.innerText || "";
+        // Clean text (strip HTML if you don't want rendering, or keep safe HTML)
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = remarksText;
+        let safeText = tempDiv.textContent || tempDiv.innerText || "";
 
+        // Add latest remarks date prefix
         if (row.latestRemarksDate) {
             safeText = `${row.latestRemarksDate}: ${safeText}`;
         }
 
+        // Truncate + expand logic (same as before, but cleaner HTML)
         let displayText = safeText;
-
-        // Truncate logic (your existing code)
         if (safeText.length > 120) {
             const short = safeText.substring(0, 120);
             displayText = `
-                <div style="min-width:155px;">
-                    <div>
-                        ${short}
-                        <span style="cursor:pointer;color:#1976d2;" 
-                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block'; this.parentElement.style.display='none';">
-                            ...(view)
-                        </span>
-                    </div>
-                    <div class="full-text" style="display:none;">
-                        ${safeText}
-                        <span style="cursor:pointer;color:red;margin-left:6px;"
-                            onclick="this.parentElement.style.display='none'; this.parentElement.parentElement.querySelector('div').style.display='block';">
-                            (hide)
-                        </span>
-                    </div>
-                </div>
+            <span>${short} <span class="text-blue-600 cursor-pointer hover:underline" 
+                onclick="this.parentElement.querySelector('.full-remarks').style.display='block'; 
+                        this.style.display='none';">(view more)</span></span>
+            <div class="full-remarks hidden mt-1">
+                ${safeText}
+                <span class="text-red-600 cursor-pointer hover:underline ml-2" 
+                onclick="this.parentElement.style.display='none'; 
+                        this.parentElement.parentElement.querySelector('span').style.display='inline';">(hide)</span>
+            </div>
             `;
         }
 
-        // Additional info
-        if (row.additionalInfo?.length > 0) {
-            displayText += `
-                <br/>
-                <span style="color:green;">
-                    <i class="ri-user-fill"></i> ${row.additionalInfo}
-                </span>
-            `;
-        }
-
+        // No content at all
         if ((!displayText || displayText.trim() === "") && !audioSrc) {
-            return <div>-</div>;
+            return <div className="text-gray-400">-</div>;
         }
-
-        const textStyles = {
-            whiteSpace: "normal",
-            wordBreak: "break-word",
-            overflowWrap: "break-word",
-            maxWidth: "480px",
-            lineHeight: "20px",
-        };
 
         return (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                {audioSrc && (
-                    <audio controls style={{ width: "140px", minWidth: "140px" }}>
-                        <source src={audioSrc} type="audio/mpeg" />
-                        Your browser does not support the audio element.
-                    </audio>
-                )}
+            <div className="flex items-start gap-3 min-w-[180px] max-w-[480px]">
+            {/* Audio player on left, fixed width */}
+            {audioSrc && (
+                <div className="flex-shrink-0">
+                <audio
+                    controls
+                    className="h-8 w-[160px] min-w-[140px]"
+                    style={{ margin: 0, padding: 0 }}
+                >
+                    <source src={audioSrc} type="audio/mpeg" />
+                    Your browser does not support audio.
+                </audio>
+                </div>
+            )}
 
-                {displayText && (
-                    <span
-                        style={textStyles}
-                        dangerouslySetInnerHTML={{ __html: displayText }}
-                    />
-                )}
+            {/* Remarks text */}
+            <div
+                className="flex-1 text-sm leading-5 text-gray-800 break-words whitespace-normal"
+                style={{
+                lineHeight: "1.4",
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+                }}
+                dangerouslySetInnerHTML={{ __html: displayText }}
+            />
             </div>
         );
     };
@@ -939,6 +925,20 @@ export default function LeadsTable({
                 background: #d4e0ec;
                 color: #111827;
                 height: 44px;
+            }
+            
+            .leadstor-table-modern td {
+                vertical-align: top !important;
+                padding: 8px 12px !important;
+            }
+
+            .leadstor-table-modern td .flex.items-start {
+                align-items: flex-start !important;
+            }
+
+            .audio-in-remarks {
+                margin: 0 !important;
+                padding: 0 !important;
             }
                 
         `}</style>
