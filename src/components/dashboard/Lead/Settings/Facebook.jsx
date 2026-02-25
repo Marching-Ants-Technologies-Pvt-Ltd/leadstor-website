@@ -226,9 +226,21 @@ function SubscribeModal({
   // Load CN fields once
   useEffect(() => {
     facebookApi
-      .fetchCNFields()
-      .then((d) => setCnFields(Array.isArray(d) ? d : []))
-      .catch(() => setCnFields([]));
+    .fetchCNFields()
+    .then((d) => {
+      if (Array.isArray(d)) {
+        setCnFields(d);
+      } else if (d && typeof d === "object") {
+        // Convert { "1": "Name" } → [{id: "1", name: "Name"}]
+        const formatted = Object.entries(d).map(([id, name]) => ({
+          id,
+          name,
+        }));
+        setCnFields(formatted);
+      } else {
+        setCnFields([]);
+      }
+    })
   }, []);
 
   // Reset & load initial data

@@ -107,6 +107,36 @@ const parseDisplayDate = (key) => {
   }
 };
 
+// Helper to render remarks with audio player support
+const renderRemarks = (remarks) => {
+  if (!remarks) return null;
+
+  // Check if remarks contains an audio tag
+  const audioMatch = remarks.match(/<audio[^>]*src="([^"]*)"[^>]*>/i);
+  
+  if (audioMatch && audioMatch[1]) {
+    const audioSrc = audioMatch[1];
+    // Extract text content (everything except the audio tag)
+    const textContent = remarks.replace(/<audio[^>]*>.*?<\/audio>/gi, "").trim();
+    
+    return (
+      <div className="space-y-2">
+        {textContent && (
+          <p className="text-sm text-gray-700">{textContent}</p>
+        )}
+        <audio controls className="w-full mt-2">
+          <source src={audioSrc} type="audio/mpeg" />
+          <source src={audioSrc} type="audio/wav" />
+          Your browser does not support the audio element.
+        </audio>
+      </div>
+    );
+  }
+  
+  // No audio tag, render as plain text
+  return <span className="font-medium text-gray-700">{remarks}</span>;
+};
+
 const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
   const [timelineData, setTimelineData] = useState([]);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
@@ -245,9 +275,7 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
                         <div className="mb-1">
                           <p className="text-sm text-gray-500">
                             Remarks:{" "}
-                            <span className="font-medium text-gray-700">
-                              {item.remarks}
-                            </span>
+                            {renderRemarks(item.remarks)}
                           </p>
                         </div>
                       )}
@@ -298,9 +326,13 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
       {showUpdatePopup && (
         <UpdateLead
           selectedLead={leadDetails}
-          onCancel={() => setShowUpdatePopup(false)}
+          onCancel={() => {
+            setShowUpdatePopup(false);
+            onClose();
+          }}
           onSuccess={() => {
             setShowUpdatePopup(false);
+            onClose();
             xLeads?.();
           }}
         />
