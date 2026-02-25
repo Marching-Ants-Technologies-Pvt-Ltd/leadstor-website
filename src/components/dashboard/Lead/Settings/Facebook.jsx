@@ -221,6 +221,7 @@ function SubscribeModal({
   const [course, setCourse] = useState("");
   const [targetLocation, setTargetLocation] = useState("");
   const [loadingFields, setLoadingFields] = useState(false);
+  const [formQuestions, setFormQuestions] = useState([]);
 
   // Load CN fields once
   useEffect(() => {
@@ -277,46 +278,109 @@ function SubscribeModal({
     const [pageId, pageAccessToken, formId] = val.split("_");
     setLoadingFields(true);
 
-    window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, (response) => {
-      const questions = (response && Array.isArray(response.questions) ? response.questions : []);
+    // Optional: also fetch mapped fields when creating new (for consistency)
+    Promise.all([
+      facebookApi.getMappedFields(corporateId, pageId, formId).catch(() => []),
+      new Promise((resolve) => {
+        window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, resolve);
+      })
+    ])
+    .then(([mappedRes, fbResponse]) => {
+      console.log('[FB API] Full response for form', formId, fbResponse);
+
+      if (fbResponse?.error) {
+        console.error('[FB API Error]', fbResponse.error);
+        toast.error(`Facebook API error: ${fbResponse.error.message || 'Unknown'}`);
+        setLoadingFields(false);
+        return;
+      }
+
+      const questions = Array.isArray(fbResponse?.questions) ? fbResponse.questions : [];
+      console.log('[FB Questions] Count:', questions.length, 'Keys:', questions.map(q => q.key || 'no-key'));
+
       const defaultMap = {};
       questions.forEach((q) => {
-        if (q.key) defaultMap[q.key] = "";
+        if (q?.key) defaultMap[q.key] = "";
       });
+
+      const mappedArray = Array.isArray(mappedRes) ? mappedRes : (mappedRes?.data || []);
+
+      mappedArray.forEach((m) => {
+        if (m.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
+          defaultMap[m.form_field_key] = String(m.cn_field_id || "");
+          console.log(`Applied mapping: ${m.form_field_key} → ${m.cn_field_id}`);
+        } else if (m.form_field_key) {
+          console.warn(`Saved mapping ignored - key not in current form: ${m.form_field_key}`);
+        }
+      });
+
       setFieldMap(defaultMap);
+      setFormQuestions(questions);
+      setLoadingFields(false);
+    })
+    .catch(err => {
+      console.error(err);
       setLoadingFields(false);
     });
   };
 
   const updateFields = async (formVal, formId, subscriptionId, formTableId, courseVal, targetLocationVal) => {
     if (!formVal || !formId) return;
+
     const [pageId, pageAccessToken] = formVal.split("_");
 
     setLoadingFields(true);
 
     try {
+      // Fetch backend mappings first
       const mapped = await facebookApi.getMappedFields(corporateId, pageId, formId);
       const mappedArray = Array.isArray(mapped) ? mapped : (mapped?.data || []);
 
-      window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, (response) => {
-        const questions = (response && Array.isArray(response.questions) ? response.questions : []);
-        const defaultMap = {};
-        questions.forEach((q) => {
-          if (q.key) defaultMap[q.key] = "";
-        });
-
-        mappedArray.forEach((m) => {
-          if (m.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
-            defaultMap[m.form_field_key] = String(m.cn_field_id || "");
+      // Then fetch Facebook form questions (promise wrapper for cleaner error handling)
+      const fbResponse = await new Promise((resolve, reject) => {
+        window.FB.api(
+          `/${formId}?fields=id,name,questions`,
+          { access_token: pageAccessToken },
+          (response) => {
+            if (response?.error) {
+              reject(new Error(response.error.message || "Facebook API error"));
+            } else {
+              resolve(response);
+            }
           }
-        });
-
-        setFieldMap(defaultMap);
-        setLoadingFields(false);
+        );
       });
+
+      console.log('[updateFields] FB response:', fbResponse);
+
+      const questions = Array.isArray(fbResponse?.questions) ? fbResponse.questions : [];
+      console.log('[updateFields] Questions count:', questions.length, 'Keys:', questions.map(q => q.key || 'no-key'));
+
+      const defaultMap = {};
+      questions.forEach((q) => {
+        if (q?.key) {
+          defaultMap[q.key] = "";
+        }
+      });
+
+      // Apply saved mappings only if key still exists
+      mappedArray.forEach((m) => {
+        if (m?.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
+          defaultMap[m.form_field_key] = String(m.cn_field_id || "");
+        }
+      });
+
+      setFieldMap(defaultMap);
+      setFormQuestions(questions);
+      setCourse(courseVal || "");
+      setTargetLocation(targetLocationVal || "");
     } catch (err) {
-      console.error(err);
-      setLoadingFields(false);
+      console.error("[updateFields] Error:", err);
+      toast.error("Failed to load form fields: " + (err.message || "Unknown error"));
+      setFieldMap({});
+      setFormQuestions([]);
+    } finally {
+      setLoadingFields(false); // always stop loading
     }
   };
 
@@ -439,10 +503,19 @@ function SubscribeModal({
             <h4 className="text-sm font-medium mb-2">Field Mapping</h4>
             <div className="border rounded p-3 bg-gray-50 max-h-60 overflow-auto">
               {loadingFields ? (
-                <div className="text-center py-4">Loading fields...</div>
-              ) : Object.keys(fieldMap).length === 0 ? (
-                <div className="text-center py-4 text-gray-500">No fields loaded</div>
-              ) : (
+                  <div className="text-center py-4">Loading form questions from Facebook...</div>
+                ) : Object.keys(fieldMap).length === 0 ? (
+                  <div className="text-center py-6 text-amber-700 bg-amber-50 rounded">
+                    <p className="font-medium">No questions found in this lead form</p>
+                    <p className="text-sm mt-2">
+                      This form might have no fields configured, or Facebook isn't returning questions.<br />
+                      <strong>Check in Ads Manager:</strong> Page → Publishing Tools → Instant Forms → edit the form → ensure it has at least Name/Email/Phone.
+                    </p>
+                    <p className="text-xs mt-3 text-gray-600">
+                      Expected keys (examples): full_name, email, phone_number, company_name
+                    </p>
+                  </div>
+                ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
@@ -453,7 +526,7 @@ function SubscribeModal({
                   <tbody>
                     {Object.keys(fieldMap).map((k) => (
                       <tr key={k} className="border-t">
-                        <td className="py-2 pr-4">{k}</td>
+                        <td className="py-2 pr-4">{formQuestions.find(q => q.key === k)?.label || k}</td>
                         <td className="py-2">
                           <select
                             value={fieldMap[k] || ""}

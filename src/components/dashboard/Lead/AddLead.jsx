@@ -354,55 +354,30 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   // Normalize mobile: remove whitespace, parentheses, dashes, dots; keep leading + if present
   const normalizeMobile = (raw) => {
     if (!raw) return "";
-    const trimmed = String(raw).trim();
-    if (!trimmed) return "";
-    // Remove all non-digit characters except leading +
-    const hasPlus = trimmed.startsWith("+");
-    let digits = trimmed.replace(/[^\d]/g, "");
-    // Remove leading 0 if present (for Indian numbers)
-    if (digits.startsWith("0") && digits.length > 10) {
+    const str = String(raw).trim();
+    if (!str) return "";
+
+    let hadPlus = str.startsWith("+");
+    let digits = str.replace(/[^\d]/g, "");
+
+    // Optional: remove leading 0 only if it looks like Indian local number
+    if (!hadPlus && digits.startsWith("0") && digits.length === 11) {
       digits = digits.slice(1);
     }
-    return hasPlus ? "+" + digits : digits;
+
+    return hadPlus ? "+" + digits : digits;
   };
 
   const isValidMobile = (raw, countryCode = "IN") => {
-    const original = String(raw).trim();
-    if (original === "") return true; // empty allowed
+    if (!raw || String(raw).trim() === "") return true;
 
-    // Remove all formatting characters
-    let digits = original.replace(/[\s\-\.\(\)]/g, "");
-    
-    // Handle + prefix
-    const hasPlus = digits.startsWith("+");
-    if (hasPlus) {
-      digits = digits.slice(1);
-    }
+    const cleaned = normalizeMobile(raw);
+    if (!cleaned) return false;
 
-    // Must be digits only after removing +
-    if (!/^\d+$/.test(digits)) return false;
+    const pureDigits = cleaned.startsWith("+") ? cleaned.slice(1) : cleaned;
 
-    // Remove leading 0 for length check (common in Indian numbers)
-    let significantDigits = digits;
-    if (significantDigits.startsWith("0")) {
-      significantDigits = significantDigits.slice(1);
-    }
-
-    // Remove leading 91 for Indian numbers (country code)
-    if (countryCode === "IN") {
-      if (significantDigits.startsWith("91") && significantDigits.length >= 12) {
-        significantDigits = significantDigits.slice(2);
-      }
-    }
-
-    // Validate length based on country
-    if (countryCode === "IN") {
-      // Indian numbers: exactly 10 digits
-      return significantDigits.length === 10 && /^[6-9]\d{9}$/.test(significantDigits);
-    }
-    
-    // International: 7-15 digits (E.164 standard)
-    return significantDigits.length >= 7 && significantDigits.length <= 15;
+    // Accept 8–15 digits (very common international rule of thumb)
+    return pureDigits.length >= 8 && pureDigits.length <= 15;
   };
 
   /**
