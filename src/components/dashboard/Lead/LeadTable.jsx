@@ -459,10 +459,10 @@ export default function LeadsTable({
         }
 
         return (
-            <div className="flex items-start gap-3 min-w-[180px] max-w-[480px]">
+            <div className="min-w-[220px] max-w-[520px] space-y-3">
             {/* Audio player on left, fixed width */}
             {audioSrc && (
-                <div className="flex-shrink-0">
+                <div className="h-8 w-[220px] min-w-[180px]">
                 <audio
                     controls
                     className="h-8 w-[160px] min-w-[140px]"
@@ -476,11 +476,11 @@ export default function LeadsTable({
 
             {/* Remarks text */}
             <div
-                className="flex-1 text-sm leading-5 text-gray-800 break-words whitespace-normal"
+                className="text-sm text-gray-800 whitespace-pre-line break-words leading-relaxed"
                 style={{
-                lineHeight: "1.4",
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
+                    lineHeight: "1.45",
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
                 }}
                 dangerouslySetInnerHTML={{ __html: displayText }}
             />

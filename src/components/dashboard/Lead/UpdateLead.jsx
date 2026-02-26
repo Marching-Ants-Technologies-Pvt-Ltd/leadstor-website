@@ -322,11 +322,30 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         if (originalFields.status != fields.status) {
           //notificationsPostStatusUpdate(fields.invitationId, fields.status);
         }
+        
+        // Refresh lead status summary to update card counts
+        const getLeadStatusSummary = async() => {
+          const res = await xFetch({
+            path: `/services/dashboard/getLeadStatusSummary?userId=${User?._id}`,
+          });
+          if (!res) return;
+          if (window.updateStatusCounts) {
+            window.updateStatusCounts({
+              overdue: res.data.overdue || 0,
+              todaysFollowUps: res.data.todaysFollowUps || 0,
+              newLeads: res.data.newLeads || 0,
+              hotLeads: res.data.hotLeads || 0,
+              conversions: res.data.conversions || 0,
+            });
+          }
+        }
+        getLeadStatusSummary();
+        
         if (onSuccess) onSuccess();
         if(Corporate?.is_ai_nextstep_enabled == 1){
           getAINextStep(payload.invitationId);
         }
-          
+
       } else {
         toast.error(response?.error || "Failed to update candidate.");
       }

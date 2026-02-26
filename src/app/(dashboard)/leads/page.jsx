@@ -28,6 +28,13 @@ export default function Leads() {
     const [selectedLeadIds, setSelectedLeadIds] = useState([]);
     const [branchId, setBranchId] = useState(null);
     const [testInfo, setTestInfo] = useState({ testId: null, testType: null });
+    const [statusCounts, setStatusCounts] = useState({
+        overdue: 0,
+        todaysFollowUps: 0,
+        newLeads: 0,
+        hotLeads: 0,
+        conversions: 0,
+    });
 
     // Download notification state
     const [downloadNotification, setDownloadNotification] = useState({
@@ -96,6 +103,17 @@ export default function Leads() {
         if (needsCleanup) {
             localStorage.removeItem('LeadFilters');
         }
+    }, []);
+
+    // Handler for updating status counts from child components (AddLead, UpdateLead)
+    useEffect(() => {
+        window.updateStatusCounts = (counts) => {
+            setStatusCounts(counts);
+        };
+
+        return () => {
+            delete window.updateStatusCounts;
+        };
     }, []);
 
     // Handler for reordering columns
@@ -219,6 +237,8 @@ export default function Leads() {
                         branchId={branchId}
                         onBackToBranches={handleBackToBranches}
                         onViewPayments={handleViewPayments}
+                        statusCounts={statusCounts}
+                        setStatusCounts={setStatusCounts}
                     />
                     {/* NORMAL LEADS TABLE */}
                     <div className="flex-1 flex flex-col px-4 gap-3 overflow-hidden">
