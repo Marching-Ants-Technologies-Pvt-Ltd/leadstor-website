@@ -59,7 +59,7 @@ export default function AppliedFilters({ onOpenAdvanceFilter }) {
     // Listen for showAppliedFilter calls (your existing global mechanism)
     useEffect(() => {
         window.showAppliedFilter = (items = []) => {
-        setFilters(items?.length > 0 ? items : []);
+        setFilterOptions(items?.length > 0 ? items : []);
         };
         return () => {
             delete window.showAppliedFilter;

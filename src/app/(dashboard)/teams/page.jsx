@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
 import { Dialog } from '@headlessui/react';
@@ -311,6 +312,8 @@ export default function Teams() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
+      <ToastContainer position="top-right" autoClose={3000} />
+
       {/* Header */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-3">

@@ -30,7 +30,9 @@ export default function LeadsMenu({
   onDeleteSelected,
   branchId,
   onBackToBranches,
-  onViewPayments
+  onViewPayments,
+  statusCounts: parentStatusCounts,
+  setStatusCounts: setParentStatusCounts
 }) {
   const router = useRouter();
 
@@ -44,13 +46,23 @@ export default function LeadsMenu({
   const [showExportModal, setShowExportModal] = useState(false);
   const [dailyReport, setDailyReport] = useState(false);
 
-  const [statusCounts, setStatusCounts] = useState({
-    overdue: 0,
-    todaysFollowUps: 0,
-    newLeads: 0,
-    hotLeads: 0,
-    conversions: 0,
-  });
+  const [statusCounts, setStatusCounts] = useState(
+    parentStatusCounts || {
+      overdue: 0,
+      todaysFollowUps: 0,
+      newLeads: 0,
+      hotLeads: 0,
+      conversions: 0,
+    }
+  );
+
+  // Sync with parent status counts when they change
+  useEffect(() => {
+    if (parentStatusCounts && setParentStatusCounts) {
+      setStatusCounts(parentStatusCounts);
+    }
+  }, [parentStatusCounts]);
+
   const [search, setSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
