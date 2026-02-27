@@ -22,8 +22,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [showTimeline, setShowTimeline] = useState(false);
   const [displayRemarks, setDisplayRemarks] = useState("");
   const [aiNextStep, setAiNextStep] = useState("");
-  const [aiThreadData, setAiThreadData] = useState(null); // { thread_id, response, action_type, content }
-  const [loadingAI, setLoadingAI] = useState(false);
   const FIELD_GROUPS = {
     leadDetails: ['mobile', 'firstName', 'emailId', 'location'],
     salesUpdate: ['status', 'leadProbability'],
@@ -366,87 +364,20 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
               path: "/services/invite/getNextStepForLead",
               payload,
           });
+          if (response.status) {
+              setAiThreadData({
+                  thread_id: response.thread_id,
+                  response: response.response,
+                  action_type: response.action_type,
+                  content: response.content,
+                  created_at: new Date().toISOString(),
+              });
+            }
           console.log("AI Next Step Response:", response);
       } catch (error) {
           console.error("Error fetching AI Next Step:", error);
       }
   }
-
-  // Get AI recommendation with thread-based conversation
-  const getAIRecommendation = async () => {
-    if (loadingAI) return;
-    
-    setLoadingAI(true);
-    try {
-      // Step 1: Fetch timeline data
-      const timelineRes = await xFetch({
-        path: "/services/invite/getCandidateTimeLine",
-        payload: { invitationId: selectedLead.invitationId, time: Date.now() },
-      });
-
-      // Step 2: Create OpenAI thread with timeline
-      const threadPayload = {
-        invitationId: selectedLead.invitationId,
-        leadName: selectedLead.firstName || "Unknown",
-        mobile: selectedLead.mobile || "",
-        email: selectedLead.emailId || "",
-        currentStatus: selectedLead.status || "",
-        timeline: timelineRes || {},
-      };
-
-      const response = await xFetch({
-        method: "POST",
-        path: "/services/invite/createAIThread",
-        payload: threadPayload,
-      });
-
-      if (response && response.thread_id && response.response) {
-        setAiThreadData({
-          thread_id: response.thread_id,
-          response: response.response,
-          action_type: response.action_type || 'call', // call, whatsapp, email
-          content: response.content || '',
-          created_at: new Date().toISOString(),
-        });
-        toast.success("AI recommendation generated!");
-      } else {
-        toast.error("Failed to get AI recommendation");
-      }
-    } catch (error) {
-      console.error("Error getting AI recommendation:", error);
-      toast.error(error.message || "Failed to get AI recommendation");
-    } finally {
-      setLoadingAI(false);
-    }
-  }
-
-  // Get action icon based on type
-  const getActionIcon = (actionType) => {
-    switch (actionType?.toLowerCase()) {
-      case 'call':
-        return '📞';
-      case 'whatsapp':
-        return '💬';
-      case 'email':
-        return '📧';
-      default:
-        return '✨';
-    }
-  };
-
-  // Get action color based on type
-  const getActionColor = (actionType) => {
-    switch (actionType?.toLowerCase()) {
-      case 'call':
-        return 'bg-blue-50 border-blue-200 text-blue-900';
-      case 'whatsapp':
-        return 'bg-green-50 border-green-200 text-green-900';
-      case 'email':
-        return 'bg-purple-50 border-purple-200 text-purple-900';
-      default:
-        return 'bg-amber-50 border-amber-200 text-amber-900';
-    }
-  };
 
   const fetchOwners = () => {
     xFetch({
@@ -590,7 +521,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                       </div>
                     )}
 
-                    {/* AI NEXT STEP (Legacy) */}
+                    {/* AI NEXT STEP */}
                     {aiNextStep && (
                       <div className="ai-card">
                         <span className="ai-icon">✨</span>
@@ -600,62 +531,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                         </div>
                       </div>
                     )}
-
-                    {/* AI RECOMMENDATION WITH THREAD */}
-                    <div className="mt-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-gray-700">AI Recommendation</h4>
-                        <button
-                          type="button"
-                          onClick={getAIRecommendation}
-                          disabled={loadingAI}
-                          className="px-3 py-1.5 text-xs bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-                        >
-                          {loadingAI ? (
-                            <>
-                              <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Analyzing...
-                            </>
-                          ) : (
-                            <>
-                              <span>🤖</span>
-                              Generate Recommendation
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      {aiThreadData && (
-                        <div className={`rounded-lg border p-4 ${getActionColor(aiThreadData.action_type)}`}>
-                          <div className="flex items-start gap-3">
-                            <span className="text-2xl">{getActionIcon(aiThreadData.action_type)}</span>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <span className="text-xs font-semibold uppercase tracking-wide">
-                                  Recommended Action: {aiThreadData.action_type}
-                                </span>
-                                <span className="text-xs opacity-70">
-                                  {new Date(aiThreadData.created_at).toLocaleString()}
-                                </span>
-                              </div>
-                              <p className="text-sm font-medium mb-2">{aiThreadData.response}</p>
-                              {aiThreadData.content && (
-                                <div className="bg-white/50 rounded p-3 text-sm">
-                                  <p className="font-medium text-xs mb-1">Suggested Content:</p>
-                                  <p className="whitespace-pre-wrap">{aiThreadData.content}</p>
-                                </div>
-                              )}
-                              {aiThreadData.thread_id && (
-                                <p className="text-xs mt-2 opacity-60">Thread ID: {aiThreadData.thread_id}</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
 
                     {/* NOTES */}
                     <div className="mt-4">
