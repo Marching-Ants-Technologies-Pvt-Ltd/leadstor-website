@@ -689,7 +689,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
                 className={`p-2 rounded-lg hover:bg-white transition ${refreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 title="Refresh filters"
               >
-                <i className={`ri-refresh-line text-lg ${refreshing ? 'ri-spin' : ''}`}></i>
+                <i className={`ri-refresh-line text-lg ${refreshing ? 'animate-spin' : ''}`}></i>
               </button>
             </div>
             <button

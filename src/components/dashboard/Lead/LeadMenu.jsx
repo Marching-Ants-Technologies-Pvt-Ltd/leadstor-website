@@ -8,7 +8,7 @@ import {
   LeadsCurrentPage,
   User,
   Corporate,
-  TotalLeads, LeadSearch 
+  TotalLeads, LeadSearch
 } from '@/utility/TinyDB';
 import ManualCandidate from '@/components/dashboard/Lead/ManualCandidate.jsx';
 import SendEmailModal from '@/components/dashboard/Lead/SendEmailModal.jsx';
@@ -16,6 +16,7 @@ import BulkUpdateDrawer from '@/components/dashboard/Lead/BulkUpdateDrawer';
 import DailyReportModal from '@/components/dashboard/Lead/DailyReportModal.jsx';
 import ExportEnquiriesModal from '@/components/dashboard/Lead/ExportEnquiriesModal.jsx';
 import { xFetch } from '@/utility/xFetch';
+import { showAppliedFilter } from '@/components/dashboard/Lead/AppliedFilters';
 
 export default function LeadsMenu({
   onOpenAdvanceFilter,
@@ -115,6 +116,119 @@ export default function LeadsMenu({
     LeadsCurrentPage.setValue(1);
     window.tableRefresh();
     setOpenMenu(null);
+  };
+
+  // Handle card click to filter leads
+  const handleCardClick = (cardType) => {
+    const filters = [];
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayEnd = new Date(todayStart);
+    todayEnd.setDate(todayEnd.getDate() + 1);
+    const tomorrowStart = new Date(todayEnd);
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const nextMonthStart = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+
+    // Format date for API (dd-MMM-yyyy)
+    const formatDate = (date) => {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = date.toLocaleString('en-US', { month: 'short' });
+      const year = date.getFullYear();
+      return `${day}-${month}-${year}`;
+    };
+
+    switch (cardType) {
+      case 'overdue':
+        // Overdue: followup_date = today (followupDate = 27-Feb-2026)
+        filters.push({
+          title: 'Follow-up Date',
+          value: formatDate(todayStart),
+          query: 'followupDate',
+          displayValue: formatDate(todayStart)
+        });
+        break;
+
+      case 'todaysFollowUps':
+        // Today's Follow-ups: followup_date >= today start AND followup_date < tomorrow start
+        filters.push({
+          title: 'Button',
+          value: 'FilterLeads',
+          query: 'button'
+        });
+        filters.push({
+          title: "Today's Follow-ups",
+          value: formatDate(todayStart),
+          query: 'followupDate',
+          displayValue: formatDate(todayStart)
+        });
+        break;
+
+      case 'newLeads':
+        // New Leads: status = 'Invited'
+        filters.push({
+          title: 'Button',
+          value: 'FilterLeads',
+          query: 'button'
+        });
+        filters.push({
+          title: 'Status',
+          value: 'Invited',
+          query: 'status',
+          displayValue: 'Invited'
+        });
+        break;
+
+      case 'hotLeads':
+        // Hot Leads: status = 'Hot Lead'
+        filters.push({
+          title: 'Button',
+          value: 'FilterLeads',
+          query: 'button'
+        });
+        filters.push({
+          title: 'Status',
+          value: 'Hot Lead',
+          query: 'status',
+          displayValue: 'Hot Lead'
+        });
+        break;
+
+      case 'conversions':
+        // Conversions: status = 'Joined' AND created_date >= month start
+        filters.push({
+          title: 'Button',
+          value: 'FilterLeads',
+          query: 'button'
+        });
+        filters.push({
+          title: 'Status',
+          value: 'Joined',
+          query: 'status',
+          displayValue: 'Joined'
+        });
+        filters.push({
+          title: 'From Date',
+          value: formatDate(monthStart),
+          query: 'frmDate',
+          displayValue: formatDate(monthStart)
+        });
+        break;
+
+      default:
+        return;
+    }
+
+    // Apply filters
+    LeadFilters.setValue(filters);
+    LeadsCurrentPage.setValue(1);
+
+    // Show applied filter bar
+    showAppliedFilter(filters);
+
+    // Refresh table
+    if (window.tableRefresh) {
+      window.tableRefresh();
+    }
   };
 
   const getLeadStatusSummary = async() => {
@@ -376,17 +490,22 @@ export default function LeadsMenu({
         </div>
       </div>
 
-      {/* KPI BAR */}
+      {/* KPI BAR - CLICKABLE CARDS */}
       <div className="flex gap-2 px-4 py-2 bg-[#f5f6f8] border-b">
         {[
-          [statusCounts.overdue, 'Overdue', 'text-red-600'],
-          [statusCounts.todaysFollowUps, "Today's Follow-ups", 'text-amber-500'],
-          [statusCounts.newLeads, 'New Leads', 'text-blue-600'],
-          [statusCounts.hotLeads, 'Hot Leads', 'text-fuchsia-600'],
-          [statusCounts.conversions, 'Conversions this month', 'text-green-600'],
-        ].map(([count, label, color], i) => (
-          <div key={i} className="flex-1 bg-white rounded-lg px-3 py-2 flex items-center gap-3 shadow-sm">
-            <div className={`text-xl font-bold ${color}`}>{count}</div>
+          [statusCounts.overdue, 'Overdue', 'text-red-600', 'overdue', 'Click to view overdue leads'],
+          [statusCounts.todaysFollowUps, "Today's Follow-ups", 'text-amber-500', 'todaysFollowUps', 'Click to view today\'s follow-ups'],
+          [statusCounts.newLeads, 'New Leads', 'text-blue-600', 'newLeads', 'Click to view new leads'],
+          [statusCounts.hotLeads, 'Hot Leads', 'text-fuchsia-600', 'hotLeads', 'Click to view hot leads'],
+          [statusCounts.conversions, 'Conversions this month', 'text-green-600', 'conversions', 'Click to view conversions'],
+        ].map(([count, label, color, cardType, tooltip], i) => (
+          <div 
+            key={i} 
+            className="flex-1 bg-white rounded-lg px-3 py-2 flex items-center gap-3 shadow-sm cursor-pointer hover:shadow-md hover:bg-gray-50 transition-all group"
+            onClick={() => handleCardClick(cardType)}
+            title={tooltip}
+          >
+            <div className={`text-xl font-bold ${color} group-hover:scale-110 transition-transform`}>{count}</div>
             <div className="text-xs text-slate-500">{label}</div>
           </div>
         ))}

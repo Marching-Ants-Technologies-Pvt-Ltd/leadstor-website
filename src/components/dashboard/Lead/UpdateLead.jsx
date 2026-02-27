@@ -369,6 +369,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           console.error("Error fetching AI Next Step:", error);
       }
   }
+
   const fetchOwners = () => {
     xFetch({
           path: '/services/profile/getUsers',
