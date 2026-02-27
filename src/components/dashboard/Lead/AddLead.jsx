@@ -406,14 +406,59 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       );
     };
 
-    const emailCol   = findCol(["email", "mail", "e-mail"]);
-    const mobileCol  = findCol(["mobile", "phone", "contact", "number", "cell", "whatsapp"]);
-    const firstNameCol = findCol(["first name", "firstname", "first"]);
-    const lastNameCol  = findCol(["last name", "lastname", "last"]);
-    const sourceCol    = findCol(["source"]);
-    const courseCol    = findCol(["course", "service", "program", "preferred course"]);
-    const ownerCol     = findCol(["owner", "assigned", "assigned user", "user"]);
-    const statusCol    = findCol(["status"]);
+    // const emailCol   = findCol(["email", "mail", "e-mail"]);
+    // const mobileCol  = findCol(["mobile", "phone", "contact", "number", "cell", "whatsapp"]);
+    // const firstNameCol = findCol(["first name", "firstname", "first"]);
+    // const lastNameCol  = findCol(["last name", "lastname", "last"]);
+    // const sourceCol    = findCol(["source"]);
+    // const courseCol    = findCol(["course"]);
+    // const ownerCol     = findCol(["owner", "assigned", "assigned user", "user"]);
+    // const statusCol    = findCol(["status"]);
+
+    // 1. Create a lookup: dataField → semantic column type
+    const columnTypes = {};
+
+    fields.forEach((field, colIndex) => {
+      const df = field?.dataField?.toLowerCase();
+
+      if (!df) return;
+
+      if (df.includes("email") || df === "email") {
+        columnTypes.email = colIndex;
+      }
+      else if (["mobile", "phone", "contact", "whatsapp", "mobilenumber"].some(k => df.includes(k))) {
+        columnTypes.mobile = colIndex;
+      }
+      else if (["firstname", "first_name", "fname", "first"].some(k => df.includes(k))) {
+        columnTypes.firstName = colIndex;
+      }
+      else if (["lastname", "last_name", "lname", "last"].some(k => df.includes(k))) {
+        columnTypes.lastName = colIndex;
+      }
+      else if (df.includes("source")) {
+        columnTypes.source = colIndex;
+      }
+      else if (df.includes("course") || df === "preferredcourse" || df === "additionalinfo") {
+        // ────────────── important part ──────────────
+        columnTypes.course = colIndex;
+      }
+      else if (["owner", "assignedto", "assigned_user", "userid", "assigned"].some(k => df.includes(k))) {
+        columnTypes.owner = colIndex;
+      }
+      else if (df.includes("status")) {
+        columnTypes.status = colIndex;
+      }
+    });
+
+    // 2. Now use these instead of findCol()
+    const emailCol    = columnTypes.email    ?? -1;
+    const mobileCol   = columnTypes.mobile   ?? -1;
+    const firstNameCol = columnTypes.firstName ?? -1;
+    const lastNameCol  = columnTypes.lastName ?? -1;
+    const sourceCol    = columnTypes.source   ?? -1;
+    const courseCol    = columnTypes.course   ?? -1;
+    const ownerCol     = columnTypes.owner    ?? -1;
+    const statusCol    = columnTypes.status   ?? -1;
 
     const raw = hot.getSourceData(); // array of objects (since data is array-of-objects)
 
