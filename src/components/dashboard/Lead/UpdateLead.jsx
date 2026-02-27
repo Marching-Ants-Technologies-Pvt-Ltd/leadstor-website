@@ -364,15 +364,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
               path: "/services/invite/getNextStepForLead",
               payload,
           });
-          if (response.status) {
-              setAiThreadData({
-                  thread_id: response.thread_id,
-                  response: response.response,
-                  action_type: response.action_type,
-                  content: response.content,
-                  created_at: new Date().toISOString(),
-              });
-            }
           console.log("AI Next Step Response:", response);
       } catch (error) {
           console.error("Error fetching AI Next Step:", error);
