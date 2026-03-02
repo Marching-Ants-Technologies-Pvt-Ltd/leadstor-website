@@ -23,7 +23,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [displayRemarks, setDisplayRemarks] = useState("");
   const [aiNextStep, setAiNextStep] = useState("");
   const FIELD_GROUPS = {
-    leadDetails: ['mobile', 'firstName', 'emailId', 'location'],
+    leadDetails: ['mobile', 'altMobile','firstName', 'emailId', 'location'],
     salesUpdate: ['status', 'leadProbability'],
     notes: ['remarks'],
     context: ['course', 'source', 'assignedUserId']
