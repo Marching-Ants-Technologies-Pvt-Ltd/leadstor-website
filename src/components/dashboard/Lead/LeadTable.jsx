@@ -250,7 +250,7 @@ export default function LeadsTable({
                     title="WhatsApp"
                     onClick={(e) => {
                         e.stopPropagation();
-                        window.open(`https://wa.me/91${phone}`, "_blank");
+                        window.open(`https://wa.me/${phone}?text=hello`, "_blank");
                     }}
                 />
 
@@ -422,7 +422,6 @@ export default function LeadsTable({
         const audioMatch = remarksText.match(/<audio[^>]*src=["']([^"']+)["'][^>]*>/i);
         if (audioMatch) {
             audioSrc = audioMatch[1];
-            // Remove audio tag from text
             remarksText = remarksText.replace(/<audio[^>]*>.*?<\/audio>/gi, "").trim();
         }
 
@@ -436,25 +435,26 @@ export default function LeadsTable({
             safeText = `${row.latestRemarksDate}: ${safeText}`;
         }
 
-        // Truncate + expand logic (same as before, but cleaner HTML)
-        let displayText = safeText;
-        if (safeText.length > 120) {
-            const short = safeText.substring(0, 120);
-            displayText = `
-            <span>${short} <span class="text-blue-600 cursor-pointer hover:underline" 
-                onclick="this.parentElement.querySelector('.full-remarks').style.display='block'; 
-                        this.style.display='none';">(view more)</span></span>
-            <div class="full-remarks hidden mt-1">
-                ${safeText}
-                <span class="text-red-600 cursor-pointer hover:underline ml-2" 
-                onclick="this.parentElement.style.display='none'; 
-                        this.parentElement.parentElement.querySelector('span').style.display='inline';">(hide)</span>
-            </div>
-            `;
-        }
+        const truncated = safeText.length > 120;
+        const short = truncated ? safeText.substring(0, 120) : safeText;
 
-        // No content at all
-        if ((!displayText || displayText.trim() === "") && !audioSrc) {
+        // We give each expandable block a unique-ish id
+        const blockId = `remarks-${row.id || Math.random().toString(36).slice(2, 10)}`;
+
+        // Truncate + expand logic (same as before, but cleaner HTML)
+        const html = truncated ? `
+            <div data-remarks-id="${blockId}">
+                <span>${short} <span class="text-blue-600 cursor-pointer hover:underline view-more" 
+                    data-action="expand"> (view more)</span></span>
+                <div class="full-remarks hidden mt-1">
+                    ${safeText}
+                    <span class="text-red-600 cursor-pointer hover:underline ml-2 view-more" 
+                        data-action="collapse"> (hide)</span>
+                </div>
+            </div>
+        ` : safeText;
+
+        if ((!html || html.trim() === "") && !audioSrc) {
             return <div className="text-gray-400">-</div>;
         }
 
@@ -482,7 +482,7 @@ export default function LeadsTable({
                     wordBreak: "break-word",
                     overflowWrap: "break-word",
                 }}
-                dangerouslySetInnerHTML={{ __html: displayText }}
+                dangerouslySetInnerHTML={{ __html: html }}
             />
             </div>
         );
@@ -647,6 +647,30 @@ export default function LeadsTable({
             delete window.tableRefresh;
         };
     }, [testInfo]);
+
+    useEffect(() => {
+        const handleClick = (e) => {
+            const target = e.target.closest('.view-more');
+            if (!target) return;
+
+            const container = target.closest('[data-remarks-id]');
+            if (!container) return;
+
+            const full = container.querySelector('.full-remarks');
+            const shortSpan = container.querySelector('span:not(.full-remarks span)');
+
+            if (target.dataset.action === 'expand') {
+                full.style.display = 'block';
+                shortSpan.style.display = 'none';
+            } else if (target.dataset.action === 'collapse') {
+                full.style.display = 'none';
+                shortSpan.style.display = 'inline';
+            }
+        };
+
+        document.addEventListener('click', handleClick);
+        return () => document.removeEventListener('click', handleClick);
+    }, []);
 
     /* =======================
      TANSTACK COLUMN DEFINITIONS
