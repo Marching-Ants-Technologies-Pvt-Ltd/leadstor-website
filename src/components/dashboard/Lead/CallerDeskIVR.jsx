@@ -138,10 +138,10 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
           const services = [];
           if (res.data.hasKnowlarityIntegration)   services.push(serviceConfigs.knowlarity);
           if (res.data.hasVoxbayIntegration)       services.push(serviceConfigs.voxbay);
-          if (res.data.hasSmartfloIntegration)     services.push(serviceConfigs.smartflo);
-          if (res.data.hasSmartfloIVRIntegration)  services.push(serviceConfigs.smartflo_ivr);
+          if (res.data.hasSmartTGIntegration)     services.push(serviceConfigs.smartTG);
+          if (res.data.hasSmartfloIntegration)  services.push(serviceConfigs.smartflo);
           if (res.data.hasCallerDeskIntegration)   services.push(serviceConfigs.callerdesk);
-
+          console.log('Available IVR services:', services);
           setIvrServices(services);
           if (services.length > 0) setSelectedIvrService(services[0].type);
         } else {
@@ -222,8 +222,8 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
       const endpointMap = {
         knowlarity: '/services/invite/callKnowlarity',
         voxbay: '/services/invite/callVoxbay',
-        smartflo: '/services/invite/callSmartflo',
-        smartflo_ivr: '/services/invite/callSmartfloIVR',
+        smartflo: '/services/invite/callSmartfloIVR',
+        smartTG: '/services/invite/callSmartflo',
         callerdesk: '/services/invite/callCallerDeskIVR',
       };
 
@@ -275,7 +275,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 		}
 
     } catch (err) {
-	  console.error(err);
+	    console.error(err);
       setCallStatus('failed');
       setCallStatusMessage('Network error. Failed to connect.');
       toast.error('Failed to connect');
