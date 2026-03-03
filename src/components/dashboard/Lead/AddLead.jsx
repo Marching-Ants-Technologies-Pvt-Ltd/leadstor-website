@@ -56,7 +56,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       if (res && Array.isArray(res)) {
         // Remove unwanted items
         let filtered = res.filter(
-          (f) => !["action", "updateTime", "leadProbability","courseMode"].includes(f.dataField)
+          (f) => !["action", "updateTime", "leadProbability","courseMode","altMobile"].includes(f.dataField)
         );
 
         // Ensure lastName exists; inject if missing (as requested earlier)
@@ -426,7 +426,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       if (df.includes("email") || df === "email") {
         columnTypes.email = colIndex;
       }
-      else if (["mobile", "phone", "contact", "whatsapp", "mobilenumber"].some(k => df.includes(k))) {
+      else if (["mobile", "phone"].some(k => df.includes(k))) {
         columnTypes.mobile = colIndex;
       }
       else if (["firstname", "first_name", "fname", "first"].some(k => df.includes(k))) {
