@@ -488,64 +488,64 @@ export default function LeadsTable({
         );
     };
 
-    const renderAINextStepCell = (row) => {
-        let content = row.aINextStep || "";
+    // const renderAINextStepCell = (row) => {
+    //     let content = row.aINextStep || "";
 
-        const div = document.createElement("div");
-        div.innerText = content;
-        let safeText = div.innerHTML;
+    //     const div = document.createElement("div");
+    //     div.innerText = content;
+    //     let safeText = div.innerHTML;
 
-        let finalText = "";
+    //     let finalText = "";
 
-        if (safeText.length > 120) {
-            const shortText = safeText.substring(0, 120);
+    //     if (safeText.length > 120) {
+    //         const shortText = safeText.substring(0, 120);
 
-            finalText = `
-                <div style="min-width:155px;">
-                    <div>
-                        ${shortText}
-                        <span style="cursor:pointer;color:#1976d2;" 
-                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
-                                    this.parentElement.style.display='none';">
-                            ...(view)
-                        </span>
-                    </div>
+    //         finalText = `
+    //             <div style="min-width:155px;">
+    //                 <div>
+    //                     ${shortText}
+    //                     <span style="cursor:pointer;color:#1976d2;" 
+    //                         onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
+    //                                 this.parentElement.style.display='none';">
+    //                         ...(view)
+    //                     </span>
+    //                 </div>
 
-                    <div class="full-text" style="display:none;">
-                        ${safeText}
-                        <span style="cursor:pointer;color:red;margin-left:6px;"
-                            onclick="this.parentElement.style.display='none';
-                                    this.parentElement.parentElement.querySelector('div').style.display='block';">
-                            (hide)
-                        </span>
-                    </div>
-                </div>
-            `;
-        } else {
-            finalText = safeText;
-        }
+    //                 <div class="full-text" style="display:none;">
+    //                     ${safeText}
+    //                     <span style="cursor:pointer;color:red;margin-left:6px;"
+    //                         onclick="this.parentElement.style.display='none';
+    //                                 this.parentElement.parentElement.querySelector('div').style.display='block';">
+    //                         (hide)
+    //                     </span>
+    //                 </div>
+    //             </div>
+    //         `;
+    //     } else {
+    //         finalText = safeText;
+    //     }
 
-        if (!finalText || finalText === "null") {
-            return "-";
-        }
+    //     if (!finalText || finalText === "null") {
+    //         return "-";
+    //     }
 
-        const textStyles = {
-            whiteSpace: "normal",
-            wordBreak: "normal",
-            overflowWrap: "break-word",
-            maxWidth: "480px",
-            lineHeight: "20px",
-        };
+    //     const textStyles = {
+    //         whiteSpace: "normal",
+    //         wordBreak: "normal",
+    //         overflowWrap: "break-word",
+    //         maxWidth: "480px",
+    //         lineHeight: "20px",
+    //     };
 
-        return (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <span
-                    style={textStyles}
-                    dangerouslySetInnerHTML={{ __html: finalText }}
-                />
-            </div>
-        );
-    };
+    //     return (
+    //         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+    //             <span
+    //                 style={textStyles}
+    //                 dangerouslySetInnerHTML={{ __html: finalText }}
+    //             />
+    //         </div>
+    //     );
+    // };
 
     const renderActionCell = (row) => {
         return (
@@ -737,6 +737,10 @@ export default function LeadsTable({
         });
         
         columnOrder.forEach(col => {
+        
+        if (col === 'aINextStep' && Corporate?.is_ai_nextstep_enabled !== "1") {
+            return; // skip this column entirely
+        }
         cols.push({
             accessorKey: col,
             size: col === 'remarks' ? 200 : undefined,
@@ -776,6 +780,196 @@ export default function LeadsTable({
         onExpandedChange: setExpandedRows,
         getRowId: (row) => row.invitationId,
     });
+
+    const renderAINextStepCell = ( row ) => {
+        const lead = row;
+        const invitationId = lead.invitationId;
+        const phone = (lead.mobile || '').replace(/\D/g, ''); // clean for wa.me
+
+        const [suggestion, setSuggestion] = useState(null);
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState(null);
+        const [showDetails, setShowDetails] = useState(false);
+
+        // Initial display uses whatever came from backend table data
+        const initialSummary = lead.aiNextStep || lead.aINextStep || 'No AI suggestion yet';
+
+        const fetchSuggestion = async (forceRefresh = false) => {
+            setLoading(true);
+            setError(null);
+            try {
+                const payload = { invitationId };
+                if (forceRefresh) payload.refresh = true; // optional flag if your API supports it
+
+                const res = await xFetch({
+                    path: '/services/invite/getAINextStepSuggestion',          // ← your actual route
+                    method: 'POST',                     // or GET if preferred
+                    payload,
+                });
+
+                if (res.status !== true && !res.status?.includes('success')) {
+                    throw new Error(res.error || 'Failed to get AI suggestion');
+                }
+
+                setSuggestion(res);
+            } catch (err) {
+                setError(err.message || 'Could not load AI plan');
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Lazy load on first interaction (better than auto-fetching all rows)
+        const handleAction = (type) => {
+            if (!suggestion) {
+                fetchSuggestion().then(() => performAction(type));
+            } else {
+                performAction(type);
+            }
+        };
+
+        const performAction = (type) => {
+            if (!suggestion?.full) return;
+
+            const data = suggestion.full;
+            const name = lead.firstName || 'there';
+
+            if (type === 'whatsapp') {
+                if (data.action_type !== 'whatsapp' && !data.content) {
+                    alert('AI recommends a different action right now.');
+                    return;
+                }
+                const message = (data.content || '')
+                    .replace('{{firstName}}', name)
+                    .replace('{{course}}', lead.course || 'program');
+                const encoded = encodeURIComponent(message);
+                window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+            }
+
+            else if (type === 'call') {
+                const script = data.content || data.next_conversation_tips || 'No script available';
+                // Simple alert → replace with nice modal later
+                alert(`Call Script for ${name}:\n\n${script}\n\n(Confidence: ${data.confidence}%)`);
+                // Bonus: copy to clipboard
+                navigator.clipboard.writeText(script).catch(() => {});
+            }
+
+            else if (type === 'mistakes') {
+                const mistakes = data.past_mistakes || 'No mistakes identified';
+                // Replace alert with popup/modal as needed
+                alert(`Past Mistakes for ${name}:\n\n${mistakes}`);
+                navigator.clipboard.writeText(mistakes).catch(() => {});
+            }
+
+            else if (type === 'nextStepDetails') {
+                setShowDetails(!showDetails);
+            }
+        };
+
+        // UI: Show summary + action icons
+        return (
+            <div className="min-w-[240px] max-w-[520px] space-y-2 text-sm">
+                {loading ? (
+                    <div className="text-blue-600 animate-pulse">Generating AI response...</div>
+                ) : error ? (
+                    <div className="text-red-600">{error} <button onClick={() => fetchSuggestion()} className="underline">Retry</button></div>
+                ) : (
+                    <>
+                        {/* Main summary line */}
+                        <div className="font-medium text-gray-800">
+                            {suggestion?.summary || initialSummary}
+                            {suggestion?.full?.confidence && (
+                                <span className="text-xs text-gray-500 ml-2">
+                                    (conf: {suggestion.full.confidence}%)
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Quick status indicators */}
+                        {suggestion?.full?.reason && (
+                            <div className="text-gray-600 italic text-xs">
+                                {suggestion.full.reason.substring(0, 90)}
+                                {suggestion.full.reason.length > 90 ? '...' : ''}
+                            </div>
+                        )}
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-4 mt-2">
+
+                            <button
+                                title="Show next step for conversion"
+                                onClick={() => handleAction('nextStepDetails')}
+                                disabled={loading}
+                                className="text-purple-600 hover:text-purple-800 transition"
+                            >
+                                <i className={`ri-information-${showDetails ? 'fill' : 'line'} text-2xl`} />
+                            </button>
+
+                            <button
+                                title="Send WhatsApp message"
+                                onClick={() => handleAction('whatsapp')}
+                                disabled={loading}
+                                className="text-green-600 hover:text-green-800 transition"
+                            >
+                                <i className="ri-whatsapp-line text-2xl" />
+                            </button>
+
+                            <button
+                                title="View / Copy call script"
+                                onClick={() => handleAction('call')}
+                                disabled={loading}
+                                className="text-blue-600 hover:text-blue-800 transition"
+                            >
+                                <i className="ri-phone-fill text-2xl" />
+                            </button>
+
+                            <button
+                                title="What have I done wrong so far?"
+                                onClick={() => handleAction('mistakes')}
+                                disabled={loading}
+                                className="text-red-600 hover:text-red-800 flex items-center gap-1"
+                            >
+                                <i className="ri-error-warning-line text-xl" />
+                                <span className="text-xs font-medium">Mistakes</span>
+                            </button>
+
+                            {/* Refresh if you want manual control */}
+                            <button
+                                title="Refresh AI suggestion"
+                                onClick={() => fetchSuggestion(true)}
+                                disabled={loading}
+                                className="text-gray-500 hover:text-gray-700 text-xs ml-auto"
+                            >
+                                <i className="ri-refresh-line" /> Refresh
+                            </button>
+                        </div>
+
+                        {/* Expanded details panel */}
+                        {showDetails && suggestion?.full && (
+                            <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-800 text-xs leading-relaxed">
+                                <div className="font-semibold mb-1">AI Reasoning:</div>
+                                <p>{suggestion.full.reason || 'No reason provided'}</p>
+
+                                {suggestion.full.next_conversation_tips && (
+                                    <>
+                                        <div className="font-semibold mt-2 mb-1">Next Conversation Tips:</div>
+                                        <p className="whitespace-pre-line">{suggestion.full.next_conversation_tips}</p>
+                                    </>
+                                )}
+
+                                {suggestion.full.conversion_probability && (
+                                    <div className="mt-2 text-green-700 font-medium">
+                                        Estimated conversion chance: {suggestion.full.conversion_probability}%
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        );
+    };
 
     return (
         <>
