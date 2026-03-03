@@ -11,8 +11,8 @@ const INDIAN_MOBILE_REGEX = /^\+91[6-9]\d{9}$/;
 const serviceConfigs = {
   knowlarity: { type: "knowlarity", name: "Knowlarity", logo: "/logos/knowlarity.webp" },
   voxbay: { type: "voxbay", name: "Voxbay", logo: "/logos/voxbay.webp" },
-  smartflo: { type: "smartflo", name: "Smartflo", logo: "/logos/smartflo.webp" },
-  smartflo_ivr: { type: "smartflo_ivr", name: "Smartflo IVR [TTS]", logo: "/logos/smartflo.webp" },
+  smartTG: { type: "smartTG", name: "smartTG", logo: "/logos/smartflo.webp" },
+  smartflo: { type: "smartflo", name: "Smartflo IVR [TTS]", logo: "/logos/smartflo.webp" },
   callerdesk: { type: "callerdesk", name: "CallerDesk", logo: "/logos/callerdesk.webp" },
 };
 
@@ -222,8 +222,8 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
       const endpointMap = {
         knowlarity: '/services/invite/callKnowlarity',
         voxbay: '/services/invite/callVoxbay',
-        smartflo: '/services/invite/callSmartfloIVR',
-        smartTG: '/services/invite/callSmartflo',
+        smartflo: '/services/invite/callSmartflo',
+        smartTG: '/services/invite/callSmartfloIVR',
         callerdesk: '/services/invite/callCallerDeskIVR',
       };
 
@@ -295,7 +295,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 			return;
 		}
 
-		// For smartflo_ivr we might not need callId – but check if we have it
+		// For smartflo we might not need callId – but check if we have it
 		if (selectedIvrService === 'knowlarity' && !callId) {
 			toast.error("No active call ID available for transfer");
 			return;
@@ -317,7 +317,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
 				customerNumber: clientNumber,
 				agentNumber: agentInput,
 			};
-			} else if (selectedIvrService === 'smartflo_ivr') {
+			} else if (selectedIvrService === 'smartflo') {
 			endpoint = '/services/invite/callTransferSmartFloTTS';
 			payload = {
 				transferTo: transferTo,          
@@ -669,7 +669,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
           </button>
 
           {/* Transfer Section - only for Knowlarity + Smartflo tata tele service after success */}
-          {callStatus === 'success' && (selectedIvrService === 'knowlarity' || selectedIvrService == 'smartflo_ivr') && (
+          {callStatus === 'success' && (selectedIvrService === 'knowlarity' || selectedIvrService == 'smartflo') && (
             <div className="mt-6 pt-3 border-t border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Transfer Call to Another Agent
