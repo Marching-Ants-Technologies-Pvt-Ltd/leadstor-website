@@ -488,64 +488,352 @@ export default function LeadsTable({
         );
     };
 
-    // const renderAINextStepCell = (row) => {
-    //     let content = row.aINextStep || "";
+    
+const PopupModal = ({ isOpen, onClose, title, children, onCopy }) => {
+        if (!isOpen) return null;
 
-    //     const div = document.createElement("div");
-    //     div.innerText = content;
-    //     let safeText = div.innerHTML;
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto m-4">
+                <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <div className="flex items-center gap-3">
+                    {onCopy && (
+                    <button
+                        onClick={onCopy}
+                        className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
+                    >
+                        Copy
+                    </button>
+                    )}
+                    <button
+                    onClick={onClose}
+                    className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                    >
+                    x
+                    </button>
+                </div>
+                </div>
+                <div className="px-6 py-5 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {children}
+                </div>
+            </div>
+            </div>
+        );
+    };
 
-    //     let finalText = "";
+    const prettifyAction = (action = '') => {
+        if (!action) return 'Not set';
+        return action
+            .replace(/_/g, ' ')
+            .split(' ')
+            .filter(Boolean)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+    };
 
-    //     if (safeText.length > 120) {
-    //         const shortText = safeText.substring(0, 120);
+    const normalizeSuggestionResponse = (res) => {
+        const full = res?.full || {};
+        const review = full?.conversation_review || {};
+        const mistakes = Array.isArray(review?.mistakes) ? review.mistakes.filter(Boolean) : [];
+        const improvements = Array.isArray(review?.improvements) ? review.improvements.filter(Boolean) : [];
+        const tips = Array.isArray(full?.tips) ? full.tips.filter(Boolean) : [];
 
-    //         finalText = `
-    //             <div style="min-width:155px;">
-    //                 <div>
-    //                     ${shortText}
-    //                     <span style="cursor:pointer;color:#1976d2;" 
-    //                         onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
-    //                                 this.parentElement.style.display='none';">
-    //                         ...(view)
-    //                     </span>
-    //                 </div>
+        return {
+            source: res?.source || '',
+            summary: res?.summary || '',
+            conversationId: res?.conversation_id || '',
+            action: res?.action || '',
+            recommendedAction: full?.recommended_action || '',
+            conversionProbability: Number(full?.conversion_probability || 0),
+            confidence: Number(full?.confidence || 0),
+            nextStep: full?.next_step || '',
+            whatsappMessage: full?.whatsapp_message || '',
+            callScript: full?.call_script || '',
+            tips,
+            hrReply: full?.hr_reply || '',
+            reviewQuality: review?.quality || '',
+            reviewMistakes: mistakes,
+            reviewImprovements: improvements,
+            raw: res
+        };
+    };
 
-    //                 <div class="full-text" style="display:none;">
-    //                     ${safeText}
-    //                     <span style="cursor:pointer;color:red;margin-left:6px;"
-    //                         onclick="this.parentElement.style.display='none';
-    //                                 this.parentElement.parentElement.querySelector('div').style.display='block';">
-    //                         (hide)
-    //                     </span>
-    //                 </div>
-    //             </div>
-    //         `;
-    //     } else {
-    //         finalText = safeText;
-    //     }
+    const formatSuggestionForModal = (s) => {
+        if (!s) return 'No AI suggestion available.';
 
-    //     if (!finalText || finalText === "null") {
-    //         return "-";
-    //     }
+        const lines = [];
+        lines.push(`Recommended Action: ${prettifyAction(s.recommendedAction)}`);
+        if (s.conversionProbability > 0) lines.push(`Conversion Probability: ${s.conversionProbability}%`);
+        if (s.confidence > 0) lines.push(`Confidence: ${s.confidence}%`);
+        if (s.nextStep) lines.push(`Next Step:\n${s.nextStep}`);
+        if (s.whatsappMessage) lines.push(`WhatsApp Message:\n${s.whatsappMessage}`);
+        if (s.callScript) lines.push(`Call Script:\n${s.callScript}`);
+        if (s.tips.length > 0) lines.push(`Tips:\n${s.tips.map((t) => `- ${t}`).join('\n')}`);
+        if (s.reviewQuality) lines.push(`Conversation Quality: ${s.reviewQuality}`);
+        if (s.reviewMistakes.length > 0) lines.push(`Mistakes:\n${s.reviewMistakes.map((m) => `- ${m}`).join('\n')}`);
+        if (s.reviewImprovements.length > 0) lines.push(`Improvements:\n${s.reviewImprovements.map((m) => `- ${m}`).join('\n')}`);
+        if (s.hrReply) lines.push(`AI Reply for HR:\n${s.hrReply}`);
 
-    //     const textStyles = {
-    //         whiteSpace: "normal",
-    //         wordBreak: "normal",
-    //         overflowWrap: "break-word",
-    //         maxWidth: "480px",
-    //         lineHeight: "20px",
-    //     };
+        return lines.join('\n\n');
+    };
 
-    //     return (
-    //         <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-    //             <span
-    //                 style={textStyles}
-    //                 dangerouslySetInnerHTML={{ __html: finalText }}
-    //             />
-    //         </div>
-    //     );
-    // };
+    const AINextStepCell = ({ lead }) => {
+        const invitationId = lead.invitationId;
+        const safeName = (lead.firstName || lead.name || 'there').trim();
+        const phone = (lead.mobile || lead.altMobile || lead.additional_mobile || '').replace(/\D/g, '');
+
+        const [suggestion, setSuggestion] = useState(null);
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState(null);
+        const [showModal, setShowModal] = useState(false);
+        const [modalTitle, setModalTitle] = useState('');
+        const [modalContent, setModalContent] = useState('');
+        const [showConversationModal, setShowConversationModal] = useState(false);
+        const [hrMessage, setHrMessage] = useState('');
+        const [conversationReply, setConversationReply] = useState('');
+        const [conversationLoading, setConversationLoading] = useState(false);
+
+        const initialSummary = lead.aiNextStep || lead.aINextStep || 'No AI suggestion yet';
+
+        const fetchSuggestion = async (action, extraPayload = {}) => {
+            setLoading(true);
+            setError(null);
+            try {
+                const payload = { invitationId, action, ...extraPayload };
+                const res = await xFetch({
+                    path: '/services/invite/getAINextStepSuggestion',
+                    method: 'POST',
+                    payload,
+                });
+
+                if (!res?.status) {
+                    throw new Error(res?.error || 'Failed to fetch AI suggestion');
+                }
+
+                const normalized = normalizeSuggestionResponse(res);
+                setSuggestion(normalized);
+                return normalized;
+            } catch (err) {
+                const message = err?.message || 'Could not load AI suggestion';
+                setError(message);
+                return null;
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const handleGenerateNextStep = async () => {
+            const data = await fetchSuggestion('generate_next_step', { forceGenerate: true });
+            if (!data) return;
+            setModalTitle('Generated Next Step');
+            setModalContent(formatSuggestionForModal(data));
+            setShowModal(true);
+        };
+
+        const handleWhatsapp = async () => {
+            const data = await fetchSuggestion('whatsapp');
+            if (!data) return;
+
+            const message = (data.whatsappMessage || `Hi ${safeName}, just following up.`)
+                .replace(/{{firstName}}|{{name}}|\[Name\]/gi, safeName);
+            const encoded = encodeURIComponent(message);
+            window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+        };
+
+        const handleCallScript = async () => {
+            const data = await fetchSuggestion('call_script');
+            if (!data) return;
+            const script = data.callScript || data.nextStep || 'No call script available.';
+            setModalTitle('Call Script');
+            setModalContent(script);
+            setShowModal(true);
+        };
+
+        const handleConversationReview = async () => {
+            const data = await fetchSuggestion('conversation_review');
+            if (!data) return;
+            const text = formatSuggestionForModal({
+                ...data,
+                whatsappMessage: '',
+                callScript: '',
+                nextStep: ''
+            });
+            setModalTitle('Conversation Review');
+            setModalContent(text);
+            setShowModal(true);
+        };
+
+        const handleLatestSuggestion = async () => {
+            const data = await fetchSuggestion('latest_suggestion');
+            if (!data) return;
+            setModalTitle('Latest AI Suggestion');
+            setModalContent(formatSuggestionForModal(data));
+            setShowModal(true);
+        };
+
+        const openConversationAssistant = async () => {
+            const data = suggestion || await fetchSuggestion('latest_suggestion');
+            if (!data) return;
+            setConversationReply(data.hrReply || '');
+            setShowConversationModal(true);
+        };
+
+        const submitHRConversation = async () => {
+            const cleaned = hrMessage.trim();
+            if (!cleaned) return;
+
+            setConversationLoading(true);
+            try {
+                const data = await fetchSuggestion('hr_conversation', { hrMessage: cleaned });
+                if (data) {
+                    setConversationReply(data.hrReply || data.nextStep || 'No response generated.');
+                    setHrMessage('');
+                }
+            } finally {
+                setConversationLoading(false);
+            }
+        };
+
+        const copyModalContent = () => {
+            navigator.clipboard.writeText(modalContent || '').catch(() => {});
+        };
+
+        return (
+            <>
+            <div className="min-w-[260px] max-w-[520px] space-y-2 text-sm">
+                {loading ? (
+                <div className="text-blue-600 animate-pulse">Working...</div>
+                ) : error ? (
+                <div className="text-red-600">
+                    {error}
+                    <button onClick={handleLatestSuggestion} className="ml-2 underline text-xs">
+                    Retry
+                    </button>
+                </div>
+                ) : (
+                <>
+                    <div className="font-medium text-gray-800 flex items-baseline gap-2 flex-wrap">
+                    {suggestion?.summary || initialSummary}
+                    {suggestion?.confidence > 0 && (
+                        <span className="text-xs text-gray-500">(conf: {suggestion.confidence}%)</span>
+                    )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 mt-2">
+                    <button
+                        title="Generate Next Step"
+                        onClick={handleGenerateNextStep}
+                        disabled={loading}
+                        className="text-purple-600 hover:text-purple-800"
+                    >
+                        <i className="ri-sparkling-2-line text-xl" />
+                    </button>
+
+                    <button
+                        title="WhatsApp"
+                        onClick={handleWhatsapp}
+                        disabled={loading || !phone}
+                        className={`text-green-600 hover:text-green-800 ${!phone ? 'opacity-40' : ''}`}
+                    >
+                        <i className="ri-whatsapp-line text-xl" />
+                    </button>
+
+                    <button
+                        title="Call Script"
+                        onClick={handleCallScript}
+                        disabled={loading}
+                        className="text-blue-600 hover:text-blue-800"
+                    >
+                        <i className="ri-phone-fill text-xl" />
+                    </button>
+
+                    <button
+                        title="Conversation Review"
+                        onClick={handleConversationReview}
+                        disabled={loading}
+                        className="text-rose-600 hover:text-rose-800"
+                    >
+                        <i className="ri-error-warning-line text-xl" />
+                    </button>
+
+                    <button
+                        title="View Latest Suggestion"
+                        onClick={handleLatestSuggestion}
+                        disabled={loading}
+                        className="text-indigo-600 hover:text-indigo-800"
+                    >
+                        <i className="ri-eye-fill text-xl" />
+                    </button>
+
+                    <button
+                        title="AI Conversation"
+                        onClick={openConversationAssistant}
+                        disabled={loading}
+                        className="text-amber-600 hover:text-amber-800"
+                    >
+                        <i className="ri-message-3-line text-xl" />
+                    </button>
+                    </div>
+                </>
+                )}
+            </div>
+
+            <PopupModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                title={modalTitle}
+                onCopy={copyModalContent}
+            >
+                {modalContent}
+            </PopupModal>
+
+            <PopupModal
+                isOpen={showConversationModal}
+                onClose={() => setShowConversationModal(false)}
+                title="AI Conversation Assistant"
+            >
+                <div className="space-y-4">
+                    <div className="text-xs text-gray-500">
+                        Conversation ID: {suggestion?.conversationId || lead.aIConversationId || '-'}
+                    </div>
+                    <div className="text-sm border rounded-md p-3 bg-slate-50 whitespace-pre-wrap">
+                        <div className="font-semibold mb-1">Latest Suggestion</div>
+                        {formatSuggestionForModal(suggestion)}
+                    </div>
+
+                    {conversationReply ? (
+                        <div className="text-sm border rounded-md p-3 bg-emerald-50 whitespace-pre-wrap">
+                            <div className="font-semibold mb-1">AI Reply</div>
+                            {conversationReply}
+                        </div>
+                    ) : null}
+
+                    <textarea
+                        value={hrMessage}
+                        onChange={(e) => setHrMessage(e.target.value)}
+                        placeholder="Write your message for AI. It will use the previous conversation context."
+                        rows={4}
+                        className="w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <div className="flex justify-end">
+                        <button
+                            onClick={submitHRConversation}
+                            disabled={conversationLoading || !hrMessage.trim()}
+                            className="bg-indigo-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+                        >
+                            {conversationLoading ? 'Sending...' : 'Ask AI'}
+                        </button>
+                    </div>
+                </div>
+            </PopupModal>
+            </>
+        );
+    };
+
+    const renderAINextStepCell = (row) => {
+        return <AINextStepCell lead={row} />;
+    };
 
     const renderActionCell = (row) => {
         return (
@@ -781,196 +1069,6 @@ export default function LeadsTable({
         getRowId: (row) => row.invitationId,
     });
 
-    const renderAINextStepCell = ( row ) => {
-        const lead = row;
-        const invitationId = lead.invitationId;
-        const phone = (lead.mobile || '').replace(/\D/g, ''); // clean for wa.me
-
-        const [suggestion, setSuggestion] = useState(null);
-        const [loading, setLoading] = useState(false);
-        const [error, setError] = useState(null);
-        const [showDetails, setShowDetails] = useState(false);
-
-        // Initial display uses whatever came from backend table data
-        const initialSummary = lead.aiNextStep || lead.aINextStep || 'No AI suggestion yet';
-
-        const fetchSuggestion = async (forceRefresh = false) => {
-            setLoading(true);
-            setError(null);
-            try {
-                const payload = { invitationId };
-                if (forceRefresh) payload.refresh = true; // optional flag if your API supports it
-
-                const res = await xFetch({
-                    path: '/services/invite/getAINextStepSuggestion',          // ← your actual route
-                    method: 'POST',                     // or GET if preferred
-                    payload,
-                });
-
-                if (res.status !== true && !res.status?.includes('success')) {
-                    throw new Error(res.error || 'Failed to get AI suggestion');
-                }
-
-                setSuggestion(res);
-            } catch (err) {
-                setError(err.message || 'Could not load AI plan');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        // Lazy load on first interaction (better than auto-fetching all rows)
-        const handleAction = (type) => {
-            if (!suggestion) {
-                fetchSuggestion().then(() => performAction(type));
-            } else {
-                performAction(type);
-            }
-        };
-
-        const performAction = (type) => {
-            if (!suggestion?.full) return;
-
-            const data = suggestion.full;
-            const name = lead.firstName || 'there';
-
-            if (type === 'whatsapp') {
-                if (data.action_type !== 'whatsapp' && !data.content) {
-                    alert('AI recommends a different action right now.');
-                    return;
-                }
-                const message = (data.content || '')
-                    .replace('{{firstName}}', name)
-                    .replace('{{course}}', lead.course || 'program');
-                const encoded = encodeURIComponent(message);
-                window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
-            }
-
-            else if (type === 'call') {
-                const script = data.content || data.next_conversation_tips || 'No script available';
-                // Simple alert → replace with nice modal later
-                alert(`Call Script for ${name}:\n\n${script}\n\n(Confidence: ${data.confidence}%)`);
-                // Bonus: copy to clipboard
-                navigator.clipboard.writeText(script).catch(() => {});
-            }
-
-            else if (type === 'mistakes') {
-                const mistakes = data.past_mistakes || 'No mistakes identified';
-                // Replace alert with popup/modal as needed
-                alert(`Past Mistakes for ${name}:\n\n${mistakes}`);
-                navigator.clipboard.writeText(mistakes).catch(() => {});
-            }
-
-            else if (type === 'nextStepDetails') {
-                setShowDetails(!showDetails);
-            }
-        };
-
-        // UI: Show summary + action icons
-        return (
-            <div className="min-w-[240px] max-w-[520px] space-y-2 text-sm">
-                {loading ? (
-                    <div className="text-blue-600 animate-pulse">Generating AI response...</div>
-                ) : error ? (
-                    <div className="text-red-600">{error} <button onClick={() => fetchSuggestion()} className="underline">Retry</button></div>
-                ) : (
-                    <>
-                        {/* Main summary line */}
-                        <div className="font-medium text-gray-800">
-                            {suggestion?.summary || initialSummary}
-                            {suggestion?.full?.confidence && (
-                                <span className="text-xs text-gray-500 ml-2">
-                                    (conf: {suggestion.full.confidence}%)
-                                </span>
-                            )}
-                        </div>
-
-                        {/* Quick status indicators */}
-                        {suggestion?.full?.reason && (
-                            <div className="text-gray-600 italic text-xs">
-                                {suggestion.full.reason.substring(0, 90)}
-                                {suggestion.full.reason.length > 90 ? '...' : ''}
-                            </div>
-                        )}
-
-                        {/* Action buttons */}
-                        <div className="flex items-center gap-4 mt-2">
-
-                            <button
-                                title="Show next step for conversion"
-                                onClick={() => handleAction('nextStepDetails')}
-                                disabled={loading}
-                                className="text-purple-600 hover:text-purple-800 transition"
-                            >
-                                <i className={`ri-information-${showDetails ? 'fill' : 'line'} text-2xl`} />
-                            </button>
-
-                            <button
-                                title="Send WhatsApp message"
-                                onClick={() => handleAction('whatsapp')}
-                                disabled={loading}
-                                className="text-green-600 hover:text-green-800 transition"
-                            >
-                                <i className="ri-whatsapp-line text-2xl" />
-                            </button>
-
-                            <button
-                                title="View / Copy call script"
-                                onClick={() => handleAction('call')}
-                                disabled={loading}
-                                className="text-blue-600 hover:text-blue-800 transition"
-                            >
-                                <i className="ri-phone-fill text-2xl" />
-                            </button>
-
-                            <button
-                                title="What have I done wrong so far?"
-                                onClick={() => handleAction('mistakes')}
-                                disabled={loading}
-                                className="text-red-600 hover:text-red-800 flex items-center gap-1"
-                            >
-                                <i className="ri-error-warning-line text-xl" />
-                                <span className="text-xs font-medium">Mistakes</span>
-                            </button>
-
-                            {/* Refresh if you want manual control */}
-                            <button
-                                title="Refresh AI suggestion"
-                                onClick={() => fetchSuggestion(true)}
-                                disabled={loading}
-                                className="text-gray-500 hover:text-gray-700 text-xs ml-auto"
-                            >
-                                <i className="ri-refresh-line" /> Refresh
-                            </button>
-                        </div>
-
-                        {/* Expanded details panel */}
-                        {showDetails && suggestion?.full && (
-                            <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-md text-gray-800 text-xs leading-relaxed">
-                                <div className="font-semibold mb-1">AI Reasoning:</div>
-                                <p>{suggestion.full.reason || 'No reason provided'}</p>
-
-                                {suggestion.full.next_conversation_tips && (
-                                    <>
-                                        <div className="font-semibold mt-2 mb-1">Next Conversation Tips:</div>
-                                        <p className="whitespace-pre-line">{suggestion.full.next_conversation_tips}</p>
-                                    </>
-                                )}
-
-                                {suggestion.full.conversion_probability && (
-                                    <div className="mt-2 text-green-700 font-medium">
-                                        Estimated conversion chance: {suggestion.full.conversion_probability}%
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
-        );
-    };
-
     return (
         <>
         <AppliedFilters onOpenAdvanceFilter={onOpenAdvanceFilter} />
@@ -1163,3 +1261,4 @@ export default function LeadsTable({
         </>
     );
 }
+
