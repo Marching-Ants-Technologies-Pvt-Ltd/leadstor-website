@@ -488,63 +488,351 @@ export default function LeadsTable({
         );
     };
 
-    const renderAINextStepCell = (row) => {
-        let content = row.aINextStep || "";
+    
+const PopupModal = ({ isOpen, onClose, title, children, onCopy }) => {
+        if (!isOpen) return null;
 
-        const div = document.createElement("div");
-        div.innerText = content;
-        let safeText = div.innerHTML;
-
-        let finalText = "";
-
-        if (safeText.length > 120) {
-            const shortText = safeText.substring(0, 120);
-
-            finalText = `
-                <div style="min-width:155px;">
-                    <div>
-                        ${shortText}
-                        <span style="cursor:pointer;color:#1976d2;" 
-                            onclick="this.parentElement.parentElement.querySelector('.full-text').style.display='block';
-                                    this.parentElement.style.display='none';">
-                            ...(view)
-                        </span>
-                    </div>
-
-                    <div class="full-text" style="display:none;">
-                        ${safeText}
-                        <span style="cursor:pointer;color:red;margin-left:6px;"
-                            onclick="this.parentElement.style.display='none';
-                                    this.parentElement.parentElement.querySelector('div').style.display='block';">
-                            (hide)
-                        </span>
-                    </div>
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto m-4">
+                <div className="sticky top-0 bg-white px-6 py-4 border-b flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                <div className="flex items-center gap-3">
+                    {onCopy && (
+                    <button
+                        onClick={onCopy}
+                        className="text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded hover:bg-gray-100 text-sm"
+                    >
+                        Copy
+                    </button>
+                    )}
+                    <button
+                    onClick={onClose}
+                    className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+                    >
+                    x
+                    </button>
                 </div>
-            `;
-        } else {
-            finalText = safeText;
-        }
+                </div>
+                <div className="px-6 py-5 text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {children}
+                </div>
+            </div>
+            </div>
+        );
+    };
 
-        if (!finalText || finalText === "null") {
-            return "-";
-        }
+    const prettifyAction = (action = '') => {
+        if (!action) return 'Not set';
+        return action
+            .replace(/_/g, ' ')
+            .split(' ')
+            .filter(Boolean)
+            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+            .join(' ');
+    };
 
-        const textStyles = {
-            whiteSpace: "normal",
-            wordBreak: "normal",
-            overflowWrap: "break-word",
-            maxWidth: "480px",
-            lineHeight: "20px",
+    const normalizeSuggestionResponse = (res) => {
+        const full = res?.full || {};
+        const review = full?.conversation_review || {};
+        const mistakes = Array.isArray(review?.mistakes) ? review.mistakes.filter(Boolean) : [];
+        const improvements = Array.isArray(review?.improvements) ? review.improvements.filter(Boolean) : [];
+        const tips = Array.isArray(full?.tips) ? full.tips.filter(Boolean) : [];
+
+        return {
+            source: res?.source || '',
+            summary: res?.summary || '',
+            conversationId: res?.conversation_id || '',
+            action: res?.action || '',
+            recommendedAction: full?.recommended_action || '',
+            conversionProbability: Number(full?.conversion_probability || 0),
+            confidence: Number(full?.confidence || 0),
+            nextStep: full?.next_step || '',
+            whatsappMessage: full?.whatsapp_message || '',
+            callScript: full?.call_script || '',
+            tips,
+            hrReply: full?.hr_reply || '',
+            reviewQuality: review?.quality || '',
+            reviewMistakes: mistakes,
+            reviewImprovements: improvements,
+            raw: res
+        };
+    };
+
+    const formatSuggestionForModal = (s) => {
+        if (!s) return 'No AI suggestion available.';
+
+        const lines = [];
+        lines.push(`Recommended Action: ${prettifyAction(s.recommendedAction)}`);
+        if (s.conversionProbability > 0) lines.push(`Conversion Probability: ${s.conversionProbability}%`);
+        if (s.confidence > 0) lines.push(`Confidence: ${s.confidence}%`);
+        if (s.nextStep) lines.push(`Next Step:\n${s.nextStep}`);
+        if (s.whatsappMessage) lines.push(`WhatsApp Message:\n${s.whatsappMessage}`);
+        if (s.callScript) lines.push(`Call Script:\n${s.callScript}`);
+        if (s.tips.length > 0) lines.push(`Tips:\n${s.tips.map((t) => `- ${t}`).join('\n')}`);
+        if (s.reviewQuality) lines.push(`Conversation Quality: ${s.reviewQuality}`);
+        if (s.reviewMistakes.length > 0) lines.push(`Mistakes:\n${s.reviewMistakes.map((m) => `- ${m}`).join('\n')}`);
+        if (s.reviewImprovements.length > 0) lines.push(`Improvements:\n${s.reviewImprovements.map((m) => `- ${m}`).join('\n')}`);
+        if (s.hrReply) lines.push(`AI Reply for HR:\n${s.hrReply}`);
+
+        return lines.join('\n\n');
+    };
+
+    const AINextStepCell = ({ lead }) => {
+        const invitationId = lead.invitationId;
+        const safeName = (lead.firstName || lead.name || 'there').trim();
+        const phone = (lead.mobile || lead.altMobile || lead.additional_mobile || '').replace(/\D/g, '');
+
+        const [suggestion, setSuggestion] = useState(null);
+        const [loading, setLoading] = useState(false);
+        const [error, setError] = useState(null);
+        const [showModal, setShowModal] = useState(false);
+        const [modalTitle, setModalTitle] = useState('');
+        const [modalContent, setModalContent] = useState('');
+        const [showConversationModal, setShowConversationModal] = useState(false);
+        const [hrMessage, setHrMessage] = useState('');
+        const [conversationReply, setConversationReply] = useState('');
+        const [conversationLoading, setConversationLoading] = useState(false);
+
+        const initialSummary = lead.aiNextStep || lead.aINextStep || 'No AI suggestion yet';
+
+        const fetchSuggestion = async (action, extraPayload = {}) => {
+            setLoading(true);
+            setError(null);
+            try {
+                const payload = { invitationId, action, ...extraPayload };
+                const res = await xFetch({
+                    path: '/services/invite/getAINextStepSuggestion',
+                    method: 'POST',
+                    payload,
+                });
+
+                if (!res?.status) {
+                    throw new Error(res?.error || 'Failed to fetch AI suggestion');
+                }
+
+                const normalized = normalizeSuggestionResponse(res);
+                setSuggestion(normalized);
+                return normalized;
+            } catch (err) {
+                const message = err?.message || 'Could not load AI suggestion';
+                setError(message);
+                return null;
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        const handleGenerateNextStep = async () => {
+            const data = await fetchSuggestion('generate_next_step', { forceGenerate: true });
+            if (!data) return;
+            setModalTitle('Generated Next Step');
+            setModalContent(formatSuggestionForModal(data));
+            setShowModal(true);
+        };
+
+        const handleWhatsapp = async () => {
+            const data = await fetchSuggestion('whatsapp');
+            if (!data) return;
+
+            const message = (data.whatsappMessage || `Hi ${safeName}, just following up.`)
+                .replace(/{{firstName}}|{{name}}|\[Name\]/gi, safeName);
+            const encoded = encodeURIComponent(message);
+            window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+        };
+
+        const handleCallScript = async () => {
+            const data = await fetchSuggestion('call_script');
+            if (!data) return;
+            const script = data.callScript || data.nextStep || 'No call script available.';
+            setModalTitle('Call Script');
+            setModalContent(script);
+            setShowModal(true);
+        };
+
+        const handleConversationReview = async () => {
+            const data = await fetchSuggestion('conversation_review');
+            if (!data) return;
+            const text = formatSuggestionForModal({
+                ...data,
+                whatsappMessage: '',
+                callScript: '',
+                nextStep: ''
+            });
+            setModalTitle('Conversation Review');
+            setModalContent(text);
+            setShowModal(true);
+        };
+
+        const handleLatestSuggestion = async () => {
+            const data = await fetchSuggestion('latest_suggestion');
+            if (!data) return;
+            setModalTitle('Latest AI Suggestion');
+            setModalContent(formatSuggestionForModal(data));
+            setShowModal(true);
+        };
+
+        const openConversationAssistant = async () => {
+            const data = suggestion || await fetchSuggestion('latest_suggestion');
+            if (!data) return;
+            setConversationReply(data.hrReply || '');
+            setShowConversationModal(true);
+        };
+
+        const submitHRConversation = async () => {
+            const cleaned = hrMessage.trim();
+            if (!cleaned) return;
+
+            setConversationLoading(true);
+            try {
+                const data = await fetchSuggestion('hr_conversation', { hrMessage: cleaned });
+                if (data) {
+                    setConversationReply(data.hrReply || data.nextStep || 'No response generated.');
+                    setHrMessage('');
+                }
+            } finally {
+                setConversationLoading(false);
+            }
+        };
+
+        const copyModalContent = () => {
+            navigator.clipboard.writeText(modalContent || '').catch(() => {});
         };
 
         return (
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-                <span
-                    style={textStyles}
-                    dangerouslySetInnerHTML={{ __html: finalText }}
-                />
+            <>
+            <div className="min-w-[260px] max-w-[520px] space-y-2 text-sm">
+                {loading ? (
+                <div className="text-blue-600 animate-pulse">Working...</div>
+                ) : error ? (
+                <div className="text-red-600">
+                    {error}
+                    <button onClick={handleLatestSuggestion} className="ml-2 underline text-xs">
+                    Retry
+                    </button>
+                </div>
+                ) : (
+                <>
+                    <div className="font-medium text-gray-800 flex items-baseline gap-2 flex-wrap">
+                    {suggestion?.summary || initialSummary}
+                    {suggestion?.confidence > 0 && (
+                        <span className="text-xs text-gray-500">(conf: {suggestion.confidence}%)</span>
+                    )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 mt-2">
+                    <button
+                        title="Generate Next Step"
+                        onClick={handleGenerateNextStep}
+                        disabled={loading}
+                        className="text-purple-600 hover:text-purple-800"
+                    >
+                        <i className="ri-sparkling-2-line text-xl" />
+                    </button>
+
+                    <button
+                        title="WhatsApp"
+                        onClick={handleWhatsapp}
+                        disabled={loading || !phone}
+                        className={`text-green-600 hover:text-green-800 ${!phone ? 'opacity-40' : ''}`}
+                    >
+                        <i className="ri-whatsapp-line text-xl" />
+                    </button>
+
+                    <button
+                        title="Call Script"
+                        onClick={handleCallScript}
+                        disabled={loading}
+                        className="text-blue-600 hover:text-blue-800"
+                    >
+                        <i className="ri-phone-fill text-xl" />
+                    </button>
+
+                    <button
+                        title="Conversation Review"
+                        onClick={handleConversationReview}
+                        disabled={loading}
+                        className="text-rose-600 hover:text-rose-800"
+                    >
+                        <i className="ri-error-warning-line text-xl" />
+                    </button>
+
+                    <button
+                        title="View Latest Suggestion"
+                        onClick={handleLatestSuggestion}
+                        disabled={loading}
+                        className="text-indigo-600 hover:text-indigo-800"
+                    >
+                        <i className="ri-eye-fill text-xl" />
+                    </button>
+
+                    <button
+                        title="AI Conversation"
+                        onClick={openConversationAssistant}
+                        disabled={loading}
+                        className="text-amber-600 hover:text-amber-800"
+                    >
+                        <i className="ri-message-3-line text-xl" />
+                    </button>
+                    </div>
+                </>
+                )}
             </div>
+
+            <PopupModal
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                title={modalTitle}
+                onCopy={copyModalContent}
+            >
+                {modalContent}
+            </PopupModal>
+
+            <PopupModal
+                isOpen={showConversationModal}
+                onClose={() => setShowConversationModal(false)}
+                title="AI Conversation Assistant"
+            >
+                <div className="space-y-4">
+                    <div className="text-xs text-gray-500">
+                        Conversation ID: {suggestion?.conversationId || lead.aIConversationId || '-'}
+                    </div>
+                    <div className="text-sm border rounded-md p-3 bg-slate-50 whitespace-pre-wrap">
+                        <div className="font-semibold mb-1">Latest Suggestion</div>
+                        {formatSuggestionForModal(suggestion)}
+                    </div>
+
+                    {conversationReply ? (
+                        <div className="text-sm border rounded-md p-3 bg-emerald-50 whitespace-pre-wrap">
+                            <div className="font-semibold mb-1">AI Reply</div>
+                            {conversationReply}
+                        </div>
+                    ) : null}
+
+                    <textarea
+                        value={hrMessage}
+                        onChange={(e) => setHrMessage(e.target.value)}
+                        placeholder="Write your message for AI. It will use the previous conversation context."
+                        rows={4}
+                        className="w-full border rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <div className="flex justify-end">
+                        <button
+                            onClick={submitHRConversation}
+                            disabled={conversationLoading || !hrMessage.trim()}
+                            className="bg-indigo-600 text-white rounded px-4 py-2 text-sm disabled:opacity-50"
+                        >
+                            {conversationLoading ? 'Sending...' : 'Ask AI'}
+                        </button>
+                    </div>
+                </div>
+            </PopupModal>
+            </>
         );
+    };
+
+    const renderAINextStepCell = (row) => {
+        return <AINextStepCell lead={row} />;
     };
 
     const renderActionCell = (row) => {
@@ -737,6 +1025,10 @@ export default function LeadsTable({
         });
         
         columnOrder.forEach(col => {
+        
+        if (col === 'aINextStep' && Corporate?.is_ai_nextstep_enabled !== "1") {
+            return; // skip this column entirely
+        }
         cols.push({
             accessorKey: col,
             size: col === 'remarks' ? 200 : undefined,
@@ -969,3 +1261,4 @@ export default function LeadsTable({
         </>
     );
 }
+
