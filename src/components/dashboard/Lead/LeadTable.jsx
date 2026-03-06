@@ -28,6 +28,8 @@ import {
 import RelatedEnquiries from '@/components/dashboard/Lead/RelatedEnquiries';
 import RouteData from '@/components/dashboard/Lead/RouteData';
 import ExtendedFormModal from '@/components/dashboard/Lead/ExtendedFormModal';
+import UniversityListModal from '@/components/dashboard/Lead/UniversityListModal';
+import DocumentsModal from '@/components/dashboard/Lead/DocumentsModal';
 
 export default function LeadsTable({
     columns,
@@ -73,6 +75,11 @@ export default function LeadsTable({
 
     const [showExtendedFormModal, setShowExtendedFormModal] = useState(false);
     const [extendedFormInvitationId, setExtendedFormInvitationId] = useState(null);
+
+    const [showUniversityModal, setShowUniversityModal] = useState(false);
+    const [universityModalInvitationId, setUniversityModalInvitationId] = useState(null);
+    const [showDocsModal, setShowDocsModal] = useState(false);
+    const [docsModalInvitationId, setDocsModalInvitationId] = useState(null);
 
     const dataFormatters = {
         assignedUserId: (row) => {
@@ -489,7 +496,7 @@ export default function LeadsTable({
     };
 
     
-const PopupModal = ({ isOpen, onClose, title, children, onCopy }) => {
+    const PopupModal = ({ isOpen, onClose, title, children, onCopy }) => {
         if (!isOpen) return null;
 
         return (
@@ -794,9 +801,6 @@ const PopupModal = ({ isOpen, onClose, title, children, onCopy }) => {
                 title="AI Conversation Assistant"
             >
                 <div className="space-y-4">
-                    <div className="text-xs text-gray-500">
-                        Conversation ID: {suggestion?.conversationId || lead.aIConversationId || '-'}
-                    </div>
                     <div className="text-sm border rounded-md p-3 bg-slate-50 whitespace-pre-wrap">
                         <div className="font-semibold mb-1">Latest Suggestion</div>
                         {formatSuggestionForModal(suggestion)}
@@ -879,23 +883,27 @@ const PopupModal = ({ isOpen, onClose, title, children, onCopy }) => {
             {/* Corporate Type 800 */}
             {Corporate?.type === 800 && (
                 <>
-                {/* University List */}
-                <button
+                    <button
                     title="University List"
-                    onClick={() => universityList(row.invitationId)}
-                    className="p-1 rounded hover:bg-gray-100 transition"
-                >
-                    <i className="ri-school-line text-lg text-indigo-600" />
-                </button>
+                    onClick={() => {
+                        setUniversityModalInvitationId(row.invitationId);
+                        setShowUniversityModal(true);
+                    }}
+                    className="p-1.5 rounded hover:bg-indigo-50"
+                    >
+                    <i className="ri-school-line text-xl text-indigo-700" />
+                    </button>
 
-                {/* Documents */}
-                <button
+                    <button
                     title="Documents"
-                    onClick={() => uploadLeadDocs(row.invitationId)}
-                    className="p-1 rounded hover:bg-gray-100 transition"
-                >
-                    <i className="ri-folder-3-line text-lg text-sky-600" />
-                </button>
+                    onClick={() => {
+                        setDocsModalInvitationId(row.invitationId);
+                        setShowDocsModal(true);
+                    }}
+                    className="p-1.5 rounded hover:bg-sky-50"
+                    >
+                    <i className="ri-folder-3-line text-xl text-sky-700" />
+                    </button>
                 </>
             )}
             </div>
@@ -1220,6 +1228,29 @@ const PopupModal = ({ isOpen, onClose, title, children, onCopy }) => {
                 setExtendedFormInvitationId(null);
                 }}
                 onRefresh={refreshLeads}   // optional
+            />
+        )}
+
+        {showUniversityModal && universityModalInvitationId && (
+            <UniversityListModal
+            invitationId={universityModalInvitationId}
+            isOpen={showUniversityModal}
+            onClose={() => {
+                setShowUniversityModal(false);
+                setUniversityModalInvitationId(null);
+            }}
+            onRefresh={refreshLeads} // optional
+            />
+        )}
+
+        {showDocsModal && docsModalInvitationId && (
+            <DocumentsModal
+            invitationId={docsModalInvitationId}
+            isOpen={showDocsModal}
+            onClose={() => {
+                setShowDocsModal(false);
+                setDocsModalInvitationId(null);
+            }}
             />
         )}
         {/* STYLES */}
