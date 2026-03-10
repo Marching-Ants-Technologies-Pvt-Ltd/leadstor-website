@@ -232,7 +232,7 @@ export default function DocumentsModal({ invitationId, isOpen, onClose }) {
                 {/* You can replace with your own image */}
                 <FaFolderOpen className="mx-auto text-8xl text-yellow-500 mb-6 opacity-80" />
                 <h3 className="text-xl font-medium text-gray-700 mb-3">
-                  You haven't uploaded any docs for this lead yet!
+                  You haven&apos;t uploaded any docs for this lead yet!
                 </h3>
                 <p className="text-gray-600 mb-2">
                   <label
