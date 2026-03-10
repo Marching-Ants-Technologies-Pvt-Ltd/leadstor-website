@@ -80,6 +80,9 @@ export default function LeadsTable({
     const [universityModalInvitationId, setUniversityModalInvitationId] = useState(null);
     const [showDocsModal, setShowDocsModal] = useState(false);
     const [docsModalInvitationId, setDocsModalInvitationId] = useState(null);
+    const [googleDriveConnected, setGoogleDriveConnected] = useState(null);
+    const [googleDriveToken, setGoogleDriveToken] = useState("");
+    const [showGoogleConnectDialog, setShowGoogleConnectDialog] = useState(false);
 
     const dataFormatters = {
         assignedUserId: (row) => {
@@ -227,7 +230,7 @@ export default function LeadsTable({
         
         return (
             <div className="flex items-center gap-2">
-                <span className="font-medium text-slate-800">{row.firstName} 
+                <span className="font-medium text-slate-800">{`${row.firstName} ${row.lastName}`}
                     {/* Edit */}
                     <i
                         className="ri-pencil-fill ml-1.5 text-amber-500 cursor-pointer text-[14px]"
@@ -835,6 +838,86 @@ export default function LeadsTable({
         );
     };
 
+    const showConnectGoogleDriveDialog = () => {
+        setShowGoogleConnectDialog(true);
+    };
+
+    const handleOpenDocuments = async (invitationId) => {
+        // ─── 1. Check if we already know the status ───
+        if (googleDriveConnected === true) {
+            setDocsModalInvitationId(invitationId);
+            setShowDocsModal(true);
+            return;
+        }
+
+        if (googleDriveConnected === false) {
+            showConnectGoogleDriveDialog();
+            return;
+        }
+
+        // ─── 2. First time → fetch corporate details ───
+        try {
+            const corporateData = await xFetch({
+                path: `/services/profile/getCorporateDetails?time=${Date.now()}`,
+            });
+
+            const isConnected = corporateData?.google_drive_connected === true;
+
+            setGoogleDriveConnected(isConnected);
+            setGoogleDriveToken(corporateData?.google_drive_token || "");
+
+            if (isConnected) {
+                setDocsModalInvitationId(invitationId);
+                setShowDocsModal(true);
+            } else {
+                showConnectGoogleDriveDialog();
+            }
+        } catch (err) {
+            console.error("Failed to check Google Drive status:", err);
+            // Decide what to do – for now show dialog as fallback
+            showConnectGoogleDriveDialog();
+        }
+    };
+
+    const ConfirmDialog = ({ isOpen, onClose, title, message, onConfirm }) => {
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+                {/* Header */}
+                <div className="px-6 py-4 border-b bg-gray-50">
+                <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+                </div>
+
+                {/* Body */}
+                <div className="px-6 py-5 text-gray-700">
+                <p className="text-sm leading-relaxed">{message}</p>
+                </div>
+
+                {/* Footer */}
+                <div className="px-6 py-4 border-t bg-gray-50 flex justify-end gap-3">
+                <button
+                    onClick={onClose}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                >
+                    Cancel
+                </button>
+                <button
+                    onClick={() => {
+                    onConfirm?.();
+                    onClose();
+                    }}
+                    className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                    Connect Now
+                </button>
+                </div>
+            </div>
+            </div>
+        );
+    };
+
     const renderAINextStepCell = (row) => {
         return <AINextStepCell lead={row} />;
     };
@@ -896,10 +979,7 @@ export default function LeadsTable({
 
                     <button
                     title="Documents"
-                    onClick={() => {
-                        setDocsModalInvitationId(row.invitationId);
-                        setShowDocsModal(true);
-                    }}
+                    onClick={() => handleOpenDocuments(row.invitationId)}
                     className="p-1.5 rounded hover:bg-sky-50"
                     >
                     <i className="ri-folder-3-line text-xl text-sky-700" />
@@ -1253,6 +1333,19 @@ export default function LeadsTable({
             }}
             />
         )}
+
+        {showGoogleConnectDialog && (
+            <ConfirmDialog
+                isOpen={showGoogleConnectDialog}
+                onClose={() => setShowGoogleConnectDialog(false)}
+                title="Google Drive Connection Required"
+                message="Please connect Google Drive to use this feature. Go to Settings → Integration → Google Drive. If it is not connected, candidates will not be able to submit the form."
+                onConfirm={() => {
+                window.location.href = '/leads/settings/';
+                }}
+            />
+        )}
+
         {/* STYLES */}
         <style jsx>{`
             /* ===== MODERN CRM TABLE ===== */
