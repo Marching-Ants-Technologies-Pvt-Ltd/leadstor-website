@@ -375,6 +375,13 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     return `${day}-${month}-${year}`;
   };
 
+  function base64Encode(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+  }
+
   const buildLeadFilters = () => {
     const filters = [];
 
@@ -394,7 +401,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
 
         if (col.dataField === 'course') {
           const courseValue = value.join(',');
-          filterObj.value = btoa(courseValue);
+          filterObj.value =  base64Encode(courseValue);
           filterObj.displayValue = courseValue;
         } else {
           filterObj.value = value.join(',');

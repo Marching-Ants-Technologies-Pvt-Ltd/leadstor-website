@@ -13,28 +13,82 @@ export default function DocumentsModal({ invitationId, isOpen, onClose }) {
   const [uploading, setUploading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
-
+  const [refreshToken, setRefreshToken] = useState(null);
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
+    useEffect(() => {
     if (isOpen) {
-      loadDocuments();
+        loadDocuments();
+        loadCorporateDetails();
     }
-  }, [isOpen, invitationId]);
+    }, [isOpen, invitationId]);
 
-  const loadDocuments = async () => {
-    setLoading(true);
-    try {
-      const data = await xFetch({
-        path: `/services/invite/getDocuments?invitationId=${invitationId}&time=${Date.now()}`,
-      });
-      setDocs(Array.isArray(data) ? data : []);
-    } catch (err) {
-      toast.error('Failed to load documents');
-    } finally {
-      setLoading(false);
-    }
-  };
+    const loadDocuments = async () => {
+        setLoading(true);
+
+        try {
+            const [docsData] = await Promise.all([
+            xFetch({
+                path: `/services/invite/getDocuments?invitationId=${invitationId}&time=${Date.now()}`,
+            }),
+            ]);
+
+            setDocs(Array.isArray(docsData) ? docsData : []);
+
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to load documents");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadCorporateDetails = async () => {
+        setLoading(true);
+
+        try {
+            const [corporateData] = await Promise.all([
+                xFetch({
+                    path: `/services/profile/getCorporateDetails?time=${Date.now()}`,
+                }),
+            ]);
+
+            if (corporateData) {
+                setRefreshToken(corporateData.google_drive_token || "");
+            }
+
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to load corporate details");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const refreshGoogleToken = async () => {
+        if (!refreshToken) return false;
+
+        try {
+            const res = await fetch('/api/conceptninjas/refresh-google-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+            });
+
+            if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error_description || 'Token refresh failed');
+            }
+
+            const { access_token } = await res.json();
+            localStorage.setItem('GOOGLE_DRIVE_ACCESS_TOKEN', access_token);
+            return true;
+        } catch (err) {
+            console.error(err);
+            toast.error('Google Drive connection failed. Please reconnect.');
+            return false;
+        }
+    };
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
@@ -66,10 +120,14 @@ export default function DocumentsModal({ invitationId, isOpen, onClose }) {
       );
       formData.append('file', file);
 
-      const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=media', {
+      const hasToken = await refreshGoogleToken();
+      if (!hasToken) return;
+      const token = localStorage.getItem('GOOGLE_DRIVE_ACCESS_TOKEN');
+
+      const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('GOOGLE_DRIVE_ACCESS_TOKEN') || ''}`,
+          Authorization: `Bearer ${token || ''}`,
         },
         body: formData,
       });
@@ -83,7 +141,7 @@ export default function DocumentsModal({ invitationId, isOpen, onClose }) {
       await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('GOOGLE_DRIVE_ACCESS_TOKEN') || ''}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ role: 'reader', type: 'anyone' }),
