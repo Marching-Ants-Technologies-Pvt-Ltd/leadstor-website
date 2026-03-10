@@ -4,20 +4,26 @@ import { useEffect, useState } from "react";
 import { xFetch } from "@/utility/xFetch";
 import { toast } from "react-toastify";
 import Image from "next/image";
+import { Corporate } from "@/utility/TinyDB";
 
 export default function GoogleDriveConnect() {
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
 
   // Fetch status on load
   const fetchStatus = async () => {
     try {
-      const res = await xFetch({ path: "/services/widget/getGoogleDriveStatus" });
-      // API expected to return: { authorized: true/false }
-      setIsAuthorized(res.authorized || false);
+      const res = await xFetch({ path: "/services/profile/getGoogleDriveStatus" });
+      // API can return boolean directly or object shape
+      const authorized =
+        typeof res === "boolean"
+          ? res
+          : Boolean(res?.authorized ?? res?.isAuthorized ?? res?.status);
+      setIsAuthorized(authorized);
     } catch {
       toast.error("Failed to check Google Drive status");
+      setIsAuthorized(false);
     } finally {
       setLoading(false);
     }
@@ -28,7 +34,7 @@ export default function GoogleDriveConnect() {
   }, []);
 
   const connectDrive = () => {
-    window.open("/services/google/oAuthGoogleDrive.php", "_blank");
+    window.open(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/google/oAuthGoogleDrive.php`, "_blank");
     toast.info("Please complete authentication in the opened window.");
   };
 
@@ -40,10 +46,14 @@ export default function GoogleDriveConnect() {
 
     try {
       setDisconnecting(true);
+      const formData = new FormData();
+      formData.append("corporateId", Corporate?._id);
 
       const res = await xFetch({
         path: "/services/widget/disconnectGoogleDrive",
         method: "POST",
+        payload: formData,
+        isFormData: true,
       });
 
       if (res.status) {
@@ -76,7 +86,11 @@ export default function GoogleDriveConnect() {
 
         {/* Title */}
         <h1 className="text-2xl font-semibold text-gray-800">
-          {isAuthorized ? "Connected With Your Google Drive!" : "Connect Your Google Drive!"}
+          {loading
+            ? "Checking Google Drive status..."
+            : isAuthorized
+            ? "Connected With Your Google Drive!"
+            : "Connect Your Google Drive!"}
         </h1>
 
         {/* Description */}
@@ -86,7 +100,7 @@ export default function GoogleDriveConnect() {
         </p>
 
         {/* Buttons */}
-        {!loading && (
+        {!loading && isAuthorized !== null && (
           <div className="mt-6">
             {!isAuthorized ? (
               <button

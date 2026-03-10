@@ -103,119 +103,142 @@ export default function UniversityListModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[94vh] flex flex-col overflow-hidden border border-gray-200/70">
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between bg-gray-50">
-          <h2 className="text-xl font-semibold">University List</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl">
+        <div className="px-6 py-3.5 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-800">University List</h2>
+            <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-800 text-2xl font-light leading-none p-1 hover:bg-gray-100 rounded-full transition-colors"
+            >
             ×
-          </button>
+            </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 p-6 overflow-auto">
-          {loading ? (
-            <div className="text-center py-10">Loading universities...</div>
-          ) : universities.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p className="text-lg">No universities added yet</p>
-              <button
+        <div className="flex-1 p-5 overflow-auto">
+            {loading ? (
+            <div className="text-center py-12 text-gray-500">Loading universities...</div>
+            ) : universities.length === 0 ? (
+            <div className="text-center py-16 text-gray-500">
+                <p className="text-base font-medium mb-4">No universities added yet</p>
+                <button
                 onClick={openAddNew}
-                className="mt-4 px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
+                className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                >
                 + Add University
-              </button>
+                </button>
             </div>
-          ) : (
+            ) : (
             <>
-              <div className="flex justify-between mb-4">
+                <div className="flex items-center justify-between mb-4">
                 <button
-                  onClick={handleDeleteSelected}
-                  disabled={selectedIds.length === 0}
-                  className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleDeleteSelected}
+                    disabled={selectedIds.length === 0}
+                    className={`
+                    px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                    ${selectedIds.length === 0
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-red-600 hover:bg-red-700 text-white shadow-sm"
+                    }
+                    `}
                 >
-                  Delete Selected ({selectedIds.length})
+                    Delete Selected ({selectedIds.length})
                 </button>
-                <button
-                  onClick={openAddNew}
-                  className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  + Add University
-                </button>
-              </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full border border-gray-200">
-                  <thead className="bg-gray-100">
+                <button
+                    onClick={openAddNew}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+                >
+                    + Add University
+                </button>
+                </div>
+
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead className="bg-gray-50/80">
                     <tr>
-                      <th className="px-4 py-3 text-left">
-                        <input type="checkbox" onChange={handleSelectAll} />
-                      </th>
-                      <th className="px-4 py-3 text-left">University</th>
-                      <th className="px-4 py-3 text-left">Country</th>
-                      <th className="px-4 py-3 text-left">Course</th>
-                      <th className="px-4 py-3 text-left">Mode</th>
-                      <th className="px-4 py-3 text-left">App. Date</th>
-                      <th className="px-4 py-3 text-left">Docs</th>
-                      <th className="px-4 py-3 text-left">Submitted</th>
-                      <th className="px-4 py-3 text-left">Via</th>
-                      <th className="px-4 py-3 text-left">Offer</th>
-                      <th className="px-4 py-3 text-left">Actions</th>
+                        <th className="w-10 px-3 py-3 text-left">
+                        <input
+                            type="checkbox"
+                            onChange={handleSelectAll}
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        </th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">University</th>
+                        <th className="px-3 py-3 text-left font-medium text-gray-700">Country</th>
+                        <th className="px-3 py-3 text-left font-medium text-gray-700">Course</th>
+                        <th className="px-3 py-3 text-left font-medium text-gray-700">App. Mode</th>
+                        <th className="px-3 py-3 text-left font-medium text-gray-700">Deadline</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Documents</th>
+                        <th className="px-4 py-3 text-left font-medium text-gray-700">Submitted On</th>
+                        <th className="px-3 py-3 text-left font-medium text-gray-700">Submitted</th>
+                        <th className="px-3 py-3 text-left font-medium text-gray-700">Via</th>
+                        <th className="px-3 py-3 text-left font-medium text-gray-700">Offer</th>
+                        <th className="w-16 px-3 py-3 text-left font-medium text-gray-700">Action</th>
                     </tr>
-                  </thead>
-                  <tbody>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 bg-white">
                     {universities.map(uni => (
-                      <tr key={uni.uvs_id} className="border-t hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <input
+                        <tr
+                        key={uni.uvs_id}
+                        className="hover:bg-indigo-50/40 transition-colors duration-100"
+                        >
+                        <td className="px-3 py-3">
+                            <input
                             type="checkbox"
                             checked={selectedIds.includes(uni.uvs_id)}
                             onChange={e => handleSelectOne(uni.uvs_id, e.target.checked)}
-                          />
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                            />
                         </td>
-                        <td className="px-4 py-3">{uni.university}</td>
-                        <td className="px-4 py-3">{uni.country}</td>
-                        <td className="px-4 py-3">{uni.course}</td>
-                        <td className="px-4 py-3">{uni.application_mode}</td>
-                        <td className="px-4 py-3">{uni.application_date || '-'}</td>
-                        <td className="px-4 py-3">{uni.document_status || '-'}</td>
-                        <td className="px-4 py-3">{uni.submission_date || '-'}</td>
-                        <td className="px-4 py-3">{uni.submission_status || '-'}</td>
-                        <td className="px-4 py-3">{uni.submission_by || '-'}</td>
-                        <td className="px-4 py-3">{uni.offer_type || '-'}</td>
-                        <td className="px-4 py-3">
-                          <button
+                        <td className="px-4 py-3 font-medium text-gray-900">{uni.university || '-'}</td>
+                        <td className="px-3 py-3 text-gray-700">{uni.country || '-'}</td>
+                        <td className="px-3 py-3 text-gray-700">{uni.course || '-'}</td>
+                        <td className="px-3 py-3 text-gray-600">{uni.application_mode || '-'}</td>
+                        <td className="px-3 py-3 text-gray-600">
+                            {uni.application_date?.split(' ')[0] || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{uni.document_status || '-'}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                            {uni.submission_date?.split(' ')[0] || '-'}
+                        </td>
+                        <td className="px-3 py-3 text-gray-600">{uni.submission_status || '-'}</td>
+                        <td className="px-3 py-3 text-gray-600">{uni.submission_by || '-'}</td>
+                        <td className="px-3 py-3 text-gray-600">{uni.offer_type || '-'}</td>
+                        <td className="px-3 py-3">
+                            <button
                             onClick={() => openEdit(uni)}
-                            className="text-blue-600 hover:underline"
-                          >
+                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium hover:underline transition-colors"
+                            >
                             Edit
-                          </button>
+                            </button>
                         </td>
-                      </tr>
+                        </tr>
                     ))}
-                  </tbody>
+                    </tbody>
                 </table>
-              </div>
+                </div>
             </>
-          )}
+            )}
         </div>
 
-        {/* Edit/Add Form Modal - nested or separate component */}
+        {/* Nested Edit Modal */}
         {showEditForm && editingUniversity && (
-          <UniversityEditForm
+            <UniversityEditForm
             university={editingUniversity}
             invitationId={invitationId}
             onSave={handleSaveEdit}
             onCancel={() => {
-              setShowEditForm(false);
-              setEditingUniversity(null);
+                setShowEditForm(false);
+                setEditingUniversity(null);
             }}
-          />
+            />
         )}
-      </div>
+        </div>
     </div>
-  );
+    );
 }
 
 // You can extract this into its own component or keep it here
@@ -260,188 +283,208 @@ function UniversityEditForm({
   const isEdit = !!form.uvs_id;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto border border-gray-200/70">
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center justify-between bg-gray-50 sticky top-0">
-          <h3 className="text-lg font-bold">
-            {isEdit ? 'Edit' : 'Add'} University Info
-          </h3>
-          <button
+        <div className="px-6 py-4 border-b bg-gradient-to-r from-gray-50 to-white sticky top-0 z-10 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-800">
+            {isEdit ? 'Edit' : 'Add'} University
+            </h3>
+            <button
             type="button"
             onClick={onCancel}
-            className="text-gray-500 hover:text-gray-800 text-2xl"
-          >
+            className="text-gray-500 hover:text-gray-900 text-2xl font-light p-1 hover:bg-gray-100 rounded-full transition-colors"
+            >
             ×
-          </button>
+            </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6">
-          <table className="w-full">
-            <tbody>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right w-1/3">University<span className="text-red-500 ml-1">*</span></td>
-                <td className="py-3">
-                  <input
-                    type="text"
-                    name="university"
-                    value={form.university}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Country<span className="text-red-500 ml-1">*</span></td>
-                <td className="py-3">
-                  <input
-                    type="text"
-                    name="country"
-                    value={form.country}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Course<span className="text-red-500 ml-1">*</span></td>
-                <td className="py-3">
-                  <input
-                    type="text"
-                    name="course"
-                    value={form.course}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Application Mode<span className="text-red-500 ml-1">*</span></td>
-                <td className="py-3">
-                  <select
-                    name="application_mode"
-                    value={form.application_mode}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Choose application mode</option>
-                    <option value="Direct">Direct</option>
-                    <option value="KC">KC</option>
-                    <option value="SIUK">SIUK</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Application Submission Date</td>
-                <td className="py-3">
-                  <input
-                    type="date"
-                    name="application_date"
-                    value={form.application_date}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Required Documents Checklist</td>
-                <td className="py-3">
-                  <select
-                    name="document_status"
-                    value={form.document_status}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Choose document status</option>
-                    <option value="Uploaded">Uploaded</option>
-                    <option value="Pending">Pending</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Date of Submission</td>
-                <td className="py-3">
-                  <input
-                    type="date"
-                    name="submission_date"
-                    value={form.submission_date}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Submitted</td>
-                <td className="py-3">
-                  <select
-                    name="submission_status"
-                    value={form.submission_status}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Choose submission status</option>
-                    <option value="Yes">Yes</option>
-                    <option value="No">No</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Submitted Via</td>
-                <td className="py-3">
-                  <select
-                    name="submission_by"
-                    value={form.submission_by}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Choose submitter</option>
-                    <option value="Aggregator">Aggregator</option>
-                    <option value="Direct">Direct</option>
-                  </select>
-                </td>
-              </tr>
-              <tr>
-                <td className="py-3 pr-4 font-medium text-right">Offer Management</td>
-                <td className="py-3">
-                  <select
-                    name="offer_type"
-                    value={form.offer_type}
-                    onChange={handleChange}
-                    className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Choose offer type</option>
-                    <option value="Conditional">Conditional</option>
-                    <option value="Unconditional">Unconditional</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {/* University */}
+            <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">
+                University <span className="text-red-500">*</span>
+            </label>
+            <input
+                type="text"
+                name="university"
+                value={form.university}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow shadow-sm hover:shadow"
+                placeholder="e.g. University of Example"
+            />
+            </div>
 
-          {/* Footer Actions */}
-          <div className="mt-6 flex justify-end gap-3 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-5 py-2 border rounded hover:bg-gray-100"
+            {/* Country */}
+            <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">
+                Country <span className="text-red-500">*</span>
+            </label>
+            <input
+                type="text"
+                name="country"
+                value={form.country}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow shadow-sm hover:shadow"
+                placeholder="e.g. IND, UK, AUS"
+            />
+            </div>
+
+            {/* Course */}
+            <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">
+                Course <span className="text-red-500">*</span>
+            </label>
+            <input
+                type="text"
+                name="course"
+                value={form.course}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow shadow-sm hover:shadow"
+                placeholder="e.g. MSc Computer Science"
+            />
+            </div>
+
+            {/* Application Mode */}
+            <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">
+                Application Mode <span className="text-red-500">*</span>
+            </label>
+            <select
+                name="application_mode"
+                value={form.application_mode}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:shadow transition-shadow"
             >
-              Cancel
+                <option value="">Select mode</option>
+                <option value="Direct">Direct</option>
+                <option value="KC">KC</option>
+                <option value="SIUK">SIUK</option>
+            </select>
+            </div>
+
+            {/* Application Date */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">
+                Application Deadline
+                </label>
+                <input
+                type="date"
+                name="application_date"
+                value={form.application_date}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm hover:shadow transition-shadow"
+                />
+            </div>
+
+            {/* Submission Date */}
+            <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">
+                Date of Submission
+                </label>
+                <input
+                type="date"
+                name="submission_date"
+                value={form.submission_date}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm hover:shadow transition-shadow"
+                />
+            </div>
+            </div>
+
+            {/* Documents + Submitted + Via */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">
+                Documents Checklist
+                </label>
+                <select
+                name="document_status"
+                value={form.document_status}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:shadow transition-shadow"
+                >
+                <option value="">Select status</option>
+                <option value="Uploaded">Uploaded</option>
+                <option value="Pending">Pending</option>
+                </select>
+            </div>
+
+            <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">
+                Submitted
+                </label>
+                <select
+                name="submission_status"
+                value={form.submission_status}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:shadow transition-shadow"
+                >
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                </select>
+            </div>
+
+            <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-gray-700">
+                Submitted Via
+                </label>
+                <select
+                name="submission_by"
+                value={form.submission_by}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:shadow transition-shadow"
+                >
+                <option value="">Select</option>
+                <option value="Aggregator">Aggregator</option>
+                <option value="Direct">Direct</option>
+                </select>
+            </div>
+            </div>
+
+            {/* Offer Management */}
+            <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">
+                Offer Management
+            </label>
+            <select
+                name="offer_type"
+                value={form.offer_type}
+                onChange={handleChange}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm hover:shadow transition-shadow"
+            >
+                <option value="">Select offer type</option>
+                <option value="Conditional">Conditional</option>
+                <option value="Unconditional">Unconditional</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="mt-8 flex justify-end gap-3 pt-5 border-t border-gray-200">
+            <button
+                type="button"
+                onClick={onCancel}
+                className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors font-medium"
+            >
+                Cancel
             </button>
             <button
-              type="submit"
-              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                type="submit"
+                className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm font-medium flex items-center gap-2"
             >
-              Save Changes
+                {isEdit ? 'Update' : 'Save'} University
             </button>
-          </div>
+            </div>
         </form>
-      </div>
+        </div>
     </div>
-  );
+);
 }
