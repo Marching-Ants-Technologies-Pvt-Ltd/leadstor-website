@@ -101,7 +101,7 @@ export default function PerformanceAuditModal({ isOpen, onClose }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[980px] max-h-[92vh] overflow-y-auto border border-gray-200 animate-fadeIn">
         <div className="px-6 py-3 flex justify-between items-center border-b bg-gradient-to-r from-slate-50 to-white">
           <div>
-            <div className="text-lg font-semibold text-slate-900">Owner Performance Audit</div>
+            <div className="text-lg font-semibold text-slate-900">Team Performance Insight</div>
             <div className="text-xs text-slate-500 mt-0.5">
               Last 5 days overview{meta?.from && meta?.to ? ` • ${meta.from} to ${meta.to}` : ''}
             </div>
