@@ -58,7 +58,6 @@ export default function LeadsMenu({
       conversions: 0,
     }
   );
-  console.log(User);
   // Sync with parent status counts when they change
   useEffect(() => {
     if (parentStatusCounts && setParentStatusCounts) {
@@ -380,7 +379,7 @@ export default function LeadsMenu({
               title="AI performance audit for last 5 days"
             >
               <i className="ri-line-chart-line text-indigo-600" />
-              AI Sales Inshite
+              AI Sales Insight
             </button>
           )}
 
