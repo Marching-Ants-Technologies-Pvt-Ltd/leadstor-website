@@ -14,131 +14,150 @@ import {
 import { xFetch } from "@/utility/xFetch";
 import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
 
-// Status → visual config
-const STATUS_CONFIG = {
-  "Invited": {
-    type: "info",
-    Icon: Rocket,
-    color: "#3b82f6",
-    ring: "ring-blue-400",
-    pill: "bg-blue-50 text-blue-800",
-  },
-  "Follow Up": {
-    type: "warning",
-    Icon: CalendarCheck,
-    color: "#f59e0b",
-    ring: "ring-amber-400",
-    pill: "bg-amber-50 text-amber-800",
-  },
-  "Hot Lead": {
-    type: "danger",
-    Icon: AlertCircle,
-    color: "#ef4444",
-    ring: "ring-red-400",
-    pill: "bg-red-50 text-red-800",
-  },
-  "Registered": {
-    type: "success",
-    Icon: CheckCircle2,
-    color: "#10b981",
-    ring: "ring-emerald-400",
-    pill: "bg-emerald-50 text-emerald-800",
-  },
-  default: {
-    type: "gray",
-    Icon: History,
-    color: "#6b7280",
-    ring: "ring-gray-300",
-    pill: "bg-gray-100 text-gray-700",
-  },
-};
-
-const getFollowUpStatus = (datetimeStr, currentStatus) => {
-  if (currentStatus !== "Follow Up") return null;
-
-  try {
-    // Parse your weird format: "5th-January-2026 18:08:26 PM #1"
-    const clean = datetimeStr.replace(/#\d+$/, "").trim();
-    const [dayPart, timePart] = clean.split(" ");
-    const [dayNum, month, year] = dayPart.replace("th", "").replace("st", "").replace("nd", "").replace("rd", "").split("-");
-    const dateStr = `${month} ${dayNum}, ${year} ${timePart}`;
-    const followUpDate = new Date(dateStr);
-
-    if (isNaN(followUpDate)) return null;
-
-    const now = new Date();
-    const diffMs = followUpDate - now;
-    const diffMins = Math.round(diffMs / 60000);
-    const diffHours = Math.round(diffMs / 3600000);
-    const diffDays = Math.round(diffMs / 86400000);
-
-    if (diffMs > 0) {
-      // Future
-      if (diffDays > 1) return `Follow-up expected in ${diffDays} days`;
-      if (diffHours > 0) return `Follow-up expected in ${diffHours} hours`;
-      return `Follow-up expected in ${diffMins} minutes`;
-    } else {
-      // Overdue
-      const overdueMins = Math.abs(diffMins);
-      const overdueHours = Math.abs(diffHours);
-      const overdueDays = Math.abs(diffDays);
-
-      if (overdueDays > 1) return `Follow-up overdue by ${overdueDays} days – please contact`;
-      if (overdueHours > 0) return `Follow-up overdue by ${overdueHours} hours – please contact`;
-      return `Follow-up overdue by ${overdueMins} minutes – please contact`;
-    }
-  } catch (e) {
-    return null;
-  }
-};
-
-const parseDisplayDate = (key) => {
-  // "5th-January-2026 18:08:26 PM #1" → "5 Jan 2026, 18:08"
-  try {
-    const clean = key.replace(/#\d+$/, "").trim();
-    const [dayPart, timePart] = clean.split(" ");
-    const [dayNum, month, year] = dayPart.replace(/[a-z]{2}/, "").split("-");
-    const shortMonth = month.slice(0, 3);
-    const time = timePart.slice(0, 5); // remove seconds
-    return `${dayNum} ${shortMonth} ${year}, ${time}`;
-  } catch {
-    return key;
-  }
-};
-
-// Helper to render remarks with audio player support
-const renderRemarks = (remarks) => {
-  if (!remarks) return null;
-
-  // Check if remarks contains an audio tag
-  const audioMatch = remarks.match(/<audio[^>]*src="([^"]*)"[^>]*>/i);
-  
-  if (audioMatch && audioMatch[1]) {
-    const audioSrc = audioMatch[1];
-    // Extract text content (everything except the audio tag)
-    const textContent = remarks.replace(/<audio[^>]*>.*?<\/audio>/gi, "").trim();
-    
-    return (
-      <div className="space-y-2">
-        {textContent && (
-          <p className="text-sm text-gray-700">{textContent}</p>
-        )}
-        <audio controls className="w-full mt-2">
-          <source src={audioSrc} type="audio/mpeg" />
-          <source src={audioSrc} type="audio/wav" />
-          Your browser does not support the audio element.
-        </audio>
-      </div>
-    );
-  }
-  
-  // No audio tag, render as plain text
-  return <span className="font-medium text-gray-700">{remarks}</span>;
-};
-
 const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
   const [timelineData, setTimelineData] = useState([]);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
+  const [owner, setOwner] = useState([]);
+
+   const fetchOwners = () => {
+      xFetch({
+            path: '/services/profile/getUsers',
+            payload: { basic: 1 }
+        })
+        .then(data => {
+          setOwner(data);
+        })
+        .catch(error => {
+            console.error(`An error occurred while fetching leads`, error);
+        });
+    }
+
+    useEffect(() => {
+      if (isOpen) {
+        fetchOwners();
+      }
+    }, [isOpen]);
+
+    const STATUS_CONFIG = {
+      "Invited": {
+        type: "info",
+        Icon: Rocket,
+        color: "#3b82f6",
+        ring: "ring-blue-400",
+        pill: "bg-blue-50 text-blue-800",
+      },
+      "Follow Up": {
+        type: "warning",
+        Icon: CalendarCheck,
+        color: "#f59e0b",
+        ring: "ring-amber-400",
+        pill: "bg-amber-50 text-amber-800",
+      },
+      "Hot Lead": {
+        type: "danger",
+        Icon: AlertCircle,
+        color: "#ef4444",
+        ring: "ring-red-400",
+        pill: "bg-red-50 text-red-800",
+      },
+      "Registered": {
+        type: "success",
+        Icon: CheckCircle2,
+        color: "#10b981",
+        ring: "ring-emerald-400",
+        pill: "bg-emerald-50 text-emerald-800",
+      },
+      default: {
+        type: "gray",
+        Icon: History,
+        color: "#6b7280",
+        ring: "ring-gray-300",
+        pill: "bg-gray-100 text-gray-700",
+      },
+    };
+
+    const getFollowUpStatus = (datetimeStr, currentStatus) => {
+      if (currentStatus !== "Follow Up") return null;
+
+      try {
+        // Parse your weird format: "5th-January-2026 18:08:26 PM #1"
+        const clean = datetimeStr.replace(/#\d+$/, "").trim();
+        const [dayPart, timePart] = clean.split(" ");
+        const [dayNum, month, year] = dayPart.replace("th", "").replace("st", "").replace("nd", "").replace("rd", "").split("-");
+        const dateStr = `${month} ${dayNum}, ${year} ${timePart}`;
+        const followUpDate = new Date(dateStr);
+
+        if (isNaN(followUpDate)) return null;
+
+        const now = new Date();
+        const diffMs = followUpDate - now;
+        const diffMins = Math.round(diffMs / 60000);
+        const diffHours = Math.round(diffMs / 3600000);
+        const diffDays = Math.round(diffMs / 86400000);
+
+        if (diffMs > 0) {
+          // Future
+          if (diffDays > 1) return `Follow-up expected in ${diffDays} days`;
+          if (diffHours > 0) return `Follow-up expected in ${diffHours} hours`;
+          return `Follow-up expected in ${diffMins} minutes`;
+        } else {
+          // Overdue
+          const overdueMins = Math.abs(diffMins);
+          const overdueHours = Math.abs(diffHours);
+          const overdueDays = Math.abs(diffDays);
+
+          if (overdueDays > 1) return `Follow-up overdue by ${overdueDays} days – please contact`;
+          if (overdueHours > 0) return `Follow-up overdue by ${overdueHours} hours – please contact`;
+          return `Follow-up overdue by ${overdueMins} minutes – please contact`;
+        }
+      } catch (e) {
+        return null;
+      }
+    };
+
+    const parseDisplayDate = (key) => {
+      // "5th-January-2026 18:08:26 PM #1" → "5 Jan 2026, 18:08"
+      try {
+        const clean = key.replace(/#\d+$/, "").trim();
+        const [dayPart, timePart] = clean.split(" ");
+        const [dayNum, month, year] = dayPart.replace(/[a-z]{2}/, "").split("-");
+        const shortMonth = month.slice(0, 3);
+        const time = timePart.slice(0, 5); // remove seconds
+        return `${dayNum} ${shortMonth} ${year}, ${time}`;
+      } catch {
+        return key;
+      }
+    };
+
+  // Helper to render remarks with audio player support
+  const renderRemarks = (remarks) => {
+    if (!remarks) return null;
+
+    // Check if remarks contains an audio tag
+    const audioMatch = remarks.match(/<audio[^>]*src="([^"]*)"[^>]*>/i);
+    
+    if (audioMatch && audioMatch[1]) {
+      const audioSrc = audioMatch[1];
+      // Extract text content (everything except the audio tag)
+      const textContent = remarks.replace(/<audio[^>]*>.*?<\/audio>/gi, "").trim();
+      
+      return (
+        <div className="space-y-2">
+          {textContent && (
+            <p className="text-sm text-gray-700">{textContent}</p>
+          )}
+          <audio controls className="w-full mt-2">
+            <source src={audioSrc} type="audio/mpeg" />
+            <source src={audioSrc} type="audio/wav" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      );
+    }
+    
+    // No audio tag, render as plain text
+    return <span className="font-medium text-gray-700">{remarks}</span>;
+  };
 
   const handleEditClick = () => {
     setShowUpdatePopup(true);
@@ -174,22 +193,22 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
       console.error("Timeline fetch failed", e);
     }
   };
-
+  
   const getUpdatedBy = (value) => {
     if (!value?.updated_by) return "Unknown";
 
-    const updatedById = Number(value.updated_by); // ensure number comparison
+    const updatedById = String(value.updated_by).trim(); 
+    if (updatedById === "-1" || updatedById === -1) return "Admin";
+    if (updatedById === "-3" || updatedById === -3) return "System";
 
-    // Special cases first (they have priority)
-    if (updatedById === -1) return "Admin";
-    if (updatedById === -3) return "System";
-
-    // Look up in users array
-    if (Array.isArray(users) && users.length > 0) {
-      const matchingUser = users.find((user) => Number(user.id) === updatedById);
-      if (matchingUser?.name) return matchingUser.name;
+    if (owner && typeof owner === "object" && !Array.isArray(owner)) {
+      const name = owner[updatedById];
+      if (name && typeof name === "string" && name.trim()) {
+        return name.trim();
+      }
     }
 
+    // Fallback
     return "Unknown";
   };
 
