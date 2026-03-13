@@ -15,6 +15,7 @@ import SendEmailModal from '@/components/dashboard/Lead/SendEmailModal.jsx';
 import BulkUpdateDrawer from '@/components/dashboard/Lead/BulkUpdateDrawer';
 import DailyReportModal from '@/components/dashboard/Lead/DailyReportModal.jsx';
 import ExportEnquiriesModal from '@/components/dashboard/Lead/ExportEnquiriesModal.jsx';
+import PerformanceAuditModal from '@/components/dashboard/Lead/PerformanceAuditModal.jsx';
 import { xFetch } from '@/utility/xFetch';
 import { showAppliedFilter } from '@/components/dashboard/Lead/AppliedFilters';
 
@@ -46,6 +47,7 @@ export default function LeadsMenu({
   const [showBulkUpdateDrawer, setShowBulkUpdateDrawer] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [dailyReport, setDailyReport] = useState(false);
+  const [showPerformanceAudit, setShowPerformanceAudit] = useState(false);
 
   const [statusCounts, setStatusCounts] = useState(
     parentStatusCounts || {
@@ -56,7 +58,7 @@ export default function LeadsMenu({
       conversions: 0,
     }
   );
-
+  console.log(User);
   // Sync with parent status counts when they change
   useEffect(() => {
     if (parentStatusCounts && setParentStatusCounts) {
@@ -371,6 +373,17 @@ export default function LeadsMenu({
             Add
           </button>
 
+          {User?._id == 0 && Corporate?.is_ai_nextstep_enabled == "1" && (
+            <button
+              onClick={() => setShowPerformanceAudit(true)}
+              className="action-chip"
+              title="AI performance audit for last 5 days"
+            >
+              <i className="ri-line-chart-line text-indigo-600" />
+              AI Sales Inshite
+            </button>
+          )}
+
           {/* EXPORT */}
           <div className="relative">
             <button
@@ -526,6 +539,9 @@ export default function LeadsMenu({
         <BulkUpdateDrawer open onClose={() => setShowBulkUpdateDrawer(false)} selectedIds={selectedLeadIds}/>
       )}
       {dailyReport && <DailyReportModal isOpen onClose={() => setDailyReport(false)} />}
+      {showPerformanceAudit && (
+        <PerformanceAuditModal isOpen onClose={() => setShowPerformanceAudit(false)} />
+      )}
       {showExportModal && (
         <ExportEnquiriesModal
           isOpen
