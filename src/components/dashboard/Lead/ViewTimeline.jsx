@@ -11,7 +11,6 @@ import {
   History,
   Rocket,
 } from "lucide-react";
-import { Owners } from "@/utility/TinyDB";
 import { xFetch } from "@/utility/xFetch";
 import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
 
@@ -176,10 +175,22 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
     }
   };
 
-  const getUpdatedByName = (id) => {
-    if (id === "-1" || id === -1) return "Admin";
-    if (id === "-3" || id === -3) return "System";
-    return Owners[String(id)] || "Unknown";
+  const getUpdatedBy = (value) => {
+    if (!value?.updated_by) return "Unknown";
+
+    const updatedById = Number(value.updated_by); // ensure number comparison
+
+    // Special cases first (they have priority)
+    if (updatedById === -1) return "Admin";
+    if (updatedById === -3) return "System";
+
+    // Look up in users array
+    if (Array.isArray(users) && users.length > 0) {
+      const matchingUser = users.find((user) => Number(user.id) === updatedById);
+      if (matchingUser?.name) return matchingUser.name;
+    }
+
+    return "Unknown";
   };
 
   const headerName = `${leadDetails?.firstName || "Unknown Lead"} ${
@@ -229,7 +240,8 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
 
                 const isLast = index === timelineData.length - 1;
                 const followUpInfo = getFollowUpStatus(item.datetimeKey, status);
-
+                const updatedBy = getUpdatedBy(item);
+                
                 return (
                   <div key={item.datetime} className="flex gap-4 relative">
                     {/* Smaller icon */}
@@ -285,7 +297,7 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
                         <p className="text-sm text-gray-500">
                           Updated by{" "}
                           <span className="font-medium text-gray-700">
-                            {getUpdatedByName(item.updated_by)}
+                            {updatedBy}
                           </span>
                         </p>
                       </div>

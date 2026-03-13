@@ -445,8 +445,20 @@ export default function LeadsTable({
             safeText = `${row.latestRemarksDate}: ${safeText}`;
         }
 
-        const truncated = safeText.length > 120;
-        const short = truncated ? safeText.substring(0, 120) : safeText;
+        let displayValue = safeText;
+
+        if (Corporate?.type !== 800 && row.additionalInfo && row.additionalInfo.trim().length > 0) {
+            if (displayValue.length > 0) {
+                displayValue += "<br/>";
+            }
+            displayValue += 
+                '<font color="GREEN"><span class="glyphicon glyphicon-user"></span>&nbsp;-&nbsp;' 
+                + row.additionalInfo 
+                + '</font>';
+        }
+
+        const truncated = displayValue.length > 120;
+        const short = truncated ? displayValue.substring(0, 120) : displayValue;
 
         // We give each expandable block a unique-ish id
         const blockId = `remarks-${row.id || Math.random().toString(36).slice(2, 10)}`;
@@ -457,12 +469,12 @@ export default function LeadsTable({
                 <span>${short} <span class="text-blue-600 cursor-pointer hover:underline view-more" 
                     data-action="expand"> (view more)</span></span>
                 <div class="full-remarks hidden mt-1">
-                    ${safeText}
+                    ${displayValue}
                     <span class="text-red-600 cursor-pointer hover:underline ml-2 view-more" 
                         data-action="collapse"> (hide)</span>
                 </div>
             </div>
-        ` : safeText;
+        ` : displayValue;
 
         if ((!html || html.trim() === "") && !audioSrc) {
             return <div className="text-gray-400">-</div>;
