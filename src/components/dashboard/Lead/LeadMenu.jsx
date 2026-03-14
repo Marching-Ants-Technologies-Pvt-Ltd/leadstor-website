@@ -372,7 +372,7 @@ export default function LeadsMenu({
             Add
           </button>
 
-          {User?._id == 0 && Corporate?.is_ai_nextstep_enabled == "1" && (
+          {Corporate?.is_ai_nextstep_enabled == "1" && (
             <button
               onClick={() => setShowPerformanceAudit(true)}
               className="action-chip"
