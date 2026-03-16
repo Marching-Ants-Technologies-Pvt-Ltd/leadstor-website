@@ -376,9 +376,9 @@ export default function LeadsMenu({
             <button
               onClick={() => setShowPerformanceAudit(true)}
               className="action-chip"
-              title="AI performance audit for last 5 days"
+              title="AI performance audit for last 7 days"
             >
-              <i className="ri-line-chart-line text-indigo-600" />
+                <span class="sparkle">✨</span>
               AI Sales Insight
             </button>
           )}

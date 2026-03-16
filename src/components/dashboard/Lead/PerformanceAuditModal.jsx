@@ -27,6 +27,7 @@ const pick = (obj, keys, fallback) => {
 };
 
 export default function PerformanceAuditModal({ isOpen, onClose }) {
+  const REPORT_DAYS = 7;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [payload, setPayload] = useState(null);
@@ -38,7 +39,8 @@ export default function PerformanceAuditModal({ isOpen, onClose }) {
     try {
       const res = await xFetch({
         method: 'POST',
-        path: '/services/invite/getCorporatePerformanceAudit'
+        path: '/services/invite/getCorporatePerformanceAudit',
+        payload: { days: REPORT_DAYS }
       });
       if (!res || res.status === false) {
         throw new Error(res?.error || 'Unable to generate performance audit');
@@ -59,6 +61,7 @@ export default function PerformanceAuditModal({ isOpen, onClose }) {
 
   const data = payload?.data || {};
   const meta = payload?.meta || {};
+  const eventStats = payload?.event_stats || {};
 
   const comparativeRows = useMemo(
     () =>
@@ -93,6 +96,11 @@ export default function PerformanceAuditModal({ isOpen, onClose }) {
     () => ensureArray(pick(data, ['final_salesperson_ranking', 'finalSalespersonRanking'], [])),
     [data]
   );
+  const hasAnyOutput =
+    Boolean(data?.best_performer || data?.average_performer || data?.weakest_performer ||
+      data?.bestPerformer || data?.averagePerformer || data?.weakestPerformer ||
+      comparativeRows.length || scorecardRows.length || individualRows.length ||
+      insights.length || ranking.length);
 
   if (!isOpen) return null;
 
@@ -103,7 +111,7 @@ export default function PerformanceAuditModal({ isOpen, onClose }) {
           <div>
             <div className="text-lg font-semibold text-slate-900">Team Performance Insight</div>
             <div className="text-xs text-slate-500 mt-0.5">
-              Last 5 days overview{meta?.from && meta?.to ? ` • ${meta.from} to ${meta.to}` : ''}
+              Last {REPORT_DAYS} days overview{meta?.from && meta?.to ? ` - ${meta.from} to ${meta.to}` : ''}
             </div>
           </div>
           <button
@@ -134,8 +142,41 @@ export default function PerformanceAuditModal({ isOpen, onClose }) {
             </div>
           )}
 
+          {Object.keys(eventStats).length > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4">
+              <div className="text-sm font-semibold text-slate-700 mb-2">
+                Sales Activity Signals
+              </div>
+
+              {Object.entries(eventStats).map(([user, events]) => (
+                <div key={user} className="mb-3">
+                  <div className="text-xs font-semibold text-slate-800">{user}</div>
+                  <div className="text-xs text-slate-600">
+                    {Object.entries(events).map(([event,count]) => (
+                      <span key={event} className="mr-3">
+                        {event.replaceAll('_',' ')}: {count}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {!loading && !error && payload && (
             <>
+              {!hasAnyOutput && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                  No analysis data returned from AI. This usually means the model returned an unexpected
+                  format or an empty response.
+                </div>
+              )}
+              {meta?.compressed && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+                  Large data detected. The audit used intelligent summarization to fit model limits.
+                  {meta?.raw_entries ? ` Raw entries: ${meta.raw_entries}.` : ''}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
                   <div className="text-xs uppercase text-emerald-600 font-semibold">Best Performer</div>
