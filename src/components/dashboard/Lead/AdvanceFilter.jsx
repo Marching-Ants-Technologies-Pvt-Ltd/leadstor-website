@@ -16,6 +16,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   const [searches, setSearches] = useState({});
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = React.useRef(null);
+  const [hydratedForOpen, setHydratedForOpen] = useState(false);
 
   const probabilityOptions = [
     { label: 'Low', value: '20' },
@@ -67,6 +68,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
 
   // Fields to exclude from filter
   const EXCLUDED_FIELDS = ['mobile', 'firstName', 'emailId', 'action', 'updateTime', 'createdDate', 'aINextStep', 'remarks', 'message'];
+  const STATUS_FIELD = 'status';
 
   // Fetch columns from API
   const fetchColumns = async () => {
@@ -196,6 +198,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     if (isOpen) {
       fetchColumns();
       fetchFilterOptions();
+      setHydratedForOpen(false);
     }
   }, [isOpen, sessionData]);
 
@@ -214,13 +217,133 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
           followupDate_end: prev?.followupDate_end || '',
         };
         columns.forEach(col => {
-          if (!updated.hasOwnProperty(col.dataField)) {
-            updated[col.dataField] = [];
-          }
+          updated[col.dataField] = prev?.[col.dataField] ?? [];
         });
         return updated;
       });
     }
+  }, [columns]);
+
+  const parseStoredDate = (value) => {
+    if (!value) return '';
+    const str = String(value).trim();
+    // Expected format: dd-MMM-yyyy (e.g., 07-Feb-2026)
+    const parts = str.split('-');
+    if (parts.length === 3) {
+      const [day, mon, year] = parts;
+      const parsed = new Date(`${mon} ${day}, ${year}`);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    const fallback = new Date(str);
+    return isNaN(fallback.getTime()) ? '' : fallback;
+  };
+
+  const base64Decode = (value) => {
+    try {
+      if (typeof window === 'undefined') return value;
+      const binary = atob(value);
+      const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    } catch (e) {
+      return value;
+    }
+  };
+
+  const hydrateSelectedFiltersFromStorage = (cols) => {
+    const stored = LeadFilters?.value?.() || [];
+    if (!Array.isArray(stored) || stored.length === 0) return;
+
+    const hydrated = {
+      owner: [],
+      courseMode: '',
+      probability: [],
+      enquiryDateFrom: '',
+      enquiryDateTo: '',
+      updatedDateFrom: '',
+      updatedDateTo: '',
+      followupDate: '',
+      followupDate_end: '',
+    };
+
+    const safeCols = Array.isArray(cols) ? cols : [];
+    safeCols.forEach(col => {
+      if (col?.filterable) {
+        hydrated[col.dataField] = [];
+      }
+    });
+
+    stored.forEach(filter => {
+      const query = filter?.query;
+      if (!query || query === 'button') return;
+
+      if (query === 'owner') {
+        hydrated.owner = String(filter?.value || '').split(',').filter(Boolean);
+        return;
+      }
+      if (query === 'courseModeFilter') {
+        hydrated.courseMode = filter?.value || '';
+        return;
+      }
+      if (query === 'leadProbability') {
+        hydrated.probability = String(filter?.value || '').split(',').filter(Boolean);
+        return;
+      }
+      if (query === 'frmDate') {
+        hydrated.enquiryDateFrom = parseStoredDate(filter?.value);
+        return;
+      }
+      if (query === 'toDate') {
+        hydrated.enquiryDateTo = parseStoredDate(filter?.value);
+        return;
+      }
+      if (query === 'updatedFrmDate') {
+        hydrated.updatedDateFrom = parseStoredDate(filter?.value);
+        return;
+      }
+      if (query === 'updatedToDate') {
+        hydrated.updatedDateTo = parseStoredDate(filter?.value);
+        return;
+      }
+      if (query === 'followupDate') {
+        hydrated.followupDate = parseStoredDate(filter?.value);
+        return;
+      }
+      if (query === 'followupDate_end') {
+        hydrated.followupDate_end = parseStoredDate(filter?.value);
+        return;
+      }
+
+      const col = safeCols.find(c => c.dataField === query);
+      if (!col && !Object.prototype.hasOwnProperty.call(hydrated, query)) {
+        hydrated[query] = [];
+      }
+      let raw = filter?.value || '';
+      if (query === 'course') {
+        raw = base64Decode(raw);
+      }
+      hydrated[query] = String(raw).split(',').filter(Boolean);
+    });
+
+    setSelectedFilters(prev => ({ ...prev, ...hydrated }));
+    setResetKey(prev => prev + 1);
+  };
+
+  useEffect(() => {
+    if (isOpen && !hydratedForOpen) {
+      hydrateSelectedFiltersFromStorage(columns);
+      setHydratedForOpen(true);
+    }
+  }, [isOpen, columns, hydratedForOpen]);
+
+  const orderedColumns = useMemo(() => {
+    if (!columns || columns.length === 0) return [];
+    const list = [...columns];
+    const idx = list.findIndex(c => c.dataField === STATUS_FIELD);
+    if (idx > 0) {
+      const [statusCol] = list.splice(idx, 1);
+      list.unshift(statusCol);
+    }
+    return list;
   }, [columns]);
 
   useEffect(() => {
@@ -306,9 +429,9 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   const selectMultiOption = (type, value) => {
     setSelectedFilters(prev => ({
       ...prev,
-      [type]: prev[type].includes(value)
-        ? prev[type].filter(item => item !== value)
-        : [...prev[type], value]
+      [type]: (prev[type] || []).includes(value)
+        ? (prev[type] || []).filter(item => item !== value)
+        : [...(prev[type] || []), value]
     }));
   };
 
@@ -719,7 +842,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
             ) : (
               <div>
                 {/* Column Filters */}
-                {columns.map(col => {
+                {orderedColumns.map(col => {
                   const field = col.dataField;
                   if (field === 'owner' || field === 'assignedUserId' || field === 'assignedTo') {
                     return null;
