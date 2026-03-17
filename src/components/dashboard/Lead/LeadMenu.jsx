@@ -48,6 +48,7 @@ export default function LeadsMenu({
   const [showExportModal, setShowExportModal] = useState(false);
   const [dailyReport, setDailyReport] = useState(false);
   const [showPerformanceAudit, setShowPerformanceAudit] = useState(false);
+  const [performanceAuditDays, setPerformanceAuditDays] = useState(7);
 
   const [statusCounts, setStatusCounts] = useState(
     parentStatusCounts || {
@@ -372,15 +373,40 @@ export default function LeadsMenu({
             Add
           </button>
 
-          {Corporate?.is_ai_nextstep_enabled == "1" && (
-            <button
-              onClick={() => setShowPerformanceAudit(true)}
-              className="action-chip"
-              title="AI performance audit for last 7 days"
-            >
-                <span class="sparkle">✨</span>
-              AI Sales Insight
-            </button>
+          {Corporate?.is_ai_nextstep_enabled == "1" && User?._id == -1 && (
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenu(openMenu === 'ai' ? null : 'ai');
+                }}
+                className="action-chip"
+                title="AI performance audit"
+              >
+                <span className="sparkle">✨</span>
+                AI Sales Insight
+                <i className="ri-arrow-down-s-line text-xs opacity-60" />
+              </button>
+
+              {openMenu === 'ai' && (
+                <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                  {[7, 15].map((days) => (
+                    <button
+                      key={days}
+                      className="drop-item"
+                      onClick={() => {
+                        setPerformanceAuditDays(days);
+                        setShowPerformanceAudit(true);
+                        setOpenMenu(null);
+                      }}
+                    >
+                      <i className="ri-calendar-line text-blue-500" />
+                      Last {days} days
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* EXPORT */}
@@ -539,7 +565,11 @@ export default function LeadsMenu({
       )}
       {dailyReport && <DailyReportModal isOpen onClose={() => setDailyReport(false)} />}
       {showPerformanceAudit && (
-        <PerformanceAuditModal isOpen onClose={() => setShowPerformanceAudit(false)} />
+        <PerformanceAuditModal
+          isOpen
+          onClose={() => setShowPerformanceAudit(false)}
+          days={performanceAuditDays}
+        />
       )}
       {showExportModal && (
         <ExportEnquiriesModal
@@ -634,3 +664,4 @@ export default function LeadsMenu({
     </>
   );
 }
+

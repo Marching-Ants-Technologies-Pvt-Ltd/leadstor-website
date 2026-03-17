@@ -26,8 +26,8 @@ const pick = (obj, keys, fallback) => {
   return fallback;
 };
 
-export default function PerformanceAuditModal({ isOpen, onClose }) {
-  const REPORT_DAYS = 7;
+export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
+  const REPORT_DAYS = Number(days) || 7;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [payload, setPayload] = useState(null);
@@ -57,7 +57,7 @@ export default function PerformanceAuditModal({ isOpen, onClose }) {
     if (isOpen) {
       loadAudit();
     }
-  }, [isOpen]);
+  }, [isOpen, REPORT_DAYS]);
 
   const data = payload?.data || {};
   const meta = payload?.meta || {};
