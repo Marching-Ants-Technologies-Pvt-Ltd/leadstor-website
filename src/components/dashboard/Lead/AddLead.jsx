@@ -541,29 +541,29 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       if (hasValidMobile) phones.push(mobileNorm);
 
       // 6. Optional: Validate dropdown / autocomplete fields
-      if (sourceCol >= 0) {
-        const val = String(row[fields[sourceCol]?.dataField] ?? "").trim();
-        if (val && !sources.some(s => s.source?.toLowerCase() === val.toLowerCase())) {
-          hot.setCellMeta(r, sourceCol, "className", "htInvalid");
-          hot.render();
-          return {
-            ok: false,
-            message: `Row ${r + 1}: Invalid Source → ${val}`,
-          };
-        }
-      }
+      // if (sourceCol >= 0) {
+      //   const val = String(row[fields[sourceCol]?.dataField] ?? "").trim();
+      //   if (val && !sources.some(s => s.source?.toLowerCase() === val.toLowerCase())) {
+      //     hot.setCellMeta(r, sourceCol, "className", "htInvalid");
+      //     hot.render();
+      //     return {
+      //       ok: false,
+      //       message: `Row ${r + 1}: Invalid Source → ${val}`,
+      //     };
+      //   }
+      // }
 
-      if (courseCol >= 0) {
-        const val = String(row[fields[courseCol]?.dataField] ?? "").trim();
-        if (val && !courses.some(c => c.course?.toLowerCase() === val.toLowerCase())) {
-          hot.setCellMeta(r, courseCol, "className", "htInvalid");
-          hot.render();
-          return {
-            ok: false,
-            message: `Row ${r + 1}: Invalid Course → ${val}`,
-          };
-        }
-      }
+      // if (courseCol >= 0) {
+      //   const val = String(row[fields[courseCol]?.dataField] ?? "").trim();
+      //   if (val && !courses.some(c => c.course?.toLowerCase() === val.toLowerCase())) {
+      //     hot.setCellMeta(r, courseCol, "className", "htInvalid");
+      //     hot.render();
+      //     return {
+      //       ok: false,
+      //       message: `Row ${r + 1}: Invalid Course → ${val}`,
+      //     };
+      //   }
+      // }
 
       if (ownerCol >= 0) {
         const val = String(row[fields[ownerCol]?.dataField] ?? "").trim();
@@ -656,6 +656,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     if (!hot || !duplicates || duplicates.length === 0) return 0;
 
     let matched = 0;
+    const duplicateRows = new Set();
     const raw = hot.getData();
 
     // Create a Set for faster lookup
@@ -672,6 +673,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         
         if (email && duplicateSet.has(email)) {
           matched++;
+          duplicateRows.add(r);
           hot.setCellMeta(r, emailColIndex, "className", "htInvalid");
         }
       }
@@ -693,6 +695,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         
         if (phoneDigits && duplicateSet.has(phoneDigits)) {
           matched++;
+          duplicateRows.add(r);
           hot.setCellMeta(r, phoneColIndex, "className", "htInvalid");
         }
       }

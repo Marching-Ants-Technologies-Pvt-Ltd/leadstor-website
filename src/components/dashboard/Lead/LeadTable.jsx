@@ -251,6 +251,7 @@ export default function LeadsTable({
     ======================= */
     const renderMobileCell = (row) => {
         const phone = row.altMobile ? row.mobile + ', ' + row.altMobile : row.mobile;
+        const whatsappCall = row.mobile;
         return (
             <div className="flex items-center gap-2">
                 <span>{phone}</span>
@@ -260,7 +261,7 @@ export default function LeadsTable({
                     title="WhatsApp"
                     onClick={(e) => {
                         e.stopPropagation();
-                        window.open(`https://wa.me/${phone}?text=hello`, "_blank");
+                        window.open(`https://wa.me/${whatsappCall}?text=hello`, "_blank");
                     }}
                 />
 
@@ -439,26 +440,36 @@ export default function LeadsTable({
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = remarksText;
         let safeText = tempDiv.textContent || tempDiv.innerText || "";
+        safeText = safeText.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+        safeText = safeText.replace(/\n{2,}/g, "\n").trim();
 
         // Add latest remarks date prefix
         if (row.latestRemarksDate) {
             safeText = `${row.latestRemarksDate}: ${safeText}`;
         }
 
-        let displayValue = safeText;
+        safeText = safeText.replace(/\n{2,}/g, "\n").trim();
+
+        let displayValue = safeText.replace(/\n/g, "<br/>");
+        let plainText = safeText;
 
         if (Corporate?.type !== 800 && row.additionalInfo && row.additionalInfo.trim().length > 0) {
             if (displayValue.length > 0) {
                 displayValue += "<br/>";
             }
-            displayValue += 
-                '<font color="GREEN"><span class="glyphicon glyphicon-user"></span>&nbsp;-&nbsp;' 
-                + row.additionalInfo 
+            displayValue +=
+                '<font color="GREEN"><span class="glyphicon glyphicon-user"></span>&nbsp;-&nbsp;'
+                + row.additionalInfo
                 + '</font>';
+
+            plainText = plainText ? `${plainText} - ${row.additionalInfo}` : row.additionalInfo;
         }
 
-        const truncated = displayValue.length > 120;
-        const short = truncated ? displayValue.substring(0, 120) : displayValue;
+        const truncated = plainText.length > 120;
+        const shortPlain = truncated ? plainText.substring(0, 120) : plainText;
+        const escDiv = document.createElement("div");
+        escDiv.textContent = shortPlain;
+        const shortHtml = escDiv.innerHTML;
 
         // We give each expandable block a unique-ish id
         const blockId = `remarks-${row.id || Math.random().toString(36).slice(2, 10)}`;
@@ -466,7 +477,7 @@ export default function LeadsTable({
         // Truncate + expand logic (same as before, but cleaner HTML)
         const html = truncated ? `
             <div data-remarks-id="${blockId}">
-                <span>${short} <span class="text-blue-600 cursor-pointer hover:underline view-more" 
+                <span>${shortHtml} <span class="text-blue-600 cursor-pointer hover:underline view-more" 
                     data-action="expand"> (view more)</span></span>
                 <div class="full-remarks hidden mt-1">
                     ${displayValue}
@@ -498,7 +509,7 @@ export default function LeadsTable({
 
             {/* Remarks text */}
             <div
-                className="text-sm text-gray-800 whitespace-pre-line break-words leading-relaxed"
+                className="text-sm text-gray-800 break-words leading-relaxed"
                 style={{
                     lineHeight: "1.45",
                     wordBreak: "break-word",
@@ -1132,8 +1143,8 @@ export default function LeadsTable({
         cols.push({
             accessorKey: col,
             size: col === 'remarks' ? 200 : undefined,
-            header: columns?.find(c => c.dataField === col)?.displayName
-                    || columns?.find(c => c.dataField === col)?.fieldName,
+            header: (col === 'course' && Corporate?.type === 800) ? 'Country' : (columns?.find(c => c.dataField === col)?.displayName
+                    || columns?.find(c => c.dataField === col)?.fieldName),
 
             cell: ({ row }) => {
                 const r = row.original;

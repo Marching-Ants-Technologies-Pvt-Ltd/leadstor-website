@@ -188,12 +188,12 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   };
 
   const transformOwnerOptions = (owners) => {
-    if (Object.keys(owners).length > 0) {
-      return Object.entries(owners).map(([key, value]) => ({ key, value }));
+    if (!owners || Object.keys(owners).length === 0) {
+      return [{ key: "0", value: "---Not Allocated---" }];
     }
-    return [];
+    const list = Object.entries(owners).map(([key, value]) => ({ key, value }));
+    return [{ key: "0", value: "---Not Allocated---" }, ...list];
   };
-
   useEffect(() => {
     if (isOpen) {
       fetchColumns();

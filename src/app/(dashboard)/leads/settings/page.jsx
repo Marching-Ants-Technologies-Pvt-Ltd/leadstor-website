@@ -4,7 +4,7 @@ import React, { useState, useMemo, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { RiArrowDownSLine, RiArrowRightSLine } from "react-icons/ri";
-
+import { Corporate } from '@/utility/TinyDB';
 // ---------------------------------------------------
 // ⚡ 1. DYNAMIC IMPORTS (Lazy Loading)
 // ---------------------------------------------------
@@ -31,7 +31,7 @@ const Calendly = dynamic(() => import('@/components/dashboard/Lead/Settings/Cale
 const GoogleDrive = dynamic(() => import('@/components/dashboard/Lead/Settings/GoogleDrive'), { ssr: false });
 const IVRSettings = dynamic(() => import('@/components/dashboard/Lead/Settings/IVRSettings'), { ssr: false });
 const Facebook = dynamic(() => import('@/components/dashboard/Lead/Settings/Facebook'), { ssr: false });
-
+const PreferredCourses = dynamic(() => import('@/components/dashboard/Lead/Settings/PreferredCourses'), { ssr: false });
 const Loading = dynamic(() => import('@/components/dashboard/Lead/Settings/loading'), { ssr: false });
 
 
@@ -42,17 +42,18 @@ export default function Settings() {
   const router = useRouter();
 
   // Active selected content
-  const [activeMenu, setActiveMenu] = useState("courses");
+  const [activeMenu, setActiveMenu] = useState("statuses");
 
   // Dropdown states
-  const [openMenus, setOpenMenus] = useState({});
+  const [openMenus, setOpenMenus] = useState({ leadSetup: true });
   const [openSubMenus, setOpenSubMenus] = useState({});
 
   // ---------------------------------------------------
   // MENU STRUCTURE MEMOIZED (Optimized)
   // ---------------------------------------------------
-  const menuStructure = useMemo(
-    () => [
+  const menuStructure = useMemo(() => {
+    const isCorporate800 = Corporate?.type === 800;
+    return [
       {
         label: "Integrations",
         key: "integrations",
@@ -75,7 +76,6 @@ export default function Settings() {
           { key: "calendly", label: "Calendly" },
         ]
       },
-
       {
         label: "Templates",
         key: "templates",
@@ -94,21 +94,20 @@ export default function Settings() {
           }
         ]
       },
-
       {
         label: "Lead Settings",
         key: "leadSetup",
         collapsible: true,
         children: [
           { key: "statuses", label: "Statuses" },
-          { key: "courses", label: "Courses & Fee" },
+          { key: "courses", label: isCorporate800 ? "Country & Processing Fee" : "Courses & Fee",},
+          ...(isCorporate800 ? [{ key: "preferredCourses", label: "Preferred Courses" }] : []),
           { key: "sources", label: "Sources" },
           { key: "leadAllocation", label: "Lead Allocation" },
           { key: "mapping", label: "Field Mapping" },
           { key: "tableReorder", label: "Table Reorder" },
         ]
       },
-
       {
         label: "General",
         key: "general",
@@ -119,39 +118,117 @@ export default function Settings() {
           { key: "currencySettings", label: "Currency Settings" }
         ]
       }
-    ],
-    []
-  );
+    ];
+    }, [Corporate?.type]);
 
 
   // ---------------------------------------------------
   // SELECT CONTENT LAZILY
   // ---------------------------------------------------
+  // const renderContent = () => {
+  //   switch (activeMenu) {
+  //     case "statuses": return <Statuses />;
+  //     case "sources": return <Sources />;
+  //     case "leadAllocation": return <LeadAllocation />;
+  //     case "mapping": return <FieldMapping />;
+  //     case "tableReorder": return <TableReorder />;
+  //     case "courses": return <CourseAndFee />;
+  //     Corporate?.type === 800 && case "preferredCourses": return <PreferredCourses />;
+  //     case "preferences": return <Preferences />;
+  //     case "images": return <Images />;
+  //     case "currencySettings": return <CurrencySettings />;
+
+  //     case "welcomeTemplate": return <WelcomeTemplate />;
+  //     case "emailTemplateManagement": return <EmailTemplateManager />;
+  //     case "templateStatusWise": return <StatusTemplateMapping />;
+  //     case "templateCourseWise": return <CourseTemplateMapping />;
+
+  //     case "justdial": return <JustdialSulekha />;
+  //     case "webSync": return <WebSync />;
+  //     case "whatsAppConfig": return <WhatsAppConfig />;
+  //     case "whatsAppAutomation": return <WhatsAppAutomation />;
+  //     case "calendly": return <Calendly />;
+  //     case "googleDrive": return <GoogleDrive />;
+  //     case "facebook": return <Facebook />;
+  //     case "IVR": return <IVRSettings />;
+
+  //     default:
+  //       return <div className="text-gray-500">Select an item from the menu</div>;
+  //   }
+  // };
+  
+
   const renderContent = () => {
     switch (activeMenu) {
-      case "statuses": return <Statuses />;
-      case "sources": return <Sources />;
-      case "leadAllocation": return <LeadAllocation />;
-      case "mapping": return <FieldMapping />;
-      case "tableReorder": return <TableReorder />;
-      case "courses": return <CourseAndFee />;
-      case "preferences": return <Preferences />;
-      case "images": return <Images />;
-      case "currencySettings": return <CurrencySettings />;
+      case "statuses":
+        return <Statuses />;
 
-      case "welcomeTemplate": return <WelcomeTemplate />;
-      case "emailTemplateManagement": return <EmailTemplateManager />;
-      case "templateStatusWise": return <StatusTemplateMapping />;
-      case "templateCourseWise": return <CourseTemplateMapping />;
+      case "sources":
+        return <Sources />;
 
-      case "justdial": return <JustdialSulekha />;
-      case "webSync": return <WebSync />;
-      case "whatsAppConfig": return <WhatsAppConfig />;
-      case "whatsAppAutomation": return <WhatsAppAutomation />;
-      case "calendly": return <Calendly />;
-      case "googleDrive": return <GoogleDrive />;
-      case "facebook": return <Facebook />;
-      case "IVR": return <IVRSettings />;
+      case "leadAllocation":
+        return <LeadAllocation />;
+
+      case "mapping":
+        return <FieldMapping />;
+
+      case "tableReorder":
+        return <TableReorder />;
+
+      case "courses":
+        return <CourseAndFee />;
+
+      case "preferredCourses":
+        // Only render for corporate type 800
+        if (Corporate?.type !== 800) {
+          return null; // or <div>Not available for this corporate type</div>
+        }
+        return <PreferredCourses />;
+
+      case "preferences":
+        return <Preferences />;
+
+      case "images":
+        return <Images />;
+
+      case "currencySettings":
+        return <CurrencySettings />;
+
+      case "welcomeTemplate":
+        return <WelcomeTemplate />;
+
+      case "emailTemplateManagement":
+        return <EmailTemplateManager />;
+
+      case "templateStatusWise":
+        return <StatusTemplateMapping />;
+
+      case "templateCourseWise":
+        return <CourseTemplateMapping />;
+
+      case "justdial":
+        return <JustdialSulekha />;
+
+      case "webSync":
+        return <WebSync />;
+
+      case "whatsAppConfig":
+        return <WhatsAppConfig />;
+
+      case "whatsAppAutomation":
+        return <WhatsAppAutomation />;
+
+      case "calendly":
+        return <Calendly />;
+
+      case "googleDrive":
+        return <GoogleDrive />;
+
+      case "facebook":
+        return <Facebook />;
+
+      case "IVR":
+        return <IVRSettings />;
 
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;
