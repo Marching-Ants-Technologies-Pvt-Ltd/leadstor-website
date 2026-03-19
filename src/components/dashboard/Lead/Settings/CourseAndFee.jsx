@@ -7,6 +7,12 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/ReactToastify.min.css";
 
 export default function CoursesAndFee() {
+  const isCorporate800 = Corporate?.type === 800;
+  const courseLabel = isCorporate800 ? 'Country' : 'Course';
+  const feeLabel = isCorporate800 ? 'Processing Fee' : 'Standard Fee';
+  const titleLabel = isCorporate800 ? 'Country and Processing Fee' : 'Courses & Fees';
+  const itemLabel = isCorporate800 ? 'Country' : 'Course';
+  const addLabel = isCorporate800 ? 'Country & Processing Fee' : 'Course & Fee';
   const [data, setData] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
@@ -67,8 +73,8 @@ export default function CoursesAndFee() {
 
   const handleSave = async () => {
     const newErrors = {};
-    if (!form.course) newErrors.course = "Course is required";
-    if (!form.standardFee) newErrors.standardFee = "Standard Fee is required";
+    if (!form.course) newErrors.course = `${courseLabel} is required`;
+    if (!form.standardFee) newErrors.standardFee = `${feeLabel} is required`;
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
@@ -93,7 +99,7 @@ export default function CoursesAndFee() {
       payload,
     })
       .then(() => {
-        toast.success(editing ? "Course updated successfully" : "Course added successfully");
+        toast.success(editing ? `${courseLabel} updated successfully` : `${courseLabel} added successfully`);
         setShowModal(false);
         setErrors({});
         setForm({ id: null, course: "", standardFee: "", maximumDiscount: "" });
@@ -103,7 +109,7 @@ export default function CoursesAndFee() {
       })
       .catch((error) => {
         console.error(`Error saving course`, error);
-        toast.error("Failed to save course");
+        toast.error(`Failed to save ${itemLabel.toLowerCase()}`);
       })
       .finally(() => setLoading(false));
   };
@@ -117,24 +123,24 @@ export default function CoursesAndFee() {
       payload,
     })
       .then(() => {
-        toast.success("Course deleted successfully");
+        toast.success(`${courseLabel} deleted successfully`);
         fetchData();
       })
       .catch((error) => {
         console.error(`Error deleting course`, error);
-        toast.error("Failed to delete course");
+        toast.error(`Failed to delete ${itemLabel.toLowerCase()}`);
       })
       .finally(() => setLoading(false));
   };
 
   const handleBulkDelete = async () => {
-    if (selected.length === 0) return toast.error("No courses selected");
-    if (!window.confirm("Delete selected courses?")) return;
+    if (selected.length === 0) return toast.error(`No ${itemLabel.toLowerCase()}s selected`);
+    if (!window.confirm(`Delete selected ${itemLabel.toLowerCase()}s?`)) return;
     for (const id of selected) {
       await handleDelete(id);
     }
     setSelected([]);
-    toast.success("Selected courses deleted successfully");
+    toast.success(`Selected ${itemLabel.toLowerCase()}s deleted successfully`);
   };
 
   const toggleSelect = (id) => {
@@ -147,14 +153,14 @@ export default function CoursesAndFee() {
     <div className="p-4">
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex flex-wrap justify-between items-center mb-4">
-        <h2 className="text-xl">Courses & Fees</h2>
+        <h2 className="text-xl">{titleLabel}</h2>
 
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search course..."
+              placeholder={`Search ${itemLabel.toLowerCase()}...`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 pr-3 py-2 border rounded-lg bg-white text-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -166,7 +172,7 @@ export default function CoursesAndFee() {
               setEditing(false);
               setForm({ id: null, course: "", standardFee: "", maximumDiscount: "" });
               setShowModal(true);
-            }} title="Add Course & Fee"
+            }} title={`Add ${addLabel}`}
             className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"
           >
             <Plus size={16} />
@@ -201,8 +207,8 @@ export default function CoursesAndFee() {
                     }
                   />
                 </th>
-                <th className="p-2 text-left">Course</th>
-                <th className="p-2 text-left">Standard Fee</th>
+                <th className="p-2 text-left">{courseLabel}</th>
+                <th className="p-2 text-left">{feeLabel}</th>
                 <th className="p-2 text-left">Max Discount %</th>
                 <th className="p-2 text-center">Actions</th>
               </tr>
@@ -289,12 +295,12 @@ export default function CoursesAndFee() {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
             <h3 className="text-lg mb-4">
-              {editing ? "Update" : "Add"} Course & Fee
+              {editing ? "Update" : "Add"} {addLabel}
             </h3>
 
             <input
               name="course"
-              placeholder="Course"
+              placeholder={courseLabel}
               value={form.course}
               onChange={handleChange}
               className="w-full border bg-white border-gray-300 text-gray-600 rounded p-2 mb-2 focus:ring-2 focus:ring-blue-500"
@@ -303,7 +309,7 @@ export default function CoursesAndFee() {
 
             <input
               name="standardFee"
-              placeholder="Standard Fee"
+              placeholder={feeLabel}
               value={form.standardFee}
               onChange={handleChange}
               className="w-full border bg-white border-gray-300 text-gray-600 rounded p-2 mb-2 focus:ring-2 focus:ring-blue-500"

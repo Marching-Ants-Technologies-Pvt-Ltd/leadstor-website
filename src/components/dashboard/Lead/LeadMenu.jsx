@@ -209,9 +209,9 @@ export default function LeadsMenu({
           displayValue: 'Joined'
         });
         filters.push({
-          title: 'From Date',
+          title: 'Updated From',
           value: formatDate(monthStart),
-          query: 'frmDate',
+          query: 'updatedFrmDate',
           displayValue: formatDate(monthStart)
         });
         break;

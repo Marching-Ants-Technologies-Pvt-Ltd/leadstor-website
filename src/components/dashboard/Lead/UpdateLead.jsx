@@ -22,6 +22,9 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [showTimeline, setShowTimeline] = useState(false);
   const [displayRemarks, setDisplayRemarks] = useState("");
   const [aiNextStep, setAiNextStep] = useState("");
+  const isCorporate800 = Corporate?.type === 800;
+  const courseLabel = isCorporate800 ? 'Country' : 'Course';
+
   const FIELD_GROUPS = {
     leadDetails: ['mobile', 'altMobile','firstName', 'emailId', 'location'],
     salesUpdate: ['status', 'leadProbability'],
@@ -47,6 +50,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const renderFieldByColumn = (item, index) => {
     const value = fields?.[item.dataField] || "";
     const options = dynamicFields[item.dataField] || [];
+    const label = (item.dataField === 'course' && isCorporate800) ? courseLabel : (item.displayName || item.fieldName);
 
     if (item.dataField === "assignedUserId") {
       const { options: ownerOptions } = renderOwnerSelect(
@@ -55,7 +59,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
       return (
         <div key={index} className="field-card">
-          <label className="label-crm">{item.displayName || item.fieldName}</label>
+          <label className="label-crm">{label}</label>
           <select
             value={fields.assignedUserId}
             onChange={(e) => handleChange(item.dataField, e.target.value)}
@@ -74,7 +78,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     if (item.fieldType === "dropdown") {
       return (
         <div key={index} className="field-card">
-          <label className="label-crm">{item.displayName || item.fieldName}</label>
+          <label className="label-crm">{label}</label>
           <select
             value={value}
             onChange={(e) => {
@@ -103,7 +107,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     if (item.fieldType === "textarea") {
       return (
         <div key={index} className="field-card">
-          <label className="label-crm">{item.displayName || item.fieldName}</label>
+          <label className="label-crm">{label}</label>
           <textarea
             rows="3"
             value={displayRemarks}
@@ -122,6 +126,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         <label className="label-crm">{ item.displayName || item.fieldName }</label>
         <input
           type={item.dataField === "emailId" ? "email" : "text"}
+          placeholder={label}
           value={value}
           onChange={(e) => handleChange(item.dataField, e.target.value)}
           className="input-crm"
