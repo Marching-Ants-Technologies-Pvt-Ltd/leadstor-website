@@ -390,7 +390,7 @@ export default function LeadsMenu({
 
               {openMenu === 'ai' && (
                 <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                  {[7, 15].map((days) => (
+                  {[7].map((days) => (
                     <button
                       key={days}
                       className="drop-item"
