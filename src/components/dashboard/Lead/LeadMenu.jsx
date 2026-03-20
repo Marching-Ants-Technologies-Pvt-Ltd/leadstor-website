@@ -567,7 +567,7 @@ export default function LeadsMenu({
       </div>
 
       {/* KPI BAR - CLICKABLE CARDS - Hidden for Counsellor role */}
-      {User?.role !== 'Counsellor' && (
+      
         <div className="flex gap-2 px-4 py-2 bg-[#f5f6f8] border-b">
           {[
             [statusCounts.overdue, 'Overdue', 'text-red-600', 'overdue', 'Click to view overdue leads'],
@@ -587,7 +587,7 @@ export default function LeadsMenu({
             </div>
           ))}
         </div>
-      )}
+     
 
       {/* MODALS */}
       {showManual && <ManualCandidate onCancel={() => setShowManual(false)} />}
