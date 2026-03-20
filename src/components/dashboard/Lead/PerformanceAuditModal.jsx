@@ -31,7 +31,7 @@ const normalizeStatus = (value) => {
   if (!value) return '';
   const status = String(value).toLowerCase();
   if (status === 'generated') return 'Generated';
-  if (status === 'processing') return 'Processing';
+  if (status === 'processing') return 'Processing your data, I have to process a lot considering the timelines of all your team members hence it will take some time but result will be worth the wait.';
   if (status === 'queued') return 'Queued';
   if (status === 'failed') return 'Failed';
   if (status === 'not_found') return 'Queued';

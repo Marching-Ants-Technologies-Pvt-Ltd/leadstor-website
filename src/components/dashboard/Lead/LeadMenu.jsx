@@ -370,40 +370,7 @@ export default function LeadsMenu({
           )}
 
           {/* Show only Filter menu for Counsellor role */}
-          {User?.role === 'Counsellor' ? (
-            <div className="relative">
-              <button
-                className="action-chip"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenMenu(openMenu === 'filter' ? null : 'filter');
-                }}
-              >
-                <i className="ri-filter-3-line text-indigo-600" />
-                Filter
-                <i className="ri-arrow-down-s-line text-xs opacity-60" />
-              </button>
 
-              {openMenu === 'filter' && (
-                <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                  <button className="drop-item" onClick={handelFollowUpFilters}>
-                    <i className="ri-time-line text-orange-500" />
-                    Pending Follow-ups
-                  </button>
-                  <button className="drop-item" onClick={handelBookmarks}>
-                    <i className="ri-bookmark-line text-yellow-500" />
-                    Bookmarks
-                  </button>
-                  <div className="dropdown-divider" />
-                  <button className="drop-item" onClick={onOpenAdvanceFilter}>
-                    <i className="ri-equalizer-line text-purple-500" />
-                    Advanced
-                  </button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
               <button onClick={handleAddLead} className="btn-primary-crm action-chip">
                 <i className="ri-user-add-line" />
                 Add
@@ -446,32 +413,37 @@ export default function LeadsMenu({
               )}
 
               {/* EXPORT */}
-              <div className="relative">
-                <button
-                  className="action-chip"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMenu(openMenu === 'export' ? null : 'export');
-                  }}
-                >
-                  <i className="ri-file-excel-2-line text-emerald-600" />
-                  Export
-                  <i className="ri-arrow-down-s-line text-xs opacity-60" />
-                </button>
+                <div className="relative">
+                  <button
+                    className="action-chip"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenu(openMenu === 'export' ? null : 'export');
+                    }}
+                  >
+                    <i className="ri-file-excel-2-line text-emerald-600" />
+                    Export
+                    <i className="ri-arrow-down-s-line text-xs opacity-60" />
+                  </button>
 
-                {openMenu === 'export' && (
-                  <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                    <button className="drop-item" onClick={() => setDailyReport(true)}>
-                      <i className="ri-calendar-line text-blue-500" />
-                      Daily report
-                    </button>
-                    <button className="drop-item" onClick={() => setShowExportModal(true)}>
-                      <i className="ri-download-2-line text-green-600" />
-                      Export enquiries
-                    </button>
-                  </div>
-                )}
-              </div>
+                  {openMenu === 'export' && (
+                    <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                      <button className="drop-item" onClick={() => setDailyReport(true)}>
+                        <i className="ri-calendar-line text-blue-500" />
+                        Daily report
+                      </button>
+                      { User?.role !== "Counsellor" && (
+                        <>
+                          <button className="drop-item" onClick={() => setShowExportModal(true)}>
+                            <i className="ri-download-2-line text-green-600" />
+                            Export enquiries
+                          </button>
+                        </>
+                      )}
+                      
+                    </div>
+                  )}
+                </div>
 
               {/* FILTER */}
               <div className="relative">
@@ -522,17 +494,18 @@ export default function LeadsMenu({
 
                 {openMenu === 'actions' && (
                   <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                    {selectedLeadIds.length > 0 && User?.role !== 'Super Counsellor' && (
-                      <button
-                        className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
-                        onClick={() => {
-                          onDeleteSelected();
-                          setOpenMenu(null);
-                        }}
-                      >
-                        <i className="ri-delete-bin-line" />
-                        Delete Invite ({selectedLeadIds.length})
-                      </button>
+                    {selectedLeadIds.length > 0 && 
+                      !['Counsellor', 'Super Counsellor'].includes(User?.role ?? '') && (
+                        <button
+                          className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            onDeleteSelected();
+                            setOpenMenu(null);
+                          }}
+                        >
+                          <i className="ri-delete-bin-line" />
+                          Delete Invite ({selectedLeadIds.length})
+                        </button>
                     )}
                     <button className="drop-item" onClick={() => setShowSendEmail(true)}>
                       <i className="ri-mail-line text-indigo-500" />
@@ -555,8 +528,7 @@ export default function LeadsMenu({
               <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
                 <i className="ri-settings-3-line" title="Settings" />
               </button>
-            </>
-          )}
+          
           <button
             className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`}
             onClick={() => resetAndRefreshLeads()}
