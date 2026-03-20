@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { xFetch } from '@/utility/xFetch';
+import { User } from '@/utility/TinyDB';
 
 const toTitle = (value) => {
   if (!value) return '';
@@ -26,42 +27,169 @@ const pick = (obj, keys, fallback) => {
   return fallback;
 };
 
+const normalizeStatus = (value) => {
+  if (!value) return '';
+  const status = String(value).toLowerCase();
+  if (status === 'generated') return 'Generated';
+  if (status === 'processing') return 'Processing';
+  if (status === 'queued') return 'Queued';
+  if (status === 'failed') return 'Failed';
+  if (status === 'not_found') return 'Queued';
+  return status.charAt(0).toUpperCase() + status.slice(1);
+};
+
 export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
   const REPORT_DAYS = Number(days) || 7;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [payload, setPayload] = useState(null);
+  const [reportStatus, setReportStatus] = useState('');
+  const pollingRef = useRef(null);
+  const [data,setData] = useState({});
+  const [meta,setMeta] = useState({});
+  const [eventStats,setEventStats] = useState({});  
 
-  const loadAudit = async () => {
+  const clearPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
+  const startPollingWithDelay = (initialDelayMs = 5000) => {
+    clearPolling();
+
+    pollingRef.current = setInterval(async () => {
+      console.log('Started polling for report status...');
+      try {
+        const payload = { days: REPORT_DAYS };
+
+        const res = await xFetch({
+          method: 'POST',
+          path: '/services/invite/getCorporatePerformanceAuditStatus',
+          payload
+        });
+
+        if (!res) return;
+
+        const status = (res.report_status || res.job_status || '').toLowerCase();
+
+        setReportStatus(status);
+
+        if (status === 'queued') {
+          setReportStatus('queued');
+          return;
+        }
+
+        if ( status === 'processing') {
+          setReportStatus('processing');
+          return;
+        }
+
+        if (res?.data || status === 'generated') {
+
+          setReportStatus('generated');
+          setPayload(res);
+          setData(res.data || {});
+          setMeta(res.meta || {});
+          setEventStats(res.event_stats || {});
+          setLoading(false);
+          clearPolling();
+          return;
+        }
+
+        if (status === 'failed') {
+          setError('Report generation failed');
+          setLoading(false);
+          clearPolling();
+          return;
+        }
+
+      } catch (err) {
+        console.error(err);
+        // keep polling or you can add max retry logic
+      }
+    }, initialDelayMs);
+  };
+
+  const checkInitialStatus = async () => {
     setLoading(true);
     setError('');
     setPayload(null);
+    setReportStatus('queued');
     try {
+    // Step 1: First check current status (fast path if report already exists)
       const res = await xFetch({
         method: 'POST',
-        path: '/services/invite/getCorporatePerformanceAudit',
-        payload: { days: REPORT_DAYS }
+        path: '/services/invite/getCorporatePerformanceAuditStatus',
+        payload: { days: REPORT_DAYS }, // add days if the endpoint expects it
       });
-      if (!res || res.status === false) {
-        throw new Error(res?.error || 'Unable to generate performance audit');
+
+      const currentStatus = (res?.report_status || res?.job_status || '').toLowerCase();
+
+      if (res?.data || currentStatus === 'generated') {
+        setPayload(res);
+        setData(res.data || {});
+        setMeta(res.meta || {});
+        setEventStats(res.event_stats || {});
+        setReportStatus('generated');
+        setLoading(false);
+        return;
       }
-      setPayload(res);
+      setReportStatus(currentStatus);
+      loadAudit(false);       
+      
     } catch (err) {
-      setError(err?.message || 'Failed to load performance audit');
-    } finally {
+      console.error('Audit load failed:', err);
+      setError(err?.message || 'Failed to load or fetch audit');
+      setLoading(false);
+    }
+  }
+
+  const loadAudit = async (forceNew = false) => {
+    setLoading(true);
+    setError('');
+    setPayload(null);
+    setReportStatus('queued');
+    if(forceNew == true){
+      clearPolling();
+    }
+
+    try {
+      
+      const generateRes = await xFetch({
+        method: 'POST',
+        path: '/services/invite/generateCorporatePerformanceAudit',
+        payload: {
+          days: REPORT_DAYS,
+          userId: User?._id,
+          force_new: forceNew,
+        },
+      });
+
+      // Start polling to wait for completion
+      startPollingWithDelay(5000);
+
+    } catch (err) {
+      console.error('Audit load failed:', err);
+      setError(err?.message || 'Failed to load or generate audit');
       setLoading(false);
     }
   };
 
   useEffect(() => {
     if (isOpen) {
-      loadAudit();
+      checkInitialStatus();
+    } else {
+      clearPolling();
     }
   }, [isOpen, REPORT_DAYS]);
 
-  const data = payload?.data || {};
-  const meta = payload?.meta || {};
-  const eventStats = payload?.event_stats || {};
+  useEffect(() => {
+    return () => {
+      clearPolling();
+    };
+  }, []);
 
   const comparativeRows = useMemo(
     () =>
@@ -114,19 +242,35 @@ export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
               Last {REPORT_DAYS} days overview{meta?.from && meta?.to ? ` - ${meta.from} to ${meta.to}` : ''}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-600 hover:text-black transition"
-            aria-label="Close"
-          >
-            &#10005;
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => loadAudit(true)}
+              disabled={loading}
+              className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-60"
+            >
+              Generate New Report
+            </button>
+            <button
+              onClick={onClose}
+              className="h-9 w-9 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-600 hover:text-black transition"
+              aria-label="Close"
+            >
+              &#10005;
+            </button>
+          </div>
         </div>
 
         <div className="p-6 space-y-6">
-          {loading && (
-            <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-900">
-              Generating performance evaluation. This can take a few seconds.
+          {(loading || reportStatus) && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-5 text-sm text-blue-900 flex items-center gap-3">
+              {normalizeStatus(reportStatus) !== 'Generated' && (
+                <span className="inline-flex h-4 w-4 rounded-full border-2 border-blue-300 border-t-blue-700 animate-spin" />
+              )}
+              <div>
+                {normalizeStatus(reportStatus) !== 'Generated' ? 'Generating AI report...' : 'Report Status'}
+                <br />
+                Status: {normalizeStatus(reportStatus) || 'Queued'}
+              </div>
             </div>
           )}
 
@@ -134,7 +278,7 @@ export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
             <div className="rounded-xl border border-red-100 bg-red-50 p-5 text-sm text-red-800 flex items-center justify-between gap-4">
               <div>{error}</div>
               <button
-                onClick={loadAudit}
+                onClick={() => loadAudit(true)}
                 className="px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700"
               >
                 Retry
@@ -163,7 +307,7 @@ export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
             </div>
           )}
 
-          {!loading && !error && payload && (
+          {!loading && (reportStatus === 'generated' || payload?.data) && (
             <>
               {!hasAnyOutput && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
@@ -321,7 +465,7 @@ export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
                   <div className="text-sm font-semibold text-slate-700">Key Business Insights</div>
                   <div className="text-xs text-slate-700 mt-2 space-y-1">
                     {insights.map((line, idx) => (
-                      <div key={idx}>• {line}</div>
+                      <div key={idx}>{line}</div>
                     ))}
                   </div>
                 </div>
@@ -337,7 +481,7 @@ export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
                           {row?.rank ?? idx + 1}
                         </span>
                         <span className="font-semibold text-slate-800">{row?.salesperson || row?.name}</span>
-                        {row?.reason && <span className="text-slate-600">— {row.reason}</span>}
+                        {row?.reason && <span className="text-slate-600">{row.reason}</span>}
                       </div>
                     ))}
                   </div>
