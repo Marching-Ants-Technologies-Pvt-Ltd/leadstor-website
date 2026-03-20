@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { getSession } from 'next-auth/react';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import LeadsTable from '@/components/dashboard/Lead/LeadTable';
@@ -11,11 +12,23 @@ import FilterDrawer from '@/components/dashboard/Lead/AdvanceFilter';
 import AppliedFilters from '@/components/dashboard/Lead/AppliedFilters';
 import { xFetch } from '@/utility/xFetch';
 import AddLead from '@/components/dashboard/Lead/AddLead';
-import { Corporate, Test as SessionTest } from '@/utility/TinyDB';
+import { Corporate, Test as SessionTest, User } from '@/utility/TinyDB';
 
 export default function Leads() {
     const searchParams = useSearchParams();
     const router = useRouter();
+
+    // Restrict Finance role from accessing Leads page
+    useEffect(() => {
+        const checkRole = async () => {
+            if (User?.role === 'Finance') {
+                toast.error('You do not have access to Leads page');
+                router.push('/payments');
+            }
+        };
+        checkRole();
+    }, [router]);
+
     const branchCorporateId = searchParams.get('corporateId');
     const branchTestId = searchParams.get('testId');
     const branchTestType = searchParams.get('testType');

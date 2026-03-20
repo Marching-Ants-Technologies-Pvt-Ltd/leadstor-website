@@ -44,7 +44,7 @@ export default function LeadsTable({
     onOpenAdvanceFilter,
     branchId,
     testInfo
-}) {
+}) {console.log('user --', User);
     let setLeadsFn;
     setLeadsFn = setLeads;
 

@@ -90,7 +90,12 @@ export default function Profile() {
                 localStorage.setItem('CurrentSessionData', JSON.stringify(data));
 
                 setLoadingText('Taking You to Lead Management Page, Please Wait...');
-                router.push('/leads');
+                console.log(data);
+                if(data['user']?.role === 'Finance') {
+                    router.push('/payments');
+                }else{
+                    router.push('/leads');
+                }
             }
 
             if (result.page === 'DASHBOARD-OLD') {

@@ -9,8 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
-import { LeadsCurrentPage,LeadFilters,LeadSearch } from '@/utility/TinyDB';
-
+import { LeadsCurrentPage,LeadFilters,LeadSearch, User } from '@/utility/TinyDB';
 
 export default function ClientLayout({ children }) {
   const [session, setSession] = useState(null);
@@ -79,7 +78,7 @@ export default function ClientLayout({ children }) {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex h-screen overflow-hidden bg-[#f5f6f8] font-[-apple-system,BlinkMacSystemFont,Segoe_UI,Arial]">
         {/* Sidebar */}
-        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed}  />
+        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} userRole={User?.role || ''} />
 
         <div className="flex flex-col flex-1 min-w-0">
           {/* Navbar / Header */}

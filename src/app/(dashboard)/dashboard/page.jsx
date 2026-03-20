@@ -1,11 +1,21 @@
 'use client';
-// import React from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { getSession } from 'next-auth/react';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 
 export default function Dashboard() {
+    const router = useRouter();
 
-    // const isAdmin = true;
-    // if (!isAdmin) return <CounsellorOverview />
+    useEffect(() => {
+        const checkRoleAndRedirect = async () => {
+            const session = await getSession();
+            if (session?.user?.role === 'Finance') {
+                router.push('/payments');
+            }
+        };
+        checkRoleAndRedirect();
+    }, [router]);
 
     return (
         <div>
