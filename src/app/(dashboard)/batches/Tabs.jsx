@@ -16,8 +16,7 @@ export default function BatchesTabs() {
   // Restrict Finance role from accessing Batches page
   useEffect(() => {
     const checkRole = async () => {
-      const session = await getSession();
-      if (session?.user?.role === 'Finance') {
+      if (User?.role === 'Finance') {
         toast.error('You do not have access to Batches page');
         router.push('/payments');
       }

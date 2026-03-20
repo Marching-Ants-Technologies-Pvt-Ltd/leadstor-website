@@ -409,7 +409,7 @@ export default function LeadsMenu({
                 Add
               </button>
 
-              {Corporate?.is_ai_nextstep_enabled == "1" && User?._id === '-1' && (
+              {(Corporate?.is_ai_nextstep_enabled == "1" && User?.role === "Admin" || User?.role === "Administrator") && (
                 <div className="relative">
                   <button
                     onClick={(e) => {
