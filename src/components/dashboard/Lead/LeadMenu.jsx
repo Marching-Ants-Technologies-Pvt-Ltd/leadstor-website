@@ -352,15 +352,15 @@ export default function LeadsMenu({
         <div className="flex items-center gap-2" ref={menuRef}>
           {branchId && (
             <>
-              <button 
-                onClick={onViewPayments} 
+              <button
+                onClick={onViewPayments}
                 className="px-3 py-1.5 text-xs border border-blue-300 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 flex items-center gap-1.5 transition-all"
               >
                 <i className="ri-bank-card-line text-[14px]" />
                 View Payments
               </button>
-              <button 
-                onClick={onBackToBranches} 
+              <button
+                onClick={onBackToBranches}
                 className="px-3 py-1.5 text-xs border border-gray-300 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center gap-1.5 transition-all"
               >
                 <i className="ri-arrow-left-line text-[14px]" />
@@ -368,159 +368,197 @@ export default function LeadsMenu({
               </button>
             </>
           )}
-          <button onClick={handleAddLead} className="btn-primary-crm action-chip">
-            <i className="ri-user-add-line" />
-            Add
-          </button>
 
-          {Corporate?.is_ai_nextstep_enabled == "1" && User?._id == -1 && (
+          {/* Show only Filter menu for Counsellor role */}
+          {User?.role === 'Counsellor' ? (
             <div className="relative">
               <button
+                className="action-chip"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setOpenMenu(openMenu === 'ai' ? null : 'ai');
+                  setOpenMenu(openMenu === 'filter' ? null : 'filter');
                 }}
-                className="action-chip"
-                title="AI performance audit"
               >
-                <span className="sparkle">✨</span>
-                AI Sales Insight
+                <i className="ri-filter-3-line text-indigo-600" />
+                Filter
                 <i className="ri-arrow-down-s-line text-xs opacity-60" />
               </button>
 
-              {openMenu === 'ai' && (
+              {openMenu === 'filter' && (
                 <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                  {[7].map((days) => (
-                    <button
-                      key={days}
-                      className="drop-item"
-                      onClick={() => {
-                        setPerformanceAuditDays(days);
-                        setShowPerformanceAudit(true);
-                        setOpenMenu(null);
-                      }}
-                    >
-                      <i className="ri-calendar-line text-blue-500" />
-                      Last {days} days
-                    </button>
-                  ))}
+                  <button className="drop-item" onClick={handelFollowUpFilters}>
+                    <i className="ri-time-line text-orange-500" />
+                    Pending Follow-ups
+                  </button>
+                  <button className="drop-item" onClick={handelBookmarks}>
+                    <i className="ri-bookmark-line text-yellow-500" />
+                    Bookmarks
+                  </button>
+                  <div className="dropdown-divider" />
+                  <button className="drop-item" onClick={onOpenAdvanceFilter}>
+                    <i className="ri-equalizer-line text-purple-500" />
+                    Advanced
+                  </button>
                 </div>
               )}
             </div>
-          )}
+          ) : (
+            <>
+              <button onClick={handleAddLead} className="btn-primary-crm action-chip">
+                <i className="ri-user-add-line" />
+                Add
+              </button>
 
-          {/* EXPORT */}
-          <div className="relative">
-            <button
-              className="action-chip"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenMenu(openMenu === 'export' ? null : 'export');
-              }}
-            >
-              <i className="ri-file-excel-2-line text-emerald-600" />
-              Export
-              <i className="ri-arrow-down-s-line text-xs opacity-60" />
-            </button>
-
-            {openMenu === 'export' && (
-              <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                <button className="drop-item" onClick={() => setDailyReport(true)}>
-                  <i className="ri-calendar-line text-blue-500" />
-                  Daily report
-                </button>
-                <button className="drop-item" onClick={() => setShowExportModal(true)}>
-                  <i className="ri-download-2-line text-green-600" />
-                  Export enquiries
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* FILTER */}
-          <div className="relative">
-            <button
-              className="action-chip"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenMenu(openMenu === 'filter' ? null : 'filter');
-              }}
-            >
-              <i className="ri-filter-3-line text-indigo-600" />
-              Filter
-              <i className="ri-arrow-down-s-line text-xs opacity-60" />
-            </button>
-
-            {openMenu === 'filter' && (
-              <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                <button className="drop-item" onClick={handelFollowUpFilters}>
-                  <i className="ri-time-line text-orange-500" />
-                  Pending Follow-ups
-                </button>
-                <button className="drop-item" onClick={handelBookmarks}>
-                  <i className="ri-bookmark-line text-yellow-500" />
-                  Bookmarks
-                </button>
-                <div className="dropdown-divider" />
-                <button className="drop-item" onClick={onOpenAdvanceFilter}>
-                  <i className="ri-equalizer-line text-purple-500" />
-                  Advanced
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* ACTIONS */}
-          <div className="relative">
-            <button
-              className="action-chip"
-              onClick={(e) => {
-                e.stopPropagation();
-                setOpenMenu(openMenu === 'actions' ? null : 'actions');
-              }}
-            >
-              <i className="ri-apps-2-line text-sky-600" />
-              Actions
-              <i className="ri-arrow-down-s-line text-xs opacity-60" />
-            </button>
-
-            {openMenu === 'actions' && (
-              <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                {selectedLeadIds.length > 0 && (
+              {(Corporate?.is_ai_nextstep_enabled == "1" && User?.role === "Admin" || User?.role === "Administrator") && (
+                <div className="relative">
                   <button
-                    className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
-                    onClick={() => {
-                      onDeleteSelected(); 
-                      setOpenMenu(null);
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenu(openMenu === 'ai' ? null : 'ai');
                     }}
+                    className="action-chip"
+                    title="AI performance audit"
                   >
-                    <i className="ri-delete-bin-line" />
-                    Delete Invite ({selectedLeadIds.length})
+                    <span className="sparkle">✨</span>
+                    AI Sales Insight
+                    <i className="ri-arrow-down-s-line text-xs opacity-60" />
                   </button>
-                )}
-                <button className="drop-item" onClick={() => setShowSendEmail(true)}>
-                  <i className="ri-mail-line text-indigo-500" />
-                  Send Email
-                </button>
+
+                  {openMenu === 'ai' && (
+                    <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                      {[7].map((days) => (
+                        <button
+                          key={days}
+                          className="drop-item"
+                          onClick={() => {
+                            setPerformanceAuditDays(days);
+                            setShowPerformanceAudit(true);
+                            setOpenMenu(null);
+                          }}
+                        >
+                          <i className="ri-calendar-line text-blue-500" />
+                          Last {days} days
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* EXPORT */}
+              <div className="relative">
                 <button
-                  className="drop-item"
-                  onClick={() => {
-                    if (!selectedLeadIds.length) toast.error('Select at least one record');
-                    else setShowBulkUpdateDrawer(true);
+                  className="action-chip"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenu(openMenu === 'export' ? null : 'export');
                   }}
                 >
-                  <i className="ri-database-2-line text-purple-500" />
-                  Bulk Update
+                  <i className="ri-file-excel-2-line text-emerald-600" />
+                  Export
+                  <i className="ri-arrow-down-s-line text-xs opacity-60" />
                 </button>
-              </div>
-            )}
-          </div>
 
-          <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
-            <i className="ri-settings-3-line" title="Settings" />
-          </button>
-          <button 
-            className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`} 
+                {openMenu === 'export' && (
+                  <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                    <button className="drop-item" onClick={() => setDailyReport(true)}>
+                      <i className="ri-calendar-line text-blue-500" />
+                      Daily report
+                    </button>
+                    <button className="drop-item" onClick={() => setShowExportModal(true)}>
+                      <i className="ri-download-2-line text-green-600" />
+                      Export enquiries
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* FILTER */}
+              <div className="relative">
+                <button
+                  className="action-chip"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenu(openMenu === 'filter' ? null : 'filter');
+                  }}
+                >
+                  <i className="ri-filter-3-line text-indigo-600" />
+                  Filter
+                  <i className="ri-arrow-down-s-line text-xs opacity-60" />
+                </button>
+
+                {openMenu === 'filter' && (
+                  <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                    <button className="drop-item" onClick={handelFollowUpFilters}>
+                      <i className="ri-time-line text-orange-500" />
+                      Pending Follow-ups
+                    </button>
+                    <button className="drop-item" onClick={handelBookmarks}>
+                      <i className="ri-bookmark-line text-yellow-500" />
+                      Bookmarks
+                    </button>
+                    <div className="dropdown-divider" />
+                    <button className="drop-item" onClick={onOpenAdvanceFilter}>
+                      <i className="ri-equalizer-line text-purple-500" />
+                      Advanced
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ACTIONS */}
+              <div className="relative">
+                <button
+                  className="action-chip"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenMenu(openMenu === 'actions' ? null : 'actions');
+                  }}
+                >
+                  <i className="ri-apps-2-line text-sky-600" />
+                  Actions
+                  <i className="ri-arrow-down-s-line text-xs opacity-60" />
+                </button>
+
+                {openMenu === 'actions' && (
+                  <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                    {selectedLeadIds.length > 0 && User?.role !== 'Super Counsellor' && (
+                      <button
+                        className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          onDeleteSelected();
+                          setOpenMenu(null);
+                        }}
+                      >
+                        <i className="ri-delete-bin-line" />
+                        Delete Invite ({selectedLeadIds.length})
+                      </button>
+                    )}
+                    <button className="drop-item" onClick={() => setShowSendEmail(true)}>
+                      <i className="ri-mail-line text-indigo-500" />
+                      Send Email
+                    </button>
+                    <button
+                      className="drop-item"
+                      onClick={() => {
+                        if (!selectedLeadIds.length) toast.error('Select at least one record');
+                        else setShowBulkUpdateDrawer(true);
+                      }}
+                    >
+                      <i className="ri-database-2-line text-purple-500" />
+                      Bulk Update
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
+                <i className="ri-settings-3-line" title="Settings" />
+              </button>
+            </>
+          )}
+          <button
+            className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`}
             onClick={() => resetAndRefreshLeads()}
           >
             <i className="ri-refresh-line" title="Refresh" />
@@ -528,26 +566,28 @@ export default function LeadsMenu({
         </div>
       </div>
 
-      {/* KPI BAR - CLICKABLE CARDS */}
-      <div className="flex gap-2 px-4 py-2 bg-[#f5f6f8] border-b">
-        {[
-          [statusCounts.overdue, 'Overdue', 'text-red-600', 'overdue', 'Click to view overdue leads'],
-          [statusCounts.todaysFollowUps, "Today's Follow-ups", 'text-amber-500', 'todaysFollowUps', 'Click to view today\'s follow-ups'],
-          [statusCounts.newLeads, 'New Leads', 'text-blue-600', 'newLeads', 'Click to view new leads'],
-          [statusCounts.hotLeads, 'Hot Leads', 'text-fuchsia-600', 'hotLeads', 'Click to view hot leads'],
-          [statusCounts.conversions, 'Conversions this month', 'text-green-600', 'conversions', 'Click to view conversions'],
-        ].map(([count, label, color, cardType, tooltip], i) => (
-          <div 
-            key={i} 
-            className="flex-1 bg-white rounded-lg px-3 py-2 flex items-center gap-3 shadow-sm cursor-pointer hover:shadow-md hover:bg-gray-50 transition-all group"
-            onClick={() => handleCardClick(cardType)}
-            title={tooltip}
-          >
-            <div className={`text-xl font-bold ${color} group-hover:scale-110 transition-transform`}>{count}</div>
-            <div className="text-xs text-slate-500">{label}</div>
-          </div>
-        ))}
-      </div>
+      {/* KPI BAR - CLICKABLE CARDS - Hidden for Counsellor role */}
+      {User?.role !== 'Counsellor' && (
+        <div className="flex gap-2 px-4 py-2 bg-[#f5f6f8] border-b">
+          {[
+            [statusCounts.overdue, 'Overdue', 'text-red-600', 'overdue', 'Click to view overdue leads'],
+            [statusCounts.todaysFollowUps, "Today's Follow-ups", 'text-amber-500', 'todaysFollowUps', 'Click to view today\'s follow-ups'],
+            [statusCounts.newLeads, 'New Leads', 'text-blue-600', 'newLeads', 'Click to view new leads'],
+            [statusCounts.hotLeads, 'Hot Leads', 'text-fuchsia-600', 'hotLeads', 'Click to view hot leads'],
+            [statusCounts.conversions, 'Conversions this month', 'text-green-600', 'conversions', 'Click to view conversions'],
+          ].map(([count, label, color, cardType, tooltip], i) => (
+            <div 
+              key={i} 
+              className="flex-1 bg-white rounded-lg px-3 py-2 flex items-center gap-3 shadow-sm cursor-pointer hover:shadow-md hover:bg-gray-50 transition-all group"
+              onClick={() => handleCardClick(cardType)}
+              title={tooltip}
+            >
+              <div className={`text-xl font-bold ${color} group-hover:scale-110 transition-transform`}>{count}</div>
+              <div className="text-xs text-slate-500">{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* MODALS */}
       {showManual && <ManualCandidate onCancel={() => setShowManual(false)} />}

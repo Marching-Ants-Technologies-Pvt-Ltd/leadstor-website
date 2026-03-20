@@ -315,12 +315,12 @@ export default function PerformanceAuditModal({ isOpen, onClose, days = 7 }) {
                   format or an empty response.
                 </div>
               )}
-              {meta?.compressed && (
+              {/* {meta?.compressed && (
                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
                   Large data detected. The audit used intelligent summarization to fit model limits.
                   {meta?.raw_entries ? ` Raw entries: ${meta.raw_entries}.` : ''}
                 </div>
-              )}
+              )} */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3">
                   <div className="text-xs uppercase text-emerald-600 font-semibold">Best Performer</div>

@@ -1,11 +1,10 @@
 'use client';
-// import React from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 
 export default function Dashboard() {
-
-    // const isAdmin = true;
-    // if (!isAdmin) return <CounsellorOverview />
+    const router = useRouter();
 
     return (
         <div>

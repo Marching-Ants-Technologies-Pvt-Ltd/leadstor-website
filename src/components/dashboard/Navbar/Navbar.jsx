@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {Corporate} from "@/utility/TinyDB";
+import {Corporate, User} from "@/utility/TinyDB";
 import { usePathname } from 'next/navigation';
 
 export default function Navbar({ collapsed, setCollapsed, data }) {
@@ -122,12 +122,14 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
                 </div>
                 </Link>
 
-                <Link href="/teams">
-                <div className="dropdown-row">
-                    <i className="ri-team-line text-emerald-500 text-lg"></i>
-                    <span>Teams</span>
-                </div>
-                </Link>
+                {(User?.role === "Admin" || User?.role === "Administrator") && (
+                  <Link href="/teams">
+                  <div className="dropdown-row">
+                      <i className="ri-team-line text-emerald-500 text-lg"></i>
+                      <span>Teams</span>
+                  </div>
+                  </Link>
+                )}
 
                 <div className="dropdown-divider" />
 

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { xFetch } from '@/utility/xFetch';
-import { Corporate } from '@/utility/TinyDB';
+import { Corporate, User } from '@/utility/TinyDB';
 import { Dialog } from '@headlessui/react';
 import Spinner from '@/components/common/Spinner';
 import 'remixicon/fonts/remixicon.css';
@@ -26,6 +27,19 @@ export default function Teams() {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10); // default rows per page
   const [totalPages, setTotalPages] = useState(1);
+
+  const router = useRouter();
+  
+  // Restrict Counsellor role from accessing Leads page
+  useEffect(() => {
+      const checkRole = async () => {
+          if (User?.role !== 'Admin' && User?.role !== "Administrator") {
+            toast.error('You do not have access to Teams page');
+            router.push('/businessProfile');
+          }
+      };
+      checkRole();
+  }, [router]);
 
   // ─── Fetch Data ──────────────────────────────────────────────
   const fetchData = async () => {
