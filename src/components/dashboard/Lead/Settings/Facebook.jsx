@@ -436,6 +436,12 @@ function SubscribeModal({
       })),
     };
 
+    // Add required IDs for update operation
+    if (initialData) {
+      payload.subscriptionId = initialData.subscriptionId;
+      payload.formTableId = initialData.formTableId;
+    }
+
     try {
       const result = initialData
         ? await facebookApi.updateSubscription(payload)
