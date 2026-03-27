@@ -10,6 +10,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   const [resetKey, setResetKey] = useState(0);
   const [columns, setColumns] = useState([]);
   const [filterOptions, setFilterOptions] = useState({});
+  const [rawOwners, setRawOwners] = useState({});
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -17,12 +18,18 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const dropdownRef = React.useRef(null);
   const [hydratedForOpen, setHydratedForOpen] = useState(false);
+  const [subOrdinates, setSubOrdinates] = useState([String(User._id)]);
+  const [isSubordinatesLoaded, setIsSubordinatesLoaded] = useState(false);
 
   const probabilityOptions = [
     { label: 'Low', value: '20' },
     { label: 'Medium', value: '55' },
     { label: 'High', value: '85' }
   ];
+
+  const shouldShowOwnerFilter = useMemo(() => {
+      return User?.role === "Admin" || User?.role === "Administrator" || User?.isManager === 1;
+  }, [User]);
 
   // Get session data
   const sessionData = useMemo(() => {
@@ -94,6 +101,41 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     }
   };
 
+  // Fetch Subordinates (same logic as LeadsTable)
+    useEffect(() => {
+        const fetchSubordinates = async () => {
+            if (User.role !== 'Counsellor' || User._id == -1) {
+                setSubOrdinates([String(User._id)]);
+                setIsSubordinatesLoaded(true);
+                return;
+            }
+
+            try {
+                const data = await xFetch({
+                    path: `/services/profile/getSubordinates?userId=${User._id}&time=${new Date().getTime()}`
+                });
+
+                let subs = Array.isArray(data) ? data :
+                           (data?.subordinates || data?.data || []);
+
+                const formatted = Array.isArray(subs)
+                    ? subs.map(id => String(id).trim()).filter(Boolean)
+                    : [String(User._id)];
+
+                setSubOrdinates(formatted.length > 0 ? formatted : [String(User._id)]);
+            } catch (err) {
+                console.error("Failed to fetch subordinates in filter:", err);
+                setSubOrdinates([String(User._id)]);
+            } finally {
+                setIsSubordinatesLoaded(true);
+            }
+        };
+
+        if (isOpen) {
+            fetchSubordinates();
+        }
+    }, [isOpen]);
+
   // Fetch filter options from backend
   const fetchFilterOptions = async () => {
     if (!sessionData?.test?._id) return;
@@ -129,7 +171,8 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
         optionsMap.location = transformOptions(response.locations);
       }
       if (response.owners) {
-        optionsMap.owner = transformOwnerOptions(response.owners);
+          setRawOwners(response.owners);
+          optionsMap.owner = transformOwnerOptions(response.owners);
       }
       if (response.courseModes) {
         optionsMap.courseMode = transformOptions(response.courseModes);
@@ -188,19 +231,44 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   };
 
   const transformOwnerOptions = (owners) => {
-    if (!owners || Object.keys(owners).length === 0) {
-      return [{ key: "0", value: "---Not Allocated---" }];
-    }
-    const list = Object.entries(owners).map(([key, value]) => ({ key, value }));
-    return [{ key: "0", value: "---Not Allocated---" }, ...list];
+        if (!owners || Object.keys(owners).length === 0) return [];
+
+        let list = Object.entries(owners).map(([key, value]) => ({
+            key: String(key),
+            value: String(value)
+        }));
+
+        // For Counsellor → filter by subordinates
+        if (User.role === 'Counsellor' && isSubordinatesLoaded) {
+            list = list.filter(owner => subOrdinates.includes(owner.key));
+        }
+
+        // "--Not Allocated--" ONLY if NOT Counsellor
+        const finalOptions = User.role !== 'Counsellor' 
+            ? [{ key: "0", value: "--Not Allocated--" }] 
+            : [];
+
+        return [...finalOptions, ...list];
   };
+
+  // Re-apply owner transformation when subordinates are loaded
   useEffect(() => {
-    if (isOpen) {
-      fetchColumns();
-      fetchFilterOptions();
-      setHydratedForOpen(false);
-    }
-  }, [isOpen, sessionData]);
+        if (isSubordinatesLoaded && Object.keys(rawOwners).length > 0 && shouldShowOwnerFilter) {
+            setFilterOptions(prev => ({
+                ...prev,
+                owner: transformOwnerOptions(rawOwners)
+            }));
+        }
+    }, [isSubordinatesLoaded, subOrdinates, rawOwners, shouldShowOwnerFilter]);
+
+    // ==================== FETCH DATA WHEN DRAWER OPENS ====================
+    useEffect(() => {
+        if (isOpen) {
+            fetchColumns();
+            fetchFilterOptions();             // This will get raw owners
+            setHydratedForOpen(false);
+        }
+    }, [isOpen]);
 
   useEffect(() => {
     if (columns.length > 0) {
@@ -236,6 +304,12 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     }
     const fallback = new Date(str);
     return isNaN(fallback.getTime()) ? '' : fallback;
+  };
+
+  const renderOwnerFilter = () => {
+    if (!shouldShowOwnerFilter) return null;
+    if (!filterOptions.owner || filterOptions.owner.length === 0) return null;
+    return renderMultiSelectField('owner', filterOptions.owner, 'owner');
   };
 
   const base64Decode = (value) => {
@@ -853,7 +927,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
                 })}
 
                 {/* Owner Filter */}
-                {(filterOptions.owner || []).length > 0 && renderMultiSelectField('Owner', filterOptions.owner, 'owner')}
+                {renderOwnerFilter()}
 
                 {/* Course Mode */}
                 {(filterOptions.courseMode || []).length > 0 && renderSingleSelectField('courseMode', filterOptions.courseMode)}
