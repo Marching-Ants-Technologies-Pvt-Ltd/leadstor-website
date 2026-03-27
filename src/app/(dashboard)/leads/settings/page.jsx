@@ -33,7 +33,7 @@ const IVRSettings = dynamic(() => import('@/components/dashboard/Lead/Settings/I
 const Facebook = dynamic(() => import('@/components/dashboard/Lead/Settings/Facebook'), { ssr: false });
 const PreferredCourses = dynamic(() => import('@/components/dashboard/Lead/Settings/PreferredCourses'), { ssr: false });
 const Loading = dynamic(() => import('@/components/dashboard/Lead/Settings/loading'), { ssr: false });
-
+const Category = dynamic(() => import('@/components/dashboard/Lead/Settings/Category'), { ssr: false });
 
 // ---------------------------------------------------
 // ⚡ 2. SETTINGS PAGE
@@ -102,6 +102,7 @@ export default function Settings() {
           { key: "statuses", label: "Statuses" },
           { key: "courses", label: isCorporate800 ? "Country & Processing Fee" : "Courses & Fee",},
           ...(isCorporate800 ? [{ key: "preferredCourses", label: "Preferred Courses" }] : []),
+          { key: "categories", label: "Categories" },
           { key: "sources", label: "Sources" },
           { key: "leadAllocation", label: "Lead Allocation" },
           { key: "mapping", label: "Field Mapping" },
@@ -165,6 +166,9 @@ export default function Settings() {
 
       case "sources":
         return <Sources />;
+
+      case "categories":
+        return <Category />;
 
       case "leadAllocation":
         return <LeadAllocation />;

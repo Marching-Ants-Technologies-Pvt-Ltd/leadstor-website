@@ -30,6 +30,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   // dropdown sets used for validation
   const [sources, setSources] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
   const [statuses, setStatuses] = useState([]);
 
@@ -101,17 +102,19 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   async function loadDropdowns() {
     try {
-      const [src, crs, sts, usrs] = await Promise.all([
+      const [src, crs, sts, usrs, ctgs] = await Promise.all([
         xFetch({ path: `/services/profile/getSources?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getCourseAndFee?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getStatuses?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getUsers?corporateId=${corporateId}` }),
+        xFetch({ path: `/services/profile/getCategories?corporateId=${corporateId}` }),
       ]);
 
       setSources(src || []);
       setCourses(crs || []);
       setStatuses(sts || []);
       setUsers(usrs || []);
+      setCategories(ctgs || []);
     } catch {
       toast.error("Failed loading dropdown values");
     }
@@ -171,6 +174,15 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           data: field.dataField,
           type: "autocomplete",
           source: sources.map((s) => s.source),
+          strict: false,
+          allowInvalid: true,
+        };
+
+      case "category":
+        return {
+          data: field.dataField,
+          type: "autocomplete",
+          source: categories.map((c) => c.category),
           strict: false,
           allowInvalid: true,
         };
@@ -438,6 +450,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       else if (df.includes("source")) {
         columnTypes.source = colIndex;
       }
+      else if (df.includes("category")) {
+        columnTypes.category = colIndex;
+      }
       else if (df.includes("course") || df === "preferredcourse" || df === "additionalinfo") {
         // ────────────── important part ──────────────
         columnTypes.course = colIndex;
@@ -456,6 +471,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     const firstNameCol = columnTypes.firstName ?? -1;
     const lastNameCol  = columnTypes.lastName ?? -1;
     const sourceCol    = columnTypes.source   ?? -1;
+    const categoryCol = columnTypes.category ?? -1;
     const courseCol    = columnTypes.course   ?? -1;
     const ownerCol     = columnTypes.owner    ?? -1;
     const statusCol    = columnTypes.status   ?? -1;

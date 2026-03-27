@@ -83,7 +83,9 @@ export default function LeadsTable({
     const [googleDriveConnected, setGoogleDriveConnected] = useState(null);
     const [googleDriveToken, setGoogleDriveToken] = useState("");
     const [showGoogleConnectDialog, setShowGoogleConnectDialog] = useState(false);
-
+    const [subOrdinates, setSubOrdinates] = useState([User._id]);
+    const [isSubordinatesLoaded, setIsSubordinatesLoaded] = useState(false);
+    
     const dataFormatters = {
         assignedUserId: (row) => {
             const id = Number(row?.assignedUserId);
@@ -127,6 +129,59 @@ export default function LeadsTable({
         };
     }, []);
 
+    // ==================== SUBORDINATES LOGIC FOR COUNSELLOR ====================
+
+    useEffect(() => {
+        console.log("User Role:", User.role);
+        console.log("User ID:", User._id);
+        const fetchSubordinates = async () => {
+            if (User.role !== 'Counsellor' || User._id == -1) {
+                console.log("Not Counsellor → using self only");
+                setSubOrdinates([String(User._id)]);
+                setIsSubordinatesLoaded(true);
+                return;
+            }
+            try {
+                const data = await xFetch({ 
+                    path: `/services/profile/getSubordinates?userId=${User._id}&time=${new Date().getTime()}` 
+                })
+            
+                let subs = [];
+
+                if (Array.isArray(data)) {
+                    subs = data;
+                } 
+                else if (data && typeof data === 'object' && Array.isArray(data.subordinates || data.data)) {
+                    subs = data.subordinates || data.data || [];
+                } 
+                else if (typeof data === 'string') {
+                    try {
+                        subs = JSON.parse(data);
+                        if (!Array.isArray(subs)) subs = [];
+                    } catch (e) {
+                        console.error("Failed to parse subordinates string:", e);
+                        subs = [];
+                    }
+                }
+
+                const formattedSubs = Array.isArray(subs) 
+                    ? subs.map(id => String(id).trim()).filter(id => id !== '')
+                    : [];
+
+                console.log("Final subordinates array:", formattedSubs);
+
+                setSubOrdinates(formattedSubs.length > 0 ? formattedSubs : [String(User._id)]);
+
+            } catch (err) {
+                setSubOrdinates([String(User._id)]);
+            } finally {
+                setIsSubordinatesLoaded(true);
+            }
+        }
+
+        fetchSubordinates();
+    }, []);
+
     async function xLeads(callback) {
         // Clear selected leads when table refreshes (use ref to avoid stale closure)
         if (selectedLeadIdsRef.current.length > 0) {
@@ -145,13 +200,13 @@ export default function LeadsTable({
         LeadsCurrentPage.setValue(currentPage);
 
         let offset = (currentPage - 1) * limit;
-
+        
         let filters = LeadFilters.value();
         offset = Math.max(0, offset);
         let payload = {
             testId: testInfo?.testId || Test._id,
             testType: testInfo?.testType || Test.type,
-            owner: User._id,
+            owner: subOrdinates.join(','),
             isTelecaller: User.telecaller ? 1 : 0,
             order: "asc",
             offset,
@@ -1038,6 +1093,9 @@ export default function LeadsTable({
     };
 
     useEffect(() => {
+
+        if (!isSubordinatesLoaded) return; 
+
         LeadsCurrentPage.setValue(1);
         xLeads();
         window.tableRefresh = () => xLeads();
@@ -1045,7 +1103,7 @@ export default function LeadsTable({
         return () => {
             delete window.tableRefresh;
         };
-    }, [testInfo]);
+    }, [isSubordinatesLoaded, testInfo]);
 
     useEffect(() => {
         const handleClick = (e) => {
