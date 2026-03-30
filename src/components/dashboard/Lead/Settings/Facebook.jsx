@@ -262,7 +262,7 @@ function SubscribeModal({
       loadFormsForPage(pageVal).then(() => {
         const formVal = `${pageVal}_${formId}`;
         setFormSelection(formVal);
-        loadFormFields(formVal);        // ← Use the unified function
+        loadFormFields(formVal, true);        // ← Use the unified function
       });
     }
   }, [isOpen, initialData]);
@@ -309,20 +309,17 @@ function SubscribeModal({
     try {
       let mappedArray = [];
 
-      // IMPORTANT: Only fetch saved mappings in EDIT mode
       if (isEditMode) {
         const mappedRes = await facebookApi.getMappedFields(corporateId, pageId, formId).catch(() => []);
         mappedArray = Array.isArray(mappedRes) ? mappedRes : (mappedRes?.data || []);
       }
-      // For NEW subscription → mappedArray remains empty → all fields show "Select Field"
 
-      // Fetch Facebook form questions
       const fbResponse = await new Promise((resolve, reject) => {
         window.FB.api(
           `/${formId}?fields=id,name,questions`,
           { access_token: pageAccessToken },
           (response) => {
-            if (response?.error) reject(new Error(response.error.message || "FB API Error"));
+            if (response?.error) reject(new Error(response.error.message));
             else resolve(response);
           }
         );
@@ -330,13 +327,12 @@ function SubscribeModal({
 
       const questions = Array.isArray(fbResponse?.questions) ? fbResponse.questions : [];
 
-      // Initialize all fields as empty (Select Field)
       const defaultMap = {};
       questions.forEach((q) => {
         if (q?.key) defaultMap[q.key] = "";
       });
 
-      // Only apply saved mappings in Edit mode
+      // Only apply mappings when editing
       if (isEditMode) {
         mappedArray.forEach((m) => {
           if (m?.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
@@ -347,7 +343,6 @@ function SubscribeModal({
 
       setFieldMap(defaultMap);
       setFormQuestions(questions);
-
     } catch (err) {
       console.error("[loadFormFields] Error:", err);
       toast.error("Failed to load form fields");
@@ -370,7 +365,7 @@ function SubscribeModal({
   const onFormChange = (e) => {
     const val = e.target.value;
     setFormSelection(val);
-    loadFormFields(val);
+    loadFormFields(val, false);
   };
 
   const onFieldMapChange = (key, val) => {
@@ -379,40 +374,48 @@ function SubscribeModal({
 
   const submit = async () => {
     if (!pageSelection || !formSelection) {
-      toast.error("Please select page and form");
+      toast.error("Please select page and form before subscribing");
       return;
     }
 
     const { pageId, pageAccessToken: pageToken } = parseFormValue(pageSelection);
     const { formId } = parseFormValue(formSelection);
 
+    // Build flat payload exactly like old jQuery version
     const payload = {
       corporateId,
       pageId,
       pageAccessToken: pageToken,
       formId,
-      course,
-      target_location: targetLocation,
-      mapped: Object.keys(fieldMap).map((k) => ({
-        form_field_key: k,
-        cn_field_id: fieldMap[k] || null,
-      })),
+      course: course || "",
+      target_location: targetLocation || "",
     };
+
+    // Add each mapped field as a top-level key (this is what backend expects)
+    Object.keys(fieldMap).forEach((fbFieldKey) => {
+      if (fieldMap[fbFieldKey] && fieldMap[fbFieldKey] !== "") {
+        payload[fbFieldKey] = fieldMap[fbFieldKey];     // e.g. email: "2", full_name: "1"
+      }
+    });
+
+    console.log("Final Payload being sent:", payload);   // ← Check this in console
 
     try {
       const result = initialData
         ? await facebookApi.updateSubscription(payload)
         : await facebookApi.subscribe(payload);
 
-      if (result?.status === "OK") {
+      console.log("Server Response:", result);
+
+      if (result && result.status === "OK") {
         toast.success(initialData ? "Subscription updated successfully" : "Subscribed successfully");
         onSaved?.();
         onClose();
       } else {
-        toast.error(result?.msg || "Operation failed");
+        toast.error(result?.msg || "Something went wrong");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Submit failed:", err);
       toast.error("Network error while saving");
     }
   };
