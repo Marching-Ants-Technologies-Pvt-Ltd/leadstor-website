@@ -158,6 +158,7 @@ const facebookApi = {
       path: API.subscribeFBPage,
       method: "POST",
       payload,
+      isFormData: true,
     }).catch((err) => {
       console.error("subscribe error:", err);
       throw err;
@@ -168,6 +169,7 @@ const facebookApi = {
       path: API.updateSubscription,
       method: "POST",
       payload,
+      isFormData: true,
     }).catch((err) => {
       console.error("updateSubscription error:", err);
       throw err;
@@ -372,16 +374,10 @@ function SubscribeModal({
     setFieldMap((prev) => ({ ...prev, [key]: val }));
   };
 
-  const submit = async () => {
-    if (!pageSelection || !formSelection) {
-      toast.error("Please select page and form before subscribing");
-      return;
-    }
-
+  const buildSubscriptionFormData = () => {
     const { pageId, pageAccessToken: pageToken } = parseFormValue(pageSelection);
     const { formId } = parseFormValue(formSelection);
 
-    // Build flat payload exactly like old jQuery version
     const payload = {
       corporateId,
       pageId,
@@ -391,19 +387,44 @@ function SubscribeModal({
       target_location: targetLocation || "",
     };
 
-    // Add each mapped field as a top-level key (this is what backend expects)
+    if (initialData?.subscriptionId) {
+      payload.subscriptionId = initialData.subscriptionId;
+    }
+
+    if (initialData?.formTableId) {
+      payload.formTableId = initialData.formTableId;
+    }
+
     Object.keys(fieldMap).forEach((fbFieldKey) => {
       if (fieldMap[fbFieldKey] && fieldMap[fbFieldKey] !== "") {
-        payload[fbFieldKey] = fieldMap[fbFieldKey];     // e.g. email: "2", full_name: "1"
+        payload[fbFieldKey] = fieldMap[fbFieldKey];
       }
     });
 
-    console.log("Final Payload being sent:", payload);   // ← Check this in console
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
+    });
+
+    return { payload, formData };
+  };
+
+  const submit = async () => {
+    if (!pageSelection || !formSelection) {
+      toast.error("Please select page and form before subscribing");
+      return;
+    }
+
+    const { payload, formData } = buildSubscriptionFormData();
+
+    console.log("Final Payload being sent:", payload);
 
     try {
       const result = initialData
-        ? await facebookApi.updateSubscription(payload)
-        : await facebookApi.subscribe(payload);
+        ? await facebookApi.updateSubscription(formData)
+        : await facebookApi.subscribe(formData);
 
       console.log("Server Response:", result);
 
