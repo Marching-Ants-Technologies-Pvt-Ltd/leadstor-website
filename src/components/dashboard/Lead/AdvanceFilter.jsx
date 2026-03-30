@@ -28,7 +28,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   ];
 
   const shouldShowOwnerFilter = useMemo(() => {
-      return User?.role === "Admin" || User?.role === "Administrator" || User?.isManager === 1;
+      return User?.role === "Admin" || User?.role === "Administrator" || User?.role === "Super Counsellor" || User?.isManager === 1;
   }, [User]);
 
   // Get session data
@@ -394,6 +394,13 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
       let raw = filter?.value || '';
       if (query === 'course') {
         raw = base64Decode(raw);
+        try {
+          const parsed = JSON.parse(raw);
+          hydrated[query] = Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+          return;
+        } catch (err) {
+          // Backward compatibility for older comma-joined saved filters.
+        }
       }
       hydrated[query] = String(raw).split(',').filter(Boolean);
     });
@@ -597,9 +604,8 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
         };
 
         if (col.dataField === 'course') {
-          const courseValue = value.join(',');
-          filterObj.value =  base64Encode(courseValue);
-          filterObj.displayValue = courseValue;
+          filterObj.value = base64Encode(JSON.stringify(value));
+          filterObj.displayValue = value.join(',');
         } else {
           filterObj.value = value.join(',');
         }
