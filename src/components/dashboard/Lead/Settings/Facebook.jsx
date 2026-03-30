@@ -225,28 +225,23 @@ function SubscribeModal({
 
   // Load CN fields once
   useEffect(() => {
-    facebookApi
-    .fetchCNFields()
-    .then((d) => {
+    facebookApi.fetchCNFields().then((d) => {
       if (Array.isArray(d)) {
         setCnFields(d);
       } else if (d && typeof d === "object") {
-        // Convert { "1": "Name" } → [{id: "1", name: "Name"}]
-        const formatted = Object.entries(d).map(([id, name]) => ({
-          id,
-          name,
-        }));
+        const formatted = Object.entries(d).map(([id, name]) => ({ id, name }));
         setCnFields(formatted);
       } else {
         setCnFields([]);
       }
-    })
+    });
   }, []);
 
-  // Reset & load initial data
+  // Reset form + Load initial data for Edit mode
   useEffect(() => {
     if (!isOpen) return;
 
+    // Reset everything
     setPageSelection("");
     setFormSelection("");
     setFormsForPage([]);
@@ -257,19 +252,32 @@ function SubscribeModal({
 
     if (initialData) {
       const { pageId, pageAccessToken, formId, course: c, target_location } = initialData;
+
       setCourse(c || "");
       setTargetLocation(target_location || "");
+
       const pageVal = `${pageId}_${pageAccessToken}`;
       setPageSelection(pageVal);
 
-      // Load forms → then select form → then load mapped fields
       loadFormsForPage(pageVal).then(() => {
         const formVal = `${pageVal}_${formId}`;
         setFormSelection(formVal);
-        updateFields(formVal, formId, initialData.subscriptionId, initialData.formTableId, c, target_location);
+        loadFormFields(formVal);        // ← Use the unified function
       });
     }
   }, [isOpen, initialData]);
+
+  // Helper to safely parse form value
+  const parseFormValue = (val) => {
+    if (!val) return { pageId: null, pageAccessToken: null, formId: null };
+
+    const parts = val.split("_");
+    const formId = parts[parts.length - 1];           // Last part is always formId
+    const pageId = parts[0];
+    const pageAccessToken = parts[1];
+
+    return { pageId, pageAccessToken, formId };
+  };
 
   const loadFormsForPage = async (val) => {
     if (!val) return [];
@@ -277,122 +285,76 @@ function SubscribeModal({
     if (!window.FB) return [];
 
     return new Promise((resolve) => {
-      window.FB.api(`/${pageId}/leadgen_forms?access_token=${pageAccessToken}&limit=200`, (response) => {
-        const list = (response && Array.isArray(response.data) ? response.data : []);
-        setFormsForPage(list);
-        resolve(list);
-      });
-    });
-  };
-
-  const loadFieldsForForm = (val) => {
-    if (!val) return;
-    const [pageId, pageAccessToken, formId] = val.split("_");
-    setLoadingFields(true);
-
-    // Optional: also fetch mapped fields when creating new (for consistency)
-    Promise.all([
-      facebookApi.getMappedFields(corporateId, pageId, formId).catch(() => []),
-      new Promise((resolve) => {
-        window.FB.api(`/${formId}?fields=id,name,questions&access_token=${pageAccessToken}`, resolve);
-      })
-    ])
-    .then(([mappedRes, fbResponse]) => {
-      console.log('[FB API] Full response for form', formId, fbResponse);
-
-      if (fbResponse?.error) {
-        console.error('[FB API Error]', fbResponse.error);
-        toast.error(`Facebook API error: ${fbResponse.error.message || 'Unknown'}`);
-        setLoadingFields(false);
-        return;
-      }
-
-      const questions = Array.isArray(fbResponse?.questions) ? fbResponse.questions : [];
-      console.log('[FB Questions] Count:', questions.length, 'Keys:', questions.map(q => q.key || 'no-key'));
-
-      const defaultMap = {};
-      questions.forEach((q) => {
-        if (q?.key) defaultMap[q.key] = "";
-      });
-
-      const mappedArray = Array.isArray(mappedRes) ? mappedRes : (mappedRes?.data || []);
-
-      mappedArray.forEach((m) => {
-        if (m.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
-          defaultMap[m.form_field_key] = String(m.cn_field_id || "");
-          console.log(`Applied mapping: ${m.form_field_key} → ${m.cn_field_id}`);
-        } else if (m.form_field_key) {
-          console.warn(`Saved mapping ignored - key not in current form: ${m.form_field_key}`);
+      window.FB.api(
+        `/${pageId}/leadgen_forms?access_token=${pageAccessToken}&limit=200`,
+        (response) => {
+          const list = Array.isArray(response?.data) ? response.data : [];
+          setFormsForPage(list);
+          resolve(list);
         }
-      });
-
-      setFieldMap(defaultMap);
-      setFormQuestions(questions);
-      setLoadingFields(false);
-    })
-    .catch(err => {
-      console.error(err);
-      setLoadingFields(false);
+      );
     });
   };
 
-  const updateFields = async (formVal, formId, subscriptionId, formTableId, courseVal, targetLocationVal) => {
-    if (!formVal || !formId) return;
+  // Unified function to load fields (used for both New & Edit)
+  const loadFormFields = async (formVal, isEditMode = false) => {
+    if (!formVal) return;
 
-    const [pageId, pageAccessToken] = formVal.split("_");
+    const { pageId, pageAccessToken, formId } = parseFormValue(formVal);
+    if (!formId || !pageAccessToken) return;
 
     setLoadingFields(true);
+    setFieldMap({});
 
     try {
-      // Fetch backend mappings first
-      const mapped = await facebookApi.getMappedFields(corporateId, pageId, formId);
-      const mappedArray = Array.isArray(mapped) ? mapped : (mapped?.data || []);
+      let mappedArray = [];
 
-      // Then fetch Facebook form questions (promise wrapper for cleaner error handling)
+      // IMPORTANT: Only fetch saved mappings in EDIT mode
+      if (isEditMode) {
+        const mappedRes = await facebookApi.getMappedFields(corporateId, pageId, formId).catch(() => []);
+        mappedArray = Array.isArray(mappedRes) ? mappedRes : (mappedRes?.data || []);
+      }
+      // For NEW subscription → mappedArray remains empty → all fields show "Select Field"
+
+      // Fetch Facebook form questions
       const fbResponse = await new Promise((resolve, reject) => {
         window.FB.api(
           `/${formId}?fields=id,name,questions`,
           { access_token: pageAccessToken },
           (response) => {
-            if (response?.error) {
-              reject(new Error(response.error.message || "Facebook API error"));
-            } else {
-              resolve(response);
-            }
+            if (response?.error) reject(new Error(response.error.message || "FB API Error"));
+            else resolve(response);
           }
         );
       });
 
-      console.log('[updateFields] FB response:', fbResponse);
-
       const questions = Array.isArray(fbResponse?.questions) ? fbResponse.questions : [];
-      console.log('[updateFields] Questions count:', questions.length, 'Keys:', questions.map(q => q.key || 'no-key'));
 
+      // Initialize all fields as empty (Select Field)
       const defaultMap = {};
       questions.forEach((q) => {
-        if (q?.key) {
-          defaultMap[q.key] = "";
-        }
+        if (q?.key) defaultMap[q.key] = "";
       });
 
-      // Apply saved mappings only if key still exists
-      mappedArray.forEach((m) => {
-        if (m?.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
-          defaultMap[m.form_field_key] = String(m.cn_field_id || "");
-        }
-      });
+      // Only apply saved mappings in Edit mode
+      if (isEditMode) {
+        mappedArray.forEach((m) => {
+          if (m?.form_field_key && defaultMap.hasOwnProperty(m.form_field_key)) {
+            defaultMap[m.form_field_key] = String(m.cn_field_id || "");
+          }
+        });
+      }
 
       setFieldMap(defaultMap);
       setFormQuestions(questions);
-      setCourse(courseVal || "");
-      setTargetLocation(targetLocationVal || "");
+
     } catch (err) {
-      console.error("[updateFields] Error:", err);
-      toast.error("Failed to load form fields: " + (err.message || "Unknown error"));
+      console.error("[loadFormFields] Error:", err);
+      toast.error("Failed to load form fields");
       setFieldMap({});
       setFormQuestions([]);
     } finally {
-      setLoadingFields(false); // always stop loading
+      setLoadingFields(false);
     }
   };
 
@@ -401,13 +363,14 @@ function SubscribeModal({
     setPageSelection(val);
     setFormSelection("");
     setFieldMap({});
+    setFormsForPage([]);
     loadFormsForPage(val);
   };
 
   const onFormChange = (e) => {
     const val = e.target.value;
     setFormSelection(val);
-    loadFieldsForForm(val);
+    loadFormFields(val);
   };
 
   const onFieldMapChange = (key, val) => {
@@ -416,12 +379,12 @@ function SubscribeModal({
 
   const submit = async () => {
     if (!pageSelection || !formSelection) {
-      toast.error("Please select page and form before subscribing");
+      toast.error("Please select page and form");
       return;
     }
 
-    const [pageId, pageToken] = pageSelection.split("_");
-    const [, , formId] = formSelection.split("_");
+    const { pageId, pageAccessToken: pageToken } = parseFormValue(pageSelection);
+    const { formId } = parseFormValue(formSelection);
 
     const payload = {
       corporateId,
@@ -432,31 +395,25 @@ function SubscribeModal({
       target_location: targetLocation,
       mapped: Object.keys(fieldMap).map((k) => ({
         form_field_key: k,
-        cn_field_id: fieldMap[k],
+        cn_field_id: fieldMap[k] || null,
       })),
     };
-
-    // Add required IDs for update operation
-    if (initialData) {
-      payload.subscriptionId = initialData.subscriptionId;
-      payload.formTableId = initialData.formTableId;
-    }
 
     try {
       const result = initialData
         ? await facebookApi.updateSubscription(payload)
         : await facebookApi.subscribe(payload);
 
-      if (result && result.status === "OK") {
-        toast.success(initialData ? "Subscription updated" : "Subscribed successfully");
-        onSaved && onSaved();
+      if (result?.status === "OK") {
+        toast.success(initialData ? "Subscription updated successfully" : "Subscribed successfully");
+        onSaved?.();
         onClose();
       } else {
-        toast.error(result?.msg || "Something went wrong");
+        toast.error(result?.msg || "Operation failed");
       }
     } catch (err) {
       console.error(err);
-      toast.error("Network error while saving subscription");
+      toast.error("Network error while saving");
     }
   };
 
@@ -464,106 +421,87 @@ function SubscribeModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="w-full max-w-3xl bg-white rounded shadow-xl p-6 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Facebook Form Subscribe</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-xl">
-            ×
-          </button>
+      <div className="w-full max-w-3xl bg-white rounded-xl shadow-xl p-6 max-h-[92vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-semibold">
+            {initialData ? "Update Subscription" : "Subscribe to Facebook Form"}
+          </h3>
+          <button onClick={onClose} className="text-3xl text-gray-400 hover:text-gray-600">×</button>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-6">
           {/* Page Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Page</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Facebook Page</label>
             <select
               value={pageSelection}
               onChange={onPageChange}
-              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Select Page</option>
-              {Array.isArray(fbPages) && fbPages.length > 0 ? (
-                fbPages.map((p) => (
-                  <option key={p.id} value={`${p.id}_${p.access_token}`}>
-                    {p.name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No pages available</option>
-              )}
+              {fbPages.map((p) => (
+                <option key={p.id} value={`${p.id}_${p.access_token}`}>
+                  {p.name}
+                </option>
+              ))}
             </select>
           </div>
 
           {/* Form Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Form</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lead Form</label>
             <select
               value={formSelection}
               onChange={onFormChange}
-              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={!pageSelection}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
             >
               <option value="">Select Form</option>
-              {Array.isArray(formsForPage) && formsForPage.length > 0 ? (
-                formsForPage.map((f) => (
-                  <option key={f.id} value={`${pageSelection}_${f.id}`}>
-                    {f.name}
-                  </option>
-                ))
-              ) : (
-                <option disabled>{pageSelection ? "No forms found" : "Select page first"}</option>
-              )}
+              {formsForPage.map((f) => (
+                <option key={f.id} value={`${pageSelection}_${f.id}`}>
+                  {f.name}
+                </option>
+              ))}
             </select>
           </div>
 
           {/* Field Mapping */}
           <div>
-            <h4 className="text-sm font-medium mb-2">Field Mapping</h4>
-            <div className="border rounded p-3 bg-gray-50 max-h-60 overflow-auto">
+            <h4 className="text-sm font-semibold mb-2">Field Mapping</h4>
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 max-h-72 overflow-auto">
               {loadingFields ? (
-                  <div className="text-center py-4">Loading form questions from Facebook...</div>
-                ) : Object.keys(fieldMap).length === 0 ? (
-                  <div className="text-center py-6 text-amber-700 bg-amber-50 rounded">
-                    <p className="font-medium">No questions found in this lead form</p>
-                    <p className="text-sm mt-2">
-                      This form might have no fields configured, or Facebook isn&apos;t returning questions.<br />
-                      <strong>Check in Ads Manager:</strong> Page → Publishing Tools → Instant Forms → edit the form → ensure it has at least Name/Email/Phone.
-                    </p>
-                    <p className="text-xs mt-3 text-gray-600">
-                      Expected keys (examples): full_name, email, phone_number, company_name
-                    </p>
-                  </div>
-                ) : (
+                <div className="text-center py-8 text-gray-500">Loading questions from Facebook...</div>
+              ) : Object.keys(fieldMap).length === 0 ? (
+                <div className="text-center py-8 text-amber-700 bg-amber-50 rounded-lg">
+                  <p className="font-medium">No questions found in this form</p>
+                  <p className="text-sm mt-2">Make sure the Instant Form has fields (Name, Email, Phone, etc.)</p>
+                </div>
+              ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2">Field Key</th>
-                      <th className="text-left py-2">Mapped To</th>
+                      <th className="text-left py-2">Facebook Field</th>
+                      <th className="text-left py-2">Map to Concept Ninjas Field</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.keys(fieldMap).map((k) => (
                       <tr key={k} className="border-t">
-                        <td className="py-2 pr-4">{formQuestions.find(q => q.key === k)?.label || k}</td>
-                        <td className="py-2">
+                        <td className="py-3 pr-4 font-medium">
+                          {formQuestions.find((q) => q.key === k)?.label || k}
+                        </td>
+                        <td className="py-3">
                           <select
                             value={fieldMap[k] || ""}
                             onChange={(e) => onFieldMapChange(k, e.target.value)}
-                            className="w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full border border-gray-300 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
-                            <option value="">Select Field</option>
-                            {Array.isArray(cnFields) && cnFields.length > 0 ? (
-                              cnFields.map((f) => (
-                                <option
-                                  key={f.id || f.fieldId || f}
-                                  value={f.id || f.fieldId || f}
-                                >
-                                  {f.name || f}
-                                </option>
-                              ))
-                            ) : (
-                              <option disabled>No fields available</option>
-                            )}
+                            <option value="">— Select Field —</option>
+                            {cnFields.map((f) => (
+                              <option key={f.id} value={f.id}>
+                                {f.name}
+                              </option>
+                            ))}
                           </select>
                         </td>
                       </tr>
@@ -574,40 +512,42 @@ function SubscribeModal({
             </div>
           </div>
 
-          {/* Optional fields */}
+          {/* Optional Fields */}
           {(corporateType === 100 || corporateType === 500 || corporateType === 800) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Course (Optional)</label>
               <input
                 value={course}
                 onChange={(e) => setCourse(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+                placeholder="Enter course name"
               />
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location (Optional)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Target Location (Optional)</label>
             <input
               value={targetLocation}
               onChange={(e) => setTargetLocation(e.target.value)}
-              className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2.5"
+              placeholder="Enter location"
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex justify-end gap-3 pt-4">
             <button
               onClick={onClose}
-              className="px-5 py-2 border border-gray-300 rounded hover:bg-gray-100"
+              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100"
             >
               Cancel
             </button>
             <button
               onClick={submit}
-              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
             >
-              {initialData ? "Update Subscription" : "Subscribe"}
+              {initialData ? "Update Subscription" : "Subscribe Now"}
             </button>
           </div>
         </div>
