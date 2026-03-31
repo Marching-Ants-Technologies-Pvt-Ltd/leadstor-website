@@ -189,103 +189,105 @@ export default function Category() {
 
       {/* Data Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
-        {loading ? (
-          <p className="text-center py-4 text-gray-500">Loading...</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr className="text-left">
-                <th className="p-2 text-left">
-                  <input
-                    type="checkbox"
-                    onChange={(e) =>
-                      setSelected(
-                        e.target.checked ? paginated.map((r) => r.id) : []
-                      )
-                    }
-                    checked={
-                      paginated.length > 0 &&
-                      paginated.every((r) => selected.includes(r.id))
-                    }
-                  />
-                </th>
-                <th className="p-2 text-left">Category</th>
-                <th className="p-2 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.map((row) => (
-                <tr
-                  key={row.id}
-                  className="border-t hover:bg-gray-50 transition-colors"
-                >
-                  <td className="p-2">
+        <div className="overflow-auto max-h-[calc(100vh-220px)]">
+          {loading ? (
+            <p className="text-center py-4 text-gray-500">Loading...</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr className="text-left">
+                  <th className="p-2 text-left">
                     <input
                       type="checkbox"
-                      checked={selected.includes(row.id)}
-                      onChange={() => toggleSelect(row.id)}
+                      onChange={(e) =>
+                        setSelected(
+                          e.target.checked ? paginated.map((r) => r.id) : []
+                        )
+                      }
+                      checked={
+                        paginated.length > 0 &&
+                        paginated.every((r) => selected.includes(r.id))
+                      }
                     />
-                  </td>
-                  <td className="p-2">{row.category}</td>
-                  <td className="p-2 text-center space-x-2">
-                    <button
-                      onClick={() => {
-                        setForm(row);
-                        setEditing(true);
-                        setShowModal(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(row.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
+                  </th>
+                  <th className="p-2 text-left">Category</th>
+                  <th className="p-2 text-center">Actions</th>
                 </tr>
-              ))}
-              {paginated.length === 0 && (
-                <tr>
-                  <td colSpan="3" className="text-center py-4 text-gray-500">
-                    No records found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
+              </thead>
+              <tbody>
+                {paginated.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="border-t hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(row.id)}
+                        onChange={() => toggleSelect(row.id)}
+                      />
+                    </td>
+                    <td className="p-2">{row.category}</td>
+                    <td className="p-2 text-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setForm(row);
+                          setEditing(true);
+                          setShowModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(row.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {paginated.length === 0 && (
+                  <tr>
+                    <td colSpan="3" className="text-center py-4 text-gray-500">
+                      No records found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
 
-      {/* Pagination */}
-      <div className="flex justify-end items-center mt-3 gap-2 text-sm">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage(page - 1)}
-          className={`px-3 py-1 rounded ${
-            page === 1
-              ? "bg-gray-200 text-gray-500"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <span className="text-gray-700">
-          Page {page} of {totalPages || 1}
-        </span>
-        <button
-          disabled={page === totalPages || totalPages === 0}
-          onClick={() => setPage(page + 1)}
-          className={`px-3 py-1 rounded ${
-            page === totalPages || totalPages === 0
-              ? "bg-gray-200 text-gray-500"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-        >
-          <ChevronRight size={20} />
-        </button>
+        {/* Pagination */}
+        <div className="flex justify-end items-center mt-3 gap-2 text-sm">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className={`px-3 py-1 rounded ${
+              page === 1
+                ? "bg-gray-200 text-gray-500"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <span className="text-gray-700">
+            Page {page} of {totalPages || 1}
+          </span>
+          <button
+            disabled={page === totalPages || totalPages === 0}
+            onClick={() => setPage(page + 1)}
+            className={`px-3 py-1 rounded ${
+              page === totalPages || totalPages === 0
+                ? "bg-gray-200 text-gray-500"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
       </div>
 
       {/* Add/Edit Modal */}

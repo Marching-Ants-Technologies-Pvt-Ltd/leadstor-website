@@ -99,7 +99,8 @@ export default function Statuses() {
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6 pt-2 pb-20 min-h-screen space-y-4">
+      
       <ToastContainer position="top-right" autoClose={3000} />
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -140,77 +141,79 @@ export default function Statuses() {
 
       {/* Table */}
       <div className="bg-white shadow rounded-xl overflow-hidden">
-        {loading ? (
-          <p className="text-center py-6 text-gray-500">Loading...</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100 text-gray-700">
-              <tr>
-                <th className="p-2 text-left">
-                  <input
-                    type="checkbox"
-                    checked={
-                      selectedIds.length === currentRecords.length && currentRecords.length > 0
-                    }
-                    onChange={(e) =>
-                      setSelectedIds(e.target.checked ? currentRecords.map((r) => r.id) : [])
-                    }
-                  />
-                </th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Follow-up</th>
-                <th className="p-2">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentRecords.map((row) => (
-                <tr key={row.id} className="border-t hover:bg-gray-50">
-                  <td className="p-2">
+        <div className="overflow-auto max-h-[calc(100vh-220px)]">
+          {loading ? (
+            <p className="text-center py-6 text-gray-500">Loading...</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="p-2 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedIds.includes(row.id)}
-                      onChange={() =>
-                        setSelectedIds((prev) =>
-                          prev.includes(row.id)
-                            ? prev.filter((x) => x !== row.id)
-                            : [...prev, row.id]
-                        )
+                      checked={
+                        selectedIds.length === currentRecords.length && currentRecords.length > 0
+                      }
+                      onChange={(e) =>
+                        setSelectedIds(e.target.checked ? currentRecords.map((r) => r.id) : [])
                       }
                     />
-                  </td>
-                  <td className="p-2">{row.status}</td>
-                  <td className="p-2">{row.isFollowup == 1 ? "Needed" : "Not Needed"}</td>
-                  <td className="p-2 flex gap-2">
-                    <button
-                      onClick={() => {
-                        setForm({ id: row.id, status: row.status, isFollowup: Number(row.isFollowup) });
-                        setEditing(true);
-                        setModalOpen(true);
-                      }}
-                      className="text-blue-600 hover:underline"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(row.id)}
-                      className="text-red-600 hover:underline"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </td>
+                  </th>
+                  <th className="p-2">Status</th>
+                  <th className="p-2">Follow-up</th>
+                  <th className="p-2">Action</th>
                 </tr>
-              ))}
+              </thead>
+              <tbody>
+                {currentRecords.map((row) => (
+                  <tr key={row.id} className="border-t hover:bg-gray-50">
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(row.id)}
+                        onChange={() =>
+                          setSelectedIds((prev) =>
+                            prev.includes(row.id)
+                              ? prev.filter((x) => x !== row.id)
+                              : [...prev, row.id]
+                          )
+                        }
+                      />
+                    </td>
+                    <td className="p-2">{row.status}</td>
+                    <td className="p-2">{row.isFollowup == 1 ? "Needed" : "Not Needed"}</td>
+                    <td className="p-2 flex gap-2">
+                      <button
+                        onClick={() => {
+                          setForm({ id: row.id, status: row.status, isFollowup: Number(row.isFollowup) });
+                          setEditing(true);
+                          setModalOpen(true);
+                        }}
+                        className="text-blue-600 hover:underline"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(row.id)}
+                        className="text-red-600 hover:underline"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
 
-              {currentRecords.length === 0 && (
-                <tr>
-                  <td colSpan="4" className="text-center py-4 text-gray-500">
-                    No records found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+                {currentRecords.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4 text-gray-500">
+                      No records found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
 
         {/* Pagination */}
         {totalPages > 1 && (

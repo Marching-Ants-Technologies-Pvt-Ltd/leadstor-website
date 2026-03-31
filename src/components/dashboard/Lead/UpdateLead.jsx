@@ -89,7 +89,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
             }}
             className="input-crm"
           >
-            <option value="">-- Select --</option>
+            {item.dataField !== "status" && <option value="">-- Select --</option>}
             {options.map((opt) => (
               <option 
                 key={opt.key} 

@@ -259,45 +259,81 @@ export default function JobPostingsController() {
             {/* Pagination controls */}
             {!loading && total > 0 && (
               <div className="mt-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-600 px-2">
-                <div>
-                  Showing <strong>{(page - 1) * limit + 1}</strong>–
-                  <strong>{Math.min(page * limit, total)}</strong> of{' '}
-                  <strong>{total.toLocaleString()}</strong>
-                </div>
-                
-                <div className="flex items-center gap-1 flex-wrap justify-center">
-                  <button
-                    disabled={page === 1}
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-                  >
-                    Prev
-                  </button>
+                <div className="flex items-center gap-3">
+                    <span className="font-medium">
+                      Showing <strong className="text-blue-600">{(page - 1) * limit + 1}</strong>–
+                      <strong className="text-blue-600">{Math.min(page * limit, total)}</strong> of <strong className="text-blue-600">{total.toLocaleString()}</strong>
+                    </span>
 
-                  {Array.from({ length: Math.min(Math.ceil(total / limit), 7) }, (_, i) => {
-                    const num = page - 3 + i;
-                    if (num < 1 || num > Math.ceil(total / limit)) return null;
-                    return (
-                      <button
-                        key={num}
-                        onClick={() => setPage(num)}
-                        className={`px-3 py-1 border rounded min-w-[32px] ${
-                          num === page ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'
-                        }`}
-                      >
-                        {num}
-                      </button>
-                    );
-                  })}
+                    <select
+                      value={limit}
+                      onChange={(e) => {
+                        setLimit(Number(e.target.value))
+                        setPage(1) // reset to first page
+                      }}
+                      className="border border-gray-300 rounded-full px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={500}>500</option>
+                    </select>
 
-                  <button
-                    disabled={page >= Math.ceil(total / limit)}
-                    onClick={() => setPage(p => p + 1)}
-                    className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
-                  >
-                    Next
-                  </button>
-                </div>
+                    <span className="font-medium">per page</span>
+                  </div>
+
+                  {/* Page navigation */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
+                    >
+                      Previous
+                    </button>
+
+                    {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+                      const pageNum = i + 1
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPage(pageNum)}
+                          className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
+                            page === pageNum
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
+                              : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      )
+                    })}
+
+                    {totalPages > 10 && (
+                      <>
+                        <span className="px-2 text-gray-400">...</span>
+                        <button
+                          onClick={() => setPage(totalPages)}
+                          className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
+                            page === totalPages
+                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
+                              : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
+                          }`}
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+
+                    <button
+                      disabled={page >= totalPages}
+                      onClick={() => setPage(p => p + 1)}
+                      className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
+                    >
+                      Next
+                    </button>
+                  </div>
               </div>
             )}
           </div>

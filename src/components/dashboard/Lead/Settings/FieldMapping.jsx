@@ -218,104 +218,106 @@ export default function FieldMapping() {
 
       {/* Table */}
       <div className="bg-white shadow rounded-lg overflow-auto">
-        <table className="w-full text-sm min-w-[900px]">
-          <thead className="bg-gray-100 border-b">
-            <tr>
-              <th className="p-2"></th>
-              <th className="p-2">Sr.</th>
-              <th className="p-2">Field Name</th>
-              <th className="p-2">Display Name</th>
-              <th className="p-2">Data Field (DB Column)</th>
-              <th className="p-2">Field Type</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading ? (
+        <div className="overflow-auto max-h-[calc(100vh-280px)]">
+          <table className="w-full text-sm min-w-[900px]">
+            <thead className="bg-gray-100 border-b">
               <tr>
-                <td colSpan="5" className="text-center py-4">
-                  Loading...
-                </td>
+                <th className="p-2"></th>
+                <th className="p-2">Sr.</th>
+                <th className="p-2">Field Name</th>
+                <th className="p-2">Display Name</th>
+                <th className="p-2">Data Field (DB Column)</th>
+                <th className="p-2">Field Type</th>
               </tr>
-            ) : currentRecords.length === 0 ? (
-              <tr>
-                <td colSpan="5" className="text-center py-4">
-                  No fields found
-                </td>
-              </tr>
-            ) : (
-              currentRecords.map((row, index) => (
-                <tr
-                  key={row.id}
-                  className={index % 2 ? "bg-gray-50" : ""}
-                >
-                  <td className="p-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(row.id)}
-                      disabled={defaultFields.includes(row.id)}
-                      onChange={() => toggleCheckbox(row.id)}
-                    />
-                    {defaultFields.includes(row.id) && (
-                      <span className="ml-1 text-xs text-gray-500">(Default)</span>
-                    )}
-                  </td>
-                  <td className="p-2">{row.sr}</td>
-                  <td className="p-2">{row.fieldName}</td>
+            </thead>
 
-                  <td className="p-2">
-                    <div className="relative" title={
-                            selectedIds.includes(row.id)
-                              ? ""
-                              : "Enable this field by checking the box"
-                          }>
-                         <input
-                          disabled={!selectedIds.includes(row.id)}
-                          className="w-full border rounded px-2 py-1 disabled:bg-gray-100"
-                          placeholder={
-                            selectedIds.includes(row.id)
-                              ? "Enter display name"
-                              : "Check box to enable"
-                          }
-                          value={row.displayName}
-                          onChange={(e) =>
-                            updateField(row.id, "displayName", e.target.value)
-                          }
-                        />
-
-                        {!selectedIds.includes(row.id) && (
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
-                            🔒
-                          </span>
-                        )}
-                      </div>
-                  </td>
-
-                  <td className="p-2">{row.dataField}</td>
-                  <td className="p-2">
-                    <select
-                      className={`w-full border rounded px-2 py-1 ${
-                        selectedIds.includes(row.id) && !row.fieldType
-                          ? "border-red-500"
-                          : ""
-                      }`}
-                      value={row.fieldType}
-                      onChange={(e) =>
-                        updateField(row.id, "fieldType", e.target.value)
-                      }
-                    >
-                      <option value="">Select</option>
-                      <option value="text">Text</option>
-                      <option value="dropdown">Dropdown</option>
-                      <option value="textarea">Textarea</option>
-                      <option value="datetime">Date & Time</option>
-                    </select>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-4">
+                    Loading...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : currentRecords.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-4">
+                    No fields found
+                  </td>
+                </tr>
+              ) : (
+                currentRecords.map((row, index) => (
+                  <tr
+                    key={row.id}
+                    className={index % 2 ? "bg-gray-50" : ""}
+                  >
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(row.id)}
+                        disabled={defaultFields.includes(row.id)}
+                        onChange={() => toggleCheckbox(row.id)}
+                      />
+                      {defaultFields.includes(row.id) && (
+                        <span className="ml-1 text-xs text-gray-500">(Default)</span>
+                      )}
+                    </td>
+                    <td className="p-2">{row.sr}</td>
+                    <td className="p-2">{row.fieldName}</td>
+
+                    <td className="p-2">
+                      <div className="relative" title={
+                              selectedIds.includes(row.id)
+                                ? ""
+                                : "Enable this field by checking the box"
+                            }>
+                          <input
+                            disabled={!selectedIds.includes(row.id)}
+                            className="w-full border rounded px-2 py-1 disabled:bg-gray-100"
+                            placeholder={
+                              selectedIds.includes(row.id)
+                                ? "Enter display name"
+                                : "Check box to enable"
+                            }
+                            value={row.displayName}
+                            onChange={(e) =>
+                              updateField(row.id, "displayName", e.target.value)
+                            }
+                          />
+
+                          {!selectedIds.includes(row.id) && (
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">
+                              🔒
+                            </span>
+                          )}
+                        </div>
+                    </td>
+
+                    <td className="p-2">{row.dataField}</td>
+                    <td className="p-2">
+                      <select
+                        className={`w-full border rounded px-2 py-1 ${
+                          selectedIds.includes(row.id) && !row.fieldType
+                            ? "border-red-500"
+                            : ""
+                        }`}
+                        value={row.fieldType}
+                        onChange={(e) =>
+                          updateField(row.id, "fieldType", e.target.value)
+                        }
+                      >
+                        <option value="">Select</option>
+                        <option value="text">Text</option>
+                        <option value="dropdown">Dropdown</option>
+                        <option value="textarea">Textarea</option>
+                        <option value="datetime">Date & Time</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
         {/* Pagination */}
         <div className="flex justify-between items-center px-4 py-3 text-sm">
