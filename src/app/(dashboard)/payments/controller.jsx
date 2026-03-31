@@ -21,8 +21,6 @@ export default function PaymentsSectionController() {
     const branchTestType = searchParams.get('testType');
 
     const corporateId = Corporate?._id;
-    let totalPages = 0;
-    let currentPage = 0;
 
     const [leads, setLeads] = useState(null);
     const [counsellor, setCounsellor] = useState([]);
@@ -100,51 +98,57 @@ export default function PaymentsSectionController() {
         }, 300);
     };
 
+    const totalRecords = leads?.total || 0;
+    const totalPages = Math.ceil(totalRecords / query.limit);
+    const currentPage = Math.floor(query.offset / query.limit) + 1;
     const getPages = () => {
-        totalPages = Math.ceil(leads?.total || 0 / query.limit);
-        currentPage = Math.floor(query.offset / query.limit);
-
         const pages = [];
-        const delta = 1; // how many pages around current
+        const delta = 1; // pages to show around current
 
-        const rangeStart = Math.max(0, currentPage - delta);
-        const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
-
-        if (rangeStart > 0) {
-            pages.push(0);
-            if (rangeStart > 1) pages.push("...");
+        if (totalPages <= 7) {
+            // Show all pages if total is small
+            for (let i = 1; i <= totalPages; i++) {
+            pages.push(i);
+            }
+            return pages;
         }
 
-        for (let i = rangeStart; i <= rangeEnd; i++) {
+        // Always show first page
+        pages.push(1);
+
+        const start = Math.max(2, currentPage - delta);
+        const end = Math.min(totalPages - 1, currentPage + delta);
+
+        if (start > 2) pages.push("...");
+
+        for (let i = start; i <= end; i++) {
             pages.push(i);
         }
 
-        if (rangeEnd < totalPages - 1) {
-            if (rangeEnd < totalPages - 2) pages.push("...");
-            pages.push(totalPages - 1);
+        if (end < totalPages - 1) {
+            if (end < totalPages - 2) pages.push("...");
+            pages.push(totalPages);
         }
 
-        return pages.filter(
-            (item, index) => pages.indexOf(item) === index
-        );
-    }
+        return pages;
+    };
 
-    const changePage = (pageIndex) => {
-        if (pageIndex < 0 || pageIndex >= totalPages) return;
+    const changePage = (newPage) => {
+        if (newPage < 1 || newPage > totalPages) return;
 
         setQuery((prev) => ({
             ...prev,
-            offset: pageIndex * prev.limit
+            offset: (newPage - 1) * prev.limit,
         }));
     };
 
     const changeLimit = (newLimit) => {
-
         setQuery((prev) => ({
             ...prev,
             limit: newLimit,
-            offset: 0 // reset to first page
+            offset: 0,
         }));
+        setLimitPopup(false);
     };
 
     const filterPendingPayments = (e) => {
@@ -573,87 +577,94 @@ export default function PaymentsSectionController() {
                 </div>
 
                 {/* Table View */}
-                <div className="h-[calc(100vh-120px)] overflow-scroll show-scrollbar pb-24">
-                    <PaymentsTable
-                        rows={leads?.rows || []}
-                        router={router}
-                        changePlacementReadyStatus={cbChangePlacementReadyStatus}
-                        deleteRecord={cbDeleteRecord}
-                        counsellors={counsellor}
-                        trainers={trainer}
-                        changeCounsellorOrTrainer={cbChangeCounsellorOrTrainer}
-                        checkUncheckRows={checkUncheckRows}
-                        downloadReceipt={downloadPaymentReceipt}
-                    />
-                </div>
+                <div className="flex flex-col h-[calc(100vh-180px)]">
+                    <div className="flex-1 overflow-auto">
+                        <PaymentsTable
+                            rows={leads?.rows || []}
+                            router={router}
+                            changePlacementReadyStatus={cbChangePlacementReadyStatus}
+                            deleteRecord={cbDeleteRecord}
+                            counsellors={counsellor}
+                            trainers={trainer}
+                            changeCounsellorOrTrainer={cbChangeCounsellorOrTrainer}
+                            checkUncheckRows={checkUncheckRows}
+                            downloadReceipt={downloadPaymentReceipt}
+                        />
+                    </div>
+                    
+                    <div className="bg-white border-t border-slate-200 px-4 py-2 flex justify-between items-center text-sm">
+        
+                        {/* Left */}
+                        <div className="flex items-center gap-3">
+                            <span>
+                                Showing {query.offset + 1} to {Math.min(query.offset + query.limit, totalRecords)} of {totalRecords}
+                            </span>
 
-                {/* Pagination Controller */}
-                <div className="sticky bottom-0 bg-white border-t border-slate-200 flex justify-between items-center px-4 py-3 text-sm">
-                    <div className="flex items-center gap-2">
-                        Showing 1 to {leads?.rows?.length || 0} of {leads?.total || 0} rows
+                            <div className="relative">
+                                <button
+                                    onClick={() => setLimitPopup(!limitPopup)}
+                                    className="border px-3 py-1 rounded bg-white flex items-center gap-1"
+                                >
+                                    {query.limit} ▼
+                                </button>
 
-                        <div onClick={() => setLimitPopup(prev => !prev)} className="border py-1 px-2 gap-3 flex items-center rounded-sm cursor-pointer relative">
-                            <div>{query.limit}</div>
-                            <div className='text-gray-500'>⏷</div>
-                            {limitPopup &&
-                                <div className='w-16 p-1 bg-white shadow-md absolute bottom-8 rounded-md border -left-0.5 flex flex-col gap-0.5 z-0'>
-                                    <div onClick={() => changeLimit(25)} className={`${(query.limit === 25) ? 'text-blue-600 font-semibold bg-blue-100' : ''} px-1 py-0.5 hover:bg-blue-100 rounded-sm text-base`}>25</div>
-                                    <div onClick={() => changeLimit(50)} className={`${(query.limit === 50) ? 'text-blue-600 font-semibold bg-blue-100' : ''} px-1 py-0.5 hover:bg-blue-100 rounded-sm text-base`}>50</div>
-                                    <div onClick={() => changeLimit(100)} className={`${(query.limit === 100) ? 'text-blue-600 font-semibold bg-blue-100' : ''} px-1 py-0.5 hover:bg-blue-100 rounded-sm text-base`}>100</div>
-                                </div>
-                            }
+                                {limitPopup && (
+                                    <div className="absolute bottom-full mb-1 bg-white shadow border rounded w-20">
+                                        {[50, 100, 200, 500].map(num => (
+                                            <div
+                                                key={num}
+                                                onClick={() => changeLimit(num)}
+                                                className="px-3 py-1 hover:bg-gray-100 cursor-pointer text-center"
+                                            >
+                                                {num}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <span className="text-gray-500">rows per page</span>
                         </div>
 
-                        rows per page
-                    </div>
+                        {/* Right */}
+                        <div className="flex items-center gap-1">
+                            <button
+                                onClick={() => changePage(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                className="border w-8 h-8 flex items-center justify-center rounded disabled:opacity-40"
+                            >
+                                ‹
+                            </button>
 
-                    {/* Backdrop: Pagination */}
-                    {limitPopup && <div onClick={() => setLimitPopup(false)} className='bg-transparent inset-0 absolute z-0'></div>}
-
-                    <div className="flex items-center gap-1">
-                        {/* Previous */}
-                        <button
-                            className="border w-8 h-8 rounded flex justify-center items-center"
-                            onClick={() => changePage(currentPage - 1)}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" color="#505050" fill="none" stroke="#505050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M15 6C15 6 9.00001 10.4189 9 12C8.99999 13.5812 15 18 15 18" />
-                            </svg>
-                        </button>
-
-                        {/* Page numbers */}
-                        {getPages().map((page, index) =>
-                            page === "..." ? (
-                                <span key={index} className="px-1 text-slate-400">
-                                    …
-                                </span>
-                            ) : (
-                                <button
-                                    key={page}
-                                    onClick={() => changePage(page)}
-                                    className={`w-8 h-8 rounded ${page === currentPage
-                                        ? "bg-blue-600 text-white"
-                                        : "border"
+                            {getPages().map((page, i) =>
+                                page === "..." ? (
+                                    <span key={i}>…</span>
+                                ) : (
+                                    <button
+                                        key={i}
+                                        onClick={() => changePage(page)}
+                                        className={`w-8 h-8 rounded ${
+                                            currentPage === page
+                                                ? "bg-blue-600 text-white"
+                                                : "border"
                                         }`}
-                                >
-                                    {page + 1}
-                                </button>
-                            )
-                        )}
+                                    >
+                                        {page}
+                                    </button>
+                                )
+                            )}
 
-                        {/* Next */}
-                        <button
-                            className="border w-8 h-8 rounded flex justify-center items-center"
-                            onClick={() => changePage(currentPage + 1)}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" color="#505050" fill="none" stroke="#505050" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18" />
-                            </svg>
-                        </button>
+                            <button
+                                onClick={() => changePage(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                className="border w-8 h-8 flex items-center justify-center rounded disabled:opacity-40"
+                            >
+                                ›
+                            </button>
+                        </div>
+
                     </div>
-
                 </div>
-
             </div>
         </div>
     )
