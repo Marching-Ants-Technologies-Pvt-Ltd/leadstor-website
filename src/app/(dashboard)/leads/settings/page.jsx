@@ -34,6 +34,8 @@ const Facebook = dynamic(() => import('@/components/dashboard/Lead/Settings/Face
 const PreferredCourses = dynamic(() => import('@/components/dashboard/Lead/Settings/PreferredCourses'), { ssr: false });
 const Loading = dynamic(() => import('@/components/dashboard/Lead/Settings/loading'), { ssr: false });
 const Category = dynamic(() => import('@/components/dashboard/Lead/Settings/Category'), { ssr: false });
+const SubServices = dynamic(() => import('@/components/dashboard/Lead/Settings/SubServices'), { ssr: false });
+const AssociatedCenters = dynamic(() => import('@/components/dashboard/Lead/Settings/AssociatedCenters'), { ssr: false });
 
 // ---------------------------------------------------
 // ⚡ 2. SETTINGS PAGE
@@ -102,7 +104,9 @@ export default function Settings() {
           { key: "statuses", label: "Statuses" },
           { key: "courses", label: isCorporate800 ? "Country & Processing Fee" : "Courses & Fee",},
           ...(isCorporate800 ? [{ key: "preferredCourses", label: "Preferred Courses" }] : []),
-          { key: "categories", label: "Categories" },
+          { key: "subServices", label: "Sub Services" },
+          { key: "categories", label: "Lead Category" },
+          { key: "associatedCenters", label: "Associated Centers" },
           { key: "sources", label: "Sources" },
           { key: "leadAllocation", label: "Lead Allocation" },
           { key: "mapping", label: "Field Mapping" },
@@ -169,6 +173,12 @@ export default function Settings() {
 
       case "categories":
         return <Category />;
+
+      case "subServices":
+        return <SubServices />;
+
+      case "associatedCenters":
+        return <AssociatedCenters />;
 
       case "leadAllocation":
         return <LeadAllocation />;

@@ -31,6 +31,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   const [sources, setSources] = useState([]);
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [associatedCenters, setAssociatedCenters] = useState([]);
   const [users, setUsers] = useState([]);
   const [statuses, setStatuses] = useState([]);
 
@@ -102,12 +103,13 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   async function loadDropdowns() {
     try {
-      const [src, crs, sts, usrs, ctgs] = await Promise.all([
+      const [src, crs, sts, usrs, ctgs, asct] = await Promise.all([
         xFetch({ path: `/services/profile/getSources?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getCourseAndFee?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getStatuses?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getUsers?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getCategories?corporateId=${corporateId}` }),
+        xFetch({ path: `/services/profile/getAssociatedCenters?corporateId=${corporateId}` }),
       ]);
 
       setSources(src || []);
@@ -115,6 +117,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       setStatuses(sts || []);
       setUsers(usrs || []);
       setCategories(ctgs || []);
+      setAssociatedCenters(asct || []);
     } catch {
       toast.error("Failed loading dropdown values");
     }
@@ -187,6 +190,15 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           allowInvalid: true,
         };
 
+      case "associatedCenters":
+        return {
+          data: field.dataField,
+          type: "autocomplete",
+          source: associatedCenters.map((ac) => ac.associatedCenter),
+          strict: false,
+          allowInvalid: true,
+        };
+      
       case "course":
         return {
           data: field.dataField,
@@ -453,6 +465,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       else if (df.includes("category")) {
         columnTypes.category = colIndex;
       }
+      else if (df.includes("associatedCenter")) {
+        columnTypes.associatedCenter = colIndex;
+      }
       else if (df.includes("course") || df === "preferredcourse" || df === "additionalinfo") {
         // ────────────── important part ──────────────
         columnTypes.course = colIndex;
@@ -472,6 +487,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     const lastNameCol  = columnTypes.lastName ?? -1;
     const sourceCol    = columnTypes.source   ?? -1;
     const categoryCol = columnTypes.category ?? -1;
+    const associatedCenterCol = columnTypes.associatedCenter ?? -1;
     const courseCol    = columnTypes.course   ?? -1;
     const ownerCol     = columnTypes.owner    ?? -1;
     const statusCol    = columnTypes.status   ?? -1;

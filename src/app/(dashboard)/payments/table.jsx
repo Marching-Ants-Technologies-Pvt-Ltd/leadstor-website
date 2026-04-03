@@ -14,6 +14,7 @@ export default function PaymentsTable({
     deleteRecord = null,
     counsellors = {},
     trainers = {},
+    filterParams = {},
     changeCounsellorOrTrainer = null,
     checkUncheckRows = null,
     downloadReceipt = null,
@@ -25,6 +26,9 @@ export default function PaymentsTable({
     const [batchId, setBatchId] = useState(null);
     const [completedInstallment, setCompletedInstallment] = useState(null);
     const [pendingInstallment, setPendingInstallment] = useState(null);
+    const hasSubServices = filterParams?.subServices 
+        && typeof filterParams.subServices === 'object' 
+        && Object.keys(filterParams.subServices).length > 0;
 
     const formatAmountColumnData = (currency, amount, canBeZero = true) => {
         if (!amount) return (canBeZero) ? '0' : '-';
@@ -165,6 +169,9 @@ export default function PaymentsTable({
                         <th className="p-2 text-left">Email</th>
                         <th className="p-2 text-left">Mobile</th>
                         <th className="p-2 text-left min-w-32">Course</th>
+                        {hasSubServices && (
+                            <th className="p-2 text-left min-w-32">Sub Services</th>
+                        )}
                         <th className="p-2 text-left min-w-32">Batch</th>
                         <th className="p-2 text-left min-w-32">Date of Joining</th>
                         <th className="p-2 text-center">Agreed Payment</th>
@@ -177,6 +184,8 @@ export default function PaymentsTable({
                         <th className="p-2 text-left min-w-32">Counsellor</th>
                         <th className="p-2 text-left min-w-32">Trainer</th>
                         <th className="p-2 text-left">Status</th>
+                        <th className="p-2 text-left min-w-32">Lead Category Type</th>
+                        <th className="p-2 text-left min-w-32">Associated Centers</th>
                         <th className="p-2 text-left">Actions</th>
                     </tr>
                 </thead>
@@ -207,6 +216,9 @@ export default function PaymentsTable({
                                 </div>
                             </td>
                             <td className="p-2">{item?.label || '-'}</td>
+                            {hasSubServices && (
+                                <td className="p-2">{item?.sub_services || '-'}</td>
+                            )}
                             <td
                                 onClick={() => setBatchId(item?.batchId ?? '0')}
                                 className={`p-2 ${(item?.batchName ?? '').length > 0 ? 'cursor-pointer hover:text-blue-500' : ''}`}
@@ -255,6 +267,8 @@ export default function PaymentsTable({
                             <td className="p-2 cursor-pointer" onClick={(e) => setAssignedCounsellor({ id: item?.id, counsellor: item?.assignedUserId || '-1' })}>👨‍💼 {getAssignedUserById(item?.assignedUserId || 0, 'counsellor', 'Not assigned')}</td>
                             <td className="p-2 cursor-pointer" onClick={(e) => setAssignedTrainer({ id: item?.id, trainer: item?.assignedTrainerId || '0' })}>🧑‍💻 {getAssignedUserById(item?.assignedTrainerId || 0, 'trainer', 'Not assigned')}</td>
                             <td className="p-2">{getStatusFormatted(item?.status || '-')}</td>
+                            <td className="p-2">{item?.leadCategoryType || '-'}</td>
+                            <td className="p-2">{item?.associatedCenters || '-'}</td>
                             <td className="p-2 flex justify-between items-center gap-2">
                                 <a target='_blank' href={process.env.NEXT_PUBLIC_LEADSTOR_REST + '/generateCourseCertificatePDF.php?download=1&trackingId=' + item.id} className='cursor-pointer text-[20px] relative top-0.5' title='Generate Course Certificate'>🎓</a>
                                 <span onClick={(e) => changePlacementReadyStatus(item.id)} className='cursor-pointer text-[16px]' title='Update Placement Ready Status'>💼</span>
