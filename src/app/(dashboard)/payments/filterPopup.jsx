@@ -9,6 +9,9 @@ const SECTIONS = [
     { key: "trainer", label: "Trainer", options: [] },
     { key: "batch_name", label: "Batch", options: [] },
     { key: "status", label: "Status", options: [] },
+    { key: "sub_service", label: "Sub Service", options: [] },
+    { key: "leadCategoryType", label: "Lead Category Type", options: [] },
+    { key: "associatedCenters", label: "Associated Centers", options: [] },
     { key: "date", label: "Date Range" }
 ];
 
@@ -72,6 +75,27 @@ export default function FilterPopup({ open, onApply, onClose }) {
         })
     );
 
+    SECTIONS[6].options = Object.entries(open?.filterParams?.subServices || {}).map(
+        ([key, value]) => ({
+            id: key,
+            value: value
+        })
+    );
+
+    SECTIONS[7].options = Object.entries(open?.filterParams?.leadCategoryType || {}).map(
+        ([key, value]) => ({
+            id: value,
+            value: value
+        })
+    );
+
+    SECTIONS[8].options = Object.entries(open?.filterParams?.associatedCenters || {}).map(
+        ([key, value]) => ({
+            id: value,
+            value: value
+        })
+    );
+    
     const toggleOption = (section, id) => {
         setSelected(prev => {
             const list = prev[section] || [];
@@ -137,7 +161,7 @@ export default function FilterPopup({ open, onApply, onClose }) {
                 </div>
 
                 {/* LEFT MENU */}
-                <div className="w-56 border-r p-4 space-y-1 relative">
+                <div className="w-56 border-r p-4 space-y-1 relative flex flex-col">
                     <h3 className="text-sm font-semibold mb-1">
                         Filters
                     </h3>
@@ -146,25 +170,28 @@ export default function FilterPopup({ open, onApply, onClose }) {
                     </p>
                     <div className="h-1"></div>
 
-                    {SECTIONS.map(s => {
-                        const count = getCount(s.key);
-                        return (
-                            <button
-                                key={s.key}
-                                onClick={() => {
-                                    setActive(s.key)
-                                    setSearch('');
-                                }}
-                                className={`w-full text-left px-3 py-2 rounded text-sm flex justify-between ${active === s.key ? "bg-blue-50 text-blue-700 font-medium" : "hover:bg-gray-100"}`}>
-                                <span>{s.label}</span>
-                                {count > 0 && (
-                                    <span className="text-xs bg-blue-600 text-white px-2 pt-[1px] rounded-full">
-                                        {count}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
+                    <div className="flex-1 overflow-y-auto pr-1 pb-16">
+                        {SECTIONS.map(s => {
+                            const count = getCount(s.key);
+                            return (
+                                <button
+                                    key={s.key}
+                                    onClick={() => {
+                                        setActive(s.key)
+                                        setSearch('');
+                                    }}
+                                    className={`w-full text-left px-3 py-2 rounded text-sm flex justify-between ${active === s.key ? "bg-blue-50 text-blue-700 font-medium" : "hover:bg-gray-100"}`}>
+                                    <span>{s.label}</span>
+                                    {count > 0 && (
+                                        <span className="text-xs bg-blue-600 text-white px-2 pt-[1px] rounded-full">
+                                            {count}
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    
 
                     <div className="absolute bottom-0 left-0 w-full p-4 border-t bg-white">
                         <button
@@ -183,7 +210,7 @@ export default function FilterPopup({ open, onApply, onClose }) {
                 <div className="flex-1 p-5">
 
                     {/* Checkbox sections */}
-                    {(SECTIONS.length > 1) && SECTIONS.slice(0, 6).map(s => (
+                    {(SECTIONS.length > 1) && SECTIONS.slice(0, 9).map(s => (
                         active === s.key && (
                             <div key={s.key}>
 

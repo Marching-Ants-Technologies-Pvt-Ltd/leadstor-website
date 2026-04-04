@@ -36,6 +36,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [currentInstallment, setCurrentInstallment] = useState(null);
     const [showInfo, setShowInfo] = useState(true)
     const [courseFee, setCourseFee] = useState([]);
+    const [subServices, setSubServices] = useState([]);
     const [batch, setBatch] = useState([]);
 
     // Helper Functions
@@ -320,6 +321,10 @@ export default function JoineePaymentForm({ payment_id }) {
                 payload: { callback: '1' }
             }),
             xFetch({
+                path: '/services/profile/getSubServices',
+                payload: { callback: '1' }
+            }),
+            xFetch({
                 path: '/services/attendance/getBatches',
                 payload: { callback: '1' }
             }),
@@ -332,21 +337,22 @@ export default function JoineePaymentForm({ payment_id }) {
                 payload: { trackingId: payment_id }
             })
         ])
-            .then(([filterParams, courseFee, batch, currencyList, candidateInfo]) => {
-                if (!isMounted) return;
-                setFilterParams(filterParams);
-                setCurrency(currencyList);
-                setCandidate(candidateInfo);
-                setCourseFee(courseFee);
-                setBatch(batch);
+        .then(([filterParams, courseFee, subServices, batch, currencyList, candidateInfo]) => {
+            if (!isMounted) return;
+            setFilterParams(filterParams);
+            setCurrency(currencyList);
+            setCandidate(candidateInfo);
+            setCourseFee(courseFee);
+            setSubServices(subServices);
+            setBatch(batch);
 
-                // Set Current Currency
-                let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
-                setCurrentCurrency(cnc?.currency_html_code ?? '?');
-            })
-            .catch(error => {
-                console.error('Error loading initial data', error);
-            });
+            // Set Current Currency
+            let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
+            setCurrentCurrency(cnc?.currency_html_code ?? '?');
+        })
+        .catch(error => {
+            console.error('Error loading initial data', error);
+        });
 
         return () => {
             isMounted = false;
@@ -502,7 +508,40 @@ export default function JoineePaymentForm({ payment_id }) {
                                     </div>
                                 }
                             </div>
+                            {Array.isArray(subServices) && subServices.length > 0 && (
+                            <MultiSelectField
+                                label="Sub Service"
+                                options={subServices.map(
+                                    (item) => ({
+                                        id: item.id,
+                                        value: item.subService,
+                                        tag: item.subService,
+                                    })
+                                )}
+                                selected={candidate?.subServiceId ?? []}
+                                cbOnChange={onInfoChange}
+                                fieldName='subServiceId'
+                            />
+                            )}
 
+                            <SelectFieldTypeArray
+                                label="Lead Category Type"
+                                options={Object.values(filterParams?.leadCategoryType || {})}
+                                selected={candidate?.leadCategoryType || ''}
+                                cbOnChange={onInfoChange}
+                                fieldName='leadCategoryType'
+                                required={false}
+                            />
+
+                            <SelectFieldTypeArray
+                                label="Associated Center"
+                                options={Object.values(filterParams?.associatedCenters || {})}
+                                selected={candidate?.associatedCenters || ''}
+                                cbOnChange={onInfoChange}
+                                fieldName='associatedCenters'
+                                required={false}
+                            />
+                            
                             <MultiSelectField
                                 label="Batch / Intake"
                                 options={batch.map(

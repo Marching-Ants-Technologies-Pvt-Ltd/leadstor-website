@@ -6,6 +6,7 @@ import { xFetch } from "@/utility/xFetch";
 import { Corporate, User, Test } from "@/utility/TinyDB";
 import DateInputPicker from "@/components/DateInputPicker/DateInputPicker";
 import Timeline from "@/components/dashboard/Lead/ViewTimeline";
+import AssociatedCenters from "./Settings/AssociatedCenters";
 
 export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [isInitializing, setIsInitializing] = useState(true);
@@ -280,8 +281,8 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         remarks: fields.remarks || originalFields.remarks || "",
         course: fields.course || originalFields.course || "",
         score: fields.score || originalFields.score || "",
-        destination: fields.destination || originalFields.destination || "",
-        numberOfTravellers: fields.numberOfTravellers || originalFields.numberOfTravellers || "",
+        leadLocationState: fields.leadLocationState || originalFields.leadLocationState || "",
+        associatedCenters: fields.associatedCenters || originalFields.associatedCenters || "",
         source: fields.source || originalFields.source || "",
         location: fields.location || originalFields.location || "",
         assignedTo: fields.assignedUserId || originalFields.assignedUserId || "",

@@ -5,12 +5,12 @@ import { Search, Trash2, X, Edit3, Plus, Check , ChevronLeft, ChevronRight  } fr
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/ReactToastify.min.css";
 
-export default function Category() {
+export default function SubServices() {
   const [data, setData] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ id: null, category: "" });
+  const [form, setForm] = useState({ id: null, subService: "" });
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
@@ -21,14 +21,14 @@ export default function Category() {
   const fetchData = () => {
     setLoading(true);
     xFetch({
-      path: `/services/profile/getCategories`
+      path: `/services/profile/getSubServices`,
     })
       .then((data) => {
         setData(data);
         setFiltered(data);
       })
       .catch((error) => {
-        console.error("Error fetching category", error);
+        console.error("Error fetching sub services", error);
         setData([]);
       })
       .finally(() => setLoading(false));
@@ -40,7 +40,7 @@ export default function Category() {
 
   useEffect(() => {
     const result = data.filter((item) =>
-      item.category.toLowerCase().includes(search.toLowerCase())
+      item.subService.toLowerCase().includes(search.toLowerCase())
     );
     setFiltered(result);
     setPage(1);
@@ -56,13 +56,13 @@ export default function Category() {
 
   const handleSave = async () => {
     const newErrors = {};
-    if (!form.category) newErrors.category = "Category is required";
+    if (!form.subService) newErrors.subService = "Sub Service is required";
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
     const url = editing
-      ? "/services/profile/updateCategory"
-      : "/services/profile/addCategory";
+      ? "/services/profile/updateSubService"
+      : "/services/profile/addSubService";
 
     const payload = { ...form };
 
@@ -72,24 +72,24 @@ export default function Category() {
       payload,
     })
       .then(() => {
-        toast.success(editing ? "Category updated successfully" : "Category added successfully");
+        toast.success(editing ? "Sub Service updated successfully" : "Sub Service added successfully");
         setShowModal(false);
         setErrors({});
-        setForm({ id: null, category: "" });
+        setForm({ id: null, subService: "" });
         setEditing(false);
         fetchData();
       })
       .catch((error) => {
-        console.error("Error saving category", error);
-        toast.error("Failed to save category");
+        console.error("Error saving sub service", error);
+        toast.error("Failed to save sub service");
       })
       .finally(() => setLoading(false));
   };
 
-  const handleDelete = async (id, categoryName = "") => {
-    const confirmMessage = categoryName 
-      ? `Are you sure you want to delete the category "${categoryName}"?` 
-      : "Are you sure you want to delete this category?";
+  const handleDelete = async (id, subServiceName = "") => {
+    const confirmMessage = subServiceName 
+      ? `Are you sure you want to delete the sub service "${subServiceName}"?` 
+      : "Are you sure you want to delete this sub service?";
 
     if (!window.confirm(confirmMessage)) {
       return; // User cancelled
@@ -97,27 +97,27 @@ export default function Category() {
 
     try {
       await xFetch({
-        path: "/services/profile/deleteCategory",
+        path: "/services/profile/deleteSubService",
         method: "POST",
-        payload: { categoryId: id },
+        payload: { subServiceId: id },
       });
 
-      toast.success("Category deleted successfully");
+      toast.success("Sub Service deleted successfully");
       fetchData();
     } catch (error) {
-      console.error("Error deleting category", error);
-      toast.error("Failed to delete category");
+      console.error("Error deleting sub service", error);
+      toast.error("Failed to delete sub service");
     }
   };
 
   // ==================== BULK DELETE WITH ALERT ====================
   const handleBulkDelete = async () => {
     if (selected.length === 0) {
-      toast.error("No categories selected");
+      toast.error("No sub services selected");
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to delete ${selected.length} selected categories? This action cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to delete ${selected.length} selected sub services? This action cannot be undone.`)) {
       return;
     }
 
@@ -125,18 +125,18 @@ export default function Category() {
     for (const id of selected) {
       try {
         await xFetch({
-          path: "/services/profile/deleteCategory",
+          path: "/services/profile/deleteSubService",
           method: "POST",
-          payload: { categoryId: id },
+          payload: { subServiceId: id },
         });
         successCount++;
       } catch (error) {
-        console.error(`Failed to delete category ID: ${id}`, error);
+        console.error(`Failed to delete sub service ID: ${id}`, error);
       }
     }
 
     setSelected([]);
-    toast.success(`${successCount} category(s) deleted successfully`);
+    toast.success(`${successCount} sub service(s) deleted successfully`);
     fetchData();
   };
 
@@ -151,14 +151,14 @@ export default function Category() {
       <ToastContainer position="top-right" autoClose={3000} />
       {/* Header Section */}
       <div className="flex flex-wrap justify-between items-center mb-4">
-        <h2 className="text-xl">Lead Category</h2>
+        <h2 className="text-xl">Sub Services</h2>
 
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search category..."
+              placeholder="Search sub service..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-8 pr-3 py-2 border rounded-lg text-sm bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -168,11 +168,11 @@ export default function Category() {
           <button
             onClick={() => {
               setEditing(false);
-              setForm({ id: null, category: "" });
+              setForm({ id: null, subService: "" });
               setShowModal(true);
             }}
             className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"
-            title="Add Category"
+            title="Add Sub Service"
           >
             <Plus size={16} />
           </button>
@@ -210,7 +210,7 @@ export default function Category() {
                       }
                     />
                   </th>
-                  <th className="p-2 text-left">Category</th>
+                  <th className="p-2 text-left">Sub Service</th>
                   <th className="p-2 text-center">Actions</th>
                 </tr>
               </thead>
@@ -227,7 +227,7 @@ export default function Category() {
                         onChange={() => toggleSelect(row.id)}
                       />
                     </td>
-                    <td className="p-2">{row.category}</td>
+                    <td className="p-2">{row.subService}</td>
                     <td className="p-2 text-center space-x-2">
                       <button
                         onClick={() => {
@@ -295,18 +295,18 @@ export default function Category() {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
             <h3 className="text-lg mb-4">
-              {editing ? "Update" : "Add"} Category
+              {editing ? "Update" : "Add"} Sub Service
             </h3>
 
             <input
-              name="category"
-              placeholder="Category"
-              value={form.category}
+              name="subService"
+              placeholder="Sub Service"
+              value={form.subService}
               onChange={handleChange}
               className="w-full border border-gray-300 rounded p-2 mb-2 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {errors.category && (
-              <p className="text-red-500 text-sm mb-2">{errors.category}</p>
+            {errors.subService && (
+              <p className="text-red-500 text-sm mb-2">{errors.subService}</p>
             )}
 
             <div className="flex justify-end gap-2 mt-4">

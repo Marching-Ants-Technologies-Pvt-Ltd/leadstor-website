@@ -228,7 +228,25 @@ export default function PaymentsSectionController() {
 
     const exportReport = (data) => {
         data['corporateId'] = Corporate._id;
-        let target = ((data?.type ?? '') === 'Collection') ? 'paymentReportExcelGenerator' : 'joineeReportExcelGenerator';
+        let target = '';
+
+        switch (data?.type) {
+            case 'Collection':
+                target = 'paymentReportExcelGenerator';
+                break;
+
+            case 'Pending Payments':
+                target = 'pendingPaymentReportExcelGenerator';
+                break;
+
+            case 'Joinees':
+                target = 'joineeReportExcelGenerator';
+                break;
+
+            default:
+                target = 'joineeReportExcelGenerator';   // fallback
+                break;
+        }
         
         xDownload(`${target}.php?${jsonToQueryParams(data)}`);
 
@@ -428,6 +446,9 @@ export default function PaymentsSectionController() {
                         ['counsellor']: (data?.selected?.counsellor ?? []).join(','),
                         ['trainer']: (data?.selected?.trainer ?? []).join(','),
                         ['batchid']: (data?.selected?.batch_name ?? []).join(','),
+                        ['subServiceId']: (data?.selected?.sub_service ?? []).join(','),
+                        ['leadCategoryType']: (data?.selected?.leadCategoryType ?? []).join(','),
+                        ['associatedCenters']: (data?.selected?.associatedCenters ?? []).join(','),
                         ['status']: (data?.selected?.status ?? []).join(','),
                         ['doj']: doj,
                         ['dojend']: dojend
@@ -586,6 +607,7 @@ export default function PaymentsSectionController() {
                             deleteRecord={cbDeleteRecord}
                             counsellors={counsellor}
                             trainers={trainer}
+                            filterParams={filterParams}
                             changeCounsellorOrTrainer={cbChangeCounsellorOrTrainer}
                             checkUncheckRows={checkUncheckRows}
                             downloadReceipt={downloadPaymentReceipt}
