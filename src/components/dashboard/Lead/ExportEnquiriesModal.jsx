@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Corporate, User, Test, LeadFilters } from '@/utility/TinyDB';
+import { xFetch, jsonToQueryParams, xDownload } from '@/utility/xFetch';
 
 // Progress bar component inline
 function DownloadProgressBar({ isVisible, progress, message, onCancel }) {
@@ -230,7 +231,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
             }
 
             // For small datasets, export directly
-            const queryParams = new URLSearchParams({
+            const payload = {
                 testId: testId,
                 testName: testName || '',
                 testType: testType || '',
@@ -239,7 +240,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                 offset: offset,
                 limit: exportLimit,
                 time: new Date().getTime()
-            });
+            };
 
             // Add filters to query params
             appliedFilters.forEach(filter => {
@@ -257,9 +258,9 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                     const apiField = fieldMapping[filter.field] || filter.field;
                     
                     if (filter.field === 'course') {
-                        queryParams.append(apiField, btoa(filter.value));
+                        payload.append(apiField, btoa(filter.value));
                     } else {
-                        queryParams.append(apiField, filter.value);
+                        payload.append(apiField, filter.value);
                     }
                 }
             });
@@ -270,27 +271,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                 return;
             }
 
-            const apiUrl = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/invite/export?${queryParams.toString()}`;
-            const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/octet-stream,*/*'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Export failed: ${response.statusText}`);
-            }
-
-            // Write the file directly for small datasets
-            const blob = await response.blob();
-            const writable = await fileHandle.createWritable();
-            await writable.write(blob);
-            await writable.close();
-
-            toast.success(`Successfully exported ${exportLimit.toLocaleString()} enquiries to Excel!`);
-            onClose();
+            xDownload(`services/invite/export?${jsonToQueryParams(payload)}`);
 
         } catch (error) {
             console.error('Export error:', error);
