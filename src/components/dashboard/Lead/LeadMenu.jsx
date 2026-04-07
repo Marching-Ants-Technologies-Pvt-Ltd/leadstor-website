@@ -59,6 +59,11 @@ export default function LeadsMenu({
       conversions: 0,
     }
   );
+
+  const userRoles = Array.isArray(User.role) 
+    ? User.role.map(r => String(r).trim())
+    : [String(User.role).trim()];
+    
   // Sync with parent status counts when they change
   useEffect(() => {
     if (parentStatusCounts && setParentStatusCounts) {
@@ -376,7 +381,7 @@ export default function LeadsMenu({
                 Add
               </button>
 
-              {(Corporate?.is_ai_nextstep_enabled == "1" && User?.role === "Admin" || User?.role === "Administrator") && (
+              {(Corporate?.is_ai_nextstep_enabled == "1" && userRoles.includes("Admin")|| userRoles.includes("Administrator")) && (
                 <div className="relative">
                   <button
                     onClick={(e) => {
@@ -432,7 +437,7 @@ export default function LeadsMenu({
                         <i className="ri-calendar-line text-blue-500" />
                         Daily report
                       </button>
-                      { User?.role !== "Counsellor" && (
+                      { !userRoles.includes("Counsellor") && (
                         <>
                           <button className="drop-item" onClick={() => setShowExportModal(true)}>
                             <i className="ri-download-2-line text-green-600" />
@@ -495,7 +500,7 @@ export default function LeadsMenu({
                 {openMenu === 'actions' && (
                   <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
                     {selectedLeadIds.length > 0 && 
-                      !['Counsellor', 'Super Counsellor'].includes(User?.role ?? '') && (
+                      userRoles.some(role => ['Admin', 'Administrator'].includes(role)) && (
                         <button
                           className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
                           onClick={() => {

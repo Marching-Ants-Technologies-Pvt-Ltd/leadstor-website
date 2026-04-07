@@ -13,6 +13,7 @@ import Spinner from "@/components/common/Spinner";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/ReactToastify.min.css";
 import { Corporate, Test, User } from "@/utility/TinyDB";
+import { set } from "zod";
 
 export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   const corporate = Corporate || {};
@@ -32,6 +33,8 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   const [courses, setCourses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [associatedCenters, setAssociatedCenters] = useState([]);
+  const [additionalInfo, setAdditionalInfo] = useState([]);
+
   const [users, setUsers] = useState([]);
   const [statuses, setStatuses] = useState([]);
 
@@ -103,13 +106,14 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   async function loadDropdowns() {
     try {
-      const [src, crs, sts, usrs, ctgs, asct] = await Promise.all([
+      const [src, crs, sts, usrs, ctgs, asct, pref] = await Promise.all([
         xFetch({ path: `/services/profile/getSources?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getCourseAndFee?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getStatuses?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getUsers?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getCategories?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getAssociatedCenters?corporateId=${corporateId}` }),
+        xFetch({ path: `/services/profile/getPreferredCourse?corporateId=${corporateId}` }),
       ]);
 
       setSources(src || []);
@@ -118,6 +122,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       setUsers(usrs || []);
       setCategories(ctgs || []);
       setAssociatedCenters(asct || []);
+      setAdditionalInfo(pref || []);
     } catch {
       toast.error("Failed loading dropdown values");
     }
@@ -195,6 +200,15 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           data: field.dataField,
           type: "autocomplete",
           source: associatedCenters.map((ac) => ac.associatedCenter),
+          strict: false,
+          allowInvalid: true,
+        };
+
+      case "additional_info":
+        return {
+          data: field.dataField,
+          type: "autocomplete",
+          source: additionalInfo.map((ac) => ac.course),
           strict: false,
           allowInvalid: true,
         };

@@ -13,9 +13,16 @@ export default function Sidebar({ collapsed, setCollapsed, userRole }) {
   const isActive = (href) =>
     pathname === href || pathname.startsWith(`${href}/`);
 
-  // Filter items this role is allowed to see
+  // Normalize userRole to always be an array of strings
+  const userRoles = Array.isArray(userRole)
+    ? userRole.map(r => String(r).trim())
+    : [String(userRole || '').trim()].filter(Boolean);
+
+  // Filter menu items - show if user has AT LEAST ONE matching role
   const visibleItems = menuItems.filter((item) =>
-    item.allowedRoles.includes(userRole)
+    item.allowedRoles.some((allowedRole) =>
+      userRoles.includes(allowedRole)
+    )
   );
 
   useEffect(() => {
