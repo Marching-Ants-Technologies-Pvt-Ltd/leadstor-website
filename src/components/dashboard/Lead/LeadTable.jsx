@@ -136,7 +136,7 @@ export default function LeadsTable({
 
     useEffect(() => {
         const fetchSubordinates = async () => {
-            if (userRoles.includes("Counsellor") || User._id == -1) {
+            if (!userRoles.includes("Counsellor") || User._id == -1) {
                 setSubOrdinates([String(User._id)]);
                 setIsSubordinatesLoaded(true);
                 return;
