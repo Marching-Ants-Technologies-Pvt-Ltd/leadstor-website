@@ -39,7 +39,7 @@ function FacebookAuthButton({ status, onSuccess, onLogout }) {
         }
       },
       {
-        scope: "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval",
+        scope: "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,pages_manage_ads",
       }
     );
   };

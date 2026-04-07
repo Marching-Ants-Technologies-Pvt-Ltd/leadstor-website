@@ -29,11 +29,14 @@ export default function Teams() {
   const [totalPages, setTotalPages] = useState(1);
 
   const router = useRouter();
-  
+  const userRoles = Array.isArray(User.role) 
+    ? User.role.map(r => String(r).trim())
+    : [String(User.role).trim()];
+
   // Restrict Counsellor role from accessing Leads page
   useEffect(() => {
       const checkRole = async () => {
-          if (User?.role !== 'Admin' && User?.role !== "Administrator") {
+          if (!userRoles.includes("Admin") && !userRoles.includes("Administrator")) {
             toast.error('You do not have access to Teams page');
             router.push('/businessProfile');
           }

@@ -307,7 +307,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           convertDateFormat(originalFields.followupDate) ||
           "",
         industry: fields.industry || originalFields.industry || "",
-        updatedBy: User?._id || "",
+        updatedBy: User?.originalId || "",
         demoTrainer: fields.demoTrainer || originalFields.demoTrainer || "",
         courseMode: fields.courseMode || originalFields.courseMode || "",
         qualification: fields.qualification || originalFields.qualification || "",

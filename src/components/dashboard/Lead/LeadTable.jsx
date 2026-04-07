@@ -85,7 +85,10 @@ export default function LeadsTable({
     const [showGoogleConnectDialog, setShowGoogleConnectDialog] = useState(false);
     const [subOrdinates, setSubOrdinates] = useState([User._id]);
     const [isSubordinatesLoaded, setIsSubordinatesLoaded] = useState(false);
-    
+    const userRoles = Array.isArray(User.role) 
+    ? User.role.map(r => String(r).trim())
+    : [String(User.role).trim()];
+
     const dataFormatters = {
         assignedUserId: (row) => {
             const id = Number(row?.assignedUserId);
@@ -132,11 +135,8 @@ export default function LeadsTable({
     // ==================== SUBORDINATES LOGIC FOR COUNSELLOR ====================
 
     useEffect(() => {
-        console.log("User Role:", User.role);
-        console.log("User ID:", User._id);
         const fetchSubordinates = async () => {
-            if (User.role !== 'Counsellor' || User._id == -1) {
-                console.log("Not Counsellor → using self only");
+            if (userRoles.includes("Counsellor") || User._id == -1) {
                 setSubOrdinates([String(User._id)]);
                 setIsSubordinatesLoaded(true);
                 return;

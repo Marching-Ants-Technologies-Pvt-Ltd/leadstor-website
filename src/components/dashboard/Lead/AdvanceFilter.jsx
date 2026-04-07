@@ -20,15 +20,30 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   const [hydratedForOpen, setHydratedForOpen] = useState(false);
   const [subOrdinates, setSubOrdinates] = useState([String(User._id)]);
   const [isSubordinatesLoaded, setIsSubordinatesLoaded] = useState(false);
+  const [isPureCounsellor, setIsPureCounsellor] = useState(false);
 
   const probabilityOptions = [
     { label: 'Low', value: '20' },
     { label: 'Medium', value: '55' },
     { label: 'High', value: '85' }
   ];
+  
+  const userRoles = Array.isArray(User.role) 
+    ? User.role.map(r => String(r).trim())
+    : [String(User.role).trim()];
 
   const shouldShowOwnerFilter = useMemo(() => {
-      return User?.role === "Admin" || User?.role === "Administrator" || User?.role === "Super Counsellor" || User?.isManager === 1;
+    if (!User) return false;
+
+    const hasAdminRole = userRoles.some((role) =>
+      ["Admin", "Administrator"].includes(role)
+    );
+
+    const hasSuperCounsellor = userRoles.includes("Super Counsellor");
+
+    const isManager = User?.isManager === 1;
+
+    return hasAdminRole || hasSuperCounsellor || isManager;
   }, [User]);
 
   // Get session data
@@ -104,7 +119,12 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
   // Fetch Subordinates (same logic as LeadsTable)
     useEffect(() => {
         const fetchSubordinates = async () => {
-            if (User.role !== 'Counsellor' || User._id == -1) {
+          const checkCounsellor = userRoles.includes("Counsellor") && 
+                         !userRoles.includes("Super Counsellor") && 
+                         User?.isManager !== 1;
+
+            setIsPureCounsellor(checkCounsellor);
+            if (isPureCounsellor || User._id == -1) {
                 setSubOrdinates([String(User._id)]);
                 setIsSubordinatesLoaded(true);
                 return;
@@ -230,23 +250,35 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     });
   };
 
-  const transformOwnerOptions = (owners) => {
+  const transformOwnerOptions = (owners) => {console.log(owners);
         if (!owners || Object.keys(owners).length === 0) return [];
 
         let list = Object.entries(owners).map(([key, value]) => ({
             key: String(key),
-            value: String(value)
+            value: String(value),
+            label: String(value) 
         }));
 
         // For Counsellor → filter by subordinates
-        if (User.role === 'Counsellor' && isSubordinatesLoaded) {
+        if (isPureCounsellor && isSubordinatesLoaded) {
             list = list.filter(owner => subOrdinates.includes(owner.key));
         }
+        const map = new Map();
 
-        // "--Not Allocated--" ONLY if NOT Counsellor
-        const finalOptions = User.role !== 'Counsellor' 
-            ? [{ key: "0", value: "--Not Allocated--" }] 
-            : [];
+        if (userRoles.includes("Super Counsellor") && User?.isManager === 1) {
+            // map.set(String(User.originalId), { key: User.originalId, value: User.name });
+             map.set(String(User.originalId), { 
+                key: String(User.originalId),
+                value: String(User.originalId),
+                label: User.name   // 👈 important
+            });
+        }
+
+        if (!userRoles.includes("Counsellor")) {
+            map.set("0", { key: "0", value: "--Not Allocated--" });
+        }
+
+        const finalOptions = Array.from(map.values());
 
         return [...finalOptions, ...list];
   };

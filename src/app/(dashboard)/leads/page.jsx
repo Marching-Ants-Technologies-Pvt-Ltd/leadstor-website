@@ -17,11 +17,14 @@ import { Corporate, Test as SessionTest, User } from '@/utility/TinyDB';
 export default function Leads() {
     const searchParams = useSearchParams();
     const router = useRouter();
-
+    const userRoles = Array.isArray(User.role) 
+    ? User.role.map(r => String(r).trim())
+    : [String(User.role).trim()];
+    
     // Restrict Finance role from accessing Leads page
     useEffect(() => {
         const checkRole = async () => {
-            if (User?.role === 'Finance') {
+            if (userRoles.includes("Finance")) {
                 toast.error('You do not have access to Leads page');
                 router.push('/payments');
             }
