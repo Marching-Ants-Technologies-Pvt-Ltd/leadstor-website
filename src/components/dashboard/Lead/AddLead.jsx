@@ -198,6 +198,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           strict: false,
           allowInvalid: true,
         };
+        
       
       case "course":
         return {
