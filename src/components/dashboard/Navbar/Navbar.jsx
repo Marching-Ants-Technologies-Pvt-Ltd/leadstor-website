@@ -12,6 +12,12 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
   const [openAnalytics, setOpenAnalytics] = useState(false);
   const dropdownRef = useRef(null);
   const pathname = usePathname();
+
+  const userRoles = Array.isArray(User.role) 
+      ? User.role.map(r => String(r).trim())
+      : [String(User.role).trim()];
+  
+
   const pageTitles = {
     '/leads': 'Lead Management',
     '/leads/settings': 'Lead Settings',
@@ -122,7 +128,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
                 </div>
                 </Link>
 
-                {(User?.role === "Admin" || User?.role === "Administrator") && (
+                {( userRoles.includes("Admin") || userRoles.includes("Administrator")) && (
                   <Link href="/teams">
                   <div className="dropdown-row">
                       <i className="ri-team-line text-emerald-500 text-lg"></i>
