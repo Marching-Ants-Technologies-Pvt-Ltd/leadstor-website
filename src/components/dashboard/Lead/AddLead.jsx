@@ -34,7 +34,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   const [categories, setCategories] = useState([]);
   const [associatedCenters, setAssociatedCenters] = useState([]);
   const [additionalInfo, setAdditionalInfo] = useState([]);
-
+  const [qualifications, setQualifications] = useState([]);
   const [users, setUsers] = useState([]);
   const [statuses, setStatuses] = useState([]);
 
@@ -106,7 +106,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   async function loadDropdowns() {
     try {
-      const [src, crs, sts, usrs, ctgs, asct, pref] = await Promise.all([
+      const [src, crs, sts, usrs, ctgs, asct, pref, stl] = await Promise.all([
         xFetch({ path: `/services/profile/getSources?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getCourseAndFee?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getStatuses?corporateId=${corporateId}` }),
@@ -114,6 +114,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         xFetch({ path: `/services/profile/getCategories?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getAssociatedCenters?corporateId=${corporateId}` }),
         xFetch({ path: `/services/profile/getPreferredCourse?corporateId=${corporateId}` }),
+        xFetch({ path: `/services/profile/getStudyLevel?corporateId=${corporateId}` }),
       ]);
 
       setSources(src || []);
@@ -123,6 +124,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       setCategories(ctgs || []);
       setAssociatedCenters(asct || []);
       setAdditionalInfo(pref || []);
+      setQualifications(stl || []);
     } catch {
       toast.error("Failed loading dropdown values");
     }
@@ -209,6 +211,15 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           data: field.dataField,
           type: "autocomplete",
           source: additionalInfo.map((ac) => ac.course),
+          strict: false,
+          allowInvalid: true,
+        };
+
+      case "qualification":
+        return {
+          data: field.dataField,
+          type: "autocomplete",
+          source: qualifications.map((ac) => ac.qualification),
           strict: false,
           allowInvalid: true,
         };
