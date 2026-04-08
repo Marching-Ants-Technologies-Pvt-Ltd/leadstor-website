@@ -36,7 +36,7 @@ const Loading = dynamic(() => import('@/components/dashboard/Lead/Settings/loadi
 const Category = dynamic(() => import('@/components/dashboard/Lead/Settings/Category'), { ssr: false });
 const SubServices = dynamic(() => import('@/components/dashboard/Lead/Settings/SubServices'), { ssr: false });
 const AssociatedCenters = dynamic(() => import('@/components/dashboard/Lead/Settings/AssociatedCenters'), { ssr: false });
-
+const Qualification = dynamic(() => import('@/components/dashboard/Lead/Settings/Qualification'), { ssr: false });
 // ---------------------------------------------------
 // ⚡ 2. SETTINGS PAGE
 // ---------------------------------------------------
@@ -108,6 +108,7 @@ export default function Settings() {
           { key: "categories", label: "Lead Category" },
           { key: "associatedCenters", label: "Associated Centers" },
           { key: "sources", label: "Sources" },
+          { key: "qualifications", label: "Qualifications" },
           { key: "leadAllocation", label: "Lead Allocation" },
           { key: "mapping", label: "Field Mapping" },
           { key: "tableReorder", label: "Table Reorder" },
@@ -179,6 +180,9 @@ export default function Settings() {
 
       case "associatedCenters":
         return <AssociatedCenters />;
+      
+      case "qualifications":
+        return <Qualification />;
 
       case "leadAllocation":
         return <LeadAllocation />;

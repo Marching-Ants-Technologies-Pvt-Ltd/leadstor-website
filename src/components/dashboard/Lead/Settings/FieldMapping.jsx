@@ -19,6 +19,22 @@ export default function FieldMapping() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(10);
+  const DROPDOWN_ALLOWED_FIELDS = [
+    "status",
+    "course",
+    "additional_info",
+    "source",
+    "category",
+    "associatedCenters",
+    "assignedUserId",
+    "leadProbability",
+    "courseMode",
+    "qualification"
+  ];
+
+  const TEXTAREA_FIELDS = ["remarks","aINextStep"];
+
+  const DATETIME_FIELDS = ["createdDate", "updateTime","followupDate"];
 
   const fetchMapping = () => {
     setLoading(true);
@@ -92,6 +108,10 @@ export default function FieldMapping() {
 
   // Update only selected
   const updateField = (id, key, value) => {
+    const field = fields.find((f) => f.id === id);
+
+    if (field?.isDefaultField && key !== "displayName") return;
+
     if (!selectedIds.includes(id)) return;
 
     setFields((prev) =>
@@ -115,6 +135,42 @@ export default function FieldMapping() {
 
       // 2. Get only selected fields
       const selectedFields = fields.filter((f) => selectedIds.includes(f.id));
+
+      /* ✅ ADD THIS BLOCK HERE */
+      const invalidField = selectedFields.find((f) => {
+        // ❌ Skip default fields (they are locked)
+        if (f.isDefaultField) return false;
+
+        if (
+          f.fieldType === "dropdown" &&
+          !DROPDOWN_ALLOWED_FIELDS.includes(f.dataField)
+        ) {
+          return true;
+        }
+
+        if (
+          f.fieldType === "textarea" &&
+          !TEXTAREA_FIELDS.includes(f.dataField)
+        ) {
+          return true;
+        }
+
+        if (
+          f.fieldType === "datetime" &&
+          !DATETIME_FIELDS.includes(f.dataField)
+        ) {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (invalidField) {
+        toast.error(
+          `Invalid field type "${invalidField.fieldType}" for "${invalidField.fieldName}"`
+        );
+        return;
+      }
 
       // 3. Check for duplicate dataField
       const dataFields = selectedFields.map((f) => f.dataField?.trim());
@@ -295,6 +351,45 @@ export default function FieldMapping() {
                     <td className="p-2">{row.dataField}</td>
                     <td className="p-2">
                       <select
+                        disabled={
+                          !selectedIds.includes(row.id) || row.isDefaultField
+                        }
+                        className={`w-full border rounded px-2 py-1 ${
+                          selectedIds.includes(row.id) && !row.fieldType
+                            ? "border-red-500"
+                            : ""
+                        } ${row.isDefaultField ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                        value={row.fieldType}
+                        onChange={(e) =>
+                          updateField(row.id, "fieldType", e.target.value)
+                        }
+                      >
+                        <option value="">Select</option>
+
+                        {/* ✅ TEXT always available */}
+                        <option value="text">Text</option>
+
+                        {/* ✅ DROPDOWN */}
+                        {(row.isDefaultField ||
+                          DROPDOWN_ALLOWED_FIELDS.includes(row.dataField)) && (
+                          <option value="dropdown">Dropdown</option>
+                        )}
+
+                        {/* ✅ TEXTAREA */}
+                        {(row.isDefaultField ||
+                          TEXTAREA_FIELDS.includes(row.dataField)) && (
+                          <option value="textarea">Textarea</option>
+                        )}
+
+                        {/* ✅ DATETIME */}
+                        {(row.isDefaultField ||
+                          DATETIME_FIELDS.includes(row.dataField)) && (
+                          <option value="datetime">Date & Time</option>
+                        )}
+                      </select>
+                    </td>
+                    {/* <td className="p-2">
+                      <select
                         className={`w-full border rounded px-2 py-1 ${
                           selectedIds.includes(row.id) && !row.fieldType
                             ? "border-red-500"
@@ -307,11 +402,13 @@ export default function FieldMapping() {
                       >
                         <option value="">Select</option>
                         <option value="text">Text</option>
-                        <option value="dropdown">Dropdown</option>
+                        {DROPDOWN_ALLOWED_FIELDS.includes(row.dataField) && (
+                          <option value="dropdown">Dropdown</option>
+                        )}
                         <option value="textarea">Textarea</option>
                         <option value="datetime">Date & Time</option>
                       </select>
-                    </td>
+                    </td> */}
                   </tr>
                 ))
               )}
