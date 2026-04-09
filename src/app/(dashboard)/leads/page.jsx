@@ -28,6 +28,10 @@ export default function Leads() {
                 toast.error('You do not have access to Leads page');
                 router.push('/payments');
             }
+            if (userRoles.includes("Placement Officer")) {
+                toast.error('You do not have access to Leads page');
+                router.push('/placements');
+            }
         };
         checkRole();
     }, [router]);
