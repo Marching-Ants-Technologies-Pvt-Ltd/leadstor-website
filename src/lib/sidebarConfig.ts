@@ -23,13 +23,13 @@ export const menuItems = [
     icon: 'ri-briefcase-line',
     label: 'Job Posting',
     href: '/jobs',
-    allowedRoles: ['Admin', 'Administrator', 'Finance'],
+    allowedRoles: ['Admin', 'Administrator', 'Finance','Placement Officer'],
   },
   {
     icon: 'ri-user-star-line',
     label: 'Placement',
     href: '/placements',
-    allowedRoles: ['Admin', 'Administrator', 'Finance'],
+    allowedRoles: ['Admin', 'Administrator', 'Finance','Placement Officer'],
   },
   {
     icon: 'ri-receipt-line',
