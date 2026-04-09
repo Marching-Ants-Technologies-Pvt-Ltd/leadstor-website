@@ -90,9 +90,16 @@ export default function Profile() {
                 localStorage.setItem('CurrentSessionData', JSON.stringify(data));
 
                 setLoadingText('Taking You to Lead Management Page, Please Wait...');
-                if(data['user']?.role === 'Finance') {
+
+                const userRoles = Array.isArray(data['user']?.role) 
+                    ? data['user'].role.map(r => String(r).trim())
+                    : [String(data['user']?.role).trim()];
+
+                if(userRoles.includes("Finance")) {
                     router.push('/payments');
-                }else{
+                } else if(userRoles.includes("Placement Officer")) {
+                    router.push('/placements');
+                } else {
                     router.push('/leads');
                 }
             }

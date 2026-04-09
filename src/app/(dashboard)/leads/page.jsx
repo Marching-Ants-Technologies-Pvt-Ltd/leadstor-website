@@ -25,11 +25,9 @@ export default function Leads() {
     useEffect(() => {
         const checkRole = async () => {
             if (userRoles.includes("Finance")) {
-                toast.error('You do not have access to Leads page');
                 router.push('/payments');
             }
             if (userRoles.includes("Placement Officer")) {
-                toast.error('You do not have access to Leads page');
                 router.push('/placements');
             }
         };
