@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Corporate, User, Test, LeadFilters } from '@/utility/TinyDB';
-import { xFetch, jsonToQueryParams, xDownload } from '@/utility/xFetch';
+import { Corporate, Test, LeadFilters, LeadSearch } from '@/utility/TinyDB';
+import { xDownload } from '@/utility/xFetch';
 
 // Progress bar component inline
 function DownloadProgressBar({ isVisible, progress, message, onCancel }) {
@@ -60,6 +60,19 @@ function DownloadProgressBar({ isVisible, progress, message, onCancel }) {
             </div>
         </div>
     );
+}
+
+function appendAppliedFilters(params, filters = []) {
+    filters.forEach((filter) => {
+        const queryKey = filter?.query || filter?.field;
+        const filterValue = filter?.value;
+
+        if (!queryKey || filterValue === undefined || filterValue === null || filterValue === '') {
+            return;
+        }
+
+        params.append(queryKey, filterValue);
+    });
 }
 
 export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, onDownloadStart, onDownloadProgress, onDownloadEnd, onDownloadCancel, setCancelExportFunction }) {
@@ -162,6 +175,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
             const testId = Test?._id;
             const testType = Test?.type;
             const testName = Test?.name;
+            const search = LeadSearch.value();
 
             if (!corporateId || !testId) {
                 toast.error('Missing required parameters');
@@ -189,6 +203,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                     offset: offset,
                     limit: exportLimit,
                     filters: appliedFilters,
+                    search: search || '',
                     apiBaseUrl: process.env.NEXT_PUBLIC_LEADSTOR_REST
                 };
 
@@ -231,39 +246,22 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
             }
 
             // For small datasets, export directly
-            const payload = {
+            const payload = new URLSearchParams({
                 testId: testId,
                 testName: testName || '',
                 testType: testType || '',
                 corporateId: corporateId,
                 corporateType: corporateType || '',
-                offset: offset,
-                limit: exportLimit,
-                time: new Date().getTime()
-            };
-
-            // Add filters to query params
-            appliedFilters.forEach(filter => {
-                if (filter.field && filter.value) {
-                    const fieldMapping = {
-                        'status': 'status',
-                        'source': 'source',
-                        'course': 'course',
-                        'location': 'location',
-                        'owner': 'owner',
-                        'leadProbability': 'leadProbability',
-                        'qualification': 'qualification'
-                    };
-                    
-                    const apiField = fieldMapping[filter.field] || filter.field;
-                    
-                    if (filter.field === 'course') {
-                        payload.append(apiField, btoa(filter.value));
-                    } else {
-                        payload.append(apiField, filter.value);
-                    }
-                }
+                offset: String(offset),
+                limit: String(exportLimit),
+                time: String(new Date().getTime())
             });
+
+            appendAppliedFilters(payload, appliedFilters);
+
+            if (search) {
+                payload.append('search', search);
+            }
 
             const token = localStorage.getItem('access_token');
             if (!token) {
@@ -271,7 +269,7 @@ export default function ExportEnquiriesModal({ isOpen, onClose, totalLeads = 0, 
                 return;
             }
 
-            xDownload(`services/invite/export?${jsonToQueryParams(payload)}`);
+            xDownload(`services/invite/export?${payload.toString()}`);
 
         } catch (error) {
             console.error('Export error:', error);

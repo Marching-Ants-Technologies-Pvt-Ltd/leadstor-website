@@ -23,26 +23,17 @@ self.onmessage = async function(e) {
         // Add filters to query params
         if (exportParams.filters) {
             exportParams.filters.forEach(filter => {
-                if (filter.field && filter.value) {
-                    const fieldMapping = {
-                        'status': 'status',
-                        'source': 'source',
-                        'course': 'course',
-                        'location': 'location',
-                        'owner': 'owner',
-                        'leadProbability': 'leadProbability',
-                        'qualification': 'qualification'
-                    };
-                    
-                    const apiField = fieldMapping[filter.field] || filter.field;
-                    
-                    if (filter.field === 'course') {
-                        baseParams.append(apiField, btoa(filter.value));
-                    } else {
-                        baseParams.append(apiField, filter.value);
-                    }
+                const queryKey = filter?.query || filter?.field;
+                const filterValue = filter?.value;
+
+                if (queryKey && filterValue !== undefined && filterValue !== null && filterValue !== '') {
+                    baseParams.append(queryKey, filterValue);
                 }
             });
+        }
+
+        if (exportParams.search) {
+            baseParams.append('search', exportParams.search);
         }
 
         // For smaller datasets, export directly
