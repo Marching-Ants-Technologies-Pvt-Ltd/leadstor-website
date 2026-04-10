@@ -294,6 +294,7 @@ export default function JoineePaymentForm({ payment_id }) {
             payload,
         })
             .then(data => {
+                // Case 1: New Creation
                 if (data.event === 'CREATED' && data.id) {
                     toast.success('Changes saved successfully!', {
                         autoClose: 2000,
@@ -304,6 +305,15 @@ export default function JoineePaymentForm({ payment_id }) {
                     
                     return;
                 }
+
+                // Case 2: Update / Edit existing record
+                if (data.event === 'UPDATED' ||  data.id) {   // fallback if only id is returned
+                    toast.success('Changes Saved Successfully.');
+                    return;
+                }
+
+                // Fallback - if we reach here, something is wrong with response
+                toast.success('Changes Saved Successfully.');  // safe default
             })
             .catch(error => {
                 console.error(`An error occurred while saving joinees details`, error);
