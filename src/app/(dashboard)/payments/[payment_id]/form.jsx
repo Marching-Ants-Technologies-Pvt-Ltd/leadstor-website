@@ -294,12 +294,16 @@ export default function JoineePaymentForm({ payment_id }) {
             payload,
         })
             .then(data => {
-                if (data.event === 'CREATED') {
-                    router.push(`/payments/${data.id}`);
+                if (data.event === 'CREATED' && data.id) {
+                    toast.success('Changes saved successfully!', {
+                        autoClose: 2000,
+                    });
+                    setTimeout(() => {
+                        router.push(`/payments/${data.id}`);
+                    }, 800);
+                    
                     return;
                 }
-
-                toast.success('Changes Saved Successfully.');
             })
             .catch(error => {
                 console.error(`An error occurred while saving joinees details`, error);
