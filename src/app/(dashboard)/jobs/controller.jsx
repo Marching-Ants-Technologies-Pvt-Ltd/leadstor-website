@@ -6,7 +6,7 @@ import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
-import { Pencil, Trash2, Send, Bell, Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 import JobPostingsTable from './table';
 import JobPostingFormModal from '@/components/dashboard/placement/JobPostingFormModal';
@@ -16,6 +16,7 @@ import ManageCandidatesForJob from '@/components/dashboard/placement/ManageCandi
 import ScheduledEmailStatus from '@/components/dashboard/placement/ScheduledEmailStatus';
 
 export default function JobPostingsController() {
+  const router = useRouter();
   const corporateId = Corporate?._id;
   const recruiterId = Corporate?.recruiterId || corporateId;
 
@@ -66,6 +67,10 @@ export default function JobPostingsController() {
       reloadJobs();
     }
   }, [search, showNotifications, showSendToPlacement, showManageCandidates, showScheduledStatus, reloadJobs]);
+
+  useEffect(() => {
+    router.prefetch('/jobs/settings');
+  }, [router]);
 
   // ─── Client-side Pagination ──────────────────────────────────────────────
   const total = allJobs.length;
@@ -202,6 +207,14 @@ export default function JobPostingsController() {
                 />
                 <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               </div>
+
+              <button
+                onClick={() => router.push('/jobs/settings')}
+                className="p-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                title="Settings"
+              >
+                <i className="ri-settings-3-line text-lg text-gray-600"></i>
+              </button>
 
               <button
                 onClick={reloadJobs}

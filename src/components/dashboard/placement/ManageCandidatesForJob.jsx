@@ -296,7 +296,7 @@ export default function ManageCandidatesForJob({
         payload,
       });
 
-      if (res?.success || res === 'success') {
+      if (res) {
         toast.success('Status updated successfully');
         afterStatusUpdate();
       } else {

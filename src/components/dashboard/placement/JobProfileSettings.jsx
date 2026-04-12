@@ -1,0 +1,363 @@
+'use client';
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Search, Trash2, X, Edit3, Plus, Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
+import { Corporate } from '@/utility/TinyDB';
+import { xFetch } from '@/utility/xFetch';
+import 'react-toastify/ReactToastify.min.css';
+
+const INITIAL_FORM = { id: 0, jobProfileTag: '', jobProfileDescription: '' };
+
+const getProfileId = (item) => item?.id ?? item?.value ?? item?.jobTagId ?? item?.tagId ?? null;
+const getProfileName = (item) => item?.jobProfileTag ?? item?.text ?? item?.job_tag ?? item?.jobTag ?? item?.tagName ?? '';
+const getProfileDescription = (item) =>
+  item?.jobProfileDescription ?? item?.description ?? item?.desc ?? '';
+
+export default function JobProfileSettings() {
+  const corporateId = Corporate?._id;
+  const [data, setData] = useState([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [selected, setSelected] = useState([]);
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await xFetch({
+        path: '/services/job/getJobTags',
+        payload: corporateId ? { corporateId } : {},
+      });
+
+      const rows = Array.isArray(response)
+        ? response
+        : response?.rows || response?.data || [];
+
+      const normalized = rows
+        .map((item) => ({
+          id: getProfileId(item),
+          jobProfileTag: getProfileName(item),
+          jobProfileDescription: getProfileDescription(item),
+        }))
+        .filter((item) => item.id !== null && item.jobProfileTag);
+
+      setData(normalized);
+    } catch (error) {
+      console.error('Error fetching job profiles', error);
+      setData([]);
+      toast.error('Failed to load job profiles');
+    } finally {
+      setLoading(false);
+    }
+  }, [corporateId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const filtered = useMemo(() => {
+    const term = search.toLowerCase();
+    return data.filter((item) => item.jobProfileTag.toLowerCase().includes(term));
+  }, [data, search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, data]);
+
+  const paginated = filtered.slice((page - 1) * limit, page * limit);
+  const totalPages = Math.ceil(filtered.length / limit);
+
+  const resetFormState = () => {
+    setForm(INITIAL_FORM);
+    setEditing(false);
+    setErrors({});
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSave = async () => {
+    const nextErrors = {};
+    if (!form.jobProfileTag.trim()) nextErrors.jobProfileTag = 'Job Profile is required';
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) return;
+
+    try {
+      setLoading(true);
+
+      await xFetch({
+        path: '/services/job/addOrUpdateJobTags',
+        method: 'POST',
+        payload: {
+          id: editing ? form.id : 0,
+          jobProfileTag: form.jobProfileTag.trim(),
+          jobProfileDescription: form.jobProfileDescription.trim(),
+        },
+      });
+
+      toast.success(editing ? 'Job Profile updated successfully' : 'Job Profile added successfully');
+      setShowModal(false);
+      resetFormState();
+      fetchData();
+    } catch (error) {
+      console.error('Error saving job profile', error);
+      toast.error('Failed to save job profile');
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id, name = '') => {
+    const confirmMessage = name
+      ? `Are you sure you want to delete the job profile "${name}"?`
+      : 'Are you sure you want to delete this job profile?';
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      await xFetch({
+        path: '/services/job/deleteJobProfile',
+        method: 'POST',
+        payload: { jobprofileId: id },
+      });
+      toast.success('Job Profile deleted successfully');
+      setSelected((prev) => prev.filter((item) => item !== id));
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting job profile', error);
+      toast.error('Failed to delete job profile');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selected.length === 0) {
+      toast.error('No job profiles selected');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to delete ${selected.length} selected job profiles? This action cannot be undone.`)) {
+      return;
+    }
+
+    let successCount = 0;
+
+    for (const id of selected) {
+      try {
+        await xFetch({
+          path: '/services/job/deleteJobProfile',
+          method: 'POST',
+          payload: { jobprofileId: id },
+        });
+        successCount += 1;
+      } catch (error) {
+        console.error(`Failed to delete job profile ID: ${id}`, error);
+      }
+    }
+
+    setSelected([]);
+    toast.success(`${successCount} job profile(s) deleted successfully`);
+    fetchData();
+  };
+
+  const toggleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  return (
+    <div className="p-4">
+      <ToastContainer position="top-right" autoClose={3000} />
+
+      <div className="flex flex-wrap justify-between items-center mb-4">
+        <h2 className="text-xl">Job Profile</h2>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search job profile..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pl-8 pr-3 py-2 border rounded-lg text-sm bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              resetFormState();
+              setShowModal(true);
+            }}
+            className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"
+            title="Add Job Profile"
+          >
+            <Plus size={16} />
+          </button>
+
+          <button
+            onClick={handleBulkDelete}
+            className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+            title="Delete Selected"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+        <div className="overflow-auto max-h-[calc(100vh-220px)]">
+          {loading ? (
+            <p className="text-center py-4 text-gray-500">Loading...</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr className="text-left">
+                  <th className="p-2 text-left">
+                    <input
+                      type="checkbox"
+                      onChange={(event) =>
+                        setSelected(event.target.checked ? paginated.map((row) => row.id) : [])
+                      }
+                      checked={
+                        paginated.length > 0 && paginated.every((row) => selected.includes(row.id))
+                      }
+                    />
+                  </th>
+                  <th className="p-2 text-left">Job Profile</th>
+                  <th className="p-2 text-left">Description</th>
+                  <th className="p-2 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.map((row) => (
+                  <tr key={row.id} className="border-t hover:bg-gray-50 transition-colors">
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(row.id)}
+                        onChange={() => toggleSelect(row.id)}
+                      />
+                    </td>
+                    <td className="p-2">{row.jobProfileTag}</td>
+                    <td className="p-2">{row.jobProfileDescription || '-'}</td>
+                    <td className="p-2 text-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setForm({
+                            id: row.id,
+                            jobProfileTag: row.jobProfileTag,
+                            jobProfileDescription: row.jobProfileDescription || '',
+                          });
+                          setEditing(true);
+                          setErrors({});
+                          setShowModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(row.id, row.jobProfileTag)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {paginated.length === 0 && (
+                  <tr>
+                    <td colSpan="4" className="text-center py-4 text-gray-500">
+                      No records found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="flex justify-end items-center mt-3 gap-2 text-sm">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((prev) => prev - 1)}
+            className={`px-3 py-1 rounded ${
+              page === 1 ? 'bg-gray-200 text-gray-500' : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <span className="text-gray-700">
+            Page {page} of {totalPages || 1}
+          </span>
+          <button
+            disabled={page === totalPages || totalPages === 0}
+            onClick={() => setPage((prev) => prev + 1)}
+            className={`px-3 py-1 rounded ${
+              page === totalPages || totalPages === 0
+                ? 'bg-gray-200 text-gray-500'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
+            <h3 className="text-lg mb-4">{editing ? 'Update' : 'Add'} Job Profile</h3>
+
+            <input
+              name="jobProfileTag"
+              placeholder="Job Profile"
+              value={form.jobProfileTag}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded p-2 mb-2 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {errors.jobProfileTag && <p className="text-red-500 text-sm mb-2">{errors.jobProfileTag}</p>}
+
+            <input
+              name="jobProfileDescription"
+              placeholder="Description"
+              value={form.jobProfileDescription}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded p-2 mb-2 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  resetFormState();
+                }}
+                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
+                title="Cancel"
+              >
+                <X size={15} />
+              </button>
+              <button
+                onClick={handleSave}
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                title="Save"
+              >
+                <Check size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -24,6 +24,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
     '/payments': 'Payment Management',
     '/placements': 'Placements',
     '/jobs': 'Job Postings',
+    '/jobs/settings': 'Job Settings',
     '/batches': 'Batches',
     '/invoices': 'Invoices',
     '/branches': 'Branches',

@@ -13,7 +13,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [searchTerm, setSearchTerm] = useState('')
 
-  const limit = 15 // Increased slightly for better screen fit
+  const limit = 70 // Increased slightly for better screen fit
   
   // Filter report data based on search term
   const filteredReportData = originalReportData.filter(row => {
