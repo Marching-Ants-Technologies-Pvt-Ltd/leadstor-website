@@ -6,6 +6,7 @@ import { Providers } from './providers';
 import StructuredData from '@/components/StructuredData';
 import { GoogleTagManager } from '@next/third-parties/google';
 import { MetaTags } from 'leadstor';
+import ReminderPopup from '@/components/ReminderPopup'; // 👈 ADD THIS
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,6 +17,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+
   return (
     <html lang="en" suppressHydrationWarning className="scroll-smooth" data-theme="light">
       <head>
@@ -24,6 +27,9 @@ export default function RootLayout({
       <body>
         <Providers>
           {children}
+
+          {/* ✅ SSE Listener mounted globally */}
+          <ReminderPopup />
         </Providers>
       </body>
       <GoogleTagManager gtmId="GTM-PWH69TPS" />
