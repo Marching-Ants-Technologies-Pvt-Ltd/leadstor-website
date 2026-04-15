@@ -124,9 +124,9 @@ export default function SignIn() {
                     <main className="flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-24 lg:py-12 xl:col-span-6">
 
                         <div className="max-w-xl lg:max-w-3xl">
-                            <h1 className="select-none mt-6 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">SignIn</h1>
-                            <p className="select-none mt-6 text-sm leading-relaxed text-gray-500">Welcome back to Leadstor.</p>
-                            <p className="mt-0 text-sm leading-relaxed text-gray-500 select-none">Continue tracking your progress after signing in to your account. <span datatype='content-filler' className='text-transparent'>leadstor leadstor leadstor</span></p>
+                            <h1 className="mt-6 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">SignIn</h1>
+                            <p className="mt-6 text-sm leading-relaxed text-gray-500">Welcome back to Leadstor.</p>
+                            <p className="mt-0 text-sm leading-relaxed text-gray-500 font-bold">Leadstor is Modern, Sales Driven, AI enabeld platform. <span datatype='content-filler' className='text-transparent'>leadstor leadstor leadstor</span></p>
 
                             <div className="mt-8 grid grid-cols-6 gap-6">
 
