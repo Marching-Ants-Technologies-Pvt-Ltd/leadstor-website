@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, X, Trash2, Send, ArrowLeft, RefreshCw, Download, Search, ExternalLink, UserCheck, Clock, FileText, Loader2, Edit2 } from 'lucide-react';
-import { xFetch } from '@/utility/xFetch';
+import { xFetch, jsonToQueryParams, xDownload } from '@/utility/xFetch';
 import * as XLSX from 'xlsx';
 import { toast } from 'react-toastify';
 import AddManageCandidateModal from './AddManageCandidateModal';
@@ -357,20 +357,14 @@ export default function ManageCandidatesForJob({
     );
   };
 
-  const handleDownloadResume = async (resumeFile, resumeName) => {
-    if (!resumeFile) return;
+  const handleDownloadResume = async (candidateId, resumeName) => {
+    if (!resumeName) return;
+    let data = {};
+    data['id'] = candidateId;
 
-    try {
-      // Create download link
-      const downloadUrl = `/view-resume?file=${encodeURIComponent(resumeFile)}`;
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = resumeName || 'resume.pdf';
-      link.target = '_blank';
-      link.click();
-    } catch (err) {
-      toast.error('Failed to download resume');
-    }
+    let target = 'screens/jobs/downloadCandidateResume';
+      
+    xDownload(`${target}.php?${jsonToQueryParams(data)}`);
   };
 
   // Helper function to strip HTML tags
@@ -582,9 +576,9 @@ export default function ManageCandidatesForJob({
                       </td>
                       <td className="px-3 py-2 align-top text-gray-600 max-w-xs truncate">{candidate.remarks || '-'}</td>
                       <td className="px-3 py-2 align-top">
-                        {candidate.resume ? (
+                        {candidate.resumeName ? (
                           <button
-                            onClick={() => handleDownloadResume(candidate.resume, candidate.resumeName)}
+                            onClick={() => handleDownloadResume(candidate.candidateId, candidate.resumeName)}
                             className="inline-flex items-center gap-1 text-blue-600 hover:underline text-xs font-medium"
                           >
                             <FileText size={12} />

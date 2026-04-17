@@ -10,6 +10,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { SessionProvider, getSession } from "next-auth/react";
 import { LeadsCurrentPage,LeadFilters,LeadSearch, User } from '@/utility/TinyDB';
+import ReminderPopup from '@/components/ReminderPopup';
 
 export default function ClientLayout({ children }) {
   const [session, setSession] = useState(null);
@@ -87,6 +88,8 @@ export default function ClientLayout({ children }) {
           <div className="flex-1 overflow-hidden flex flex-col">
             {/* Main content area */}
               {children}
+              {/* ✅ SSE Listener mounted globally */}
+              <ReminderPopup />
           </div>
         </div>
       </div>
