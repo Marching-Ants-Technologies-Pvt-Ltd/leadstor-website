@@ -125,8 +125,8 @@ export default function SignIn() {
 
                         <div className="max-w-xl lg:max-w-3xl">
                             <h1 className="mt-6 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl">SignIn</h1>
-                            <p className="mt-6 text-sm leading-relaxed text-gray-500">Welcome back to Leadstor.</p>
-                            <p className="mt-0 text-sm leading-relaxed text-gray-500 font-bold">Leadstor is Modern, Sales Driven, AI enabeld platform. <span datatype='content-filler' className='text-transparent'>leadstor leadstor leadstor</span></p>
+                            <p className="mt-6 text-sm leading-relaxed text-gray-500">Welcome to Leadstor.</p>
+                            <p className="mt-0 text-sm leading-relaxed text-gray-500 font-bold">Leadstor is Modern, Sales Driven, AI enabeld platform committed to incresae your sales. <span datatype='content-filler' className='text-transparent'>leadstor leadstor leadstor</span></p>
 
                             <div className="mt-8 grid grid-cols-6 gap-6">
 
