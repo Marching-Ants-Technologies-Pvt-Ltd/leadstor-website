@@ -159,9 +159,11 @@ export default function ReminderPopup() {
                   {item.message}
                 </div>
 
-                <div className="text-xs text-blue-600 font-medium mt-3">
-                  {isOpening ? "Opening timeline..." : "Click to open timeline"}
-                </div>
+                 <div className="mt-4">
+                     <button className="w-full bg-red-500 hover:bg-red-600 text-white text-sm font-medium py-2.5 rounded-lg shadow-sm transition">
+                       {isOpening ? "Opening..." : "Open Lead"}
+                    </button>
+                  </div>
               </div>
             );
           })}
