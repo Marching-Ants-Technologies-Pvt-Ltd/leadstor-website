@@ -43,7 +43,7 @@ export default function Home() {
           </div>
           <h3 className="text-center text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-700 mt-12">Why Most Leads Never Convert!</h3>
           <p className="text-center px-0 md:px-10 lg:px-40 xl:px-60 text-gray-600 mt-4">Leads don’t get called on time, Follow-ups are missed, No visibility on sales team, Scattered leads
-            <BR>Leadstor is designed to fix all this, we add wings to your lead to sales journey</p>
+            <br/>Leadstor is designed to fix all this, we add wings to your lead to sales journey</p>
 
           <div className="grid mt-10">
             <div className='m-auto'>
