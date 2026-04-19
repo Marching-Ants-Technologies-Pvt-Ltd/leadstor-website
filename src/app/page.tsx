@@ -43,7 +43,7 @@ export default function Home() {
           </div>
           <h3 className="text-center text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-700 mt-12">Why Most Leads Never Convert!</h3>
           <p className="text-center px-0 md:px-10 lg:px-40 xl:px-60 text-gray-600 mt-4">Leads go cold within minutes, Follow-ups slip through the cracks,No visibility on who is doing what, Scattered leads
-          <br/>Responding within 1 minute can increase conversions by 7X .Leadstor helps your team respond instantly — every time.</p>
+          <br/>Responding within 1 minute can increase conversions by 7X. Leadstor helps your team respond instantly — every time.</p>
 
           <div className="grid mt-10">
             <div className='m-auto'>
