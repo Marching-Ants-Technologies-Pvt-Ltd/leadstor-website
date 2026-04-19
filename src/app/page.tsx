@@ -15,8 +15,8 @@ export default function Home() {
         <div className="container mx-auto px-4 max-w-screen-xl">
           <div className="grid grid-cols-1 gap-10 py-10 lg:py-24 px-5 sm:px-10 xl:gap-20 xl:px-0 lg:grid-cols-2">
             <div className="m-auto">
-              <h1 className="text-2xl sm:text-4xl hero-text-color font-bold text-gray-800 ">Leadstor is modern, sales driven, AI enabled lead management platform</h1>
-              <p className="mt-4 text-base sm:text-lg text-gray-600">We are committed to increase your sales with our innovation</p>
+              <h1 className="text-2xl sm:text-4xl hero-text-color font-bold text-gray-800 ">Close 2X More Leads Without Hiring More Salespeople with LeadStor</h1>
+              <p className="mt-4 text-base sm:text-lg text-gray-600">Capture, auto assign, and never miss a follow up — all in one AI-powered system</p>
               <Button className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded text-sm px-5 py-2 text-center me-2 mt-8 uppercase" href='/signup '>Create A Free Account</Button>
               <p className="mt-4 text-gray-500 text-sm">Automation is the only way to do more sales than your competition</p>
             </div>
@@ -41,8 +41,9 @@ export default function Home() {
           <div className="flex justify-center align-middle">
             <h2 className="bg-blue-100 px-6 py-2 rounded-full text-sm text-gray-800 font-medium uppercase">Lead Management</h2>
           </div>
-          <h3 className="text-center text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-700 mt-12">Lead Management has never been so easy!</h3>
-          <p className="text-center px-0 md:px-10 lg:px-40 xl:px-60 text-gray-600 mt-4">Engage your leads from click to close with Leadstor, your go-to lead management software. Find all the tools you need to manage your leads and convert every sales opportunity.</p>
+          <h3 className="text-center text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-700 mt-12">Why Most Leads Never Convert!</h3>
+          <p className="text-center px-0 md:px-10 lg:px-40 xl:px-60 text-gray-600 mt-4">Leads don’t get called on time, Follow-ups are missed, No visibility on sales team, Scattered leads
+            <BR>Leadstor is designed to fix all this, we add wings to your lead to sales journey</p>
 
           <div className="grid mt-10">
             <div className='m-auto'>
