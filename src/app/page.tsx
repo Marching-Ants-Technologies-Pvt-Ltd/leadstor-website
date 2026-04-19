@@ -8,7 +8,7 @@ import ProductInfo from '@/components/ProductInfo';
 
 export default function Home() {
   return (
-   
+      <>
       <Navbar />
 
       <header className="border-gray-200 bg-gray-50">
