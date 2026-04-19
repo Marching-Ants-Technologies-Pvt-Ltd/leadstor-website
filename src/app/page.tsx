@@ -15,10 +15,10 @@ export default function Home() {
         <div className="container mx-auto px-4 max-w-screen-xl">
           <div className="grid grid-cols-1 gap-10 py-10 lg:py-24 px-5 sm:px-10 xl:gap-20 xl:px-0 lg:grid-cols-2">
             <div className="m-auto">
-              <h1 className="text-2xl sm:text-4xl hero-text-color font-bold text-gray-800 ">Close 2X More Leads Without Hiring More Salespeople with LeadStor</h1>
-              <p className="mt-4 text-base sm:text-lg text-gray-600">Capture, auto assign and never miss a follow up — all in one AI-powered system</p>
+              <h1 className="text-2xl sm:text-4xl hero-text-color font-bold text-gray-800 ">Close 2X More Leads — Without Hiring More Salespeople</h1>
+              <p className="mt-4 text-base sm:text-lg text-gray-600">Capture, auto assign and follow up instantly — all in one AI-powered system</p>
               <Button className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded text-sm px-5 py-2 text-center me-2 mt-8 uppercase" href='/signup '>Create A Free Account</Button>
-              <p className="mt-4 text-gray-500 text-sm">Automation is the only way to do more sales than your competition</p>
+              <p className="mt-4 text-gray-500 text-sm">80% of leads go cold within 5 minutes. Don’t lose them to your competitors</p>
             </div>
             <div className='order-first lg:order-none'>
               <Image
@@ -42,8 +42,8 @@ export default function Home() {
             <h2 className="bg-blue-100 px-6 py-2 rounded-full text-sm text-gray-800 font-medium uppercase">Lead Management</h2>
           </div>
           <h3 className="text-center text-2xl md:text-3xl lg:text-4xl font-semibold text-gray-700 mt-12">Why Most Leads Never Convert!</h3>
-          <p className="text-center px-0 md:px-10 lg:px-40 xl:px-60 text-gray-600 mt-4">Leads don’t get called on time, Follow-ups are missed, No visibility on sales team, Scattered leads
-            <br/>Leadstor is designed to fix all this, we add wings to your lead to sales journey</p>
+          <p className="text-center px-0 md:px-10 lg:px-40 xl:px-60 text-gray-600 mt-4">Leads go cold within minutes, Follow-ups slip through the cracks,No visibility on who is doing what, Scattered leads
+            <br/>Leadstor ensures every lead is tracked, followed up and converted</p>
 
           <div className="grid mt-10">
             <div className='m-auto'>
@@ -69,7 +69,9 @@ export default function Home() {
                 </svg>
               </div>
               <h4 className="mt-4 mb-3 text-xl font-semibold text-gray-700 pointer-events-none">Lead Generation</h4>
-              <p className="text-base text-justify text-gray-600 pointer-events-none">Track and capture leads from all sources like — Website, Facebook, Google, referrals, and lead providers—using optimized forms, user-friendly layouts, and interactive chat. Boost lead generation and manage high-quality leads seamlessly from one platform.</p>
+              <p className="text-base text-justify text-gray-600 pointer-events-none">
+                Capture every lead instantly — from Website, Facebook, Google etc — without manual dependency. Never miss a follow up as LeadStor sends real time reminder to your team.
+              </p>
             </div>
 
             {/* Card #2 */}
@@ -121,7 +123,7 @@ export default function Home() {
                 </svg>
               </div>
               <h4 className="mt-4 mb-3 text-xl font-semibold text-gray-700">Lead Automation</h4>
-              <p className="text-base text-justify text-gray-600">Efficiently automate lead management processes while engaging with leads across multiple channels - WhatsApp, SMS, Email, Phone, and more. Streamline communication and nurture leads through every stage of their journey.</p>
+              <p className="text-base text-justify text-gray-600">Responding within 1 minute can increase conversions by 7X</p>
             </div>
 
             {/* Card #6 */}
