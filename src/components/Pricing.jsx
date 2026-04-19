@@ -17,10 +17,10 @@ export default function Pricing() {
                         <div className="">
                             <div className="min-h-[435px] bg-gray-50  rounded-tl-xl border-b border-[#b5b8bc] inline-flex items-start">
                                 <div className=' px-6 py-6'>
-                                    <h4 className="text-2xl poppins font-semibold text-left">Basic</h4>
-                                    <p className="mt-4 text-left antialiased font-normal text-sm text-gray-500">Tailored for startups and SMBs seeking efficient pipeline management and engagement across channels</p>
+                                    <h4 className="text-2xl poppins font-semibold text-left">Starter</h4>
+                                    <p className="mt-4 text-left antialiased font-normal text-sm text-gray-500">Tailored for small businesses looking to increase sales</p>
                                     <div className="text-left mt-6">
-                                        <div className="font-semibold poppins text-2xl">₹3,500</div>
+                                        <div className="font-semibold poppins text-2xl">₹1,999</div>
                                         <div className="mt-1">/month, billed monthly</div>
                                         <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-10 bg-gray-700 hover:bg-gray-800 text-white transition duration-300">Get started</Button>
                                         <Button href="/contact" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-3 bg-blue-transparent text-transparent cursor-default pointer-events-none select-none">-</Button>
@@ -52,7 +52,7 @@ export default function Pricing() {
                                             alt="Tick"
                                             priority
                                         />
-                                        <span className="text-xs sm:text-sm">Manage Upto 7,000 Contacts/Year</span>
+                                        <span className="text-xs sm:text-sm">Manage Upto 1500 leads/month</span>
                                     </li>
 
                                     <li className="flex items-center space-x-2 sm:space-x-3">
@@ -100,13 +100,13 @@ export default function Pricing() {
                             </div>
                         </div>
 
-                        <div className="border-t-2 col-span-2 md:col-span-1 md:border-t-0 border-r border-l border-[#b5b8bc]">
+                            <div className="border-t-2 col-span-2 md:col-span-1 md:border-t-0 border-r border-l border-[#b5b8bc]">
                             <div className="min-h-[435px] bg-blue-50 border-b border-[#b5b8bc] inline-flex items-start relative">
                                 <div className='px-6 py-6'>
-                                    <h4 className="text-2xl poppins font-semibold text-left">Pro<span className="ml-2 poppins font-semibold text-xs bg-[#bdd7ff] text-black py-1 px-2 uppercase rounded relative bottom-1">Popular</span></h4>
+                                    <h4 className="text-2xl poppins font-semibold text-left">Basic<span className="ml-2 poppins font-semibold text-xs bg-[#bdd7ff] text-black py-1 px-2 uppercase rounded relative bottom-1">Popular</span></h4>
                                     <p className="mt-4 text-left antialiased font-normal text-sm text-gray-500">Ideal for growing & mid-sized businesses requiring advanced capabilities and assistance<span className='text-transparent select-none'>- - - - - - - - - - - -</span></p>
                                     <div className="text-left mt-6">
-                                        <div className="font-semibold poppins text-2xl">₹6,000</div>
+                                        <div className="font-semibold poppins text-2xl">₹4,999</div>
                                         <div className="mt-1">/month, billed monthly</div>
                                         <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-10 bg-blue-600 hover:bg-blue-700 text-white transition duration-300">Start a free trial</Button>
                                         <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-3 bg-blue-transparent hover:bg-blue-100 text-gray-600 transition duration-300">Contact Sales</Button>
@@ -123,7 +123,7 @@ export default function Pricing() {
                                 />
                             </div>
                             <div className="mt-4 mb-4 px-10 py-4">
-                                <p className="font-normal text-sm italic">Everything in Basic, plus</p>
+                                    <p className="font-normal text-sm italic">Everything in Starter, plus</p>
                                 <ul role="list" className="mt-6 space-y-4 text-left">
 
                                     <li className="flex items-center space-x-2 sm:space-x-3">
@@ -135,7 +135,7 @@ export default function Pricing() {
                                             alt="Tick"
                                             priority
                                         />
-                                        <span className="text-xs sm:text-sm">Manage Upto 12,000 Contacts/Year</span>
+                                        <span className="text-xs sm:text-sm">Manage Upto 5,000 leads/month</span>
                                     </li>
 
                                     <li className="flex items-center space-x-2 sm:space-x-3">
@@ -160,17 +160,16 @@ export default function Pricing() {
                                 </ul>
                             </div>
                         </div>
-
-                        <div className="border-t-2 border-gray-200 col-span-2 lg:col-span-1 lg:border-t-0">
-                            <div className="min-h-[435px] bg-green-50 rounded-tr-xl border-b border-[#b5b8bc] inline-flex items-start relative">
+                        <div className="border-t-2 col-span-2 md:col-span-1 md:border-t-0 border-r border-l border-[#b5b8bc]">
+                            <div className="min-h-[435px] bg-blue-50 border-b border-[#b5b8bc] inline-flex items-start relative">
                                 <div className='px-6 py-6'>
-                                    <h4 className="text-2xl poppins font-semibold text-left">Super</h4>
-                                    <p className="mt-4 text-left antialiased font-normal text-sm text-gray-500">Designed for mid to large-sized businesses needing advanced customization and governance capabilities</p>
+                                    <h4 className="text-2xl poppins font-semibold text-left">Growth<span className="ml-2 poppins font-semibold text-xs bg-[#bdd7ff] text-black py-1 px-2 uppercase rounded relative bottom-1">Popular</span></h4>
+                                    <p className="mt-4 text-left antialiased font-normal text-sm text-gray-500">Ideal for growing & mid-sized businesses requiring advanced capabilities and assistance<span className='text-transparent select-none'>- - - - - - - - - - - -</span></p>
                                     <div className="text-left mt-6">
-                                        <div className="font-semibold poppins text-2xl">₹12,000</div>
+                                        <div className="font-semibold poppins text-2xl">₹9,999</div>
                                         <div className="mt-1">/month, billed monthly</div>
                                         <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-10 bg-blue-600 hover:bg-blue-700 text-white transition duration-300">Start a free trial</Button>
-                                        <Button href="/contact" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-3 bg-blue-transparent text-transparent cursor-default pointer-events-none select-none">-</Button>
+                                        <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-3 bg-blue-transparent hover:bg-blue-100 text-gray-600 transition duration-300">Contact Sales</Button>
                                     </div>
                                 </div>
                                 <Image
@@ -184,7 +183,7 @@ export default function Pricing() {
                                 />
                             </div>
                             <div className="mt-4 mb-4 px-10 py-4">
-                                <p className="font-normal text-sm italic">Everything in Pro, plus</p>
+                                    <p className="font-normal text-sm italic">Everything in Basic, plus</p>
                                 <ul role="list" className="mt-6 space-y-4 text-left">
 
                                     <li className="flex items-center space-x-2 sm:space-x-3">
@@ -196,10 +195,9 @@ export default function Pricing() {
                                             alt="Tick"
                                             priority
                                         />
-                                        <span className="text-xs sm:text-sm">Manage Upto 20,000 Contacts/Year</span>
+                                        <span className="text-xs sm:text-sm">Manage Upto 12,000 leads/month</span>
                                     </li>
-
-                                    <li className="flex items-center space-x-2 sm:space-x-3">
+                                     <li className="flex items-center space-x-2 sm:space-x-3">
                                         <Image
                                             placeholder='empty'
                                             src="/icons/tick.svg"
@@ -249,6 +247,94 @@ export default function Pricing() {
                                     <li className="text-sm italic">
                                         *Minor customization, which will align with our general flow.
                                     </li>
+
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="border-t-2 col-span-2 md:col-span-1 md:border-t-0 border-r border-l border-[#b5b8bc]">
+                            <div className="min-h-[435px] bg-blue-50 border-b border-[#b5b8bc] inline-flex items-start relative">
+                                <div className='px-6 py-6'>
+                                    <h4 className="text-2xl poppins font-semibold text-left">Pro<span className="ml-2 poppins font-semibold text-xs bg-[#bdd7ff] text-black py-1 px-2 uppercase rounded relative bottom-1">Popular</span></h4>
+                                    <p className="mt-4 text-left antialiased font-normal text-sm text-gray-500">Ideal for growing & mid-sized businesses requiring advanced capabilities and assistance<span className='text-transparent select-none'>- - - - - - - - - - - -</span></p>
+                                    <div className="text-left mt-6">
+                                        <div className="font-semibold poppins text-2xl">₹14,999</div>
+                                        <div className="mt-1">/month, billed monthly</div>
+                                        <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-10 bg-blue-600 hover:bg-blue-700 text-white transition duration-300">Start a free trial</Button>
+                                        <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-3 bg-blue-transparent hover:bg-blue-100 text-gray-600 transition duration-300">Contact Sales</Button>
+                                    </div>
+                                </div>
+                                <Image
+                                    className='absolute bg-white p-[5px] rounded-3xl right-3 top-3'
+                                    placeholder='empty'
+                                    src="/icons/crown_32.svg"
+                                    width={32}
+                                    height={32}
+                                    alt="leadstor Popular Plan"
+                                    priority
+                                />
+                            </div>
+                            <div className="mt-4 mb-4 px-10 py-4">
+                                    <p className="font-normal text-sm italic">Everything in Growth, plus</p>
+                                <ul role="list" className="mt-6 space-y-4 text-left">
+
+                                    <li className="flex items-center space-x-2 sm:space-x-3">
+                                        <Image
+                                            placeholder='empty'
+                                            src="/icons/tick.svg"
+                                            width={22}
+                                            height={22}
+                                            alt="Tick"
+                                            priority
+                                        />
+                                        <span className="text-xs sm:text-sm">Manage Upto 25,000 leads/month</span>
+                                    </li>
+
+                                   
+
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="border-t-2 border-gray-200 col-span-2 lg:col-span-1 lg:border-t-0">
+                            <div className="min-h-[435px] bg-green-50 rounded-tr-xl border-b border-[#b5b8bc] inline-flex items-start relative">
+                                <div className='px-6 py-6'>
+                                    <h4 className="text-2xl poppins font-semibold text-left">Scale</h4>
+                                    <p className="mt-4 text-left antialiased font-normal text-sm text-gray-500">Designed for mid to large-sized businesses needing advanced customization and governance capabilities</p>
+                                    <div className="text-left mt-6">
+                                        <div className="font-semibold poppins text-2xl">₹24,999</div>
+                                        <div className="mt-1">/month, billed monthly</div>
+                                        <Button href="/signup?sub=bm" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-10 bg-blue-600 hover:bg-blue-700 text-white transition duration-300">Start a free trial</Button>
+                                        <Button href="/contact" className="text-sm font-medium rounded-lg px-6 py-3 w-full mt-3 bg-blue-transparent text-transparent cursor-default pointer-events-none select-none">-</Button>
+                                    </div>
+                                </div>
+                                <Image
+                                    className='absolute bg-white p-[5px] rounded-3xl right-3 top-3'
+                                    placeholder='empty'
+                                    src="/icons/crown_32.svg"
+                                    width={32}
+                                    height={32}
+                                    alt="leadstor Popular Plan"
+                                    priority
+                                />
+                            </div>
+                            <div className="mt-4 mb-4 px-10 py-4">
+                                <p className="font-normal text-sm italic">Everything in Growth, plus</p>
+                                <ul role="list" className="mt-6 space-y-4 text-left">
+
+                                    <li className="flex items-center space-x-2 sm:space-x-3">
+                                        <Image
+                                            placeholder='empty'
+                                            src="/icons/tick.svg"
+                                            width={22}
+                                            height={22}
+                                            alt="Tick"
+                                            priority
+                                        />
+                                        <span className="text-xs sm:text-sm">Manage Upto 50,000 leads/month</span>
+                                    </li>
+
+                                    
 
                                 </ul>
                             </div>
