@@ -15,10 +15,10 @@ export default function Home() {
         <div className="container mx-auto px-4 max-w-screen-xl">
           <div className="grid grid-cols-1 gap-10 py-10 lg:py-24 px-5 sm:px-10 xl:gap-20 xl:px-0 lg:grid-cols-2">
             <div className="m-auto">
-              <h1 className="text-2xl sm:text-4xl hero-text-color font-bold text-gray-800 ">Choose Leadstor for intelligent lead management</h1>
-              <p className="mt-4 text-base sm:text-lg text-gray-600">Convert leads into customers faster with lead management system like Leadstor</p>
+              <h1 className="text-2xl sm:text-4xl hero-text-color font-bold text-gray-800 ">Leadstor is modern, sales driven, AI enabled lead management platform</h1>
+              <p className="mt-4 text-base sm:text-lg text-gray-600">We are committed to increase your sales with our innovation</p>
               <Button className="text-white bg-gradient-to-r from-cyan-500 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-cyan-300 dark:focus:ring-cyan-800 font-medium rounded text-sm px-5 py-2 text-center me-2 mt-8 uppercase" href='/signup '>Create A Free Account</Button>
-              <p className="mt-4 text-gray-500 text-sm">Get full access to the product, no credit card required</p>
+              <p className="mt-4 text-gray-500 text-sm">Automation is the only way to do more sales than your competition</p>
             </div>
             <div className='order-first lg:order-none'>
               <Image
@@ -68,7 +68,7 @@ export default function Home() {
                 </svg>
               </div>
               <h4 className="mt-4 mb-3 text-xl font-semibold text-gray-700 pointer-events-none">Lead Generation</h4>
-              <p className="text-base text-justify text-gray-600 pointer-events-none">Track and capture leads from all sources—website, Facebook, Google, referrals, and lead providers—using optimized forms, user-friendly layouts, and interactive chat. Boost lead generation and manage high-quality leads seamlessly from one platform.</p>
+              <p className="text-base text-justify text-gray-600 pointer-events-none">Track and capture leads from all sources like — Website, Facebook, Google, referrals, and lead providers—using optimized forms, user-friendly layouts, and interactive chat. Boost lead generation and manage high-quality leads seamlessly from one platform.</p>
             </div>
 
             {/* Card #2 */}
