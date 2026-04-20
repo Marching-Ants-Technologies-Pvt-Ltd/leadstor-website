@@ -20,20 +20,6 @@ export default function Leads() {
     const userRoles = Array.isArray(User.role) 
     ? User.role.map(r => String(r).trim())
     : [String(User.role).trim()];
-    
-    // Restrict Finance role from accessing Leads page
-    useEffect(() => {
-        const checkRole = async () => {
-            if (userRoles.includes("Finance")) {
-                router.push('/payments');
-            }
-            if (userRoles.includes("Placement Officer")) {
-                router.push('/placements');
-            }
-        };
-        checkRole();
-    }, [router]);
-
     const branchCorporateId = searchParams.get('corporateId');
     const branchTestId = searchParams.get('testId');
     const branchTestType = searchParams.get('testType');
