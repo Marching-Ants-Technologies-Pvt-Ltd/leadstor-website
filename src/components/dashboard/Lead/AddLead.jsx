@@ -540,19 +540,6 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         continue;
       }
 
-      // 1. First Name is required (if column exists)
-      if (firstNameCol >= 0) {
-        const firstName = String(row[fields[firstNameCol]?.dataField] ?? "").trim();
-        if (!firstName) {
-          hot.setCellMeta(r, firstNameCol, "className", "htInvalid");
-          hot.render();
-          return {
-            ok: false,
-            message: `Row ${r + 1}: First Name is required`,
-          };
-        }
-      }
-
       // 2. Get raw values
       const emailRaw  = emailCol  >= 0 ? String(row[fields[emailCol]?.dataField]  ?? "").trim() : "";
       const mobileRaw = mobileCol >= 0 ? String(row[fields[mobileCol]?.dataField] ?? "").trim() : "";

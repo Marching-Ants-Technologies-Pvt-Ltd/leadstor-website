@@ -30,8 +30,28 @@ export default function JobPostingsTable({
     onSelectionChange(newSelection);
   };
 
+  // Handle expand/collapse for job descriptions
+  const handleDescriptionToggle = (e) => {
+    if (e.target.classList.contains('view-more-desc')) {
+      const action = e.target.getAttribute('data-action');
+      const blockDiv = e.target.closest('[data-desc-id]');
+      const shortDesc = blockDiv?.querySelector('.short-description');
+      const fullDesc = blockDiv?.querySelector('.full-description');
+
+      if (!shortDesc || !fullDesc) return;
+
+      if (action === 'expand') {
+        shortDesc.classList.add('hidden');
+        fullDesc.classList.remove('hidden');
+      } else if (action === 'collapse') {
+        shortDesc.classList.remove('hidden');
+        fullDesc.classList.add('hidden');
+      }
+    }
+  };
+
   return (
-    <table className="text-[13px] border-collapse bg-white w-full">
+    <table className="text-[13px] border-collapse bg-white w-full" onClick={handleDescriptionToggle}>
       <thead className="bg-slate-100 sticky top-0 z-10">
         <tr className="border-b border-slate-200">
           <th className="p-3 w-10">
@@ -44,7 +64,7 @@ export default function JobPostingsTable({
           </th>
           <th className="p-3 text-left min-w-20">Job ID</th>
           <th className="p-3 text-left min-w-30">Job Title</th>
-          <th className="p-3 text-left w-64">Job Description</th>
+          <th className="p-3 text-left min-w-[22rem]">Job Description</th>
           <th className="p-3 text-left min-w-30">Company</th>
           <th className="p-3 text-left min-w-30">Location(s)</th>
           <th className="p-3 text-center min-w-16 whitespace-nowrap">Min Sal<br/>(LPA)</th>
@@ -99,9 +119,35 @@ export default function JobPostingsTable({
                   </button>
                 </td>
                 <td className="p-3 font-medium align-top">{job.title || '-'}</td>
-                <td className="p-3 font-medium align-top" dangerouslySetInnerHTML={{
-                    __html: job.description || '-',
-                }}/>
+                <td className="p-3 font-medium align-top">
+                  {(() => {
+                    const desc = job.description || '-';
+                    if (desc === '-') return desc;
+                    
+                    // Get plain text version for truncation
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = desc;
+                    const plainText = tempDiv.textContent || tempDiv.innerText || '';
+                    
+                    const truncated = plainText.length > 120;
+                    const shortText = truncated ? plainText.substring(0, 120) : plainText;
+                    const blockId = `desc-${job.id || Math.random().toString(36).slice(2, 10)}`;
+                    
+                    const html = truncated ? `
+                      <div data-desc-id="${blockId}">
+                        <div class="short-description">
+                          ${shortText} <span class="text-blue-600 cursor-pointer hover:underline view-more-desc" data-action="expand"> (view more)</span>
+                        </div>
+                        <div class="full-description hidden mt-1">
+                          ${desc}
+                          <span class="text-red-600 cursor-pointer hover:underline ml-2 view-more-desc" data-action="collapse"> (hide)</span>
+                        </div>
+                      </div>
+                    ` : desc;
+                    
+                    return <div dangerouslySetInnerHTML={{ __html: html }} />;
+                  })()}
+                </td>
                 <td className="p-3 align-top">{job.companyName || '-'}</td>
                 <td className="p-3 align-top">{Array.isArray(job.locations) ? job.locations.join(', ') : job.locations || '-'}</td>
                 <td className="p-3 text-center align-top">{job.minSal || '-'}</td>

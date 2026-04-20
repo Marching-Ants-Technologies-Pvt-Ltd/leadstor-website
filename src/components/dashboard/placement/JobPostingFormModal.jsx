@@ -333,6 +333,7 @@ export default function JobPostingFormModal({
                         <option value="">Select Position Type</option>
                         <option value="FT">Full Time</option>
                         <option value="PT">Part Time</option>
+                        <option value="INT">Internship</option>
                         <option value="C">Contract</option>
                         <option value="C2H">Contract to Hire</option>
                     </select>
