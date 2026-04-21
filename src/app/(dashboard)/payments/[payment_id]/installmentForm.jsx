@@ -69,19 +69,26 @@ export default function JoineeInstallmentForm({
     function parseDate(dateStr) {
         if (!dateStr || typeof dateStr !== "string") return undefined;
 
-        const [day, monthStr, year] = dateStr.split("-");
-        if (!day || !monthStr || !year) return undefined;
+        // Handle both old format (DD-MonthName-YYYY) and new format (YYYY-MM-DD HH:mm:ss)
+        if (dateStr.includes('-')) {
+            const parts = dateStr.split(' ')[0].split('-'); // Get date part only
+            if (parts.length === 3) {
+                // Check if first part is a year (new format: YYYY-MM-DD)
+                if (parts[0].length === 4 && !isNaN(parts[0])) {
+                    const [year, month, day] = parts;
+                    return new Date(Number(year), Number(month) - 1, Number(day));
+                }
+                // Old format: DD-MonthName-YYYY
+                else {
+                    const [day, monthStr, year] = parts;
+                    const month = MonthNameAsKey[monthStr];
+                    if (month === undefined) return undefined;
+                    return new Date(Number(year), month, Number(day));
+                }
+            }
+        }
 
-        const month = MonthNameAsKey[monthStr];
-        if (month === undefined) return undefined;
-
-        const date = new Date(
-            Number(year),
-            month,
-            Number(day)
-        );
-
-        return date;
+        return undefined;
     }
 
     return (
@@ -199,7 +206,8 @@ export default function JoineeInstallmentForm({
                                     month={month}
                                     onSelect={(date) => {
                                         if(!date) return;
-                                        let receiptDateTxt = `${date.getDate()}-${MonthNameByIndex[date.getMonth()]}-${date.getFullYear()}`
+                                        const now = new Date();
+                                        let receiptDateTxt = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
                                         onRecChange("date", receiptDateTxt);
                                     }}
                                     numberOfMonths={1}
@@ -216,7 +224,8 @@ export default function JoineeInstallmentForm({
                                     onSelect={(date) => {
                                         if(!date) return;
                                         setReceiptDate(date);
-                                        let receiptDateTxt = `${date.getDate()}-${MonthNameByIndex[date.getMonth()]}-${date.getFullYear()}`
+                                        const now = new Date();
+                                        let receiptDateTxt = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
                                         onRecChange("receipt_date", receiptDateTxt);
                                     }}
                                     numberOfMonths={1}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
@@ -32,6 +32,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [filterParams, setFilterParams] = useState({});
     const [currency, setCurrency] = useState({});
     const [currentCurrency, setCurrentCurrency] = useState('');
+    const [profileImg, setProfileImage] = useState('');
     const [datePicker, setDatePicker] = useState(false);
     const [currentInstallment, setCurrentInstallment] = useState(null);
     const [showInfo, setShowInfo] = useState(true)
@@ -66,15 +67,58 @@ export default function JoineePaymentForm({ payment_id }) {
         return txt.value;
     };
 
-    const profileImage = (image = '', name = '') => {
-        if (image.length < 7) {
-            if (name.length < 1) name = 'Candidate';
-            name = name?.split(' ')[0];
-            return `https://api.dicebear.com/9.x/initials/svg?size=200&seed=${name}`;
-        }
 
-        return image;
+    useEffect(() => {
+        if (candidate?.image) {
+            console.log("Raw image from backend:", candidate.image);
+            console.log("Image length:", candidate.image.length);
+            console.log("Starts with:", candidate.image.substring(0, 50));
+        }
+    }, [candidate?.image]);
+
+
+    const getFallbackAvatar = (name = 'Candidate') => {
+    return `https://api.dicebear.com/9.x/initials/svg?seed=${encodeURIComponent(name)}&backgroundColor=4a90e2`;
+};
+
+const profileImage = (rawImage, name = 'Candidate') => {
+    if (typeof rawImage !== 'string' || rawImage.length < 100) {
+        return getFallbackAvatar(name);
     }
+
+    if (rawImage.startsWith('blob:')) return rawImage;
+    if (rawImage.startsWith('data:image')) return rawImage;
+
+    let base64 = rawImage;
+
+    // Strong cleaning for your escaped PHP base64
+    base64 = base64
+        .replace(/\\r\\n|\\n|\\r|\\t/g, '')
+        .replace(/\\x[0-9a-fA-F]{2}/gi, '')
+        .replace(/\\\\/g, '')
+        .replace(/[^A-Za-z0-9+/=]/g, '')
+        .trim();
+
+    // Fix padding
+    while (base64.length % 4 !== 0) {
+        base64 += '=';
+    }
+
+    if (base64.length < 300) {
+        console.warn("Base64 too short after cleaning");
+        return getFallbackAvatar(name);
+    }
+
+    return `data:image/png;base64,${base64}`;
+};
+
+// 3. Add this computed value inside your component (after all useState)
+const imageSrc = useMemo(() => {
+    const src = profileImage(candidate?.image, candidate?.name || 'Candidate');
+    console.log("Computed imageSrc:", src.substring(0, 100) + "..."); // for debugging
+    return src;
+}, [candidate?.image, candidate?.name]);
+
 
     const onWhatsappButtonClick = () => {
         let mobile = candidate?.mobile ?? '';
@@ -182,6 +226,32 @@ export default function JoineePaymentForm({ payment_id }) {
                 agreedPayment: finalAmount
             };
         });
+    };
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error('File size exceeds 2MB limit');
+            return;
+        }
+
+        // Convert to base64
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64String = event.target?.result;
+            setCandidate(prev => ({
+                ...prev,
+                image: event.target.result
+            }));
+            toast.success('Image selected successfully');
+        };
+        reader.onerror = () => {
+            toast.error('Failed to read file');
+        };
+        reader.readAsDataURL(file);
     };
 
     const deleteInstallment = (installments, key) => {
@@ -353,6 +423,7 @@ export default function JoineePaymentForm({ payment_id }) {
         ])
         .then(([filterParams, courseFee, subServices, batch, currencyList, candidateInfo]) => {
             if (!isMounted) return;
+            
             setFilterParams(filterParams);
             setCurrency(currencyList);
             setCandidate(candidateInfo);
@@ -363,6 +434,8 @@ export default function JoineePaymentForm({ payment_id }) {
             // Set Current Currency
             let cnc = currencyList?.[candidateInfo?.candidate_currency ?? 'x'] ?? {};
             setCurrentCurrency(cnc?.currency_html_code ?? '?');
+
+            setProfileImage(profileImage(candidateInfo?.image, candidateInfo?.name || 'Candidate'));
         })
         .catch(error => {
             console.error('Error loading initial data', error);
@@ -687,24 +760,26 @@ export default function JoineePaymentForm({ payment_id }) {
                         </h4>
 
                         <div className="flex items-center gap-5 p-4 border rounded-lg bg-gray-50">
-                            {/* Avatar */}
-                            <div className="relative">
+                            {/* Avatar / Image */}
+                            <div className="relative flex-shrink-0">
                                 <img
-                                    src={profileImage(candidate?.image ?? '', candidate?.name ?? '')}
-                                    alt="Profile"
+                                    key={candidate?.image ? 'has-image' : 'no-image'}   // forces re-mount when image changes
+                                    src={`data:image/png;base64,${candidate.image}`}
+                                    alt={candidate?.name || "Candidate"}
+                                    className="w-24 h-24 rounded-full object-cover border-2 border-white ring-2 ring-gray-200 shadow-sm"
                                     onError={(e) => {
-                                        e.currentTarget.src = `https://api.dicebear.com/9.x/initials/svg?size=200&seed=Candidate`;
+                                        console.log("❌ onError fired - using fallback");
+                                        e.target.onerror = null;
+                                        e.target.src = getFallbackAvatar(candidate?.name || 'Candidate');
                                     }}
-                                    className="w-24 h-24 rounded-full object-cover border-2 border-white ring-2 ring-gray-200"
                                 />
-
-                                {/* Overlay badge */}
-                                <span className="absolute bottom-0 right-0 bg-white border rounded-full p-1 pt-0 shadow">
+                                {/* Camera icon overlay */}
+                                <span className="absolute bottom-0 right-0 bg-white border border-gray-300 rounded-full p-1 shadow text-lg">
                                     📷
                                 </span>
                             </div>
 
-                            {/* Upload area */}
+                            {/* Upload Section */}
                             <div className="flex-1">
                                 <label className="block text-xs font-medium text-gray-600 mb-1">
                                     Upload new photo
@@ -713,11 +788,12 @@ export default function JoineePaymentForm({ payment_id }) {
                                 <input
                                     type="file"
                                     accept="image/*"
+                                    onChange={handleImageUpload}
                                     className="block w-full text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
                                 />
 
                                 <p className="mt-2 text-xs text-gray-500">
-                                    JPG or PNG • Max size 2MB • Square images work best
+                                    JPG or PNG • Max size 2MB • Square images recommended
                                 </p>
                             </div>
                         </div>

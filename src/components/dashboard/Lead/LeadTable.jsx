@@ -182,7 +182,7 @@ export default function LeadsTable({
         fetchSubordinates();
     }, []);
 
-    async function xLeads(callback) {console.log(testInfo);console.log(Test);
+    async function xLeads(callback) {
         // Clear selected leads when table refreshes (use ref to avoid stale closure)
         if (selectedLeadIdsRef.current.length > 0) {
             setSelectedLeadIdsRef.current([]);
