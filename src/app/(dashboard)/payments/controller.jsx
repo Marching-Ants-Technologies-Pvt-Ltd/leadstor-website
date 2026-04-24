@@ -259,9 +259,9 @@ export default function PaymentsSectionController() {
             return;
         }
 
-        xDownload(`services/joinees/exportAllJoinees?corporateId=${Corporate._id}`);
+        xDownload(`services/joinees/exportAllJoinees?corporateId=${Corporate._id}&corporateType=${Corporate.type}`);
     }
-
+    
     const downloadPaymentReceipt = (payload) => {
         xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
     }
