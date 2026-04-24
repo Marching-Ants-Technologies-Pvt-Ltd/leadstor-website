@@ -252,15 +252,44 @@ export default function PaymentsSectionController() {
 
     }
 
+    // const downloadJoineesReport = (type) => {
+    //     if (!type) return;
+    //     if (type === 'Joinee@Detailed_Download') {
+    //         xDownload(`services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
+    //         return;
+    //     }
+
+    //     xDownload(`services/joinees/exportAllJoinees?corporateId=${Corporate._id}&corporateType=${Corporate.type}`);
+    // }
+
     const downloadJoineesReport = (type) => {
         if (!type) return;
-        if (type === 'Joinee@Detailed_Download') {
-            xDownload(`services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
+
+        if (type === "Joinee@Detailed_Download") {
+            xDownload(
+            `services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`
+            );
             return;
         }
 
-        xDownload(`services/joinees/exportAllJoinees?corporateId=${Corporate._id}`);
-    }
+        const columns = {
+            C1: { key: "candidateId", value: "Candidate ID" },
+            C2: { key: "first_name", value: "First Name" },
+            C3: { key: "email_id", value: "Email" },
+            C4: { key: "mobile", value: "Mobile" },
+            C5: { key: "status", value: "Status" },
+            C6: { key: "agreedPayment", value: "Agreed Payment" },
+            C7: { key: "upcomingPayment", value: "Upcoming Payment" }
+        };
+
+        const params = new URLSearchParams({
+            corporateId: Corporate._id,
+            corporateType: Corporate.type,
+            columnNames: encodeURIComponent(JSON.stringify(columns))
+        });
+
+        xDownload(`services/joinees/exportAllJoinees?${params.toString()}`);
+    };
 
     const downloadPaymentReceipt = (payload) => {
         xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
