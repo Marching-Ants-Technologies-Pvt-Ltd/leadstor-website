@@ -226,7 +226,7 @@ export default function PaymentsSectionController() {
             });
     }
 
-    const exportReport = (data) => {console.log(data);
+    const exportReport = (data) => {
         data['corporateId'] = Corporate._id;
         let target = '';
 
