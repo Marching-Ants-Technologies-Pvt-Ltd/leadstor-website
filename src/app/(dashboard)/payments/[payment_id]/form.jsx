@@ -41,6 +41,31 @@ export default function JoineePaymentForm({ payment_id }) {
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
+    const normalizeDateToMidnight = (value) => {
+        if (!value || typeof value !== 'string') return value;
+
+        const datePart = value.split(' ')[0];
+        const parts = datePart.split('-');
+
+        if (parts.length !== 3 || parts[0].length !== 4) {
+            return value;
+        }
+
+        return `${datePart} 00:00:00`;
+    };
+
+    const normalizeInstallmentsForSave = (installments = {}) => {
+        return Object.fromEntries(
+            Object.entries(installments).map(([key, item]) => [
+                key,
+                {
+                    ...item,
+                    date: normalizeDateToMidnight(item?.date)
+                }
+            ])
+        );
+    };
+
     const formatDOJ = (input = '') => {
 
         if (input === '') return '';
@@ -265,6 +290,7 @@ export default function JoineePaymentForm({ payment_id }) {
 
     const saveChanges = () => {
         let payload = { ...candidate };
+        payload.installments = normalizeInstallmentsForSave(payload?.installments);
 
         // Check For Remarks
         if (payload.remarks === '') {

@@ -12,6 +12,54 @@ export default function CandidateFormModal({
   initialData = {},
   corporateId,
 }) {
+  const getJobTagValue = (tag) => String(
+    tag?.value ??
+    tag?.id ??
+    tag?.jobTagId ??
+    tag?.tagId ??
+    tag ?? ''
+  ).trim()
+
+  const getJobTagLabel = (tag) => String(
+    tag?.text ??
+    tag?.jobProfileTag ??
+    tag?.name ??
+    tag?.jobTag ??
+    tag?.job_tag ??
+    tag?.tagName ??
+    tag ?? ''
+  ).trim()
+
+  const normalizeMultiValue = (value) => {
+    if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean)
+    if (typeof value === 'string' && value.trim()) return value.split(',').map((item) => item.trim()).filter(Boolean)
+    return []
+  }
+
+  const normalizeSelectedJobTags = (value, options = []) => {
+    const incomingTags = normalizeMultiValue(value)
+    if (incomingTags.length < 1) return []
+
+    const optionEntries = options.map((tag) => ({
+      value: getJobTagValue(tag),
+      label: getJobTagLabel(tag),
+    }))
+
+    const optionValues = new Set(optionEntries.map((tag) => tag.value))
+    const optionLabels = new Map(
+      optionEntries.map((tag) => [tag.label.toLowerCase(), tag.value])
+    )
+
+    return [...new Set(
+      incomingTags
+        .map((tag) => {
+          if (optionValues.has(tag)) return tag
+          return optionLabels.get(tag.toLowerCase()) || ''
+        })
+        .filter(Boolean)
+    )]
+  }
+
   // Initialize formData — will be updated in useEffect for edit mode
   const [formData, setFormData] = useState({
     candidateName: '',
@@ -52,12 +100,12 @@ export default function CandidateFormModal({
       try {
         const tagsRes = await xFetch({
           path: '/services/job/getJobTags',
-          query: { corporateId }
+          payload: { corporateId }
         })
-        setJobTagsOptions(tagsRes || [])
+        setJobTagsOptions(Array.isArray(tagsRes) ? tagsRes : tagsRes?.rows || tagsRes?.data || [])
 
         const locRes = await xFetch({ path: '/services/job/getCities' })
-        setLocationsOptions(locRes || [])
+        setLocationsOptions(Array.isArray(locRes) ? locRes : locRes?.rows || locRes?.data || [])
       } catch (err) {
         toast.error('Failed to load dropdown options')
       } finally {
@@ -98,12 +146,11 @@ export default function CandidateFormModal({
       relevantExperience: initialData.relevantExperience || '',
       lastOrganizationName: initialData.lastOrganizationName || '',
       expectedJobType: initialData.expectedJobType || '',
-      jobTags: Array.isArray(initialData.jobTags) ? initialData.jobTags : [],
-      expectedLocationPreference: Array.isArray(initialData.expectedLocationPreference)
-        ? initialData.expectedLocationPreference
-        : (typeof initialData.expectedLocationPreference === 'string'
-            ? initialData.expectedLocationPreference.split(',').map(s => s.trim())
-            : []),
+      jobTags: normalizeSelectedJobTags(
+        initialData.jobTagIds?.length ? initialData.jobTagIds : initialData.jobTags,
+        jobTagsOptions
+      ),
+      expectedLocationPreference: normalizeMultiValue(initialData.expectedLocationPreference),
       lastDesignation: initialData.lastDesignation || '',
       expectedDesignation: initialData.expectedDesignation || '',
       lastCTC: initialData.lastCTC || '',
@@ -112,7 +159,7 @@ export default function CandidateFormModal({
       receiveJobOpportunities: initialData.receiveJobOpportunities || 'Yes',
       candidateFile: null, // file cannot be pre-filled
     })
-  }, [isOpen, initialData]) // ← re-run when initialData changes (edit mode)
+  }, [isOpen, initialData, jobTagsOptions]) // ← re-run when initialData changes (edit mode)
 
   const handleChange = (e) => {
     const { name, value, type, files, multiple } = e.target
@@ -144,7 +191,6 @@ export default function CandidateFormModal({
             payload.append('candidateFile', val)
             }
         } else if (Array.isArray(val)) {
-            // This is correct - sends jobTags[] & expectedLocationPreference[]
             val.forEach(v => payload.append(`${key}[]`, v))
         } else if (val !== null && val !== undefined && val !== '') {
             payload.append(key, String(val))
@@ -380,9 +426,9 @@ export default function CandidateFormModal({
                             onChange={handleChange}
                             className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500 h-32"
                         >
-                            {jobTagsOptions.map((tag) => (
-                            <option key={tag.value} value={tag.value}>
-                                {tag.text}
+                            {jobTagsOptions.map((tag, index) => (
+                            <option key={`${getJobTagValue(tag)}-${index}`} value={getJobTagValue(tag)}>
+                                {getJobTagLabel(tag)}
                             </option>
                             ))}
                         </select>
@@ -496,3 +542,4 @@ export default function CandidateFormModal({
     </div>
   )
 }
+

@@ -38,40 +38,68 @@ export default function JobPostingFormModal({
   const [owners, setOwners] = useState([]);
   const editor = useRef(null); // Ref for JoditEditor
   const statuses = ['In Progress', 'Placed', 'Closed'];
+  const getJobTagValue = (tag) => String(
+    tag?.id ??
+    tag?.value ??
+    tag?.jobTagId ??
+    tag?.tagId ??
+    tag ?? ''
+  ).trim();
+  const getJobTagLabel = (tag) => String(
+    tag?.jobProfileTag ??
+    tag?.text ??
+    tag?.name ??
+    tag?.jobTag ??
+    tag?.job_tag ??
+    tag?.tagName ??
+    tag ?? ''
+  ).trim();
 
-    // Load initial data (edit mode)
-    useEffect(() => {
+  useEffect(() => {
+    const getIncomingTags = (value) => {
+      if (Array.isArray(value)) {
+        return value.map((item) => String(item).trim()).filter(Boolean);
+      }
+
+      if (typeof value === 'string' && value.trim()) {
+        return value.split(',').map((item) => item.trim()).filter(Boolean);
+      }
+
+      return [];
+    };
+
     if (mode === 'edit' && initialData) {
-        // Use jobTagIds for pre-selection (array of string IDs)
-        let preSelectedTags = [];
+      const optionEntries = jobTagsOptions.map((tag) => ({
+        value: getJobTagValue(tag),
+        label: getJobTagLabel(tag),
+      }));
 
-        if (Array.isArray(initialData.jobTagIds)) {
-        preSelectedTags = initialData.jobTagIds
-            .map(id => String(id).trim())     // force string: "2", "5", etc.
-            .filter(Boolean);
-        } else if (typeof initialData.jobTagIds === 'string' && initialData.jobTagIds.trim()) {
-        preSelectedTags = initialData.jobTagIds
-            .split(',')
-            .map(t => t.trim())
-            .filter(Boolean);
-        }
+      const optionValues = new Set(optionEntries.map((tag) => tag.value));
+      const optionLabels = new Map(
+        optionEntries.map((tag) => [tag.label.toLowerCase(), tag.value])
+      );
 
-        // Debug logs — check these in console when editing
-        console.log('[EDIT] Raw jobTagIds from backend:', initialData.jobTagIds);
-        console.log('[EDIT] Normalized tags for <select>:', preSelectedTags);
-        console.log('[EDIT] Available option values:', jobTagsOptions.map(t => t.value));
+      const preSelectedTags = [
+        ...getIncomingTags(initialData.jobTagIds),
+        ...getIncomingTags(initialData.jobTags),
+      ]
+        .map((tag) => {
+          if (optionValues.has(tag)) return tag;
+          return optionLabels.get(tag.toLowerCase()) || '';
+        })
+        .filter(Boolean);
 
-        setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         title: initialData.title || '',
         description: initialData.description || '',
         companyName: initialData.companyName || '',
-        jobTags: preSelectedTags,           // ← now uses IDs like ["2"]
+        jobTags: [...new Set(preSelectedTags)],
         minExp: initialData.minExp !== null && initialData.minExp !== undefined ? String(initialData.minExp) : '',
         maxExp: initialData.maxExp !== null && initialData.maxExp !== undefined ? String(initialData.maxExp) : '',
         locations: Array.isArray(initialData.locations)
-            ? initialData.locations.join(', ')
-            : initialData.locations || '',
+          ? initialData.locations.join(', ')
+          : initialData.locations || '',
         positionType: initialData.positionType || '',
         minSal: initialData.minSal !== null && initialData.minSal !== undefined ? String(initialData.minSal) : '',
         maxSal: initialData.maxSal !== null && initialData.maxSal !== undefined ? String(initialData.maxSal) : '',
@@ -81,9 +109,31 @@ export default function JobPostingFormModal({
         owner: String(initialData.owner || ''),
         status: initialData.status || 'Open',
         replyToEmailIds: initialData.replyToEmailIds || '',
-        }));
+      }));
+      return;
     }
-    }, [mode, initialData, jobTagsOptions]);
+
+    if (mode === 'add' && isOpen) {
+      setFormData({
+        title: '',
+        description: '',
+        companyName: '',
+        jobTags: [],
+        minExp: '',
+        maxExp: '',
+        locations: '',
+        positionType: '',
+        minSal: '',
+        maxSal: '',
+        contact_name: '',
+        contact_email: '',
+        contact_phone: '',
+        owner: '',
+        status: 'Open',
+        replyToEmailIds: '',
+      });
+    }
+  }, [mode, initialData, jobTagsOptions, isOpen]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -93,6 +143,17 @@ export default function JobPostingFormModal({
   const handleTagsChange = (e) => {
     const selected = [...e.target.selectedOptions].map((opt) => opt.value);
     setFormData((prev) => ({ ...prev, jobTags: selected }));
+  };
+
+  const toBase64Utf8 = (value = '') => {
+    const bytes = new TextEncoder().encode(value);
+    let binary = '';
+
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+
+    return btoa(binary);
   };
 
   const handleSubmit = async (e) => {
@@ -143,8 +204,8 @@ export default function JobPostingFormModal({
 
       const formDataString = params.toString();
 
-      // Base64-encode description
-      const encodedDesc = btoa(formData.description?.trim() || '');
+      // Base64-encode description in UTF-8 so rich text with bullets/special chars saves safely.
+      const encodedDesc = toBase64Utf8(formData.description?.trim() || '');
 
       // Build FormData
       const payload = new FormData();
@@ -383,8 +444,8 @@ export default function JobPostingFormModal({
                         <option disabled>No tags available</option>
                       ) : (
                         jobTagsOptions.map((tag, idx) => {
-                          const value = tag.value || tag.id || tag;
-                          const label = tag.text || tag.name || tag;
+                          const value = getJobTagValue(tag);
+                          const label = getJobTagLabel(tag);
                           return (
                             <option key={idx} value={value}>
                               {label}
@@ -570,3 +631,5 @@ export default function JobPostingFormModal({
     </div>
   );
 }
+
+

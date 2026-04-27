@@ -226,7 +226,7 @@ export default function PaymentsSectionController() {
             });
     }
 
-    const exportReport = (data) => {
+    const exportReport = (data) => {console.log(data);
         data['corporateId'] = Corporate._id;
         let target = '';
 
@@ -235,7 +235,7 @@ export default function PaymentsSectionController() {
                 target = 'paymentReportExcelGenerator';
                 break;
 
-            case 'Pending Payments':
+            case 'PendingPayment':
                 target = 'pendingPaymentReportExcelGenerator';
                 break;
 
@@ -247,21 +247,66 @@ export default function PaymentsSectionController() {
                 target = 'joineeReportExcelGenerator';   // fallback
                 break;
         }
-        
+        console.log(`${target}.php?${jsonToQueryParams(data)}`);
         xDownload(`${target}.php?${jsonToQueryParams(data)}`);
 
     }
 
     const downloadJoineesReport = (type) => {
         if (!type) return;
+
         if (type === 'Joinee@Detailed_Download') {
-            xDownload(`services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`);
+            xDownload(
+                `services/joinees/getJoineesDetailedReport?corporateId=${Corporate._id}`
+            );
             return;
         }
 
-        xDownload(`services/joinees/exportAllJoinees?corporateId=${Corporate._id}&corporateType=${Corporate.type}`);
-    }
-    
+        // old columns structure
+        const columns = {
+            C1: { key: "candidateId", value: "Candidate Tracking Id" },
+            C2: { key: "name", value: "Name" },
+            C3: { key: "email", value: "Email" },
+            C4: { key: "mobile", value: "Mobile" },
+            C5: { key: "label", value: "Course Label" },
+            C6: { key: "batchName", value: "Batch Name" },
+            C7: { key: "doj", value: "Date of Joining" },
+            C8: { key: "currency", value: "Currency" },
+            C9: { key: "agreedPayment", value: "Agreed Payment" },
+            C10: { key: "upcomingPayment", value: "Upcoming Payment" },
+            C11: { key: "completedPayment", value: "Completed Installments" },
+            C12: { key: "pendingAmount", value: "Pending Installments" },
+            C13: { key: "balance", value: "Total Balance" },
+            C14: { key: "lastPaymentDate", value: "Last Payment Date" },
+            C15: { key: "remarks", value: "Remarks" },
+            C16: { key: "source", value: "Source" },
+            C17: { key: "assignedUserId", value: "Counsellor" },
+            C18: { key: "assignedTrainerId", value: "Trainer" },
+            C19: { key: "status", value: "Status" },
+            C20: { key: "lastPaymentRefNo", value: "Payment Ref No" }
+        };
+
+        const exportFilters = Object.fromEntries(
+            Object.entries(query).filter(([key, value]) => {
+                if (['offset', 'limit', 'order', 'corporateId'].includes(key)) {
+                    return false;
+                }
+
+                return value !== '' && value !== null && value !== undefined;
+            })
+        );
+
+        const params = new URLSearchParams({
+            corporateId: branchCorporateId || Corporate._id,
+            corporateType: Corporate.type,
+            columnNames: encodeURIComponent(JSON.stringify(columns)),
+            filters: new URLSearchParams(exportFilters).toString()
+        });
+
+        xDownload(`services/joinees/exportAllJoinees?${params.toString()}`);
+        setDownloadReport(false);
+    };
+
     const downloadPaymentReceipt = (payload) => {
         xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
     }
@@ -387,6 +432,7 @@ export default function PaymentsSectionController() {
                     let payload = {
                         type,
                         fileName: `ConceptNinjas_${type}_${interval}`,
+                        instituteName: Corporate.name,
                         monthInterval: value,
                         qutype: 2
                     }

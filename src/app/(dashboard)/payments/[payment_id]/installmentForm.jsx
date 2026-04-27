@@ -32,6 +32,16 @@ export default function JoineeInstallmentForm({
 
     if (!data) return null;
 
+    const formatDateTime = (date, time = "00:00:00") => {
+        if (!date) return "";
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+
+        return `${year}-${month}-${day} ${time}`;
+    };
+
     const handleConfirm = async () => {
 
         let payload = {... record};
@@ -206,9 +216,7 @@ export default function JoineeInstallmentForm({
                                     month={month}
                                     onSelect={(date) => {
                                         if(!date) return;
-                                        const now = new Date();
-                                        let receiptDateTxt = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
-                                        onRecChange("date", receiptDateTxt);
+                                        onRecChange("date", formatDateTime(date));
                                     }}
                                     numberOfMonths={1}
                                     captionLayout="dropdown"
@@ -225,7 +233,10 @@ export default function JoineeInstallmentForm({
                                         if(!date) return;
                                         setReceiptDate(date);
                                         const now = new Date();
-                                        let receiptDateTxt = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+                                        let receiptDateTxt = formatDateTime(
+                                            date,
+                                            `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+                                        );
                                         onRecChange("receipt_date", receiptDateTxt);
                                     }}
                                     numberOfMonths={1}
