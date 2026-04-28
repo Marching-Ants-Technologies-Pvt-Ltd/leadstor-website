@@ -44,8 +44,8 @@ export default function ReportDropdown({ onChange, open }) {
 
             {/* Pending Payments */}
             <Section title="Pending Payments">
-                <Item label="Balance" value="pending@balance" onSelect={handleSelect} />
-                <Item label="Custom Duration" value="pending@Custom" onSelect={handleSelect} />
+                <Item label="Balance" value="PendingPayment@balance" onSelect={handleSelect} />
+                <Item label="Custom Duration" value="PendingPayment@Custom" onSelect={handleSelect} />
             </Section>
 
             <div className="bg-gray-50 border-t border-gray-300 font-semibold py-2 hidden">
