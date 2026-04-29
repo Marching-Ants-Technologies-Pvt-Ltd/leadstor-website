@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, Suspense } from 'react';
+import React, { useState, useMemo, Suspense, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { RiArrowDownSLine, RiArrowRightSLine } from "react-icons/ri";
 import { Corporate } from '@/utility/TinyDB';
+import { xFetch } from '@/utility/xFetch';
 // ---------------------------------------------------
 // ⚡ 1. DYNAMIC IMPORTS (Lazy Loading)
 // ---------------------------------------------------
@@ -37,6 +38,8 @@ const Category = dynamic(() => import('@/components/dashboard/Lead/Settings/Cate
 const SubServices = dynamic(() => import('@/components/dashboard/Lead/Settings/SubServices'), { ssr: false });
 const AssociatedCenters = dynamic(() => import('@/components/dashboard/Lead/Settings/AssociatedCenters'), { ssr: false });
 const Qualification = dynamic(() => import('@/components/dashboard/Lead/Settings/Qualification'), { ssr: false });
+const XtremeConfig = dynamic(() => import('@/components/dashboard/Lead/Settings/XtremeConfig'), { ssr: false });
+const CourseAgentMapping = dynamic(() => import('@/components/dashboard/Lead/Settings/CourseAgentMapping'), { ssr: false });
 // ---------------------------------------------------
 // ⚡ 2. SETTINGS PAGE
 // ---------------------------------------------------
@@ -49,6 +52,27 @@ export default function Settings() {
   // Dropdown states
   const [openMenus, setOpenMenus] = useState({ leadSetup: true });
   const [openSubMenus, setOpenSubMenus] = useState({});
+  const [showXtremeMenu, setShowXtremeMenu] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    xFetch({ path: "/services/profile/getXtremeMenuAccess" })
+      .then((res) => {
+        if (isMounted) {
+          setShowXtremeMenu(res?.showMenu === true);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setShowXtremeMenu(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // ---------------------------------------------------
   // MENU STRUCTURE MEMOIZED (Optimized)
@@ -123,9 +147,20 @@ export default function Settings() {
           { key: "images", label: "Images" },
           { key: "currencySettings", label: "Currency Settings" }
         ]
-      }
+      },
+      ...(showXtremeMenu === true
+        ? [{
+            label: "Xtreme Gen AI Integration",
+            key: "xtremeGenAI",
+            collapsible: true,
+            children: [
+              { key: "xtremeConfig", label: "Xtreme Config" },
+              { key: "courseAgentMapping", label: "Course Agent Mapping" }
+            ]
+          }]
+        : [])
     ];
-    }, [Corporate?.type]);
+    }, [Corporate?.type, showXtremeMenu]);
 
 
   // ---------------------------------------------------
@@ -211,6 +246,12 @@ export default function Settings() {
 
       case "currencySettings":
         return <CurrencySettings />;
+
+      case "xtremeConfig":
+        return <XtremeConfig />;
+
+      case "courseAgentMapping":
+        return <CourseAgentMapping />;
 
       case "welcomeTemplate":
         return <WelcomeTemplate />;

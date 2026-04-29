@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import { xFetch, jsonToQueryParams, xDownload } from '@/utility/xFetch';
-import { Corporate } from '@/utility/TinyDB';
+import { Corporate,User } from '@/utility/TinyDB';
 import { Users, ArrowLeft } from 'lucide-react';
 import PaymentsTable from './table';
 import ReportDropdown from './reportMenu';
@@ -35,6 +35,10 @@ export default function PaymentsSectionController() {
     const [limitPopup, setLimitPopup] = useState(false);
     const [loading, setLoading] = useState(true);
     const [branchTestInfo, setBranchTestInfo] = useState({ testId: null, testType: null });
+
+    const userRoles = Array.isArray(User.role) 
+    ? User.role.map(r => String(r).trim())
+    : [String(User.role).trim()];
 
     // Fetch test info for branch if coming from branch
     useEffect(() => {
@@ -657,6 +661,7 @@ export default function PaymentsSectionController() {
                             changeCounsellorOrTrainer={cbChangeCounsellorOrTrainer}
                             checkUncheckRows={checkUncheckRows}
                             downloadReceipt={downloadPaymentReceipt}
+                            userRoles={userRoles}
                         />
                     </div>
                     
