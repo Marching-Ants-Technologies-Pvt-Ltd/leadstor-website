@@ -100,6 +100,17 @@ export default function Settings() {
           },
           { key: "googleDrive", label: "Google Drive" },
           { key: "calendly", label: "Calendly" },
+        ...(showXtremeMenu === true
+          ? [{
+              label: "Xtreme Gen AI",
+              key: "xtremeGenAI",
+              nested: true,
+              children: [
+                { key: "xtremeConfig", label: "Xtreme Config" },
+                { key: "courseAgentMapping", label: "Course Agent Mapping" }
+              ]
+            }]
+            : []),
         ]
       },
       {
@@ -147,18 +158,7 @@ export default function Settings() {
           { key: "images", label: "Images" },
           { key: "currencySettings", label: "Currency Settings" }
         ]
-      },
-      ...(showXtremeMenu === true
-        ? [{
-            label: "Xtreme Gen AI Integration",
-            key: "xtremeGenAI",
-            collapsible: true,
-            children: [
-              { key: "xtremeConfig", label: "Xtreme Config" },
-              { key: "courseAgentMapping", label: "Course Agent Mapping" }
-            ]
-          }]
-        : [])
+      }
     ];
     }, [Corporate?.type, showXtremeMenu]);
 
