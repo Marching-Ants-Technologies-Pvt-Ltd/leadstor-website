@@ -444,8 +444,8 @@ export default function JobPostingFormModal({
                         <option disabled>No tags available</option>
                       ) : (
                         jobTagsOptions.map((tag, idx) => {
-                          const value = getJobTagValue(tag);
-                          const label = getJobTagLabel(tag);
+                          const value = tag.value || tag.id || tag;
+                          const label = tag.text || tag.name || tag;
                           return (
                             <option key={idx} value={value}>
                               {label}
@@ -631,5 +631,4 @@ export default function JobPostingFormModal({
     </div>
   );
 }
-
 

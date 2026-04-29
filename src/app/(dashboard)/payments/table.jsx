@@ -18,6 +18,7 @@ export default function PaymentsTable({
     changeCounsellorOrTrainer = null,
     checkUncheckRows = null,
     downloadReceipt = null,
+    userRoles = []
 }) {
 
     const [toDelete, setToDelete] = useState(0);
@@ -272,7 +273,11 @@ export default function PaymentsTable({
                             <td className="p-2 flex justify-between items-center gap-2">
                                 <a target='_blank' href={process.env.NEXT_PUBLIC_LEADSTOR_REST + '/generateCourseCertificatePDF.php?download=1&trackingId=' + item.id} className='cursor-pointer text-[20px] relative top-0.5' title='Generate Course Certificate'>🎓</a>
                                 <span onClick={(e) => changePlacementReadyStatus(item.id)} className='cursor-pointer text-[16px]' title='Update Placement Ready Status'>💼</span>
-                                <span onClick={(e) => setToDelete(item.id)} className='cursor-pointer relative top-0.5' title='Delete Joinee Record'>❌</span>
+
+                                {userRoles.some(role => ['Admin', 'Administrator'].includes(role)) && (
+                                    <span onClick={(e) => setToDelete(item.id)} className='cursor-pointer relative top-0.5' title='Delete Joinee Record'>❌</span>
+                                )}
+                                
                             </td>
                         </tr>
                     ))}
