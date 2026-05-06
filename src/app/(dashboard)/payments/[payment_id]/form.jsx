@@ -91,6 +91,42 @@ export default function JoineePaymentForm({ payment_id }) {
         return txt.value;
     };
 
+    const parseCandidateTrackingResponse = (rawResponse) => {
+        if (!rawResponse) return {};
+        if (typeof rawResponse === 'object') return rawResponse;
+
+        const asString = String(rawResponse).trim();
+        if (!asString) return {};
+
+        // 1) Normal parse path
+        try {
+            return JSON.parse(asString);
+        } catch (_) {
+            // continue to recovery strategies
+        }
+
+        // 2) Remove control characters and retry
+        const cleaned = asString.replace(/[\u0000-\u001F]+/g, ' ');
+        try {
+            return JSON.parse(cleaned);
+        } catch (_) {
+            // continue to recovery strategies
+        }
+
+        // 3) Try removing problematic image/blob field then parse
+        const withoutImage = cleaned
+            .replace(/,\s*"image"\s*:\s*"(?:\\.|[^"\\])*"/g, '')
+            .replace(/"image"\s*:\s*"(?:\\.|[^"\\])*"\s*,/g, '')
+            .replace(/"image"\s*:\s*"(?:\\.|[^"\\])*"/g, '');
+
+        try {
+            return JSON.parse(withoutImage);
+        } catch (err) {
+            console.error('Unable to parse getCandidateTrackingDetails response', err);
+            return {};
+        }
+    };
+
     const profileImage = (image = '', name = '') => {
         if (image.length < 7) {
             if (name.length < 1) name = 'Candidate';
@@ -228,12 +264,14 @@ export default function JoineePaymentForm({ payment_id }) {
     };
 
     const handleChangeInInstallment = (data) => {
+        const normalizedReceiptDate = `${data?.receipt_date ?? data?.receiptDate ?? ''}`;
         const fixed = {
             amount: `${data?.amount ?? '0'}`,
             date: data?.date ?? null,
             status: `${data?.status ?? '0'}`,
             refNum: `${data?.refNo ?? ''}`,
-            receiptDate: `${data?.receipt_date ?? ''}`
+            receiptDate: normalizedReceiptDate,
+            receipt_date: normalizedReceiptDate
         };
 
         setCandidate(prev => {
@@ -314,6 +352,24 @@ export default function JoineePaymentForm({ payment_id }) {
         payload['trackingId'] = payment_id;
         payload['batches'] = getBatchLabelMapping(payload?.batchId ?? []);
 
+        // Validate installment totals before save
+        const installments = Object.values(payload?.installments ?? {});
+        const totalInstallment = installments.reduce(
+            (sum, item) => sum + Number(item?.amount || 0),
+            0
+        );
+        const totalAgreedPayment = Number(payload?.agreedPayment || 0);
+
+        if (totalInstallment > totalAgreedPayment) {
+            let msg = 'Total value of installments is more than Total Agreed Payment.';
+            if (totalAgreedPayment < 0) {
+                msg = 'Total agreed payment value is negative which is not desirable.';
+            }
+            msg += ' Do you still want to continue with these values?';
+            const ret = window.confirm(msg);
+            if (!ret) return;
+        }
+
         xFetch({
             method: 'POST',
             path: '/services/joinees/saveCandidateTrackingDetails',
@@ -374,11 +430,13 @@ export default function JoineePaymentForm({ payment_id }) {
             }),
             xFetch({
                 path: '/services/joinees/getCandidateTrackingDetails',
-                payload: { trackingId: payment_id }
+                payload: { trackingId: payment_id },
+                responseType: 'text'
             })
         ])
-        .then(([filterParams, courseFee, subServices, batch, currencyList, candidateInfo]) => {
+        .then(([filterParams, courseFee, subServices, batch, currencyList, candidateInfoRaw]) => {
             if (!isMounted) return;
+            const candidateInfo = parseCandidateTrackingResponse(candidateInfoRaw);
             setFilterParams(filterParams);
             setCurrency(currencyList);
             setCandidate(candidateInfo);

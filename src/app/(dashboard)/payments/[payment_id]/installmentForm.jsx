@@ -13,8 +13,10 @@ export default function JoineeInstallmentForm({
     const [record, setRecord] = useState(null);
     const [status, setStatus] = useState('0');
     const [datePickerType, setDatePickerType] = useState('installment');
-    const [month, setMonth] = useState();
+    const [installmentDate, setInstallmentDate] = useState(new Date());
+    const [installmentMonth, setInstallmentMonth] = useState(new Date());
     const [receiptDate, setReceiptDate] = useState(new Date());
+    const [receiptMonth, setReceiptMonth] = useState(new Date());
 
     useEffect(() => {
         if (data) {
@@ -23,8 +25,28 @@ export default function JoineeInstallmentForm({
             setStatus(data?.status ?? '0');
 
             if (data?.date) {
-                const parsed = parseDate(data.date);
-                setMonth(parsed);
+                const parsedInstallmentDate = parseDate(data.date);
+                if (parsedInstallmentDate) {
+                    setInstallmentDate(parsedInstallmentDate);
+                    setInstallmentMonth(parsedInstallmentDate);
+                }
+            } else {
+                const today = new Date();
+                setInstallmentDate(today);
+                setInstallmentMonth(today);
+            }
+
+            const incomingReceiptDate = data?.receipt_date || data?.receiptDate || '';
+            if (incomingReceiptDate) {
+                const parsedReceiptDate = parseDate(incomingReceiptDate);
+                if (parsedReceiptDate) {
+                    setReceiptDate(parsedReceiptDate);
+                    setReceiptMonth(parsedReceiptDate);
+                }
+            } else {
+                const today = new Date();
+                setReceiptDate(today);
+                setReceiptMonth(today);
             }
         }
     }, [data]);
@@ -47,9 +69,27 @@ export default function JoineeInstallmentForm({
         let payload = {... record};
         if (!payload?.status) payload['status'] = '0';
         
+        // Persist currently selected installment date from picker state.
+        // This avoids stale date saves when status/payment method changes.
+        if (installmentDate instanceof Date && !isNaN(installmentDate.getTime())) {
+            payload.date = formatDateTime(installmentDate);
+        }
+
+        // If marked as paid and receipt date is not explicitly selected,
+        // default to current date/time to avoid unnecessary blocking.
+        const receiptDateValue = payload?.receipt_date || payload?.receiptDate || '';
+        if (payload.status !== '0' && !receiptDateValue) {
+            const now = new Date();
+            payload.receipt_date = formatDateTime(
+                now,
+                `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+            );
+            payload.receiptDate = payload.receipt_date;
+        }
+        
         // Installment status is changed and it is not 0
         if (payload.status !== '0' && payload.status !== status){
-            if (!record?.receipt_date){
+            if (!(payload?.receipt_date || payload?.receiptDate)){
                 onAlert?.(`Please update Payment Receipt Date to update this installment.`);
                 return;
             }
@@ -66,10 +106,33 @@ export default function JoineeInstallmentForm({
     };
 
     const onRecChange = (key, value) => {
-        setRecord((prev) => ({
-            ...prev,
-            [key]: value
-        }));
+        setRecord((prev) => {
+            const next = {
+                ...prev,
+                [key]: value
+            };
+
+            const hasReceiptDate = Boolean(next?.receipt_date || next?.receiptDate);
+            if (key === 'status' && value !== '0' && !hasReceiptDate) {
+                const now = new Date();
+                const defaultReceiptDate = formatDateTime(
+                    now,
+                    `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+                );
+                next.receipt_date = defaultReceiptDate;
+                next.receiptDate = defaultReceiptDate;
+            }
+
+            return next;
+        });
+
+        if (key === 'date') {
+            const parsedInstallmentDate = parseDate(value);
+            if (parsedInstallmentDate) {
+                setInstallmentDate(parsedInstallmentDate);
+                setInstallmentMonth(parsedInstallmentDate);
+            }
+        }
 
         if (key === 'status' && value !== '0') {
             setDatePickerType('receipt');
@@ -211,11 +274,13 @@ export default function JoineeInstallmentForm({
                             {datePickerType === 'installment' ? (
                                 <DayPicker
                                     mode="single"
-                                    selected={parseDate(record?.date)}
-                                    onMonthChange={setMonth}
-                                    month={month}
+                                    selected={installmentDate}
+                                    onMonthChange={setInstallmentMonth}
+                                    month={installmentMonth}
                                     onSelect={(date) => {
                                         if(!date) return;
+                                        setInstallmentDate(date);
+                                        setInstallmentMonth(date);
                                         onRecChange("date", formatDateTime(date));
                                     }}
                                     numberOfMonths={1}
@@ -228,16 +293,19 @@ export default function JoineeInstallmentForm({
                                 <DayPicker
                                     mode="single"
                                     selected={receiptDate}
-                                    month={receiptDate}
+                                    month={receiptMonth}
+                                    onMonthChange={setReceiptMonth}
                                     onSelect={(date) => {
                                         if(!date) return;
                                         setReceiptDate(date);
+                                        setReceiptMonth(date);
                                         const now = new Date();
                                         let receiptDateTxt = formatDateTime(
                                             date,
                                             `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
                                         );
                                         onRecChange("receipt_date", receiptDateTxt);
+                                        onRecChange("receiptDate", receiptDateTxt);
                                     }}
                                     numberOfMonths={1}
                                     captionLayout="dropdown"

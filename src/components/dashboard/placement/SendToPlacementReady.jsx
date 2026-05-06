@@ -28,7 +28,7 @@ export default function SendToPlacementReady({
 
   // Pagination (client-side)
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Filter candidates based on search term
   const filteredCandidates = candidates.filter(candidate => {
@@ -43,14 +43,24 @@ export default function SendToPlacementReady({
     );
   });
 
-  const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(filteredCandidates.length / itemsPerPage));
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentCandidates = filteredCandidates.slice(indexOfFirstItem, indexOfLastItem);
+  const currentCandidateIds = currentCandidates.map((c) => c.id);
+  const isCurrentPageFullySelected =
+    currentCandidateIds.length > 0 &&
+    currentCandidateIds.every((id) => selectedIds.includes(id));
 
   useEffect(() => {
     loadCandidates();
   }, [jobId, jobTagIds, corporateId]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const loadCandidates = async () => {
     setLoading(true);
@@ -135,10 +145,10 @@ export default function SendToPlacementReady({
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.length === currentCandidates.length) {
-      setSelectedIds([]);
+    if (isCurrentPageFullySelected) {
+      setSelectedIds((prev) => prev.filter((id) => !currentCandidateIds.includes(id)));
     } else {
-      setSelectedIds(currentCandidates.map((c) => c.id));
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...currentCandidateIds])));
     }
   };
 
@@ -234,12 +244,12 @@ export default function SendToPlacementReady({
                 {sending ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Sending...
+                    Sending{selectedIds.length ? ` (${selectedIds.length})` : ''}...
                   </>
                 ) : (
                   <>
                     <Send size={16} />
-                    Send Now
+                    Send Now{selectedIds.length ? ` (${selectedIds.length})` : ''}
                   </>
                 )}
               </button>
@@ -255,7 +265,7 @@ export default function SendToPlacementReady({
                     <th className="px-4 py-3.5 w-12">
                       <input
                         type="checkbox"
-                        checked={currentCandidates.length > 0 && selectedIds.length === currentCandidates.length}
+                        checked={isCurrentPageFullySelected}
                         onChange={toggleSelectAll}
                         className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       />
@@ -380,6 +390,21 @@ export default function SendToPlacementReady({
                       </span>{' '}
                       of <span className="font-bold text-emerald-600">{filteredCandidates.length}</span> candidates
                     </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-gray-300 rounded-full px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white font-medium"
+                    >
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={500}>500</option>
+                    </select>
+                    <span className="text-gray-600 font-medium">per page</span>
                   </div>
 
                   <div className="flex items-center gap-2">
