@@ -28,20 +28,10 @@ function FacebookAuthButton({ status, onSuccess, onLogout }) {
 
     setLoading(true);
 
-    window.FB.login(
-      (response) => {
-        console.log("LOGIN RESPONSE =>", response);
-
-        if (response.status === "connected") {
-          onSuccess?.();
-        }
-      },
-      {
-        scope:
-          "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,pages_manage_ads",
-        auth_type: "rerequest",
-      }
-    );
+    window.FB.login(callback, {
+      scope: 'public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,pages_manage_ads',
+      auth_type: 'rerequest'
+    });
   };
 
   const handleLogout = () => {
@@ -610,7 +600,10 @@ export default function FacebookLeadManager() {
 
       // Fetch pages
       const pageRes = await new Promise((resolve) => {
-        window.FB.api(`/me/accounts?access_token=${token}`, (res) => resolve(res));
+        window.FB.api(`/me/accounts?access_token=${token}`, (res) => {
+          console.log(res);
+          resolve(res);
+        });
       });
 
       const fbPages = Array.isArray(pageRes?.data) ? pageRes.data : [];
