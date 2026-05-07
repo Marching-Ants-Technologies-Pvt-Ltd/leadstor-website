@@ -46,6 +46,7 @@ export default function JoineeInstallments({
                                 date={value?.date ?? '-'}
                                 status={value?.status ?? '0'}
                                 refNo={value?.refNum ?? ''}
+                                receiptDate={value?.receiptDate ?? value?.receipt_date ?? ''}
                                 onDelete={setDeleteInstallment}
                                 onEdit={onInstallmentEdit}
                             />
@@ -75,7 +76,7 @@ export default function JoineeInstallments({
 }
 
 // Helper Components
-function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, status = '0', refNo = '', onDelete = (e) => { }, onEdit = (e) => { } }) {
+function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, status = '0', refNo = '', receiptDate = '', onDelete = (e) => { }, onEdit = (e) => { } }) {
 
     let statusText = STATUS?.[status] ?? 'Not Paid';
     let statusInt = Number(status || 0);
@@ -94,7 +95,7 @@ function InstallmentCard({ counter = '1', currencyIcon = '₹', amount, date, st
                 </button>
             </div>
 
-            <div className="flex-1 px-5 py-3 space-y-1 text-sm" onClick={() => onEdit({ count: parseInt(counter), amount, date, status, refNo, type: `Edit #${counter}`, currencyIcon })}>
+            <div className="flex-1 px-5 py-3 space-y-1 text-sm" onClick={() => onEdit({ count: parseInt(counter), amount, date, status, refNo, receipt_date: receiptDate, type: `Edit #${counter}`, currencyIcon })}>
                 <div className="flex justify-between">
                     <span className="text-gray-500">Amount</span>
                     <span title='Click to edit' className="font-semibold cursor-pointer">{currencyIcon}{amount}</span>

@@ -32,6 +32,20 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     notes: ['remarks'],
     context: ['course', 'source', 'assignedUserId']
   };
+  const FALLBACK_FIELDS = {
+    altMobile: {
+      dataField: "altMobile",
+      fieldName: "Alternate Mobile",
+      displayName: "Alternate Mobile",
+      fieldType: "text"
+    },
+    courseMode: {
+      dataField: "courseMode",
+      fieldName: "Course Mode",
+      displayName: "Course Mode",
+      fieldType: "dropdown"
+    }
+  };
   const ALL_GROUPED_FIELDS = Object.values(FIELD_GROUPS).flat();
     const EXCLUDED_ADDITIONAL_FIELDS = [
     "createdDate",
@@ -40,8 +54,22 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     "action"
   ];
 
+  const getColumnsWithFallbacks = () => {
+    const updatedColumns = [...columns];
+
+    if (!updatedColumns.some((c) => c.dataField === "altMobile")) {
+      updatedColumns.push(FALLBACK_FIELDS.altMobile);
+    }
+
+    if (!updatedColumns.some((c) => c.dataField === "courseMode")) {
+      updatedColumns.push(FALLBACK_FIELDS.courseMode);
+    }
+
+    return updatedColumns;
+  };
+
   const getUngroupedColumns = () => {
-    return columns.filter(
+    return getColumnsWithFallbacks().filter(
       c =>
         !ALL_GROUPED_FIELDS.includes(c.dataField) &&
         !EXCLUDED_ADDITIONAL_FIELDS.includes(c.dataField) 
@@ -485,7 +513,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
                   <section className="crm-section">
                     <h3 className="crm-section-title">Lead Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {columns
+                      {getColumnsWithFallbacks()
                         .filter(c => FIELD_GROUPS.leadDetails.includes(c.dataField))
                         .map(renderFieldByColumn)}
                     </div>

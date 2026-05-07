@@ -305,8 +305,10 @@ export default function LeadsTable({
        MOBILE + WHATSAPP + IVR
     ======================= */
     const renderMobileCell = (row) => {
-        const phone = row.altMobile ? row.mobile + ', ' + row.altMobile : row.mobile;
-        const whatsappCall = row.mobile;
+        const primaryMobile = (row.mobile || "").toString().trim();
+        const alternateMobile = (row.altMobile || "").toString().trim();
+        const phone = [primaryMobile, alternateMobile].filter(Boolean).join(", ");
+        const whatsappCall = primaryMobile || alternateMobile;
         return (
             <div className="flex items-center gap-2">
                 <span>{phone}</span>
@@ -316,6 +318,7 @@ export default function LeadsTable({
                     title="WhatsApp"
                     onClick={(e) => {
                         e.stopPropagation();
+                        if (!whatsappCall) return;
                         window.open(`https://wa.me/${whatsappCall}?text=hello`, "_blank");
                     }}
                 />

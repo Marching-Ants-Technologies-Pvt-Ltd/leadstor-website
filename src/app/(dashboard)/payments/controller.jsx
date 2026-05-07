@@ -155,6 +155,25 @@ export default function PaymentsSectionController() {
         setLimitPopup(false);
     };
 
+    const toggleDueTodayFilter = () => {
+        setQuery((prev) => {
+            const nextQuery = {
+                ...prev,
+                offset: 0
+            };
+
+            if (prev.dueToday) {
+                delete nextQuery.dueToday;
+                delete nextQuery.pending;
+                return nextQuery;
+            }
+
+            nextQuery.dueToday = true;
+            nextQuery.pending = true;
+            return nextQuery;
+        });
+    };
+
     const filterPendingPayments = (e) => {
         let status = (e.target.getAttribute('data-status') === '0');
         e.target.setAttribute('data-status', ((status) ? '1' : '0'));
@@ -509,7 +528,10 @@ export default function PaymentsSectionController() {
             />
 
             <div className="bg-white border-b border-slate-200 px-5 py-3 flex justify-between items-center">
-                <PaymentAnalyticsOfTheDay />
+                <PaymentAnalyticsOfTheDay
+                    onDueTodayClick={toggleDueTodayFilter}
+                    dueTodayActive={Boolean(query.dueToday)}
+                />
 
                 <div className="flex gap-2">
                     {branchCorporateId && (

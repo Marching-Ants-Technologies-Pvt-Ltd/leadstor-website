@@ -132,6 +132,34 @@ export default function CandidateFormModal({
       }
     }
 
+    if (mode === 'add') {
+      setFormData({
+        candidateName: '',
+        candidateEmail: '',
+        candidateMobile: '',
+        qualification: '',
+        currentCity: '',
+        candidateCourse: '',
+        courseStartDate: '',
+        courseEndDate: '',
+        jobStatus: '',
+        totalExperience: '',
+        relevantExperience: '',
+        lastOrganizationName: '',
+        expectedJobType: '',
+        jobTags: [],
+        expectedLocationPreference: [],
+        lastDesignation: '',
+        expectedDesignation: '',
+        lastCTC: '',
+        expectedCTC: '',
+        remarks: '',
+        receiveJobOpportunities: 'Yes',
+        candidateFile: null,
+      })
+      return
+    }
+
     setFormData({
       candidateName: initialData.name || '',
       candidateEmail: initialData.email || '',
@@ -159,7 +187,7 @@ export default function CandidateFormModal({
       receiveJobOpportunities: initialData.receiveJobOpportunities || 'Yes',
       candidateFile: null, // file cannot be pre-filled
     })
-  }, [isOpen, initialData, jobTagsOptions]) // ← re-run when initialData changes (edit mode)
+  }, [isOpen, mode, initialData, jobTagsOptions]) // ← re-run when initialData changes (edit mode)
 
   const handleChange = (e) => {
     const { name, value, type, files, multiple } = e.target
@@ -261,8 +289,11 @@ export default function CandidateFormModal({
                     name="candidateName"
                     value={formData.candidateName}
                     onChange={handleChange}
-                    disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={mode === 'edit'}
+                    title={mode === 'edit' ? 'This field cannot be edited' : ''}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      mode === 'edit' ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
+                    }`}
                   />
                 </div>
 
@@ -275,8 +306,11 @@ export default function CandidateFormModal({
                     name="candidateMobile"
                     value={formData.candidateMobile}
                     onChange={handleChange}
-                    disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={mode === 'edit'}
+                    title={mode === 'edit' ? 'This field cannot be edited' : ''}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      mode === 'edit' ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
+                    }`}
                   />
                 </div>
 
@@ -289,8 +323,11 @@ export default function CandidateFormModal({
                     name="candidateEmail"
                     value={formData.candidateEmail}
                     onChange={handleChange}
-                    disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={mode === 'edit'}
+                    title={mode === 'edit' ? 'This field cannot be edited' : ''}
+                    className={`w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      mode === 'edit' ? 'cursor-not-allowed bg-gray-100 text-gray-500' : ''
+                    }`}
                   />
                 </div>
 
