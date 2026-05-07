@@ -29,55 +29,55 @@ function FacebookAuthButton({ status, onSuccess, onLogout }) {
     setLoading(true);
 
     window.FB.login(
-  (response) => {
-    setLoading(false);
+      (response) => {
+        setLoading(false);
 
-    console.log("LOGIN RESPONSE =>", response);
+        console.log("LOGIN RESPONSE =>", response);
 
-    if (response.status === "connected") {
+        if (response.status === "connected") {
 
-      const accessToken = response.authResponse.accessToken;
+          const accessToken = response.authResponse.accessToken;
 
-      // CHECK USER INFO
-      window.FB.api(
-        "/me",
-        { access_token: accessToken },
-        (res) => {
-          console.log("USER =>", res);
+          // CHECK USER INFO
+          window.FB.api(
+            "/me",
+            { access_token: accessToken },
+            (res) => {
+              console.log("USER =>", res);
+            }
+          );
+
+          // CHECK PERMISSIONS
+          window.FB.api(
+            "/me/permissions",
+            { access_token: accessToken },
+            (res) => {
+              console.log("PERMISSIONS =>", res);
+            }
+          );
+
+          // CHECK PAGES
+          window.FB.api(
+            "/me/accounts",
+            { access_token: accessToken },
+            (res) => {
+              console.log("PAGES =>", res);
+            }
+          );
+
+          toast.success("Logged in successfully");
+          onSuccess?.();
+
+        } else {
+          toast.error("Login cancelled or failed");
         }
-      );
-
-      // CHECK PERMISSIONS
-      window.FB.api(
-        "/me/permissions",
-        { access_token: accessToken },
-        (res) => {
-          console.log("PERMISSIONS =>", res);
-        }
-      );
-
-      // CHECK PAGES
-      window.FB.api(
-        "/me/accounts",
-        { access_token: accessToken },
-        (res) => {
-          console.log("PAGES =>", res);
-        }
-      );
-
-      toast.success("Logged in successfully");
-      onSuccess?.();
-
-    } else {
-      toast.error("Login cancelled or failed");
-    }
-  },
-  {
-    scope:
-      "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,business_management,pages_manage_ads",
-    auth_type: "rerequest",
-  }
-);
+      },
+      {
+        scope:
+          "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,business_management,pages_manage_ads",
+        auth_type: "rerequest",
+      }
+    );
   };
 
   const handleLogout = () => {
