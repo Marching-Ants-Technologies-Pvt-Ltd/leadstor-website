@@ -294,28 +294,35 @@ export async function xFetch({
 }
 
 // Export xDownload with auth handling
-export async function xDownload(nextTarget, duration = 10000) {
+export async function xDownload(nextTarget) {
+
   if (typeof window === 'undefined') return;
 
   const token = localStorage.getItem('access_token');
+
   if (!token) {
-    console.warn('access_token not found in localStorage');
-    authService.handleTokenExpired('No authentication token found. Please login.');
+    console.warn('access_token not found');
     return;
   }
 
-  const popup = window.open('', '_blank');
-  if (!popup) {
-    console.warn('Popup blocked by browser');
+  // Open new tab
+  const newTab = window.open('', '_blank');
+
+  if (!newTab) {
+    alert('Popup blocked');
     return;
   }
-
-  // Build the form in the new window
-  const doc = popup.document;
 
   const form = document.createElement('form');
+
   form.method = 'POST';
-  form.action = `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor/dashboard`;
+
+  form.action =
+    `${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/leadstor/dashboard`;
+
+  form.target = newTab.name = 'downloadTab';
+
+  form.style.display = 'none';
 
   const tokenInput = document.createElement('input');
   tokenInput.type = 'hidden';
@@ -330,14 +337,24 @@ export async function xDownload(nextTarget, duration = 10000) {
   form.appendChild(tokenInput);
   form.appendChild(nextTargetInput);
 
-  doc.body.appendChild(form);
+  document.body.appendChild(form);
+
   form.submit();
 
-  // Close the window after a delay
+  document.body.removeChild(form);
+
+  // CLOSE TAB AFTER SOME DELAY
   setTimeout(() => {
-    popup.close();
-  }, duration);
+
+    try {
+      newTab.close();
+    } catch (e) {
+      console.error('Unable to close tab', e);
+    }
+
+  }, 30000);
 }
+
 
 // React Hook for auth state
 export function useAuth() {
