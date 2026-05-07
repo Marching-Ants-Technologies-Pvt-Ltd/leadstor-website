@@ -30,17 +30,16 @@ function FacebookAuthButton({ status, onSuccess, onLogout }) {
 
     window.FB.login(
       (response) => {
-        setLoading(false);
+        console.log("LOGIN RESPONSE =>", response);
+
         if (response.status === "connected") {
-          toast.success("Logged in successfully");
           onSuccess?.();
-        } else {
-          toast.error("Login cancelled or failed");
         }
       },
       {
-        scope:'public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,pages_manage_ads',
-        auth_type:'rerequest'
+        scope:
+          "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,pages_manage_ads",
+        auth_type: "rerequest",
       }
     );
   };
