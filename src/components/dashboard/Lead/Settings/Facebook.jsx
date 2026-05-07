@@ -39,7 +39,8 @@ function FacebookAuthButton({ status, onSuccess, onLogout }) {
         }
       },
       {
-        scope: "public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,pages_manage_ads",
+        scope:'public_profile,pages_show_list,pages_manage_metadata,pages_read_engagement,leads_retrieval,pages_manage_ads',
+        auth_type:'rerequest'
       }
     );
   };
@@ -283,19 +284,35 @@ function SubscribeModal({
 
   const loadFormsForPage = async (val) => {
     if (!val) return [];
+    const loadFormsForPage = async (val) => {
+    if (!val) return [];
+
     const [pageId, pageAccessToken] = val.split("_");
-    if (!window.FB) return [];
 
     return new Promise((resolve) => {
       window.FB.api(
-        `/${pageId}/leadgen_forms?access_token=${pageAccessToken}&limit=200`,
+        `/${pageId}/leadgen_forms`,
+        {
+          access_token: pageAccessToken,
+          limit: 200
+        },
         (response) => {
+
+          console.log("FB Forms Response:", response);
+
+          if (response?.error) {
+            toast.error(response.error.message);
+            setFormsForPage([]);
+            return resolve([]);
+          }
+
           const list = Array.isArray(response?.data) ? response.data : [];
           setFormsForPage(list);
           resolve(list);
         }
       );
     });
+  };
   };
 
   // Unified function to load fields (used for both New & Edit)
@@ -610,7 +627,10 @@ export default function FacebookLeadManager() {
 
       // Fetch pages
       const pageRes = await new Promise((resolve) => {
-        window.FB.api(`/me/accounts?access_token=${token}`, (res) => resolve(res));
+        window.FB.api(`/me/accounts?access_token=${token}`, (res) => {
+          console.log(res);
+          resolve(res);
+        });
       });
 
       const fbPages = Array.isArray(pageRes?.data) ? pageRes.data : [];
