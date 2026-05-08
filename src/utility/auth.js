@@ -352,7 +352,7 @@ export async function xDownload(nextTarget) {
       console.error('Unable to close tab', e);
     }
 
-  }, 30000);
+  }, 60000);
 }
 
 

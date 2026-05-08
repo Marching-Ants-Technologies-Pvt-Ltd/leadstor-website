@@ -38,6 +38,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [courseFee, setCourseFee] = useState([]);
     const [subServices, setSubServices] = useState([]);
     const [batch, setBatch] = useState([]);
+    const [selectedProfileImage, setSelectedProfileImage] = useState(null);
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -328,6 +329,8 @@ export default function JoineePaymentForm({ payment_id }) {
 
     const saveChanges = () => {
         let payload = { ...candidate };
+        // Never post preview/base64 image string in JSON payload.
+        delete payload.image;
         payload.installments = normalizeInstallmentsForSave(payload?.installments);
 
         // Check For Remarks
@@ -370,10 +373,17 @@ export default function JoineePaymentForm({ payment_id }) {
             if (!ret) return;
         }
 
+        const requestPayload = new FormData();
+        requestPayload.append('payload', JSON.stringify(payload));
+        if (selectedProfileImage) {
+            requestPayload.append('candidateFile', selectedProfileImage);
+        }
+
         xFetch({
             method: 'POST',
             path: '/services/joinees/saveCandidateTrackingDetails',
-            payload,
+            payload: requestPayload,
+            isFormData: true,
         })
             .then(data => {
                 // Case 1: New Creation
@@ -440,6 +450,7 @@ export default function JoineePaymentForm({ payment_id }) {
             setFilterParams(filterParams);
             setCurrency(currencyList);
             setCandidate(candidateInfo);
+            setSelectedProfileImage(null);
             setCourseFee(courseFee);
             setSubServices(subServices);
             setBatch(batch);
@@ -797,6 +808,14 @@ export default function JoineePaymentForm({ payment_id }) {
                                 <input
                                     type="file"
                                     accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0] || null;
+                                        setSelectedProfileImage(file);
+                                        if (file) {
+                                            const previewUrl = URL.createObjectURL(file);
+                                            setCandidate((prev) => ({ ...prev, image: previewUrl }));
+                                        }
+                                    }}
                                     className="block w-full text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"
                                 />
 
