@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { xFetch } from "@/utility/xFetch";
 import { Bounce, ToastContainer, toast } from "react-toastify";
@@ -35,6 +35,9 @@ export default function CourseAgentMapping() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(defaultForm);
+  const [courseSearch, setCourseSearch] = useState("");
+  const [courseDropdownOpen, setCourseDropdownOpen] = useState(false);
+  const courseDropdownRef = useRef(null);
 
   const recordsPerPage = 10;
 
@@ -66,6 +69,17 @@ export default function CourseAgentMapping() {
     setCurrentPage(1);
   }, [search]);
 
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!courseDropdownRef.current?.contains(event.target)) {
+        setCourseDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   const filteredData = (mappings || []).filter((item) => {
     const text = `${item.course_name || ""} ${item.agent_id || ""} ${item.agent_label || ""}`.toLowerCase();
     return text.includes(search.toLowerCase());
@@ -78,6 +92,8 @@ export default function CourseAgentMapping() {
   const openAddModal = () => {
     setForm(defaultForm);
     setEditing(false);
+    setCourseSearch("");
+    setCourseDropdownOpen(false);
     setModalOpen(true);
   };
 
@@ -89,6 +105,8 @@ export default function CourseAgentMapping() {
       agent_id: row.agent_id || "",
     });
     setEditing(true);
+    setCourseSearch("");
+    setCourseDropdownOpen(false);
     setModalOpen(true);
   };
 
@@ -96,6 +114,8 @@ export default function CourseAgentMapping() {
     setModalOpen(false);
     setEditing(false);
     setForm(defaultForm);
+    setCourseSearch("");
+    setCourseDropdownOpen(false);
   };
 
   const handleChange = (e) => {
@@ -175,6 +195,30 @@ export default function CourseAgentMapping() {
       console.error(error);
       toast.error(error?.message || "Failed to delete mapping");
     }
+  };
+
+  const filteredCourses = (courses || []).filter((course) =>
+    (course?.course_name || "").toLowerCase().includes(courseSearch.toLowerCase())
+  );
+
+  const handleCourseSearchChange = (value) => {
+    setCourseSearch(value);
+    setForm((prev) => ({
+      ...prev,
+      course_id: "",
+      course_name: "",
+    }));
+    setCourseDropdownOpen(true);
+  };
+
+  const handleCourseSelect = (course) => {
+    setForm((prev) => ({
+      ...prev,
+      course_id: String(course.id),
+      course_name: course.course_name || "",
+    }));
+    setCourseSearch(course.course_name || "");
+    setCourseDropdownOpen(false);
   };
 
   return (
@@ -356,19 +400,39 @@ export default function CourseAgentMapping() {
                       className="w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
                     />
                   ) : (
-                    <select
-                      name="course_id"
-                      value={form.course_id}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-violet-500"
-                    >
-                      <option value="">Select course</option>
-                      {courses.map((course) => (
-                        <option key={course.id} value={course.id}>
-                          {course.course_name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative" ref={courseDropdownRef}>
+                      <Search
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={16}
+                      />
+                      <input
+                        type="text"
+                        value={courseSearch}
+                        onChange={(e) => handleCourseSearchChange(e.target.value)}
+                        onFocus={() => setCourseDropdownOpen(true)}
+                        placeholder="Search and select course..."
+                        className="w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 py-3 outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+
+                      {courseDropdownOpen && (
+                        <div className="absolute z-20 mt-2 w-full max-h-56 overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg">
+                          {filteredCourses.length ? (
+                            filteredCourses.map((course) => (
+                              <button
+                                type="button"
+                                key={course.id}
+                                onClick={() => handleCourseSelect(course)}
+                                className="w-full px-4 py-2.5 text-left text-sm text-slate-700 hover:bg-violet-50"
+                              >
+                                {course.course_name}
+                              </button>
+                            ))
+                          ) : (
+                            <p className="px-4 py-3 text-sm text-slate-500">No course found</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 
