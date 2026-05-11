@@ -14,6 +14,7 @@ const serviceConfigs = {
   smartTG: { type: "smartTG", name: "smartTG", logo: "/logos/smartflo.webp" },
   smartflo: { type: "smartflo", name: "Smartflo IVR [TTS]", logo: "/logos/smartflo.webp" },
   callerdesk: { type: "callerdesk", name: "CallerDesk", logo: "/logos/callerdesk.webp" },
+  bonvoice: { type: "bonvoice", name: "Bonvoice", logo: "/logos/bonvoice.webp" },
 };
 
 export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) {
@@ -141,6 +142,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
           if (res.data.hasSmartTGIntegration)     services.push(serviceConfigs.smartTG);
           if (res.data.hasSmartfloIntegration)  services.push(serviceConfigs.smartflo);
           if (res.data.hasCallerDeskIntegration)   services.push(serviceConfigs.callerdesk);
+          if (res.data.hasBonvoiceIntegration)   services.push(serviceConfigs.bonvoice);
           console.log('Available IVR services:', services);
           setIvrServices(services);
           if (services.length > 0) setSelectedIvrService(services[0].type);
@@ -225,6 +227,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
         smartflo: '/services/invite/callSmartflo',
         smartTG: '/services/invite/callSmartfloIVR',
         callerdesk: '/services/invite/callCallerDeskIVR',
+        bonvoice: '/services/invite/callBonvoiceIVR',
       };
 
       const res = await xFetch({
