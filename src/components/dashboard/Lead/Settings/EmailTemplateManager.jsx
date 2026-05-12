@@ -8,6 +8,7 @@ const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 export default function EmailTemplateManager() {
     const editorRef = useRef(null);
+    const contentRef = useRef("");
 
     const [loading, setLoading] = useState(true);
     const [templates, setTemplates] = useState([]);
@@ -20,6 +21,7 @@ export default function EmailTemplateManager() {
     const [subject, setSubject] = useState("");
     const [content, setContent] = useState("");
     const [open, setOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
     const placeholders = [
         { key: "$testName", label: "Test Name" },
         { key: "$candidateName", label: "Candidate Name" },
@@ -28,6 +30,14 @@ export default function EmailTemplateManager() {
         { key: "$rating", label: "Rating of the Candidate" },
         { key: "$percentage", label: "Percentage of the Candidate" }
     ];
+
+    const toBase64Utf8 = (value = "") => {
+        try {
+            return btoa(unescape(encodeURIComponent(value)));
+        } catch (e) {
+            throw new Error("Template content contains unsupported characters");
+        }
+    };
 
     const handleOpen = () => {
         resetForm();
@@ -39,7 +49,30 @@ export default function EmailTemplateManager() {
         setTemplateName("");
         setSubject("");
         setContent("");
+        contentRef.current = "";
         setSelectedId("");
+    };
+
+    const insertPlaceholder = (token) => {
+        const editorInstance = editorRef.current;
+        if (editorInstance?.selection?.insertHTML) {
+            editorInstance.selection.insertHTML(token);
+            const nextContent = editorInstance.value || "";
+            contentRef.current = nextContent;
+            setContent(nextContent);
+            return;
+        }
+        const nextContent = `${contentRef.current || content || ""}${token}`;
+        contentRef.current = nextContent;
+        setContent(nextContent);
+    };
+
+    const getEditorContent = () => {
+        const editorValue = editorRef.current?.value;
+        if (typeof editorValue === "string" && editorValue.length > 0) {
+            return editorValue;
+        }
+        return contentRef.current || content || "";
     };
 
     // Fetch templates
@@ -75,19 +108,27 @@ export default function EmailTemplateManager() {
             editorInstance.value = temp.htmlContent;   // Load HTML correctly
             }
 
-            setContent(temp.htmlContent);
+            const nextContent = temp.htmlContent || "";
+            contentRef.current = nextContent;
+            setContent(nextContent);
         }
     };
 
     // Save new template
     const saveTemplate = async () => {
+        try {
+        if (!templateName.trim()) return toast.error("Template name is required");
+        if (!subject.trim()) return toast.error("Subject is required");
+        const latestContent = getEditorContent();
+        if (!latestContent.trim()) return toast.error("Content is required");
+
+        setSaving(true);
         const payload = {
-        atitle:templateName,
-        asubject:subject,
-        atextEditor: btoa(content),
+            atitle: templateName.trim(),
+            asubject: subject.trim(),
+            atextEditor: toBase64Utf8(latestContent),
         };
 
-        try {
         await xFetch({
             path: "/services/profile/addTemplates",
             method: "POST",
@@ -98,20 +139,29 @@ export default function EmailTemplateManager() {
         handleClose();
         fetchTemplates();
         } catch (e) {
-        toast.error("Failed to save");
+        toast.error(e?.message || "Failed to save");
+        } finally {
+        setSaving(false);
         }
     };
 
     // Update template
     const updateTemplate = async () => {
+        try {
+        if (!selectedId) return toast.error("Select a template");
+        if (!templateName.trim()) return toast.error("Template name is required");
+        if (!subject.trim()) return toast.error("Subject is required");
+        const latestContent = getEditorContent();
+        if (!latestContent.trim()) return toast.error("Content is required");
+
+        setSaving(true);
         const payload = {
-        tid: selectedId,
-        tname:templateName,
-        tsub:subject,
-        tcontent: btoa(content)
+            tid: selectedId,
+            tname: templateName.trim(),
+            tsub: subject.trim(),
+            tcontent: toBase64Utf8(latestContent),
         };
 
-        try {
         await xFetch({
             path: "/services/profile/updateTemplates",
             method: "POST",
@@ -120,8 +170,10 @@ export default function EmailTemplateManager() {
 
         toast.success("Template updated!");
         fetchTemplates();
-        } catch {
-        toast.error("Update failed");
+        } catch (e) {
+        toast.error(e?.message || "Update failed");
+        } finally {
+        setSaving(false);
         }
     };
 
@@ -232,20 +284,31 @@ export default function EmailTemplateManager() {
                     value={content}
                     config={{
                     height: 320,
+                    toolbarAdaptive: false,
                     buttons:
                         "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
+                    buttonsMD:
+                        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
+                    buttonsSM:
+                        "source,|,bold,italic,underline,|,ul,ol,|,link,image,table",
+                    buttonsXS:
+                        "source,|,bold,italic,underline,|,ul,ol,|,link,image",
                     }}
-                    onBlur={(newContent) => setContent(newContent)}
+                    onBlur={(newContent) => {
+                        contentRef.current = newContent || "";
+                        setContent(newContent || "");
+                    }}
                 />
                 </div>
             </div>
 
             <div className="flex flex-wrap gap-4">
                 <button
-                onClick={updateTemplate}
-                className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm"
+                    onClick={updateTemplate}
+                    disabled={saving}
+                    className="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition shadow-sm"
                 >
-                Save Changes
+                {saving ? "Saving..." : "Save Changes"}
                 </button>
                 <button
                 onClick={deleteTemplate}
@@ -315,19 +378,30 @@ export default function EmailTemplateManager() {
                         value={content}
                         config={{
                         height: 300,
+                        toolbarAdaptive: false,
                         buttons:
                             "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
+                        buttonsMD:
+                            "source,|,bold,italic,underline,|,ul,ol,|,link,image,table,|,align,left,center,right,justify",
+                        buttonsSM:
+                            "source,|,bold,italic,underline,|,ul,ol,|,link,image,table",
+                        buttonsXS:
+                            "source,|,bold,italic,underline,|,ul,ol,|,link,image",
                         }}
-                        onBlur={(newContent) => setContent(newContent)}
+                        onBlur={(newContent) => {
+                            contentRef.current = newContent || "";
+                            setContent(newContent || "");
+                        }}
                     />
                     </div>
                 </div>
 
                 <button
                     onClick={saveTemplate}
+                    disabled={saving}
                     className="w-full py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition"
                 >
-                    Save Template
+                    {saving ? "Saving..." : "Save Template"}
                 </button>
                 </div>
             </div>
