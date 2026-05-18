@@ -133,30 +133,41 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
   const renderRemarks = (remarks) => {
     if (!remarks) return null;
 
-    // Check if remarks contains an audio tag
-    const audioMatch = remarks.match(/<audio[^>]*src="([^"]*)"[^>]*>/i);
-    
+    // Extract audio source from <source src="">
+    const audioMatch = remarks.match(
+      /<source[^>]*src="([^"]*)"[^>]*>/i
+    );
+
     if (audioMatch && audioMatch[1]) {
+
       const audioSrc = audioMatch[1];
-      // Extract text content (everything except the audio tag)
-      const textContent = remarks.replace(/<audio[^>]*>.*?<\/audio>/gi, "").trim();
-      
+
+      // Remove audio html from text
+      const textContent = remarks
+        .replace(/<audio[\s\S]*?<\/audio>/gi, "")
+        .trim();
+
       return (
         <div className="space-y-2">
           {textContent && (
-            <p className="text-sm text-gray-700">{textContent}</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+              {textContent}
+            </p>
           )}
+
           <audio controls className="w-full mt-2">
-            <source src={audioSrc} type="audio/mpeg" />
             <source src={audioSrc} type="audio/wav" />
             Your browser does not support the audio element.
           </audio>
         </div>
       );
     }
-    
-    // No audio tag, render as plain text
-    return <span className="font-medium text-gray-700">{remarks}</span>;
+
+    return (
+      <span className="font-medium text-gray-700">
+        {remarks}
+      </span>
+    );
   };
 
   const handleEditClick = () => {
