@@ -129,45 +129,72 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
       }
     };
 
-  // Helper to render remarks with audio player support
-  const renderRemarks = (remarks) => {
-    if (!remarks) return null;
+   const renderRemarks = (remarks) => {
+      if (!remarks) return null;
 
-    // Extract audio source from <source src="">
-    const audioMatch = remarks.match(
-      /<source[^>]*src="([^"]*)"[^>]*>/i
-    );
+      let parsedRemarks = remarks;
 
-    if (audioMatch && audioMatch[1]) {
+      // Decode escaped html if present
+      const txt = document.createElement("textarea");
+      txt.innerHTML = parsedRemarks;
+      parsedRemarks = txt.value;
 
-      const audioSrc = audioMatch[1];
+      // Match audio src from:
+      // <audio src="">
+      // <source src="">
+      // direct .wav/.mp3 links
+      const audioMatches = [
+          ...parsedRemarks.matchAll(
+              /<(?:audio|source)[^>]*src=["']([^"']+)["'][^>]*>/gi
+          ),
+      ];
 
-      // Remove audio html from text
-      const textContent = remarks
-        .replace(/<audio[\s\S]*?<\/audio>/gi, "")
-        .trim();
+      // Also detect plain audio URLs
+      const plainUrlMatches = [
+          ...parsedRemarks.matchAll(
+              /(https?:\/\/[^\s]+?\.(mp3|wav|ogg|mpeg))/gi
+          ),
+      ];
+
+      const audioUrls = [
+          ...new Set([
+              ...audioMatches.map((m) => m[1]),
+              ...plainUrlMatches.map((m) => m[1]),
+          ])
+      ];
+
+      // Remove audio html from remarks text
+      let textContent = parsedRemarks
+          .replace(/<audio[\s\S]*?<\/audio>/gi, "")
+          .replace(/<source[^>]*>/gi, "")
+          .replace(/<\/audio>/gi, "")
+          .trim();
+
+      // Remove plain URLs from visible text
+      audioUrls.forEach((url) => {
+          textContent = textContent.replace(url, "");
+      });
 
       return (
-        <div className="space-y-2">
-          {textContent && (
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">
-              {textContent}
-            </p>
-          )}
+          <div className="space-y-2">
+              {textContent && (
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {textContent}
+                  </p>
+              )}
 
-          <audio controls className="w-full mt-2">
-            <source src={audioSrc} type="audio/wav" />
-            Your browser does not support the audio element.
-          </audio>
-        </div>
+              {audioUrls.map((audioSrc, index) => (
+                  <audio
+                      key={index}
+                      controls
+                      className="w-full mt-2"
+                  >
+                      <source src={audioSrc} />
+                      Your browser does not support the audio element.
+                  </audio>
+              ))}
+          </div>
       );
-    }
-
-    return (
-      <span className="font-medium text-gray-700">
-        {remarks}
-      </span>
-    );
   };
 
   const handleEditClick = () => {

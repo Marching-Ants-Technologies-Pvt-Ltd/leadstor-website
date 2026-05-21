@@ -323,15 +323,21 @@ export default function LeadsTable({
                     }}
                 />
 
-                <i
-                    className="ri-customer-service-2-line text-blue-600 cursor-pointer"
-                    title="Call via IVR"
+                <a
+                    href={`tel:${primaryMobile || alternateMobile}`}
                     onClick={(e) => {
-                        e.stopPropagation();
-                        setCallerCandidate(row);
-                        setShowCallerDeskIVR(true);
+                        if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+                            e.preventDefault();
+                            setCallerCandidate(row);
+                            setShowCallerDeskIVR(true);
+                        }
                     }}
-                />
+                >
+                    <i
+                        className="ri-customer-service-2-line text-blue-600 cursor-pointer"
+                        title="Call via IVR"
+                    />
+                </a>
             </div>
         );
     };
