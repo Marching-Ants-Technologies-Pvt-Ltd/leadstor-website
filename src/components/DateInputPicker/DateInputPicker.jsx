@@ -92,6 +92,9 @@ export default function DateInputPicker({ value, onChange, placeholder = "Select
         minuteIncrement: 5,
         closeOnSelect: false,          // ← very important: don't auto-close
         allowInput: false,             // prevents strange close-on-type behavior
+        // Disable flatpickr's mobile-optimized mode to avoid platform-specific
+        // behavior that can set unexpected instance types causing errors.
+        disableMobile: true,
         onReady: addButtons,           // add buttons when calendar is created
         onOpen: addButtons,            // also add if reopened
       }}
