@@ -17,7 +17,7 @@ const serviceConfigs = {
   bonvoice: { type: "bonvoice", name: "Bonvoice", logo: "/logos/bonvoice.webp" },
 };
 
-export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) {
+export default function CallerDeskIVR({ candidate, agentNumber = '', onClose, onNoIvrFallback }) {
   const [clientNumber, setClientNumber]     = useState('');
   const [agentInput, setAgentInput]         = useState('');
   const [agentInputMode, setAgentInputMode] = useState('default');
@@ -146,6 +146,12 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose }) 
           console.log('Available IVR services:', services);
           setIvrServices(services);
           if (services.length > 0) setSelectedIvrService(services[0].type);
+          if (services.length === 0) {
+            onClose?.();
+            if (typeof onNoIvrFallback === 'function') {
+              onNoIvrFallback();
+            }
+          }
         } else {
           // fallback ...
         }

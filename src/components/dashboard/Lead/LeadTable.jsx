@@ -67,6 +67,7 @@ export default function LeadsTable({
     const [expandedRows, setExpandedRows] = useState({});
     const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
     const [callerCandidate, setCallerCandidate] = useState(null);
+    const [hasIvrService, setHasIvrService] = useState(null);
     const [showRouteData, setShowRouteData] = useState(false);
     const [selectedLeadForRouteData, setSelectedLeadForRouteData] = useState(null);
     const isIndeterminate =
@@ -325,13 +326,7 @@ export default function LeadsTable({
 
                 <a
                     href={`tel:${primaryMobile || alternateMobile}`}
-                    onClick={(e) => {
-                        if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                            e.preventDefault();
-                            setCallerCandidate(row);
-                            setShowCallerDeskIVR(true);
-                        }
-                    }}
+                    onClick={(e) => handleIvrIconClick(e, row)}
                 >
                     <i
                         className="ri-customer-service-2-line text-blue-600 cursor-pointer"
@@ -340,6 +335,47 @@ export default function LeadsTable({
                 </a>
             </div>
         );
+    };
+
+    const checkIvrServiceAvailable = async () => {
+        if (hasIvrService !== null) return hasIvrService;
+
+        try {
+            const res = await xFetch({ path: '/services/invite/getIVRDetails', method: 'GET' });
+            const ivrData = res?.data || {};
+            const isAvailable = Boolean(
+                ivrData.hasKnowlarityIntegration ||
+                ivrData.hasVoxbayIntegration ||
+                ivrData.hasSmartTGIntegration ||
+                ivrData.hasSmartfloIntegration ||
+                ivrData.hasCallerDeskIntegration ||
+                ivrData.hasBonvoiceIntegration
+            );
+            setHasIvrService(isAvailable);
+            return isAvailable;
+        } catch (error) {
+            console.error('Failed to check IVR service availability:', error);
+            // If the check fails, allow IVR modal flow instead of forcing dialer fallback.
+            return true;
+        }
+    };
+
+    const handleIvrIconClick = async (e, row) => {
+        e.stopPropagation();
+        e.preventDefault();
+
+        const isIvrAvailable = await checkIvrServiceAvailable();
+        const dialNumber = (row.mobile || row.altMobile || '').toString().trim();
+
+        if (!isIvrAvailable) {
+            if (dialNumber) {
+                window.location.href = `tel:${dialNumber}`;
+            }
+            return;
+        }
+
+        setCallerCandidate(row);
+        setShowCallerDeskIVR(true);
     };
 
     const handleShowTimeline = (lead) => {
@@ -1368,6 +1404,12 @@ export default function LeadsTable({
             <CallerDeskIVR
             candidate={callerCandidate}
             onClose={() => setShowCallerDeskIVR(false)}
+            onNoIvrFallback={() => {
+                const dialNumber = (callerCandidate?.mobile || callerCandidate?.altMobile || '').toString().trim();
+                if (dialNumber) {
+                    window.location.href = `tel:${dialNumber}`;
+                }
+            }}
             />
         )}
 
