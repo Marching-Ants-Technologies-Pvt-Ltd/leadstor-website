@@ -392,15 +392,17 @@ export default function LeadsTable({
                                 }}
                             />
                         ) : (
-                            <a
-                                href={`tel:+${normalizedNumber}`}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <i
-                                    className="ri-customer-service-2-line text-blue-600"
-                                    title="Call via Dialer"
-                                />
-                            </a>
+                            <div className="mobiletel">
+                                <a
+                                    href={`tel:+${normalizedNumber}`}
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <i
+                                        className="ri-customer-service-2-line text-blue-600 cursor-pointer"
+                                        title="Call via Dialer"
+                                    />
+                                </a>
+                            </div>
                         )}
                     </>
                 )}
@@ -1542,7 +1544,6 @@ export default function LeadsTable({
                 margin: 0 !important;
                 padding: 0 !important;
             }
-                
         `}</style>
         </>
     );
