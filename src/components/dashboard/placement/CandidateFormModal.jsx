@@ -74,7 +74,7 @@ export default function CandidateFormModal({
     totalExperience: '',
     relevantExperience: '',
     lastOrganizationName: '',
-    expectedJobType: '',
+    expectedJobType: [],
     jobTags: [],
     expectedLocationPreference: [],
     lastDesignation: '',
@@ -146,7 +146,7 @@ export default function CandidateFormModal({
         totalExperience: '',
         relevantExperience: '',
         lastOrganizationName: '',
-        expectedJobType: '',
+        expectedJobType: [],
         jobTags: [],
         expectedLocationPreference: [],
         lastDesignation: '',
@@ -173,7 +173,7 @@ export default function CandidateFormModal({
       totalExperience: initialData.totalExperience || '',
       relevantExperience: initialData.relevantExperience || '',
       lastOrganizationName: initialData.lastOrganizationName || '',
-      expectedJobType: initialData.expectedJobType || '',
+      expectedJobType: normalizeMultiValue(initialData.expectedJobType),
       jobTags: normalizeSelectedJobTags(
         initialData.jobTagIds?.length ? initialData.jobTagIds : initialData.jobTags,
         jobTagsOptions
@@ -509,11 +509,11 @@ export default function CandidateFormModal({
                   <label className="block text-sm font-medium text-gray-700 mb-1">Expected Job Type</label>
                   <select
                     name="expectedJobType"
-                    value={formData.expectedJobType}
+                    multiple
+                    value={formData.expectedJobType || []}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-32"
                   >
-                    <option value="">Select Position Type</option>
                     <option value="Full Time">Full Time</option>
                     <option value="Part Time">Part Time</option>
                     <option value="Internship">Internship</option>
@@ -521,6 +521,7 @@ export default function CandidateFormModal({
                     <option value="Contract to Hire">Contract to Hire</option>
                     <option value="Work From Home">Work From Home</option>
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
                 </div>
 
                 {/* ... add remaining fields similarly ... */}
