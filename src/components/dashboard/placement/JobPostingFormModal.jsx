@@ -397,6 +397,7 @@ export default function JobPostingFormModal({
                         <option value="INT">Internship</option>
                         <option value="C">Contract</option>
                         <option value="C2H">Contract to Hire</option>
+                        <option value="Work From Home">Work From Home</option>
                     </select>
                   </div>
 
@@ -631,4 +632,3 @@ export default function JobPostingFormModal({
     </div>
   );
 }
-

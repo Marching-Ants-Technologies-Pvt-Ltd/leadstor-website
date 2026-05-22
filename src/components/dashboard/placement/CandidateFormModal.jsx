@@ -513,9 +513,12 @@ export default function CandidateFormModal({
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="">-- Select --</option>
+                    <option value="">Select Position Type</option>
                     <option value="Full Time">Full Time</option>
                     <option value="Part Time">Part Time</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Contract to Hire">Contract to Hire</option>
                     <option value="Work From Home">Work From Home</option>
                   </select>
                 </div>

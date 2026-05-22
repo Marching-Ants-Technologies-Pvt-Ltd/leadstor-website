@@ -700,3 +700,15 @@ textarea::placeholder {
     background: #f5f7ff;
     color: "#0f172a"
 }
+
+@media only screen and (max-device-width: 480px) {
+    .mobiletel {
+        display: block;
+    }
+}
+
+@media (min-device-width: 481px) {
+    .mobiletel {
+        display: none;
+    }
+}   
