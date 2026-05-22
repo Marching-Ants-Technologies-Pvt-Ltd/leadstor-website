@@ -67,7 +67,7 @@ export default function LeadsTable({
     const [expandedRows, setExpandedRows] = useState({});
     const [showCallerDeskIVR, setShowCallerDeskIVR] = useState(false);
     const [callerCandidate, setCallerCandidate] = useState(null);
-    const [hasIvrService, setHasIvrService] = useState(null);
+    const [hasIvrService, setHasIvrService] = useState(false);
     const [showRouteData, setShowRouteData] = useState(false);
     const [selectedLeadForRouteData, setSelectedLeadForRouteData] = useState(null);
     const isIndeterminate =
@@ -107,6 +107,30 @@ export default function LeadsTable({
             selectAllRef.current.indeterminate = isIndeterminate;
         }
     }, [isIndeterminate]);
+
+    // Load IVR availability once on table load so click action is immediate.
+    useEffect(() => {
+        const fetchIvrServiceAvailability = async () => {
+            try {
+                const res = await xFetch({ path: '/services/invite/getIVRDetails', method: 'GET' });
+                const ivrData = res?.data || {};
+                const isAvailable = Boolean(
+                    ivrData.hasKnowlarityIntegration ||
+                    ivrData.hasVoxbayIntegration ||
+                    ivrData.hasSmartTGIntegration ||
+                    ivrData.hasSmartfloIntegration ||
+                    ivrData.hasCallerDeskIntegration ||
+                    ivrData.hasBonvoiceIntegration
+                );
+                setHasIvrService(isAvailable);
+            } catch (error) {
+                console.error('Failed to fetch IVR service availability:', error);
+                setHasIvrService(false);
+            }
+        };
+
+        fetchIvrServiceAvailability();
+    }, []);
 
     // Clear selected leads when leads data changes (on refresh)
     useEffect(() => {
@@ -308,74 +332,80 @@ export default function LeadsTable({
     const renderMobileCell = (row) => {
         const primaryMobile = (row.mobile || "").toString().trim();
         const alternateMobile = (row.altMobile || "").toString().trim();
-        const phone = [primaryMobile, alternateMobile].filter(Boolean).join(", ");
-        const whatsappCall = primaryMobile || alternateMobile;
+
+        // Display text
+        let phone = "-";
+
+        if (primaryMobile && primaryMobile !== "null") {
+            phone = primaryMobile;
+            if (alternateMobile && alternateMobile !== "null") {
+                phone += `, ${alternateMobile}`;
+            }
+        } else if (alternateMobile && alternateMobile !== "null") {
+            phone = alternateMobile;
+        }
+
+        // Number used for call/whatsapp
+        let dialNumber = primaryMobile || alternateMobile || "";
+
+        // Normalize like old formatter
+        let normalizedNumber = dialNumber;
+
+        if (normalizedNumber.length === 10) {
+            normalizedNumber = "91" + normalizedNumber;
+        } else if (
+            normalizedNumber.length === 11 &&
+            normalizedNumber.charAt(0) === "0"
+        ) {
+            normalizedNumber = normalizedNumber.slice(1);
+            normalizedNumber = "91" + normalizedNumber;
+        }
+
         return (
             <div className="flex items-center gap-2">
                 <span>{phone}</span>
 
-                <i
-                    className="ri-whatsapp-line text-green-600 cursor-pointer"
-                    title="WhatsApp"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (!whatsappCall) return;
-                        window.open(`https://wa.me/${whatsappCall}?text=hello`, "_blank");
-                    }}
-                />
+                {phone !== "-" && (
+                    <>
+                        {/* WhatsApp */}
+                        <i
+                            className="ri-whatsapp-line text-green-600 cursor-pointer"
+                            title="WhatsApp"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(
+                                    `https://wa.me/${normalizedNumber}?text=hello`,
+                                    "_blank"
+                                );
+                            }}
+                        />
 
-                <a
-                    href={`tel:${primaryMobile || alternateMobile}`}
-                    onClick={(e) => handleIvrIconClick(e, row)}
-                >
-                    <i
-                        className="ri-customer-service-2-line text-blue-600 cursor-pointer"
-                        title="Call via IVR"
-                    />
-                </a>
+                        {/* IVR / Dialer */}
+                        {hasIvrService ? (
+                            <i
+                                className="ri-customer-service-2-line text-blue-600 cursor-pointer"
+                                title="Call via IVR"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCallerCandidate(row);
+                                    setShowCallerDeskIVR(true);
+                                }}
+                            />
+                        ) : (
+                            <a
+                                href={`tel:+${normalizedNumber}`}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <i
+                                    className="ri-customer-service-2-line text-blue-600"
+                                    title="Call via Dialer"
+                                />
+                            </a>
+                        )}
+                    </>
+                )}
             </div>
         );
-    };
-
-    const checkIvrServiceAvailable = async () => {
-        if (hasIvrService !== null) return hasIvrService;
-
-        try {
-            const res = await xFetch({ path: '/services/invite/getIVRDetails', method: 'GET' });
-            const ivrData = res?.data || {};
-            const isAvailable = Boolean(
-                ivrData.hasKnowlarityIntegration ||
-                ivrData.hasVoxbayIntegration ||
-                ivrData.hasSmartTGIntegration ||
-                ivrData.hasSmartfloIntegration ||
-                ivrData.hasCallerDeskIntegration ||
-                ivrData.hasBonvoiceIntegration
-            );
-            setHasIvrService(isAvailable);
-            return isAvailable;
-        } catch (error) {
-            console.error('Failed to check IVR service availability:', error);
-            // If the check fails, allow IVR modal flow instead of forcing dialer fallback.
-            return true;
-        }
-    };
-
-    const handleIvrIconClick = async (e, row) => {
-        e.stopPropagation();
-        e.preventDefault();
-
-        const isIvrAvailable = await checkIvrServiceAvailable();
-        const dialNumber = (row.mobile || row.altMobile || '').toString().trim();
-
-        if (!isIvrAvailable) {
-            if (dialNumber) {
-                window.location.href = `tel:${dialNumber}`;
-            }
-            return;
-        }
-
-        setCallerCandidate(row);
-        setShowCallerDeskIVR(true);
     };
 
     const handleShowTimeline = (lead) => {
