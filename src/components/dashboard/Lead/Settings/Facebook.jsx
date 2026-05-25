@@ -81,14 +81,13 @@ function FacebookAuthButton({ status, onSuccess, onLogout }) {
   };
 
   const handleLogout = () => {
-    if (!window.FB) return;
     setLoading(true);
 
-    window.FB.logout((response) => {
+    setTimeout(() => {
       setLoading(false);
-      toast.info("Logged out from Facebook");
+      toast.info("Disconnected successfully");
       onLogout?.();
-    });
+    }, 300);
   };
 
   const isConnected = status?.status === "connected";
@@ -294,11 +293,18 @@ function SubscribeModal({
       setCourse(c || "");
       setTargetLocation(target_location || "");
 
-      const pageVal = `${pageId}_${pageAccessToken}`;
+      const pageVal = JSON.stringify({
+                        pageId,
+                        pageAccessToken,
+                      });
       setPageSelection(pageVal);
 
       loadFormsForPage(pageVal).then(() => {
-        const formVal = `${pageVal}_${formId}`;
+        const formVal = JSON.stringify({
+                          pageId,
+                          pageAccessToken,
+                          formId,
+                        });
         setFormSelection(formVal);
         loadFormFields(formVal, true);        // ← Use the unified function
       });
@@ -307,26 +313,44 @@ function SubscribeModal({
 
   // Helper to safely parse form value
   const parseFormValue = (val) => {
-    if (!val) return { pageId: null, pageAccessToken: null, formId: null };
+    if (!val) {
+      return {
+        pageId: null,
+        pageAccessToken: null,
+        formId: null,
+      };
+    }
 
-    const parts = val.split("_");
-    const formId = parts[parts.length - 1];           // Last part is always formId
-    const pageId = parts[0];
-    const pageAccessToken = parts[1];
+    try {
+      return JSON.parse(val);
+    } catch (e) {
+      console.error("Invalid form value", e);
 
-    return { pageId, pageAccessToken, formId };
+      return {
+        pageId: null,
+        pageAccessToken: null,
+        formId: null,
+      };
+    }
   };
 
   const loadFormsForPage = async (val) => {
     if (!val) return [];
-    const [pageId, pageAccessToken] = val.split("_");
+
+    const { pageId, pageAccessToken } = JSON.parse(val);
+
     if (!window.FB) return [];
 
     return new Promise((resolve) => {
       window.FB.api(
         `/${pageId}/leadgen_forms?access_token=${pageAccessToken}&limit=200`,
         (response) => {
-          const list = Array.isArray(response?.data) ? response.data : [];
+          console.log("FORMS RESPONSE =>", response);
+
+          const list = Array.isArray(response?.data)
+            ? response.data
+            : [];
+
           setFormsForPage(list);
           resolve(list);
         }
@@ -500,9 +524,15 @@ function SubscribeModal({
             >
               <option value="">Select Page</option>
               {fbPages.map((p) => (
-                <option key={p.id} value={`${p.id}_${p.access_token}`}>
-                  {p.name}
-                </option>
+                <option
+                    key={p.id}
+                    value={JSON.stringify({
+                      pageId: p.id,
+                      pageAccessToken: p.access_token,
+                    })}
+                  >
+                    {p.name}
+                  </option>
               ))}
             </select>
           </div>
@@ -518,9 +548,15 @@ function SubscribeModal({
             >
               <option value="">Select Form</option>
               {formsForPage.map((f) => (
-                <option key={f.id} value={`${pageSelection}_${f.id}`}>
-                  {f.name}
-                </option>
+                <option
+                    key={f.id}
+                    value={JSON.stringify({
+                      ...JSON.parse(pageSelection),
+                      formId: f.id,
+                    })}
+                  >
+                    {f.name}
+                  </option>
               ))}
             </select>
           </div>
