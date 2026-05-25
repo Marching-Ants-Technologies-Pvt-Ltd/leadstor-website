@@ -221,27 +221,37 @@ export default function JoineePaymentForm({ payment_id }) {
         }));
 
         // Adjust Final Price
-        if (['gst', 'discount'].includes(key)) setTimeout(handleCalculation, 300);
+        if (['cgst', 'sgst', 'discount'].includes(key)) {
+            setTimeout(handleCalculation, 300);
+        }
     };
 
     const handleCalculation = () => {
         setCandidate(prev => {
-            const discount = parseInt(prev.discount ?? '0', 10);
-            const baseFee = parseInt(prev.stdFee ?? '0', 10);
-            const gst = parseInt(prev.gst ?? '0', 10);
 
+            const baseFee = parseFloat(prev.stdFee ?? 0) || 0;
+            const discount = parseFloat(prev.discount ?? 0) || 0;
+
+            // Allow blank values
+            const cgst = prev.cgst === '' ? 0 : (parseFloat(prev.cgst) || 0);
+            const sgst = prev.sgst === '' ? 0 : (parseFloat(prev.sgst) || 0);
+
+            // Amount after discount
             const discountedAmount = Math.max(baseFee - discount, 0);
-            const gstAmount =
-                Number.isFinite(gst) && gst >= 1
-                    ? Math.round((discountedAmount * gst) / 100)
-                    : 0;
 
-            const rawFinalAmount = discountedAmount + gstAmount;
-            const finalAmount = Number.isNaN(rawFinalAmount) ? baseFee : rawFinalAmount;
+            // GST calculations
+            const cgstAmount = (discountedAmount * cgst) / 100;
+            const sgstAmount = (discountedAmount * sgst) / 100;
+
+            // Final agreed payment
+            const finalAmount =
+                discountedAmount +
+                cgstAmount +
+                sgstAmount;
 
             return {
                 ...prev,
-                agreedPayment: finalAmount
+                agreedPayment: Math.round(finalAmount)
             };
         });
     };
@@ -449,7 +459,11 @@ export default function JoineePaymentForm({ payment_id }) {
             const candidateInfo = parseCandidateTrackingResponse(candidateInfoRaw);
             setFilterParams(filterParams);
             setCurrency(currencyList);
-            setCandidate(candidateInfo);
+            setCandidate({
+                ...candidateInfo,
+                cgst: candidateInfo?.cgst ?? '9',
+                sgst: candidateInfo?.sgst ?? '9'
+            });
             setSelectedProfileImage(null);
             setCourseFee(courseFee);
             setSubServices(subServices);
@@ -664,17 +678,18 @@ export default function JoineePaymentForm({ payment_id }) {
                                 cbOnChange={onInfoChange}
                                 fieldName='batchId'
                             />
-
+                            
                             <InputText
                                 cbOnChange={handleKeyUp}
-                                label="City"
+                                label="Current Address"
                                 value={candidate?.addressLine1 || ''}
                                 fieldName='addressLine1'
                                 required={true}
                             />
+
                             <InputText
                                 cbOnChange={handleKeyUp}
-                                label="Current Address"
+                                label="City"
                                 value={candidate?.addressLine2 || ''}
                                 fieldName='addressLine2'
                                 required={true}
@@ -867,20 +882,30 @@ export default function JoineePaymentForm({ payment_id }) {
                             />
 
                             <InputTextWithIcon
-                                label="GST Rate (%)"
+                                label="CGST Rate (%)"
                                 prefix="%"
                                 type="number"
-                                value={candidate?.gst || '0'}
-                                helper="Percentage applied to calculate tax amount"
+                                value={candidate?.cgst ?? '9'}
+                                helper="CGST percentage"
                                 cbOnChange={handleKeyUp}
-                                fieldName='gst'
+                                fieldName='cgst'
+                            />
+
+                            <InputTextWithIcon
+                                label="SGST Rate (%)"
+                                prefix="%"
+                                type="number"
+                                value={candidate?.sgst ?? '9'}
+                                helper="SGST percentage"
+                                cbOnChange={handleKeyUp}
+                                fieldName='sgst'
                             />
 
                             <InputTextWithIcon
                                 label="Total Agreed Payment"
                                 prefix={decodeHtml(currentCurrency)}
                                 value={candidate?.agreedPayment || '0'}
-                                helper="Auto calculated from Standard Fee, Discount & GST"
+                                helper="Auto calculated from Standard Fee, Discount, CGST & SGST"
                                 readOnly={true}
                                 fieldName='agreedPayment'
                                 required={true}
