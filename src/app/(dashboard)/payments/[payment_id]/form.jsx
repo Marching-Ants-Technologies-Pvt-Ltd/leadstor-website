@@ -215,34 +215,92 @@ export default function JoineePaymentForm({ payment_id }) {
     }
 
     const handleKeyUp = (key, value) => {
-        setCandidate((prev) => ({
-            ...prev,
-            [key]: value
-        }));
 
-        // Adjust Final Price
-        if (['gst', 'discount'].includes(key)) setTimeout(handleCalculation, 300);
+        setCandidate((prev) => {
+
+            const updated = {
+                ...prev,
+                [key]: value
+            };
+
+            // Auto recalculate instantly
+            if (['cgst', 'sgst', 'discount'].includes(key)) {
+
+                const baseFee = parseFloat(updated.stdFee ?? 0) || 0;
+                const discount = parseFloat(updated.discount ?? 0) || 0;
+
+                const cgst =
+                    updated.cgst === ''
+                        ? 0
+                        : (parseFloat(updated.cgst) || 0);
+
+                const sgst =
+                    updated.sgst === ''
+                        ? 0
+                        : (parseFloat(updated.sgst) || 0);
+
+                const discountedAmount =
+                    Math.max(baseFee - discount, 0);
+
+                const cgstAmount =
+                    (discountedAmount * cgst) / 100;
+
+                const sgstAmount =
+                    (discountedAmount * sgst) / 100;
+
+                const finalAmount =
+                    discountedAmount +
+                    cgstAmount +
+                    sgstAmount;
+
+                updated.gst = Number(cgst) + Number(sgst);
+
+                updated.cgstAmount = Math.round(cgstAmount);
+                updated.sgstAmount = Math.round(sgstAmount);
+
+                updated.totalGSTAmount =
+                    Math.round(cgstAmount + sgstAmount);
+
+                updated.agreedPayment =
+                    Math.round(finalAmount);
+            }
+
+            return updated;
+        });
     };
 
     const handleCalculation = () => {
         setCandidate(prev => {
-            const discount = parseInt(prev.discount ?? '0', 10);
-            const baseFee = parseInt(prev.stdFee ?? '0', 10);
-            const gst = parseInt(prev.gst ?? '0', 10);
 
+            const baseFee = parseFloat(prev.stdFee ?? 0) || 0;
+            const discount = parseFloat(prev.discount ?? 0) || 0;
+
+            // Allow blank values
+            const cgst = prev.cgst === '' ? 0 : (parseFloat(prev.cgst) || 0);
+            const sgst = prev.sgst === '' ? 0 : (parseFloat(prev.sgst) || 0);
+
+            // Amount after discount
             const discountedAmount = Math.max(baseFee - discount, 0);
-            const gstAmount =
-                Number.isFinite(gst) && gst >= 1
-                    ? Math.round((discountedAmount * gst) / 100)
-                    : 0;
 
-            const rawFinalAmount = discountedAmount + gstAmount;
-            const finalAmount = Number.isNaN(rawFinalAmount) ? baseFee : rawFinalAmount;
+            // GST calculations
+            const cgstAmount = (discountedAmount * cgst) / 100;
+            const sgstAmount = (discountedAmount * sgst) / 100;
+
+            // Final agreed payment
+            const finalAmount =
+                discountedAmount +
+                cgstAmount +
+                sgstAmount;
 
             return {
                 ...prev,
-                agreedPayment: finalAmount
+                gst: Number(cgst) + Number(sgst),
+                cgstAmount: Math.round(cgstAmount),
+                sgstAmount: Math.round(sgstAmount),
+                totalGSTAmount: Math.round(cgstAmount + sgstAmount),
+                agreedPayment: Math.round(finalAmount)
             };
+
         });
     };
 
@@ -373,6 +431,8 @@ export default function JoineePaymentForm({ payment_id }) {
             if (!ret) return;
         }
 
+        payload.gst = (parseFloat(payload.cgst || 0)) + (parseFloat(payload.sgst || 0));
+
         const requestPayload = new FormData();
         requestPayload.append('payload', JSON.stringify(payload));
         if (selectedProfileImage) {
@@ -449,7 +509,64 @@ export default function JoineePaymentForm({ payment_id }) {
             const candidateInfo = parseCandidateTrackingResponse(candidateInfoRaw);
             setFilterParams(filterParams);
             setCurrency(currencyList);
-            setCandidate(candidateInfo);
+            
+            const totalGST = parseFloat(
+                candidateInfo?.gst ??
+                0
+            );
+
+            let cgst = parseFloat(candidateInfo?.cgst || 0);
+            let sgst = parseFloat(candidateInfo?.sgst || 0);
+
+            // If backend sends 0/0 but gst exists,
+            // split total GST equally
+            if (cgst === 0 && sgst === 0 && totalGST > 0) {
+                cgst = totalGST / 2;
+                sgst = totalGST / 2;
+            }
+
+            const stdFee = parseFloat(candidateInfo?.stdFee || 0);
+            const discount = parseFloat(candidateInfo?.discount || 0);
+
+            const discountedAmount = Math.max(stdFee - discount, 0);
+
+            const cgstAmount =
+                (discountedAmount * cgst) / 100;
+
+            const sgstAmount =
+                (discountedAmount * sgst) / 100;
+
+            const calculatedGST =
+                Number(cgst || 0) +
+                Number(sgst || 0);
+
+            setCandidate({
+                ...candidateInfo,
+
+                cgst: String(cgst),
+                sgst: String(sgst),
+
+                // auto build total GST from CGST + SGST
+                gst: String(
+                    totalGST > 0
+                        ? totalGST
+                        : calculatedGST
+                ),
+
+                cgstAmount: Math.round(cgstAmount),
+                sgstAmount: Math.round(sgstAmount),
+
+                totalGSTAmount:
+                    Math.round(cgstAmount + sgstAmount),
+
+                agreedPayment:
+                    Math.round(
+                        discountedAmount +
+                        cgstAmount +
+                        sgstAmount
+                    )
+            });
+
             setSelectedProfileImage(null);
             setCourseFee(courseFee);
             setSubServices(subServices);
@@ -664,17 +781,18 @@ export default function JoineePaymentForm({ payment_id }) {
                                 cbOnChange={onInfoChange}
                                 fieldName='batchId'
                             />
-
+                            
                             <InputText
                                 cbOnChange={handleKeyUp}
-                                label="City"
+                                label="Current Address"
                                 value={candidate?.addressLine1 || ''}
                                 fieldName='addressLine1'
                                 required={true}
                             />
+
                             <InputText
                                 cbOnChange={handleKeyUp}
-                                label="Current Address"
+                                label="City"
                                 value={candidate?.addressLine2 || ''}
                                 fieldName='addressLine2'
                                 required={true}
@@ -867,12 +985,28 @@ export default function JoineePaymentForm({ payment_id }) {
                             />
 
                             <InputTextWithIcon
-                                label="GST Rate (%)"
-                                prefix="%"
+                                label="CGST %"
+                                suffix="%"
                                 type="number"
-                                value={candidate?.gst || '0'}
-                                helper="Percentage applied to calculate tax amount"
+                                value={candidate?.cgst || ''}
                                 cbOnChange={handleKeyUp}
+                                fieldName='cgst'
+                            />
+
+                            <InputTextWithIcon
+                                label="SGST %"
+                                suffix="%"
+                                type="number"
+                                value={candidate?.sgst || ''}
+                                cbOnChange={handleKeyUp}
+                                fieldName='sgst'
+                            />
+
+                            <InputTextWithIcon
+                                label="Total GST %"
+                                suffix="%"
+                                value={candidate?.gst || '0'}
+                                readOnly={true}
                                 fieldName='gst'
                             />
 
@@ -880,7 +1014,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 label="Total Agreed Payment"
                                 prefix={decodeHtml(currentCurrency)}
                                 value={candidate?.agreedPayment || '0'}
-                                helper="Auto calculated from Standard Fee, Discount & GST"
+                                helper="Auto calculated from Standard Fee, Discount, CGST & SGST"
                                 readOnly={true}
                                 fieldName='agreedPayment'
                                 required={true}
