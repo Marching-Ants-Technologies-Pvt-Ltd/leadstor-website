@@ -168,6 +168,53 @@ export default function JoineePaymentForm({ payment_id }) {
         return (amt * pct) / 100;
     }
 
+    const isCourseAvailableInMasterList = (label = '') => {
+        const normalizedLabel = `${label}`.trim().toLowerCase();
+        if (!normalizedLabel || !Array.isArray(courseFee) || courseFee.length < 1) {
+            return false;
+        }
+
+        return courseFee.some(item =>
+            `${item?.course ?? ''}`.trim().toLowerCase() === normalizedLabel
+        );
+    };
+
+    const hasCourseMasterList = Array.isArray(courseFee) && courseFee.length > 0;
+    const isMissingCourseFromMaster = Boolean(candidate?.label) && hasCourseMasterList && !isCourseAvailableInMasterList(candidate?.label);
+    const isStdFeeBlankOrZero = (
+        candidate?.stdFee === undefined ||
+        candidate?.stdFee === null ||
+        `${candidate?.stdFee}`.trim() === '' ||
+        Number(candidate?.stdFee) === 0
+    );
+
+    const calculatePaymentBreakdown = (baseData = {}, recalculateAgreed = true) => {
+        const baseFee = parseFloat(baseData?.stdFee ?? 0) || 0;
+        const discount = parseFloat(baseData?.discount ?? 0) || 0;
+        const cgst = baseData?.cgst === '' ? 0 : (parseFloat(baseData?.cgst) || 0);
+        const sgst = baseData?.sgst === '' ? 0 : (parseFloat(baseData?.sgst) || 0);
+
+        const discountedAmount = Math.max(baseFee - discount, 0);
+        const cgstAmount = (discountedAmount * cgst) / 100;
+        const sgstAmount = (discountedAmount * sgst) / 100;
+        const totalGSTAmount = Math.round(cgstAmount + sgstAmount);
+        const agreedPayment = Math.round(discountedAmount + cgstAmount + sgstAmount);
+
+        const updated = {
+            ...baseData,
+            gst: Number(cgst) + Number(sgst),
+            cgstAmount: Math.round(cgstAmount),
+            sgstAmount: Math.round(sgstAmount),
+            totalGSTAmount,
+        };
+
+        if (recalculateAgreed) {
+            updated.agreedPayment = agreedPayment;
+        }
+
+        return updated;
+    };
+
     const onInfoChange = (key, value) => {
         if (key === 'batchId') {
             setCandidate(prev => ({
@@ -200,16 +247,19 @@ export default function JoineePaymentForm({ payment_id }) {
 
             course = course[0];
             course['maximumDiscountedFees'] = calculateMaxDiscount(course?.standardFee ?? '0', course?.maximumDiscount ?? '0');
-            setCandidate(prev => ({
-                ...prev,
-                batchId: [],
-                discount: 0,
-                stdFee: parseInt(course?.standardFee ?? '0'),
-                maximumDiscount: parseInt(course?.maximumDiscount ?? '0'),
-                maximumDiscountedFees: course?.maximumDiscountedFees
-            }));
+            setCandidate(prev => {
+                const nextValue = {
+                    ...prev,
+                    label: value,
+                    batchId: [],
+                    discount: 0,
+                    stdFee: parseInt(course?.standardFee ?? '0'),
+                    maximumDiscount: parseInt(course?.maximumDiscount ?? '0'),
+                    maximumDiscountedFees: course?.maximumDiscountedFees
+                };
 
-            handleCalculation();
+                return calculatePaymentBreakdown(nextValue, true);
+            });
             return;
         }
     }
@@ -224,83 +274,11 @@ export default function JoineePaymentForm({ payment_id }) {
             };
 
             // Auto recalculate instantly
-            if (['cgst', 'sgst', 'discount'].includes(key)) {
-
-                const baseFee = parseFloat(updated.stdFee ?? 0) || 0;
-                const discount = parseFloat(updated.discount ?? 0) || 0;
-
-                const cgst =
-                    updated.cgst === ''
-                        ? 0
-                        : (parseFloat(updated.cgst) || 0);
-
-                const sgst =
-                    updated.sgst === ''
-                        ? 0
-                        : (parseFloat(updated.sgst) || 0);
-
-                const discountedAmount =
-                    Math.max(baseFee - discount, 0);
-
-                const cgstAmount =
-                    (discountedAmount * cgst) / 100;
-
-                const sgstAmount =
-                    (discountedAmount * sgst) / 100;
-
-                const finalAmount =
-                    discountedAmount +
-                    cgstAmount +
-                    sgstAmount;
-
-                updated.gst = Number(cgst) + Number(sgst);
-
-                updated.cgstAmount = Math.round(cgstAmount);
-                updated.sgstAmount = Math.round(sgstAmount);
-
-                updated.totalGSTAmount =
-                    Math.round(cgstAmount + sgstAmount);
-
-                updated.agreedPayment =
-                    Math.round(finalAmount);
+            if (['stdFee', 'cgst', 'sgst', 'discount'].includes(key)) {
+                return calculatePaymentBreakdown(updated, true);
             }
 
             return updated;
-        });
-    };
-
-    const handleCalculation = () => {
-        setCandidate(prev => {
-
-            const baseFee = parseFloat(prev.stdFee ?? 0) || 0;
-            const discount = parseFloat(prev.discount ?? 0) || 0;
-
-            // Allow blank values
-            const cgst = prev.cgst === '' ? 0 : (parseFloat(prev.cgst) || 0);
-            const sgst = prev.sgst === '' ? 0 : (parseFloat(prev.sgst) || 0);
-
-            // Amount after discount
-            const discountedAmount = Math.max(baseFee - discount, 0);
-
-            // GST calculations
-            const cgstAmount = (discountedAmount * cgst) / 100;
-            const sgstAmount = (discountedAmount * sgst) / 100;
-
-            // Final agreed payment
-            const finalAmount =
-                discountedAmount +
-                cgstAmount +
-                sgstAmount;
-
-            return {
-                ...prev,
-                gst: Number(cgst) + Number(sgst),
-                cgstAmount: Math.round(cgstAmount),
-                sgstAmount: Math.round(sgstAmount),
-                totalGSTAmount: Math.round(cgstAmount + sgstAmount),
-                agreedPayment: Math.round(finalAmount)
-            };
-
         });
     };
 
@@ -406,6 +384,18 @@ export default function JoineePaymentForm({ payment_id }) {
         // Check For Other Required Fields
         if (!validatePayload(payload)) {
             toast.warning('Some required fields are blank! Please check and try again.');
+            return;
+        }
+
+        const standardFee = parseFloat(payload?.stdFee);
+        if (
+            payload?.stdFee === undefined ||
+            payload?.stdFee === null ||
+            `${payload?.stdFee}`.trim() === '' ||
+            Number.isNaN(standardFee) ||
+            standardFee <= 0
+        ) {
+            toast.warning('Standard Fee cannot be 0 or blank.');
             return;
         }
 
@@ -525,46 +515,29 @@ export default function JoineePaymentForm({ payment_id }) {
                 sgst = totalGST / 2;
             }
 
-            const stdFee = parseFloat(candidateInfo?.stdFee || 0);
-            const discount = parseFloat(candidateInfo?.discount || 0);
+            const calculatedCandidate = calculatePaymentBreakdown({
+                ...candidateInfo,
+                stdFee: candidateInfo?.stdFee ?? 0,
+                discount: candidateInfo?.discount ?? 0,
+                agreedPayment: candidateInfo?.agreedPayment ?? 0,
+                cgst: String(Number.isFinite(cgst) ? cgst : 0),
+                sgst: String(Number.isFinite(sgst) ? sgst : 0),
+            }, false);
 
-            const discountedAmount = Math.max(stdFee - discount, 0);
-
-            const cgstAmount =
-                (discountedAmount * cgst) / 100;
-
-            const sgstAmount =
-                (discountedAmount * sgst) / 100;
-
-            const calculatedGST =
-                Number(cgst || 0) +
-                Number(sgst || 0);
+            // On edit hydration, keep API agreedPayment as-is.
+            const hasApiAgreedPayment =
+                candidateInfo?.agreedPayment !== undefined &&
+                candidateInfo?.agreedPayment !== null &&
+                `${candidateInfo?.agreedPayment}`.trim() !== '';
 
             setCandidate({
-                ...candidateInfo,
-
-                cgst: String(cgst),
-                sgst: String(sgst),
-
-                // auto build total GST from CGST + SGST
+                ...calculatedCandidate,
                 gst: String(
-                    totalGST > 0
-                        ? totalGST
-                        : calculatedGST
+                    Number(calculatedCandidate?.gst ?? 0)
                 ),
-
-                cgstAmount: Math.round(cgstAmount),
-                sgstAmount: Math.round(sgstAmount),
-
-                totalGSTAmount:
-                    Math.round(cgstAmount + sgstAmount),
-
-                agreedPayment:
-                    Math.round(
-                        discountedAmount +
-                        cgstAmount +
-                        sgstAmount
-                    )
+                agreedPayment: hasApiAgreedPayment
+                    ? candidateInfo?.agreedPayment
+                    : calculatedCandidate?.agreedPayment
             });
 
             setSelectedProfileImage(null);
@@ -714,25 +687,37 @@ export default function JoineePaymentForm({ payment_id }) {
                             </div>
 
                             <div className='relative'>
-                                <SelectFieldTypeArray
-                                    label="Course / Program"
-                                    options={courseFee.map(item => item.course)}
-                                    selected={candidate?.label || 'Not Selected'}
-                                    cbOnChange={onInfoChange}
-                                    fieldName='label'
-                                    required={true}
-                                />
-                                {Object.entries(candidate?.installments ?? {}).length > 0 &&
-                                    <div onClick={() => toast.info(`Course cannot be changed after first installment.`)} className='absolute top-0 left-0 w-full h-16 cursor-pointer'>
-                                        <div className='absolute right-1.5 p-1 top-6 bg-white cursor-not-allowed'>
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" color="#8E8E8E" fill="none" stroke="#8E8E8E" strokeWidth="2" strokeLinecap="round">
-                                                <path d="M12 16.5V14.5" />
-                                                <path d="M4.2678 18.8447C4.49268 20.515 5.87612 21.8235 7.55965 21.9009C8.97627 21.966 10.4153 22 12 22C13.5847 22 15.0237 21.966 16.4403 21.9009C18.1239 21.8235 19.5073 20.515 19.7322 18.8447C19.8789 17.7547 20 16.6376 20 15.5C20 14.3624 19.8789 13.2453 19.7322 12.1553C19.5073 10.485 18.1239 9.17649 16.4403 9.09909C15.0237 9.03397 13.5847 9 12 9C10.4153 9 8.97627 9.03397 7.55965 9.09909C5.87612 9.17649 4.49268 10.485 4.2678 12.1553C4.12104 13.2453 3.99999 14.3624 3.99999 15.5C3.99999 16.6376 4.12104 17.7547 4.2678 18.8447Z" />
-                                                <path d="M7.5 9V6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5V9" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                }
+                                {isMissingCourseFromMaster ? (
+                                    <InputText
+                                        cbOnChange={handleKeyUp}
+                                        label="Course / Program"
+                                        value={candidate?.label || ''}
+                                        fieldName='label'
+                                        required={true}
+                                    />
+                                ) : (
+                                    <>
+                                        <SelectFieldTypeArray
+                                            label="Course / Program"
+                                            options={courseFee.map(item => item.course)}
+                                            selected={candidate?.label || 'Not Selected'}
+                                            cbOnChange={onInfoChange}
+                                            fieldName='label'
+                                            required={true}
+                                        />
+                                        {Object.entries(candidate?.installments ?? {}).length > 0 &&
+                                            <div onClick={() => toast.info(`Course cannot be changed after first installment.`)} className='absolute top-0 left-0 w-full h-16 cursor-pointer'>
+                                                <div className='absolute right-1.5 p-1 top-6 bg-white cursor-not-allowed'>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" color="#8E8E8E" fill="none" stroke="#8E8E8E" strokeWidth="2" strokeLinecap="round">
+                                                        <path d="M12 16.5V14.5" />
+                                                        <path d="M4.2678 18.8447C4.49268 20.515 5.87612 21.8235 7.55965 21.9009C8.97627 21.966 10.4153 22 12 22C13.5847 22 15.0237 21.966 16.4403 21.9009C18.1239 21.8235 19.5073 20.515 19.7322 18.8447C19.8789 17.7547 20 16.6376 20 15.5C20 14.3624 19.8789 13.2453 19.7322 12.1553C19.5073 10.485 18.1239 9.17649 16.4403 9.09909C15.0237 9.03397 13.5847 9 12 9C10.4153 9 8.97627 9.03397 7.55965 9.09909C5.87612 9.17649 4.49268 10.485 4.2678 12.1553C4.12104 13.2453 3.99999 14.3624 3.99999 15.5C3.99999 16.6376 4.12104 17.7547 4.2678 18.8447Z" />
+                                                        <path d="M7.5 9V6.5C7.5 4.01472 9.51472 2 12 2C14.4853 2 16.5 4.01472 16.5 6.5V9" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        }
+                                    </>
+                                )}
                             </div>
                             {Array.isArray(subServices) && subServices.length > 0 && (
                             <MultiSelectField
@@ -970,8 +955,12 @@ export default function JoineePaymentForm({ payment_id }) {
                                 label="Standard Fee"
                                 prefix={decodeHtml(currentCurrency)}
                                 value={candidate?.stdFee || '0'}
-                                readOnly={true}
+                                type="number"
+                                readOnly={!(isMissingCourseFromMaster || isStdFeeBlankOrZero)}
+                                inputClassName="bg-white text-gray-900"
+                                readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
                                 fieldName='stdFee'
+                                cbOnChange={handleKeyUp}
                             />
 
                             <InputTextWithIcon
@@ -1007,6 +996,8 @@ export default function JoineePaymentForm({ payment_id }) {
                                 suffix="%"
                                 value={candidate?.gst || '0'}
                                 readOnly={true}
+                                readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
+                                helper="Total GST = CGST + SGST"
                                 fieldName='gst'
                             />
 
@@ -1016,6 +1007,7 @@ export default function JoineePaymentForm({ payment_id }) {
                                 value={candidate?.agreedPayment || '0'}
                                 helper="Auto calculated from Standard Fee, Discount, CGST & SGST"
                                 readOnly={true}
+                                readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
                                 fieldName='agreedPayment'
                                 required={true}
                             />
