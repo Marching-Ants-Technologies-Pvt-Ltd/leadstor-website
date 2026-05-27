@@ -17,7 +17,19 @@ export function InputText({ label, value, required = false, fieldName, type = "t
     );
 }
 
-export function InputTextWithIcon({ label, fieldName, required = false, readOnly = false, prefix, value, type = "text", helper, cbOnChange = (e) => { } }) {
+export function InputTextWithIcon({
+    label,
+    fieldName,
+    required = false,
+    readOnly = false,
+    prefix,
+    value,
+    type = "text",
+    helper,
+    inputClassName = "",
+    readOnlyInputClassName = "",
+    cbOnChange = (e) => { }
+}) {
     return (
         <div className='relative'>
             <label className="block text-xs text-gray-500 mb-1">
@@ -35,7 +47,7 @@ export function InputTextWithIcon({ label, fieldName, required = false, readOnly
                         type={type}
                         value={value}
                         readOnly
-                        className="w-full pointer-events-none cursor-default pl-[52px] pr-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-900"
+                        className={`w-full pointer-events-none cursor-default pl-[52px] pr-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-900 ${readOnlyInputClassName}`}
                     />
                 ) : (
                     <input
@@ -43,7 +55,7 @@ export function InputTextWithIcon({ label, fieldName, required = false, readOnly
                         type={type}
                         value={value}
                         onChange={(e) => cbOnChange(fieldName, e.target.value)}
-                        className="w-full pl-[52px] pr-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-900 outline-none"
+                        className={`w-full pl-[52px] pr-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-900 outline-none ${inputClassName}`}
                     />
                 )}
             </div>
