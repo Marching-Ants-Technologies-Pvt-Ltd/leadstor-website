@@ -39,6 +39,8 @@ export default function JoineePaymentForm({ payment_id }) {
     const [subServices, setSubServices] = useState([]);
     const [batch, setBatch] = useState([]);
     const [selectedProfileImage, setSelectedProfileImage] = useState(null);
+    const [hasStdFeeFromApi, setHasStdFeeFromApi] = useState(false);
+    const isEditMode = Number(payment_id) > 0;
 
     // Helper Functions
     const pad = (n) => String(n).padStart(2, "0");
@@ -181,12 +183,7 @@ export default function JoineePaymentForm({ payment_id }) {
 
     const hasCourseMasterList = Array.isArray(courseFee) && courseFee.length > 0;
     const isMissingCourseFromMaster = Boolean(candidate?.label) && hasCourseMasterList && !isCourseAvailableInMasterList(candidate?.label);
-    const isStdFeeBlankOrZero = (
-        candidate?.stdFee === undefined ||
-        candidate?.stdFee === null ||
-        `${candidate?.stdFee}`.trim() === '' ||
-        Number(candidate?.stdFee) === 0
-    );
+    const isManualAgreedOnlyMode = (!hasCourseMasterList) || (isEditMode && !hasStdFeeFromApi);
 
     const calculatePaymentBreakdown = (baseData = {}, recalculateAgreed = true) => {
         const baseFee = parseFloat(baseData?.stdFee ?? 0) || 0;
@@ -237,6 +234,8 @@ export default function JoineePaymentForm({ payment_id }) {
 
         // Update Standard Fee If Course is Changed
         if (key === 'label') {
+            if (isManualAgreedOnlyMode) return;
+
             let course = courseFee.filter(item => item.course.trim().toLowerCase() === value.trim().toLowerCase());
             if (course.length < 1) {
                 course = [{
@@ -274,7 +273,7 @@ export default function JoineePaymentForm({ payment_id }) {
             };
 
             // Auto recalculate instantly
-            if (['stdFee', 'cgst', 'sgst', 'discount'].includes(key)) {
+            if (!isManualAgreedOnlyMode && ['stdFee', 'cgst', 'sgst', 'discount'].includes(key)) {
                 return calculatePaymentBreakdown(updated, true);
             }
 
@@ -387,16 +386,18 @@ export default function JoineePaymentForm({ payment_id }) {
             return;
         }
 
-        const standardFee = parseFloat(payload?.stdFee);
-        if (
-            payload?.stdFee === undefined ||
-            payload?.stdFee === null ||
-            `${payload?.stdFee}`.trim() === '' ||
-            Number.isNaN(standardFee) ||
-            standardFee <= 0
-        ) {
-            toast.warning('Standard Fee cannot be 0 or blank.');
-            return;
+        if (!isManualAgreedOnlyMode) {
+            const standardFee = parseFloat(payload?.stdFee);
+            if (
+                payload?.stdFee === undefined ||
+                payload?.stdFee === null ||
+                `${payload?.stdFee}`.trim() === '' ||
+                Number.isNaN(standardFee) ||
+                standardFee <= 0
+            ) {
+                toast.warning('Standard Fee cannot be 0 or blank.');
+                return;
+            }
         }
 
         // Include Tracking Id
@@ -499,6 +500,40 @@ export default function JoineePaymentForm({ payment_id }) {
             const candidateInfo = parseCandidateTrackingResponse(candidateInfoRaw);
             setFilterParams(filterParams);
             setCurrency(currencyList);
+            const hasCourseOptions = Array.isArray(courseFee) && courseFee.length > 0;
+            const hasExistingIdentifier = Boolean(
+                candidateInfo?.trackingId ||
+                candidateInfo?.id ||
+                candidateInfo?._id
+            );
+
+            const hasExistingFilledCoreData = Boolean(
+                `${candidateInfo?.name ?? ''}`.trim() ||
+                `${candidateInfo?.email ?? ''}`.trim() ||
+                `${candidateInfo?.mobile ?? ''}`.trim() ||
+                `${candidateInfo?.doj ?? ''}`.trim() ||
+                `${candidateInfo?.lastUpdateDateTime ?? ''}`.trim()
+            );
+
+            const hasInstallments = Object.keys(candidateInfo?.installments ?? {}).length > 0;
+
+            const hasCandidateRecord = (
+                candidateInfo &&
+                typeof candidateInfo === 'object' &&
+                candidateInfo?.type !== 'notFund' &&
+                (hasExistingIdentifier || hasExistingFilledCoreData || hasInstallments)
+            );
+
+            const rawStdFee = candidateInfo?.stdFee;
+            const hasStdFee = !(
+                rawStdFee === undefined ||
+                rawStdFee === null ||
+                `${rawStdFee}`.trim() === '' ||
+                Number(rawStdFee) <= 0
+            );
+            const useManualModeOnLoad = (!hasCourseOptions) || (isEditMode && hasCandidateRecord && !hasStdFee);
+
+            setHasStdFeeFromApi(hasStdFee);
             
             const totalGST = parseFloat(
                 candidateInfo?.gst ??
@@ -515,30 +550,45 @@ export default function JoineePaymentForm({ payment_id }) {
                 sgst = totalGST / 2;
             }
 
-            const calculatedCandidate = calculatePaymentBreakdown({
-                ...candidateInfo,
-                stdFee: candidateInfo?.stdFee ?? 0,
-                discount: candidateInfo?.discount ?? 0,
-                agreedPayment: candidateInfo?.agreedPayment ?? 0,
-                cgst: String(Number.isFinite(cgst) ? cgst : 0),
-                sgst: String(Number.isFinite(sgst) ? sgst : 0),
-            }, false);
+            if (useManualModeOnLoad) {
+                setCandidate({
+                    ...candidateInfo,
+                    cgst: String(Number.isFinite(cgst) ? cgst : 0),
+                    sgst: String(Number.isFinite(sgst) ? sgst : 0),
+                    gst: String(Number(candidateInfo?.gst ?? 0) || 0),
+                    agreedPayment:
+                        (candidateInfo?.agreedPayment !== undefined &&
+                            candidateInfo?.agreedPayment !== null &&
+                            `${candidateInfo?.agreedPayment}`.trim() !== '')
+                            ? candidateInfo?.agreedPayment
+                            : ''
+                });
+            } else {
+                const calculatedCandidate = calculatePaymentBreakdown({
+                    ...candidateInfo,
+                    stdFee: candidateInfo?.stdFee ?? 0,
+                    discount: candidateInfo?.discount ?? 0,
+                    agreedPayment: candidateInfo?.agreedPayment ?? 0,
+                    cgst: String(Number.isFinite(cgst) ? cgst : 0),
+                    sgst: String(Number.isFinite(sgst) ? sgst : 0),
+                }, false);
 
-            // On edit hydration, keep API agreedPayment as-is.
-            const hasApiAgreedPayment =
-                candidateInfo?.agreedPayment !== undefined &&
-                candidateInfo?.agreedPayment !== null &&
-                `${candidateInfo?.agreedPayment}`.trim() !== '';
+                // On edit hydration, keep API agreedPayment as-is.
+                const hasApiAgreedPayment =
+                    candidateInfo?.agreedPayment !== undefined &&
+                    candidateInfo?.agreedPayment !== null &&
+                    `${candidateInfo?.agreedPayment}`.trim() !== '';
 
-            setCandidate({
-                ...calculatedCandidate,
-                gst: String(
-                    Number(calculatedCandidate?.gst ?? 0)
-                ),
-                agreedPayment: hasApiAgreedPayment
-                    ? candidateInfo?.agreedPayment
-                    : calculatedCandidate?.agreedPayment
-            });
+                setCandidate({
+                    ...calculatedCandidate,
+                    gst: String(
+                        Number(calculatedCandidate?.gst ?? 0)
+                    ),
+                    agreedPayment: hasApiAgreedPayment
+                        ? candidateInfo?.agreedPayment
+                        : calculatedCandidate?.agreedPayment
+                });
+            }
 
             setSelectedProfileImage(null);
             setCourseFee(courseFee);
@@ -687,7 +737,7 @@ export default function JoineePaymentForm({ payment_id }) {
                             </div>
 
                             <div className='relative'>
-                                {isMissingCourseFromMaster ? (
+                                {(isManualAgreedOnlyMode || isMissingCourseFromMaster) ? (
                                     <InputText
                                         cbOnChange={handleKeyUp}
                                         label="Course / Program"
@@ -951,65 +1001,70 @@ export default function JoineePaymentForm({ payment_id }) {
                                 fieldName='candidate_currency'
                             />
 
-                            <InputTextWithIcon
-                                label="Standard Fee"
-                                prefix={decodeHtml(currentCurrency)}
-                                value={candidate?.stdFee || '0'}
-                                type="number"
-                                readOnly={!(isMissingCourseFromMaster || isStdFeeBlankOrZero)}
-                                inputClassName="bg-white text-gray-900"
-                                readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
-                                fieldName='stdFee'
-                                cbOnChange={handleKeyUp}
-                            />
+                            {!isManualAgreedOnlyMode && (
+                                <>
+                                    <InputTextWithIcon
+                                        label="Standard Fee"
+                                        prefix={decodeHtml(currentCurrency)}
+                                        value={candidate?.stdFee || '0'}
+                                        type="number"
+                                        readOnly={!isMissingCourseFromMaster}
+                                        inputClassName="bg-white text-gray-900"
+                                        readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
+                                        fieldName='stdFee'
+                                        cbOnChange={handleKeyUp}
+                                    />
+
+                                    <InputTextWithIcon
+                                        label="Discount"
+                                        prefix={decodeHtml(currentCurrency)}
+                                        type="number"
+                                        value={candidate?.discount || '0'}
+                                        helper={`Max Discount ${candidate?.maximumDiscount || 0}% (${decodeHtml(currentCurrency)}${candidate?.maximumDiscountedFees ?? '0'})`}
+                                        cbOnChange={handleKeyUp}
+                                        fieldName='discount'
+                                    />
+
+                                    <InputTextWithIcon
+                                        label="CGST %"
+                                        suffix="%"
+                                        type="number"
+                                        value={candidate?.cgst || ''}
+                                        cbOnChange={handleKeyUp}
+                                        fieldName='cgst'
+                                    />
+
+                                    <InputTextWithIcon
+                                        label="SGST %"
+                                        suffix="%"
+                                        type="number"
+                                        value={candidate?.sgst || ''}
+                                        cbOnChange={handleKeyUp}
+                                        fieldName='sgst'
+                                    />
+
+                                    <InputTextWithIcon
+                                        label="Total GST %"
+                                        suffix="%"
+                                        value={candidate?.gst || '0'}
+                                        readOnly={true}
+                                        readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
+                                        helper="Total GST = CGST + SGST"
+                                        fieldName='gst'
+                                    />
+                                </>
+                            )}
 
                             <InputTextWithIcon
-                                label="Discount"
-                                prefix={decodeHtml(currentCurrency)}
-                                type="number"
-                                value={candidate?.discount || '0'}
-                                helper={`Max Discount ${candidate?.maximumDiscount || 0}% (${decodeHtml(currentCurrency)}${candidate?.maximumDiscountedFees ?? '0'})`}
-                                cbOnChange={handleKeyUp}
-                                fieldName='discount'
-                            />
-
-                            <InputTextWithIcon
-                                label="CGST %"
-                                suffix="%"
-                                type="number"
-                                value={candidate?.cgst || ''}
-                                cbOnChange={handleKeyUp}
-                                fieldName='cgst'
-                            />
-
-                            <InputTextWithIcon
-                                label="SGST %"
-                                suffix="%"
-                                type="number"
-                                value={candidate?.sgst || ''}
-                                cbOnChange={handleKeyUp}
-                                fieldName='sgst'
-                            />
-
-                            <InputTextWithIcon
-                                label="Total GST %"
-                                suffix="%"
-                                value={candidate?.gst || '0'}
-                                readOnly={true}
-                                readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
-                                helper="Total GST = CGST + SGST"
-                                fieldName='gst'
-                            />
-
-                            <InputTextWithIcon
-                                label="Total Agreed Payment"
+                                label={isManualAgreedOnlyMode ? "Total Agreed Payment (GST already applied) :" : "Total Agreed Payment"}
                                 prefix={decodeHtml(currentCurrency)}
                                 value={candidate?.agreedPayment || '0'}
-                                helper="Auto calculated from Standard Fee, Discount, CGST & SGST"
-                                readOnly={true}
+                                helper={isManualAgreedOnlyMode ? undefined : "Auto calculated from Standard Fee, Discount, CGST & SGST"}
+                                readOnly={!isManualAgreedOnlyMode}
                                 readOnlyInputClassName="!bg-gray-200 text-gray-900 cursor-default"
                                 fieldName='agreedPayment'
                                 required={true}
+                                cbOnChange={handleKeyUp}
                             />
                         </div>
                     </div>
