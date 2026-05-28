@@ -856,6 +856,14 @@ export default function JoineePaymentForm({ payment_id }) {
                                 required={true}
                             />
 
+                            <InputText
+                                cbOnChange={handleKeyUp}
+                                label="Unique ID"
+                                placeholder='Unique ID'
+                                value={candidate?.uniqueId?.replace('null', '') || ''}
+                                fieldName='uniqueId'
+                            />
+
                         </div>
                     </div>
 
