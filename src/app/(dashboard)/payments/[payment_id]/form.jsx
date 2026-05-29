@@ -40,6 +40,7 @@ export default function JoineePaymentForm({ payment_id }) {
     const [batch, setBatch] = useState([]);
     const [selectedProfileImage, setSelectedProfileImage] = useState(null);
     const [hasStdFeeFromApi, setHasStdFeeFromApi] = useState(false);
+    const [hasTrackingCourseOnLoad, setHasTrackingCourseOnLoad] = useState(false);
     const isEditMode = Number(payment_id) > 0;
 
     // Helper Functions
@@ -183,7 +184,8 @@ export default function JoineePaymentForm({ payment_id }) {
 
     const hasCourseMasterList = Array.isArray(courseFee) && courseFee.length > 0;
     const isMissingCourseFromMaster = Boolean(candidate?.label) && hasCourseMasterList && !isCourseAvailableInMasterList(candidate?.label);
-    const isManualAgreedOnlyMode = (!hasCourseMasterList) || (isEditMode && !hasStdFeeFromApi);
+    const isManualAgreedOnlyMode = (!hasCourseMasterList) || (isEditMode && !hasStdFeeFromApi && hasTrackingCourseOnLoad);
+    const hasExistingCourseInTracking = isEditMode && hasTrackingCourseOnLoad;
 
     const calculatePaymentBreakdown = (baseData = {}, recalculateAgreed = true) => {
         const baseFee = parseFloat(baseData?.stdFee ?? 0) || 0;
@@ -531,9 +533,11 @@ export default function JoineePaymentForm({ payment_id }) {
                 `${rawStdFee}`.trim() === '' ||
                 Number(rawStdFee) <= 0
             );
+            const hasTrackingCourse = `${candidateInfo?.label ?? ''}`.trim().length > 0;
             const useManualModeOnLoad = (!hasCourseOptions) || (isEditMode && hasCandidateRecord && !hasStdFee);
 
             setHasStdFeeFromApi(hasStdFee);
+            setHasTrackingCourseOnLoad(hasTrackingCourse);
             
             const totalGST = parseFloat(
                 candidateInfo?.gst ??
@@ -737,7 +741,15 @@ export default function JoineePaymentForm({ payment_id }) {
                             </div>
 
                             <div className='relative'>
-                                {(isManualAgreedOnlyMode || isMissingCourseFromMaster) ? (
+                                {!hasCourseMasterList ? (
+                                    <InputText
+                                        cbOnChange={handleKeyUp}
+                                        label="Course / Program"
+                                        value={candidate?.label || ''}
+                                        fieldName='label'
+                                        required={true}
+                                    />
+                                ) : (hasExistingCourseInTracking && isMissingCourseFromMaster) ? (
                                     <InputText
                                         cbOnChange={handleKeyUp}
                                         label="Course / Program"
