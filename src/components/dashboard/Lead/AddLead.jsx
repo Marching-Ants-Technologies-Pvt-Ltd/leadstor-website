@@ -476,7 +476,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       if (df.includes("email") || df === "email") {
         columnTypes.email = colIndex;
       }
-      else if (["mobile", "phone"].some(k => df.includes(k))) {
+      else if (["mobile", "phone"].includes(df)) {
         columnTypes.mobile = colIndex;
       }
       else if (["firstname", "first_name", "fname", "first"].some(k => df.includes(k))) {
