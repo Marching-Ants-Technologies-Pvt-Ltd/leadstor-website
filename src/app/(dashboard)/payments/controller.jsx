@@ -306,7 +306,8 @@ export default function PaymentsSectionController() {
             C17: { key: "assignedUserId", value: "Counsellor" },
             C18: { key: "assignedTrainerId", value: "Trainer" },
             C19: { key: "status", value: "Status" },
-            C20: { key: "lastPaymentRefNo", value: "Payment Ref No" }
+            C20: { key: "lastPaymentRefNo", value: "Payment Ref No" },
+            C21: { key: "uniqueId", value: "Unique Id" }
         };
 
         const exportFilters = Object.fromEntries(

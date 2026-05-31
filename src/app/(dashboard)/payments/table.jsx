@@ -187,6 +187,7 @@ export default function PaymentsTable({
                         <th className="p-2 text-left">Status</th>
                         <th className="p-2 text-left min-w-32">Lead Category Type</th>
                         <th className="p-2 text-left min-w-32">Associated Centers</th>
+                        <th className="p-2 text-left min-w-32">Unique ID</th>
                         <th className="p-2 text-left">Actions</th>
                     </tr>
                 </thead>
@@ -270,6 +271,7 @@ export default function PaymentsTable({
                             <td className="p-2">{getStatusFormatted(item?.status || '-')}</td>
                             <td className="p-2">{item?.leadCategoryType || '-'}</td>
                             <td className="p-2">{item?.associatedCenters || '-'}</td>
+                            <td className="p-2">{item?.uniqueId || '-'}</td>
                             <td className="p-2 flex justify-between items-center gap-2">
                                 <a target='_blank' href={process.env.NEXT_PUBLIC_LEADSTOR_REST + '/generateCourseCertificatePDF.php?download=1&trackingId=' + item.id} className='cursor-pointer text-[20px] relative top-0.5' title='Generate Course Certificate'>🎓</a>
                                 <span onClick={(e) => changePlacementReadyStatus(item.id)} className='cursor-pointer text-[16px]' title='Update Placement Ready Status'>💼</span>
