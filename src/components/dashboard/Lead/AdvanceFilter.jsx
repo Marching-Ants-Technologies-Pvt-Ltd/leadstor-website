@@ -548,6 +548,28 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     }));
   };
 
+  const toggleSelectAllOptions = (type, values = []) => {
+    const uniqueValues = [...new Set((values || []).filter(Boolean))];
+    if (uniqueValues.length === 0) return;
+
+    setSelectedFilters(prev => {
+      const current = prev[type] || [];
+      const hasAll = uniqueValues.every(v => current.includes(v));
+
+      if (hasAll) {
+        return {
+          ...prev,
+          [type]: current.filter(v => !uniqueValues.includes(v))
+        };
+      }
+
+      return {
+        ...prev,
+        [type]: [...new Set([...current, ...uniqueValues])]
+      };
+    });
+  };
+
   const updateSingleFilter = (type, value) => {
     setSelectedFilters(prev => ({
       ...prev,
@@ -793,6 +815,10 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     const selected = selectedFilters[selectedKey] || [];
     const search = searches[field] || '';
     const filteredOptions = getFilteredOptions(options, field);
+    const filteredOptionKeys = [...new Set(filteredOptions.map(option => option.key || option.value).filter(Boolean))];
+    const areAllFilteredSelected =
+      filteredOptionKeys.length > 0 && filteredOptionKeys.every(key => selected.includes(key));
+    const supportsSelectAll = ['course', 'status', 'source'].includes(field);
     const isOpen = openDropdown === selectedKey;
 
     return (
@@ -840,6 +866,30 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
 
               {/* Options List */}
               <div className="max-h-48 overflow-y-auto p-2">
+                {supportsSelectAll && filteredOptionKeys.length > 0 && (
+                  <div
+                    className="px-3 py-2 mb-1 text-sm flex items-center gap-3 cursor-pointer rounded-md transition text-blue-700 bg-blue-50 hover:bg-blue-100"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelectAllOptions(selectedKey, filteredOptionKeys);
+                    }}
+                  >
+                    <div
+                      className={`w-4 h-4 border rounded flex items-center justify-center flex-shrink-0 ${
+                        areAllFilteredSelected ? 'bg-blue-600 border-blue-600' : 'border-blue-400'
+                      }`}
+                    >
+                      {areAllFilteredSelected && (
+                        <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="truncate">
+                      {areAllFilteredSelected ? 'Unselect all (filtered)' : 'Select all (filtered)'}
+                    </span>
+                  </div>
+                )}
                 {filteredOptions.length > 0 ? (
                   filteredOptions.map(option => {
                     const optionKey = option.key || option.value;
