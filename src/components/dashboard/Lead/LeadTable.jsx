@@ -1406,6 +1406,7 @@ export default function LeadsTable({
                                             emailId={row.original.emailId}
                                             mobile={row.original.mobile}
                                             invitationId={row.original.invitationId}
+                                            onOpenTimeline={(lead) => handleShowTimeline(lead)}
                                         />
                                     </div>
                                 </td>

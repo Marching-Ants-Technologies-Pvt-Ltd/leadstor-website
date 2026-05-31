@@ -61,7 +61,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       if (res && Array.isArray(res)) {
         // Remove unwanted items
         let filtered = res.filter(
-          (f) => !["action", "updateTime", "leadProbability","courseMode","altMobile"].includes(f.dataField)
+          (f) => !["action", "updateTime", "leadProbability","courseMode"].includes(f.dataField)
         );
 
         // Ensure lastName exists; inject if missing (as requested earlier)

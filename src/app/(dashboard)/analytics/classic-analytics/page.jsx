@@ -129,9 +129,24 @@ export default function AnalyticsDashboard() {
   } = UseFilterOptionsStore();
 
   const isWorkloadDisabled = useMemo(() => {
-    if (!range?.from) return false;
-    return range.from.startOf('day').isBefore(dayjs().startOf('day'));
-  }, [range]);
+    const today = dayjs().startOf('day');
+
+    if (filters.datePreset === 'TODAY') {
+      return false;
+    }
+
+    if (filters.datePreset === 'CUSTOM') {
+      if (!range?.from || !range?.to) return true;
+
+      const fromDay = range.from.startOf('day');
+      const toDay = range.to.startOf('day');
+
+      return fromDay.isBefore(today) || toDay.isBefore(today);
+    }
+
+    // Workload should not be allowed for fixed presets like week/month.
+    return true;
+  }, [filters.datePreset, range]);
 
   const showTable = (title, data) => {
     setModalTitle(title.replace('Graph', 'Table'));
@@ -556,7 +571,6 @@ export default function AnalyticsDashboard() {
                       yearDropdownItemNumber={100}
                       scrollableYearDropdown
                       minDate={new Date(1990, 0, 1)}
-                      maxDate={new Date()}
                       calendarStartDay={1}
                     />
                   </div>
@@ -583,7 +597,7 @@ export default function AnalyticsDashboard() {
                       value="workload"
                       disabled={isWorkloadDisabled}
                     >
-                      Workload {isWorkloadDisabled ? '(Future dates only)' : ''}
+                      Workload {isWorkloadDisabled ? '(Only Today or Custom: Today/Future)' : ''}
                     </option>
 
                     <option value="missedfollowup">Missed Follow Up</option>
