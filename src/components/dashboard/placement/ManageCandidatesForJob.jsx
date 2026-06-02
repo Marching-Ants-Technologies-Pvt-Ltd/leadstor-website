@@ -29,11 +29,14 @@ export default function ManageCandidatesForJob({
 
   // Edit status modal state
   const [showEditStatusModal, setShowEditStatusModal] = useState(false);
+  const [showBulkStatusControls, setShowBulkStatusControls] = useState(false);
   const [editingCandidate, setEditingCandidate] = useState(null);
   const [statusList, setStatusList] = useState([]);
   const [editStatus, setEditStatus] = useState('');
   const [editRemarks, setEditRemarks] = useState('');
   const [editInterviewDate, setEditInterviewDate] = useState('');
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [bulkUpdating, setBulkUpdating] = useState(false);
   const [highlightedNoResume, setHighlightedNoResume] = useState([]);
 
   // Pagination
@@ -57,6 +60,13 @@ export default function ManageCandidatesForJob({
   useEffect(() => {
     loadCandidates();
   }, [jobId]);
+
+  useEffect(() => {
+    if (selectedIds.length === 0) {
+      setShowBulkStatusControls(false);
+      setBulkStatus('');
+    }
+  }, [selectedIds]);
 
   const loadCandidates = async () => {
     setLoading(true);
@@ -245,12 +255,35 @@ export default function ManageCandidatesForJob({
 
     // Fetch status list
     try {
-      const data = await xFetch({
-        path: '/services/job/getCandidateStatuses',
-        payload: { corporateId: String(corporateId) },
-      });
-      setStatusList(Array.isArray(data) ? data : []);
+      const statuses = await getStatusOptions();
+      setStatusList(statuses);
       setShowEditStatusModal(true);
+    } catch (err) {
+      console.error('Failed to load statuses:', err);
+      toast.error('Failed to load status options');
+    }
+  };
+
+  const getStatusOptions = async () => {
+    const data = await xFetch({
+      path: '/services/job/getCandidateStatuses',
+      payload: { corporateId: String(corporateId) },
+    });
+
+    return Array.isArray(data) ? data : [];
+  };
+
+  const openBulkStatusControls = async () => {
+    if (selectedIds.length === 0) {
+      toast.warn('No candidates selected');
+      return;
+    }
+
+    try {
+      const statuses = statusList.length > 0 ? statusList : await getStatusOptions();
+      setStatusList(statuses);
+      setBulkStatus(statuses[0]?.status || statuses[0]?.name || statuses[0] || 'Pending');
+      setShowBulkStatusControls(true);
     } catch (err) {
       console.error('Failed to load statuses:', err);
       toast.error('Failed to load status options');
@@ -304,6 +337,56 @@ export default function ManageCandidatesForJob({
       }
     } catch (err) {
       toast.error('Failed to update status');
+    }
+  };
+
+  const handleBulkUpdateStatus = async () => {
+    if (selectedIds.length === 0) {
+      toast.warn('No candidates selected');
+      return;
+    }
+
+    if (!bulkStatus) {
+      toast.warn('Please select a status');
+      return;
+    }
+
+    setBulkUpdating(true);
+    try {
+      const results = await Promise.allSettled(
+        selectedIds.map((id) =>
+          xFetch({
+            path: '/services/job/updateCandidateStatus',
+            method: 'GET',
+            payload: {
+              id: String(id),
+              status: bulkStatus,
+              remarks: '',
+              interview_date: null,
+            },
+          })
+        )
+      );
+
+      const successCount = results.filter(
+        (result) => result.status === 'fulfilled' && result.value
+      ).length;
+      const failCount = results.length - successCount;
+
+      if (successCount > 0) {
+        toast.success(`Updated ${successCount} candidate(s)`);
+      }
+      if (failCount > 0) {
+        toast.error(`Failed to update ${failCount} candidate(s)`);
+      }
+
+      setShowBulkStatusControls(false);
+      setSelectedIds([]);
+      loadCandidates();
+    } catch (err) {
+      toast.error('Failed to update status');
+    } finally {
+      setBulkUpdating(false);
     }
   };
 
@@ -418,6 +501,64 @@ export default function ManageCandidatesForJob({
               <Trash2 size={14} />
               Delete {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
             </button>
+
+            <button
+              onClick={openBulkStatusControls}
+              disabled={selectedIds.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
+            >
+              <Edit2 size={14} />
+              Bulk Status {selectedIds.length > 0 ? `(${selectedIds.length})` : ''}
+            </button>
+
+            {showBulkStatusControls && (
+              <>
+                <select
+                  value={bulkStatus}
+                  onChange={(e) => setBulkStatus(e.target.value)}
+                  className="px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  disabled={bulkUpdating}
+                >
+                  {statusList.length > 0 ? (
+                    statusList.map((item, idx) => {
+                      const value = typeof item === 'string' ? item : (item.status || item.name || '');
+                      const label = typeof item === 'string' ? item : (item.status || item.name || '');
+                      return (
+                        <option key={idx} value={value}>
+                          {label}
+                        </option>
+                      );
+                    })
+                  ) : (
+                    <>
+                      <option value="Pending">Pending</option>
+                      <option value="Interested">Interested</option>
+                      <option value="Not Interested">Not Interested</option>
+                      <option value="Shortlisted">Shortlisted</option>
+                      <option value="Rejected">Rejected</option>
+                      <option value="Issue">Issue</option>
+                    </>
+                  )}
+                </select>
+
+                <button
+                  onClick={handleBulkUpdateStatus}
+                  disabled={bulkUpdating || !bulkStatus || selectedIds.length === 0}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-700 text-white rounded-lg hover:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
+                >
+                  {bulkUpdating ? <Loader2 size={14} className="animate-spin" /> : <Edit2 size={14} />}
+                  Save
+                </button>
+
+                <button
+                  onClick={() => setShowBulkStatusControls(false)}
+                  disabled={bulkUpdating}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
 
             <button
               onClick={handleShareToHR}
