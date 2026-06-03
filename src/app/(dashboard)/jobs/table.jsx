@@ -6,6 +6,7 @@ import { Pencil, Trash2, Send, Bell,Users,Clock } from 'lucide-react';
 
 export default function JobPostingsTable({
     rows = [],
+    ownerMap = {},
     selectedIds = [],
     onSelectionChange,
     onEdit,
@@ -48,6 +49,11 @@ export default function JobPostingsTable({
         fullDesc.classList.add('hidden');
       }
     }
+  };
+
+  const getOwnerDisplayName = (ownerValue) => {
+    if (ownerValue === null || ownerValue === undefined || ownerValue === '') return '-';
+    return ownerMap[String(ownerValue)] || ownerValue;
   };
 
   return (
@@ -158,7 +164,7 @@ export default function JobPostingsTable({
                 <td className="p-3 align-top">{job.contact_name || '-'}</td>
                 <td className="p-3 align-top">{job.contact_email || '-'}</td>
                 <td className="p-3 align-top">{job.contact_phone || '-'}</td>
-                <td className="p-3 align-top">{job.owner || '-'}</td>
+                <td className="p-3 align-top">{getOwnerDisplayName(job.owner)}</td>
                 <td className="p-3">
                   <span
                     className={`inline-block px-2.5 py-0.5 text-xs font-medium rounded-full ${

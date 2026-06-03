@@ -81,7 +81,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     const value = fields?.[item.dataField] || "";
     const options = dynamicFields[item.dataField] || [];
     const label = (item.dataField === 'course' && isCorporate800) ? courseLabel : (item.displayName || item.fieldName);
-    const isRequiredField = ['course', 'source', 'remarks'].includes(item.dataField);
+    const isRequiredField = ['source', 'remarks'].includes(item.dataField);
     const hasError = Boolean(validationErrors[item.dataField]);
 
     if (item.dataField === "assignedUserId") {
@@ -352,7 +352,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     const sourceValue = String(fields.source || originalFields.source || "").trim();
     const nextErrors = {
       remarks: remarksValue === "",
-      course: courseValue === "",
       source: sourceValue === "",
     };
 
@@ -361,7 +360,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       if (nextErrors.remarks) {
         toast.error("Remarks are mandatory for every update.");
       } else {
-        toast.error("Course and Source are mandatory.");
+        toast.error("Source is mandatory.");
       }
       return;
     }

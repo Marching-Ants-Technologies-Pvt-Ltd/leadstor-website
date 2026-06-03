@@ -27,6 +27,7 @@ export default function JobPostingsController() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [ownerMap, setOwnerMap] = useState({});
 
   // ─── Modals & Views ──────────────────────────────────────────────────────
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,6 +40,11 @@ export default function JobPostingsController() {
   const [showScheduledStatus, setShowScheduledStatus] = useState(false);
   const [activeJob, setActiveJob] = useState(null); // shared for send, log, manage
 
+  const getOwnerDisplayName = useCallback((ownerValue) => {
+    if (ownerValue === null || ownerValue === undefined || ownerValue === '') return '';
+    return ownerMap[String(ownerValue)] || String(ownerValue);
+  }, [ownerMap]);
+
   // ─── Fetch Jobs ──────────────────────────────────────────────────────────
   const reloadJobs = useCallback(async () => {
     setLoading(true);
@@ -47,8 +53,16 @@ export default function JobPostingsController() {
         corporateId: String(corporateId),
         search: search.trim() || undefined,
       };
-      const data = await xFetch({ path: '/services/job/getJobs', payload: params });
-      const list = Array.isArray(data) ? data : data?.rows || data?.data || [];
+      const [jobsRes, ownersRes] = await Promise.all([
+        xFetch({ path: '/services/job/getJobs', payload: params }),
+        xFetch({ path: '/services/profile/getUsers', payload: { basic: 1 } }).catch(() => ({})),
+      ]);
+      const list = Array.isArray(jobsRes) ? jobsRes : jobsRes?.rows || jobsRes?.data || [];
+      const owners = ownersRes && typeof ownersRes === 'object' ? ownersRes : {};
+      const normalizedOwnerMap = Object.fromEntries(
+        Object.entries(owners).map(([id, name]) => [String(id), String(name)])
+      );
+      setOwnerMap(normalizedOwnerMap);
       setAllJobs(list);
     } catch (err) {
       toast.error('Failed to load job postings');
@@ -141,7 +155,7 @@ export default function JobPostingsController() {
       'Contact Person': j.contact_name || '',
       'Email': j.contact_email || '',
       'Phone': j.contact_phone || '',
-      'Owner': j.owner || '',
+      'Owner': getOwnerDisplayName(j.owner),
       'Status': j.status || '',
       'Job Tags': Array.isArray(j.jobTags) ? j.jobTags.join(', ') : '',
       'Last Updated': j.updateTime ? format(new Date(j.updateTime), 'dd-MMM-yyyy HH:mm') : '',
@@ -245,6 +259,7 @@ export default function JobPostingsController() {
               ) : (
                 <JobPostingsTable
                   rows={jobs}
+                  ownerMap={ownerMap}
                   selectedIds={selectedIds}
                   onSelectionChange={setSelectedIds}
                   onEdit={openEditModal}
