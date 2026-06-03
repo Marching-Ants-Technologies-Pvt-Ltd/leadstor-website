@@ -47,6 +47,73 @@ export default function RelatedEnquiries({
     return 'bg-green-500';
   };
 
+  const decodeRemarkHtml = (value = '') => {
+    return String(value)
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'");
+  };
+
+  const parseRemarkWithAudio = (value = '') => {
+    const decoded = decodeRemarkHtml(value);
+    const audioUrls = [];
+    let text = decoded;
+
+    // Extract all audio/source src URLs from embedded html.
+    const htmlAudioMatches = decoded.matchAll(/<(audio|source)[^>]*src=["']([^"']+)["'][^>]*>/gi);
+    for (const match of htmlAudioMatches) {
+      if (match?.[2]) {
+        audioUrls.push(match[2]);
+      }
+    }
+
+    // Extract raw audio-file links if present as plain text.
+    const rawLinkMatches = decoded.matchAll(/https?:\/\/[^\s"'<>]+?\.(mp3|wav|ogg|m4a)(\?[^\s"'<>]*)?/gi);
+    for (const match of rawLinkMatches) {
+      if (match?.[0]) {
+        audioUrls.push(match[0]);
+      }
+    }
+
+    // Remove audio/source html and keep readable text only.
+    text = text
+      .replace(/<audio[\s\S]*?<\/audio>/gi, '')
+      .replace(/<source[^>]*>/gi, '')
+      .replace(/<\/?audio[^>]*>/gi, '')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?[^>]+>/g, '')
+      .trim();
+
+    const uniqueAudioUrls = [...new Set(audioUrls)];
+    return { text, audioUrls: uniqueAudioUrls };
+  };
+
+  const renderRemarkCell = (remarks = '') => {
+    const { text, audioUrls } = parseRemarkWithAudio(remarks);
+
+    if (!text && audioUrls.length === 0) {
+      return '-';
+    }
+
+    return (
+      <div className="flex flex-col gap-1.5">
+        {text ? <div className="whitespace-pre-wrap break-words">{text}</div> : null}
+        {audioUrls.map((url, idx) => (
+          <audio
+            key={`${url}-${idx}`}
+            controls
+            preload="none"
+            controlsList="nodownload"
+            className="h-8 min-w-[170px] max-w-[230px]"
+          >
+            <source src={url} />
+          </audio>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="p-4 bg-gray-50 rounded-b-xl border-t border-gray-200 animate-fade-in">
       <h3 className="text-lg font-semibold text-gray-900 mb-3 text-center">Related Inquiries</h3>
@@ -121,7 +188,7 @@ export default function RelatedEnquiries({
                   </td>
 
                   <td className="px-2 py-1.5 text-xs text-gray-600 break-words whitespace-normal">
-                    {item.remarks || '-'}
+                    {renderRemarkCell(item.remarks)}
                   </td>
 
                   <td className="px-2 py-1.5 whitespace-nowrap text-xs text-gray-600">

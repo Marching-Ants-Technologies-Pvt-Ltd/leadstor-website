@@ -123,7 +123,11 @@ export default function SendEmailModal({ isOpen, onClose, ids, emails = [] }) {
       formData.append('subject', subject);
       formData.append('corporateId', Corporate?._id || '');
       formData.append('userId', User?._id || '');
-      if (attachment) formData.append('attachment', attachment);
+      if (attachment) {
+        formData.append('attachment', attachment);
+      }else{
+        formData.append('attachment',false);
+      }
 
       let response;
       try {

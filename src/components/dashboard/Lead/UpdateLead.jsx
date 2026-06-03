@@ -22,6 +22,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   const [originalFields, setOriginalFields] = useState({ ...selectedLead });
   const [showTimeline, setShowTimeline] = useState(false);
   const [displayRemarks, setDisplayRemarks] = useState("");
+  const [validationErrors, setValidationErrors] = useState({});
   const [aiNextStep, setAiNextStep] = useState("");
   const isCorporate800 = Corporate?.type === 800;
   const courseLabel = isCorporate800 ? 'Country' : 'Course';
@@ -80,6 +81,8 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     const value = fields?.[item.dataField] || "";
     const options = dynamicFields[item.dataField] || [];
     const label = (item.dataField === 'course' && isCorporate800) ? courseLabel : (item.displayName || item.fieldName);
+    const isRequiredField = ['course', 'source', 'remarks'].includes(item.dataField);
+    const hasError = Boolean(validationErrors[item.dataField]);
 
     if (item.dataField === "assignedUserId") {
       const { options: ownerOptions } = renderOwnerSelect(
@@ -88,11 +91,14 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
       return (
         <div key={index} className="field-card">
-          <label className="label-crm">{label}</label>
+          <label className="label-crm">
+            {label}
+            {isRequiredField && <span className="required-dot"> *</span>}
+          </label>
           <select
             value={fields.assignedUserId}
             onChange={(e) => handleChange(item.dataField, e.target.value)}
-            className="input-crm"
+            className={`input-crm ${hasError ? 'input-error' : ''}`}
           >
             {ownerOptions.map((o, i) => (
               <option key={i} value={o.key} disabled={o.disabled}>
@@ -105,9 +111,46 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     }
 
     if (item.fieldType === "dropdown") {
+      const shouldFallbackToTextInput =
+        ['course', 'source'].includes(item.dataField) && options.length === 0;
+      const shouldIncludeExistingValue =
+        ['course', 'source'].includes(item.dataField) &&
+        String(value || '').trim() !== '';
+      const optionValues = options.map((opt) => ({
+        key: String(opt?.key ?? '').trim().toLowerCase(),
+        value: String(opt?.value ?? '').trim().toLowerCase()
+      }));
+      const isExistingValueInOptions = optionValues.some(
+        (opt) => opt.key === String(value).trim().toLowerCase() || opt.value === String(value).trim().toLowerCase()
+      );
+      const mergedOptions = (shouldIncludeExistingValue && !isExistingValueInOptions)
+        ? [{ key: value, value }, ...options]
+        : options;
+
+      if (shouldFallbackToTextInput) {
+        return (
+          <div key={index} className="field-card">
+            <label className="label-crm">
+              {label}
+              {isRequiredField && <span className="required-dot"> *</span>}
+            </label>
+            <input
+              type="text"
+              placeholder={`Enter ${label}`}
+              value={value}
+              onChange={(e) => handleChange(item.dataField, e.target.value)}
+              className={`input-crm ${hasError ? 'input-error' : ''}`}
+            />
+          </div>
+        );
+      }
+
       return (
         <div key={index} className="field-card">
-          <label className="label-crm">{label}</label>
+          <label className="label-crm">
+            {label}
+            {isRequiredField && <span className="required-dot"> *</span>}
+          </label>
           <select
             value={value}
             onChange={(e) => {
@@ -116,16 +159,16 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
               const isFollowupType = selectedOption.getAttribute('data-isfollowup');
               handleChange(item.dataField, selectedValue, isFollowupType);
             }}
-            className="input-crm"
+            className={`input-crm ${hasError ? 'input-error' : ''}`}
           >
             {item.dataField !== "status" && <option value="">-- Select --</option>}
-            {options.map((opt) => (
+            {mergedOptions.map((opt, optIndex) => (
               <option 
-                key={opt.key} 
-                value={opt.key} 
+                key={`${opt?.key ?? opt?.value ?? optIndex}-${optIndex}`} 
+                value={opt?.key ?? opt?.value ?? ''} 
                 data-isfollowup={opt.isFollowup}
               >
-                {opt.value}
+                {opt?.value ?? opt?.key ?? ''}
               </option>
             ))}
           </select>
@@ -136,7 +179,10 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     if (item.fieldType === "textarea") {
       return (
         <div key={index} className="field-card">
-          <label className="label-crm">{label}</label>
+          <label className="label-crm">
+            {label}
+            <span className="required-dot"> *</span>
+          </label>
           <textarea
             rows="3"
             value={displayRemarks}
@@ -144,8 +190,9 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
               setDisplayRemarks(e.target.value);
               handleChange(item.dataField, e.target.value); 
             }}
-            className="input-crm resize-none"
+            className={`input-crm resize-none remarks-required ${hasError ? 'input-error' : ''}`}
           />
+          <div className="field-helper">Remarks are required for every update.</div>
         </div>
       );
     }
@@ -250,7 +297,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       payload,
     })
       .then((data) => {
-        setFields(data);
+        setFields({ ...data, remarks: "" });
         setDisplayRemarks("");
         if (data.status === "Follow Up" || data.isFollowupType == '1') {
           setShowDatePicker(true);
@@ -275,6 +322,9 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   };
 
   const handleChange = (field, value, isFollowupType) => {
+    if (validationErrors[field]) {
+      setValidationErrors((prev) => ({ ...prev, [field]: false }));
+    }
     setFields((prev) => ({ ...prev, [field]: value }));
     if (field == "status") {
       if (value === "Follow Up" || isFollowupType == '1') {
@@ -297,6 +347,27 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       return;
     }
 
+    const remarksValue = String(fields.remarks || "").trim();
+    const courseValue = String(fields.course || originalFields.course || "").trim();
+    const sourceValue = String(fields.source || originalFields.source || "").trim();
+    const nextErrors = {
+      remarks: remarksValue === "",
+      course: courseValue === "",
+      source: sourceValue === "",
+    };
+
+    if (Object.values(nextErrors).some(Boolean)) {
+      setValidationErrors(nextErrors);
+      if (nextErrors.remarks) {
+        toast.error("Remarks are mandatory for every update.");
+      } else {
+        toast.error("Course and Source are mandatory.");
+      }
+      return;
+    }
+
+    setValidationErrors({});
+
     setLoading(true);
     try {
       const payload = {
@@ -306,12 +377,12 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         mobile: fields.mobile || originalFields.mobile || "",
         altMobile: fields.altMobile || originalFields.altMobile || "",
         status: fields.status || originalFields.status || "",
-        remarks: fields.remarks || originalFields.remarks || "",
-        course: fields.course || originalFields.course || "",
+        remarks: remarksValue,
+        course: courseValue,
         score: fields.score || originalFields.score || "",
         leadLocationState: fields.leadLocationState || originalFields.leadLocationState || "",
         associatedCenters: fields.associatedCenters || originalFields.associatedCenters || "",
-        source: fields.source || originalFields.source || "",
+        source: sourceValue,
         location: fields.location || originalFields.location || "",
         assignedTo: fields.assignedUserId || originalFields.assignedUserId || "",
         deviceType: fields.deviceType || originalFields.deviceType || "",
@@ -654,6 +725,28 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
           background: #ffffff;
           border-color: #60a5fa;
           box-shadow: 0 0 0 3px rgba(96,165,250,0.2);
+        }
+
+        .required-dot {
+          color: #dc2626;
+          font-weight: 700;
+        }
+
+        .input-error {
+          border-color: #ef4444 !important;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18) !important;
+          background: #fff7f7 !important;
+        }
+
+        .remarks-required {
+          border-width: 2px;
+          border-color: #f59e0b;
+        }
+
+        .field-helper {
+          font-size: 11px;
+          color: #b45309;
+          margin-top: 4px;
         }
 
         .btn-secondary-crm {

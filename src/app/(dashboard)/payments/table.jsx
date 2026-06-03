@@ -96,6 +96,8 @@ export default function PaymentsTable({
         return inputDate < today;
     }
 
+    const isPlacementReadyRow = (item) => Number(item?.var_is_placementready ?? 0) === 1;
+
 
     return (
         <>
@@ -194,7 +196,16 @@ export default function PaymentsTable({
 
                 <tbody className="divide-y">
                     {rows.map(item => (
-                        <tr className={`${(isDateOlderThanToday(item?.renewalDate, item?.pendingAmount)) ? 'bg-rose-50 hover:bg-rose-200' : 'hover:bg-slate-50'}`} key={item?.id}>
+                        <tr
+                            className={`${
+                                isDateOlderThanToday(item?.renewalDate, item?.pendingAmount)
+                                    ? 'bg-rose-50 hover:bg-rose-200'
+                                    : isPlacementReadyRow(item)
+                                        ? 'bg-sky-50 hover:bg-sky-100'
+                                        : 'hover:bg-slate-50'
+                            }`}
+                            key={item?.id}
+                        >
                             <td className="p-2">
                                 <input
                                     className='h-[14px] w-[14px] mt-1 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500'
