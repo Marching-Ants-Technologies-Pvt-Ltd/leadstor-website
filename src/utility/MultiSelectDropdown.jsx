@@ -25,12 +25,19 @@ export default function MultiSelectDropdown({
     );
   };
 
+  const getLabelByValue = (selectedValue) => {
+    const selected = options.find(
+      (opt) => String(opt.value) === String(selectedValue)
+    );
+    return selected?.label ?? selectedValue;
+  };
+
   const displayText =
     value.length === 0
       ? 'All'
       : value.length === 1
-      ? value[0]
-      : `${value[0]} +${value.length - 1}`;
+      ? getLabelByValue(value[0])
+      : `${getLabelByValue(value[0])} +${value.length - 1}`;
 
   return (
     <div ref={ref} className="relative">
