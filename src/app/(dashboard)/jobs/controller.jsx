@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
@@ -86,10 +86,16 @@ export default function JobPostingsController() {
     router.prefetch('/jobs/settings');
   }, [router]);
 
-  // ─── Client-side Pagination ──────────────────────────────────────────────
-  const total = allJobs.length;
+  // ─── Client-side Search + Pagination ─────────────────────────────────────
+  const filteredJobs = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return allJobs;
+    return allJobs.filter((job) => (job?.title || '').toLowerCase().includes(term));
+  }, [allJobs, search]);
+
+  const total = filteredJobs.length;
   const totalPages = Math.ceil(total / limit);
-  const jobs = allJobs.slice((page - 1) * limit, page * limit);
+  const jobs = filteredJobs.slice((page - 1) * limit, page * limit);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   const openAddModal = () => {
