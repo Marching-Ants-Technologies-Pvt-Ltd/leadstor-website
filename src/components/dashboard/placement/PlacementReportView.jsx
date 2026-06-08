@@ -13,7 +13,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [searchTerm, setSearchTerm] = useState('')
 
-  const limit = 70 // Increased slightly for better screen fit
+  const limit = 25 // Increased slightly for better screen fit
   
   // Filter report data based on search term
   const filteredReportData = originalReportData.filter(row => {
@@ -26,11 +26,8 @@ export default function PlacementReportView({ corporateId, onBack }) {
     );
   });
   
-  const totalPages = Math.ceil(filteredReportData.length / limit);
-  const currentReportData = filteredReportData.slice(
-    (reportPage - 1) * limit,
-    reportPage * limit
-  );
+  const totalPages = Math.ceil(reportTotal / limit);
+  const currentReportData = filteredReportData;
 
   // Load main report data
   const loadReportData = async () => {
@@ -43,7 +40,14 @@ export default function PlacementReportView({ corporateId, onBack }) {
 
       const response = await xFetch({
         path: '/services/job/getPlacementReadyReport',
-        payload: params,
+        payload: {
+          corporateId: String(corporateId),
+          offset: String((reportPage - 1) * limit),
+          limit: String(limit),
+          search: '',
+          order: 'asc',
+          time: Date.now()
+        },
       })
 
       const rows = response?.rows || response?.data || response || []

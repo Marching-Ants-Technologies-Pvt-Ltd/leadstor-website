@@ -144,11 +144,14 @@ export default function ViewBatchDetailsModal({ batch, onClose }) {
     if (!window.confirm(`Remove ${name} from batch?`)) return
 
     try {
+      const resolvedBatchId = batch?.batchId || batch?.BatchId || batch?.id
+      if (!resolvedBatchId) throw new Error('Missing batchId for delete')
+
       await xFetch({
         path: '/services/attendance/deleteCandidateFromBatch',
         method: 'POST',
-        body: {
-          batchId: batch.batchId,
+        payload: {
+          batchId: resolvedBatchId,
           instituteCandidateId: candidate.institute_candidate_id || candidate.instituteCandidateId
         }
       })
@@ -157,9 +160,9 @@ export default function ViewBatchDetailsModal({ batch, onClose }) {
 
       // Re-fetch all data (parallel again)
       const [batchDetailsRes, trainersRes, candidatesRes] = await Promise.all([
-        xFetch({ path: `/services/attendance/getBatchDetails?BatchId=${batch.batchId}` }),
-        xFetch({ path: `/services/attendance/getTrainers?batchId=${batch.batchId}` }),
-        xFetch({ path: `/services/attendance/getCandidatesToBatch?labelId=${batch.labelId}&batchId=${batch.batchId}` })
+        xFetch({ path: `/services/attendance/getBatchDetails?BatchId=${resolvedBatchId}` }),
+        xFetch({ path: `/services/attendance/getTrainers?batchId=${resolvedBatchId}` }),
+        xFetch({ path: `/services/attendance/getCandidatesToBatch?labelId=${batch.labelId}&batchId=${resolvedBatchId}` })
       ])
 
       const paymentRes = await xFetch({
