@@ -14,45 +14,56 @@ export default function ScheduledEmailStatus({ jobId, title, onBack }) {
   const [showFilter, setShowFilter] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const totalPages = Math.ceil(totalRecords / itemsPerPage);
 
-  const filteredLogs = logs.filter(
-    (log) =>
-      log.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      log.mobile?.includes(searchTerm)
-  );
+  const getVisiblePages = () => {
+    const pages = [];
 
-  const paginatedLogs = filteredLogs.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    let start = Math.max(1, currentPage - 3);
+    let end = Math.min(totalPages, start + 7);
 
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+    if (end - start < 7) {
+      start = Math.max(1, end - 7);
+    }
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    return pages;
+  };
 
   useEffect(() => {
     loadEmailLogs();
-  }, [jobId]);
+  }, [jobId, currentPage, itemsPerPage]);
 
   const loadEmailLogs = async () => {
-    console.log(startDate);
     setLoading(true);
+
     try {
+      const offset = (currentPage - 1) * itemsPerPage;
+
       const params = {
         jobId: String(jobId),
+        offset,
+        limit: itemsPerPage,
       };
+
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
+      if (searchTerm) params.search = searchTerm;
 
       const data = await xFetch({
         path: '/services/job/getJobNotificationsEmailLogs',
         payload: params,
       });
 
-      const list = Array.isArray(data) ? data : data?.rows || [];
-      setLogs(list);
+      setLogs(data?.rows || []);
+      setTotalRecords(Number(data?.total || 0));
     } catch (err) {
-      console.error('Failed to load email logs:', err);
+      console.error(err);
       toast.error('Failed to load scheduled email status');
     } finally {
       setLoading(false);
@@ -190,14 +201,14 @@ export default function ScheduledEmailStatus({ jobId, title, onBack }) {
                   </div>
                 </td>
               </tr>
-            ) : paginatedLogs.length === 0 ? (
+            ) : logs.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-16 text-center text-gray-500">
                   No scheduled emails found
                 </td>
               </tr>
             ) : (
-              paginatedLogs.map((log, index) => {
+              logs.map((log, index) => {
                 const slNo = (currentPage - 1) * itemsPerPage + index + 1;
                 return (
                   <tr key={index} className="hover:bg-gray-50">
@@ -225,36 +236,95 @@ export default function ScheduledEmailStatus({ jobId, title, onBack }) {
       </div>
 
       {/* Pagination */}
-      {!loading && filteredLogs.length > 0 && (
-        <div className="bg-white border-t px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm text-gray-600">
-          <div>
-            Showing {(currentPage - 1) * itemsPerPage + 1} to{' '}
-            {Math.min(currentPage * itemsPerPage, filteredLogs.length)} of {filteredLogs.length}
+        {!loading && totalRecords > 0 && (
+          <div className="bg-white border-t px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4">
+
+            {/* Left */}
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <span>
+                Showing{" "}
+                <span className="font-semibold text-blue-600">
+                  {(currentPage - 1) * itemsPerPage + 1}
+                </span>
+                -
+                <span className="font-semibold text-blue-600">
+                  {Math.min(currentPage * itemsPerPage, totalRecords)}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold">
+                  {totalRecords}
+                </span>
+              </span>
+
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setItemsPerPage(Number(e.target.value));
+                }}
+                className="border rounded-full px-3 py-1 bg-white"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={500}>500</option>
+                <option value={1000}>1000</option>
+              </select>
+
+              <span>per page</span>
+            </div>
+
+            {/* Right */}
+            <div className="flex items-center gap-2">
+
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className={`px-4 py-2 rounded-full border text-sm font-medium transition
+                  ${
+                    currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }
+                `}
+              >
+                Previous
+              </button>
+
+              {getVisiblePages().map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-10 h-10 rounded-full border font-medium transition
+                    ${
+                      currentPage === page
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 hover:bg-gray-50"
+                    }
+                  `}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className={`px-4 py-2 rounded-full border text-sm font-medium transition
+                  ${
+                    currentPage === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-white hover:bg-gray-50 text-gray-700"
+                  }
+                `}
+              >
+                Next
+              </button>
+
+            </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              className="px-4 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              Previous
-            </button>
-
-            <span className="font-medium">
-              Page {currentPage} of {totalPages}
-            </span>
-
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="px-4 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }

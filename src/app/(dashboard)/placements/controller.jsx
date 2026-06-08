@@ -252,27 +252,36 @@ export default function PlacementReadyController() {
 
     // Report list reload
     const reloadReport = async () => {
-      if (showReportView) return
-      setReportLoading(true)
+      setReportLoading(true);
+
       try {
         const params = {
+          corporateId: String(corporateId),
           offset: String((reportPage - 1) * 10),
           limit: '10',
-        }
+          search: '',
+          order: 'asc',
+          time: Date.now()
+        };
+
+        console.log('Report Params:', params);
 
         const data = await xFetch({
           path: '/services/job/getPlacementReadyReport',
           payload: params,
-        })
+        });
 
-        setReportData(data?.rows || [])
-        setReportTotal(data?.total || 0)
+        console.log('Report Response:', data);
+
+        setReportData(data?.rows || []);
+        setReportTotal(data?.total || 0);
       } catch (err) {
-        toast.error('Failed to load report')
+        console.error('Report Error:', err);
+        toast.error('Failed to load report');
       } finally {
-        setReportLoading(false)
+        setReportLoading(false);
       }
-    }
+    };
 
     // Load main list or report based on view
     useEffect(() => {
@@ -323,6 +332,11 @@ export default function PlacementReadyController() {
       {showReportView ? (
           <PlacementReportView
             corporateId={corporateId}
+            reportData={reportData}
+            reportTotal={reportTotal}
+            reportLoading={reportLoading}
+            reportPage={reportPage}
+            setReportPage={setReportPage}
             onBack={() => setShowReportView(false)}
           />
         ) : (
@@ -485,6 +499,7 @@ export default function PlacementReadyController() {
                       <option value={50}>50</option>
                       <option value={100}>100</option>
                       <option value={500}>500</option>
+                      <option value={1000}>1000</option>
                     </select>
 
                     <span className="font-medium">per page</span>

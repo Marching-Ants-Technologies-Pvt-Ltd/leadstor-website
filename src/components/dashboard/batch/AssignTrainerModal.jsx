@@ -27,7 +27,10 @@ export default function AssignTrainerModal({ batch, onClose, onSuccess }) {
     fetchTrainers()
   }, [batch.batchId])
 
+  const getTrainerId = (trainer) => trainer?.userId ?? trainer?.trainerId ?? trainer?.id ?? null
+
   const toggleTrainer = (trainerId) => {
+    if (trainerId === null || trainerId === undefined || String(trainerId).trim() === '') return
     setSelectedTrainerIds(prev =>
       prev.includes(trainerId)
         ? prev.filter(id => id !== trainerId)
@@ -36,29 +39,45 @@ export default function AssignTrainerModal({ batch, onClose, onSuccess }) {
   }
 
   const handleAssign = async () => {
-    if (!selectedTrainerIds.length) return toast.warn('Select at least one trainer')
+    const resolvedBatchId = batch?.batchId || batch?.BatchId || batch?.id
+    const validTrainerIds = Array.from(
+      new Set(
+        selectedTrainerIds.filter(
+          (id) => id !== null && id !== undefined && String(id).trim() !== ''
+        )
+      )
+    )
+
+    if (!validTrainerIds.length) return toast.warn('Select at least one trainer')
+    if (!resolvedBatchId) return toast.error('Batch ID is missing')
 
     setLoading(true)
 
     try {
-      // 1. Bulk reset/update all trainers (using FormData)
+      const details = validTrainerIds.reduce((acc, id) => {
+        acc[String(id)] = 1
+        return acc
+      }, {})
 
+      // 1. Bulk reset/update all trainers
       await xFetch({
         path: '/services/attendance/updateAllTrainertoBatch',
         method: 'POST',
         payload: {
-            batchId: batch.batchId,
+            updateall: true,
+            batchId: resolvedBatchId,
             labelId: batch?.labelId,
+            details
         }
       })
 
-      // 2. Assign each selected trainer one by one (using FormData)
-      for (const trainerId of selectedTrainerIds) {
+      // 2. Assign each selected trainer one by one
+      for (const trainerId of validTrainerIds) {
         await xFetch({
             path: '/services/attendance/assignTrainertoBatch',
             method: 'POST',
             payload: {
-                batchId: batch.batchId,
+                batchId: resolvedBatchId,
                 labelId: batch?.labelId,
                 trainerId: trainerId
             }
@@ -137,12 +156,30 @@ export default function AssignTrainerModal({ batch, onClose, onSuccess }) {
                   <th className="px-4 py-3 text-left w-10">
                     <input
                       type="checkbox"
-                      checked={selectedTrainerIds.length === trainers.length && trainers.length > 0}
+                      checked={
+                        trainers.length > 0 &&
+                        selectedTrainerIds.length ===
+                          Array.from(
+                            new Set(
+                              trainers
+                                .map(getTrainerId)
+                                .filter((id) => id !== null && id !== undefined && String(id).trim() !== '')
+                            )
+                          ).length
+                      }
                       onChange={() => {
-                        if (selectedTrainerIds.length === trainers.length) {
+                        const allTrainerIds = Array.from(
+                          new Set(
+                            trainers
+                              .map(getTrainerId)
+                              .filter((id) => id !== null && id !== undefined && String(id).trim() !== '')
+                          )
+                        )
+
+                        if (selectedTrainerIds.length === allTrainerIds.length) {
                           setSelectedTrainerIds([])
                         } else {
-                          setSelectedTrainerIds(trainers.map(t => t.userId))
+                          setSelectedTrainerIds(allTrainerIds)
                         }
                       }}
                       className="h-4 w-4 rounded border-gray-300"
@@ -154,13 +191,13 @@ export default function AssignTrainerModal({ batch, onClose, onSuccess }) {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {filteredTrainers.length ? (
-                  filteredTrainers.map(t => (
-                    <tr key={t.userId} className="hover:bg-gray-50 transition-colors">
+                  filteredTrainers.map((t, i) => (
+                    <tr key={String(getTrainerId(t) ?? t.trainerEmail ?? t.trainerName ?? i)} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3">
                         <input
                           type="checkbox"
-                          checked={selectedTrainerIds.includes(t.userId)}
-                          onChange={() => toggleTrainer(t.userId)}
+                          checked={selectedTrainerIds.includes(getTrainerId(t))}
+                          onChange={() => toggleTrainer(getTrainerId(t))}
                           className="h-4 w-4 rounded border-gray-300"
                         />
                       </td>
