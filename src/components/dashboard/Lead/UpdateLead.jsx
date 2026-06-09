@@ -93,7 +93,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     const value = fields?.[item.dataField] || "";
     const options = dynamicFields[item.dataField] || [];
     const label = (item.dataField === 'course' && isCorporate800) ? courseLabel : (item.displayName || item.fieldName);
-    const isRequiredField = ['source'].includes(item.dataField);
+    const isRequiredField = false;
     const hasError = Boolean(validationErrors[item.dataField]);
 
     if (item.dataField === "assignedUserId") {
@@ -366,17 +366,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
     const remarksValue = String(fields.remarks || "").trim();
     const courseValue = String(fields.course || originalFields.course || "").trim();
-    const sourceValue = String(fields.source || originalFields.source || "").trim();
-    const nextErrors = {
-      source: sourceValue === "",
-    };
-
-    if (Object.values(nextErrors).some(Boolean)) {
-      setValidationErrors(nextErrors);
-      toast.error("Source is mandatory.");
-      return;
-    }
-
     setValidationErrors({});
 
     setLoading(true);
@@ -393,7 +382,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         score: fields.score || originalFields.score || "",
         leadLocationState: fields.leadLocationState || originalFields.leadLocationState || "",
         associatedCenters: fields.associatedCenters || originalFields.associatedCenters || "",
-        source: sourceValue,
+        source: String(fields.source || originalFields.source || "").trim(),
         location: fields.location || originalFields.location || "",
         assignedTo: fields.assignedUserId || originalFields.assignedUserId || "",
         deviceType: fields.deviceType || originalFields.deviceType || "",
