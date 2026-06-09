@@ -15,7 +15,7 @@ export default function ScheduledEmailStatus({ jobId, title, onBack }) {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(1000);
   const totalPages = Math.ceil(totalRecords / itemsPerPage);
 
   const getVisiblePages = () => {

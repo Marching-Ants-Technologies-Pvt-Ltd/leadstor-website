@@ -11,7 +11,7 @@ export default function JobNotifications({ corporateId, institutes, onBack }) {
   const [selectedInstitute, setSelectedInstitute] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(1000);
   const [totalRecords, setTotalRecords] = useState(0);
 
   // Fetch all notifications (once per institute change)
@@ -223,6 +223,7 @@ export default function JobNotifications({ corporateId, institutes, onBack }) {
                 <option value={50}>50</option>
                 <option value={100}>100</option>
                 <option value={200}>200</option>
+                <option value={1000}>1000</option>
               </select>
               <span className="text-gray-600">per page</span>
             </div>

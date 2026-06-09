@@ -48,12 +48,24 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     }
   };
   const ALL_GROUPED_FIELDS = Object.values(FIELD_GROUPS).flat();
-    const EXCLUDED_ADDITIONAL_FIELDS = [
+  const EXCLUDED_ADDITIONAL_FIELDS = [
     "createdDate",
     "updateTime",
     "aINextStep",
     "action"
   ];
+
+  const normalizeLeadFields = (lead = {}) => {
+    const normalized = { ...lead };
+    const probabilityFromAnyKey =
+      normalized.leadProbability ??
+      normalized.conversionProbability ??
+      normalized.conversion_probability ??
+      "";
+
+    normalized.leadProbability = probabilityFromAnyKey === null ? "" : String(probabilityFromAnyKey);
+    return normalized;
+  };
 
   const getColumnsWithFallbacks = () => {
     const updatedColumns = [...columns];
@@ -81,7 +93,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     const value = fields?.[item.dataField] || "";
     const options = dynamicFields[item.dataField] || [];
     const label = (item.dataField === 'course' && isCorporate800) ? courseLabel : (item.displayName || item.fieldName);
-    const isRequiredField = ['source', 'remarks'].includes(item.dataField);
+    const isRequiredField = ['source'].includes(item.dataField);
     const hasError = Boolean(validationErrors[item.dataField]);
 
     if (item.dataField === "assignedUserId") {
@@ -181,7 +193,6 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         <div key={index} className="field-card">
           <label className="label-crm">
             {label}
-            <span className="required-dot"> *</span>
           </label>
           <textarea
             rows="3"
@@ -190,9 +201,8 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
               setDisplayRemarks(e.target.value);
               handleChange(item.dataField, e.target.value); 
             }}
-            className={`input-crm resize-none remarks-required ${hasError ? 'input-error' : ''}`}
+            className={`input-crm resize-none ${hasError ? 'input-error' : ''}`}
           />
-          <div className="field-helper">Remarks are required for every update.</div>
         </div>
       );
     }
@@ -263,7 +273,12 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
 
   // Check if form has changed
   const isChanged = () => {
-    return Object.keys(fields).some((key) => fields[key] !== originalFields[key]);
+    return Object.keys(fields).some((key) => {
+      if (key === "remarks") {
+        return String(fields[key] || "").trim() !== "";
+      }
+      return fields[key] !== originalFields[key];
+    });
   };
 
   const convertDateFormat = (dateStr) => {
@@ -297,14 +312,16 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
       payload,
     })
       .then((data) => {
-        setFields({ ...data, remarks: "" });
+        const normalizedData = normalizeLeadFields(data);
+        setFields({ ...normalizedData, remarks: "" });
+        setOriginalFields(normalizedData);
         setDisplayRemarks("");
-        if (data.status === "Follow Up" || data.isFollowupType == '1') {
+        if (normalizedData.status === "Follow Up" || normalizedData.isFollowupType == '1') {
           setShowDatePicker(true);
         }
         // Only update aiNextStep if API returns a non-empty value
-        if (data.aINextStep && data.aINextStep.trim() !== "") {
-          setAiNextStep(data.aINextStep);
+        if (normalizedData.aINextStep && normalizedData.aINextStep.trim() !== "") {
+          setAiNextStep(normalizedData.aINextStep);
         }
 
       })
@@ -351,17 +368,12 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     const courseValue = String(fields.course || originalFields.course || "").trim();
     const sourceValue = String(fields.source || originalFields.source || "").trim();
     const nextErrors = {
-      remarks: remarksValue === "",
       source: sourceValue === "",
     };
 
     if (Object.values(nextErrors).some(Boolean)) {
       setValidationErrors(nextErrors);
-      if (nextErrors.remarks) {
-        toast.error("Remarks are mandatory for every update.");
-      } else {
-        toast.error("Source is mandatory.");
-      }
+      toast.error("Source is mandatory.");
       return;
     }
 
@@ -491,17 +503,21 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
   }
   useEffect(() => {
     let isMounted = true;
+    const normalizedSelectedLead = normalizeLeadFields(selectedLead || {});
     // Store the initial aiNextStep from selectedLead to preserve it
-    const initialAiNextStep = selectedLead.aINextStep || "";
+    const initialAiNextStep = normalizedSelectedLead.aINextStep || "";
 
     const initialize = async () => {
       setIsInitializing(true);
 
-      setFields({ ...selectedLead, remarks: "" });
+      setFields({ ...normalizedSelectedLead, remarks: "" });
+      setOriginalFields(normalizedSelectedLead);
       setAiNextStep(initialAiNextStep);
 
-      if (selectedLead.status === "Follow Up" || selectedLead.isFollowupType === '1') {
+      if (normalizedSelectedLead.status === "Follow Up" || normalizedSelectedLead.isFollowupType === '1') {
         setShowDatePicker(true);
+      } else {
+        setShowDatePicker(false);
       }
 
       try {
@@ -528,7 +544,7 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [selectedLead?.invitationId]);
 
   return (
     <>

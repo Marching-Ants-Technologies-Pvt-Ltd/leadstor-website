@@ -87,7 +87,7 @@ export default function Navbar({ collapsed, setCollapsed, data }) {
       
         
       {/* Analytics Hover Dropdown */}
-      {( userRoles.includes("Admin") || userRoles.includes("Administrator")) && (
+      {( userRoles.includes("Admin") || userRoles.includes("Administrator") || userRoles.includes("Super Counsellor")) && (
       
         <div className="relative group">
           <button className="nav-icon" title='Analytics'>

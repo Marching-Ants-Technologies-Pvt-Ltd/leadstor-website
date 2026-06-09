@@ -9,21 +9,39 @@ import { Corporate } from "@/utility/TinyDB";
 export default function GoogleDriveConnect() {
   const [isAuthorized, setIsAuthorized] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
   // Fetch status on load
   const fetchStatus = async () => {
     try {
-      const res = await xFetch({ path: "/services/profile/getGoogleDriveStatus" });
-      // API can return boolean directly or object shape
+      // Primary check: corporate details includes Google Drive token/flag from DB.
+      const corporateData = await xFetch({
+        path: `/services/profile/getCorporateDetails?time=${Date.now()}`,
+      });
+      const token =
+        corporateData?.google_drive_token ||
+        corporateData?.google_refreshtoken ||
+        "";
       const authorized =
-        typeof res === "boolean"
-          ? res
-          : Boolean(res?.authorized ?? res?.isAuthorized ?? res?.status);
+        corporateData?.google_drive_connected === true || Boolean(token);
+
       setIsAuthorized(authorized);
     } catch {
-      toast.error("Failed to check Google Drive status");
-      setIsAuthorized(false);
+      try {
+        // Fallback to legacy status API if corporate details endpoint fails.
+        const res = await xFetch({
+          path: "/services/profile/getGoogleDriveStatus",
+        });
+        const authorized =
+          typeof res === "boolean"
+            ? res
+            : Boolean(res?.authorized ?? res?.isAuthorized ?? res?.status);
+        setIsAuthorized(authorized);
+      } catch {
+        toast.error("Failed to check Google Drive status");
+        setIsAuthorized(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -33,9 +51,85 @@ export default function GoogleDriveConnect() {
     fetchStatus();
   }, []);
 
+  const saveGoogleRefreshToken = async (refreshToken, corporateId) => {
+    const formData = new FormData();
+    formData.append("corporateId", String(corporateId || Corporate?._id || ""));
+    formData.append("drive_token", String(refreshToken || ""));
+
+    const res = await xFetch({
+      path: "/services/widget/saveGoogleDriveToken",
+      method: "POST",
+      payload: formData,
+      isFormData: true,
+    });
+
+    if (res?.status === false) {
+      throw new Error(res?.desc || "Failed to save Google Drive token");
+    }
+  };
+
+  useEffect(() => {
+    const handleMessage = async (event) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      const { type, message, refreshToken, corporateId } = event.data || {};
+
+      if (type === "GOOGLE_DRIVE_CONNECTED") {
+        setConnecting(false);
+        try {
+          await saveGoogleRefreshToken(refreshToken, corporateId);
+          setIsAuthorized(true);
+          toast.success("Connected to Google Drive");
+          fetchStatus();
+        } catch (err) {
+          setIsAuthorized(false);
+          toast.error(err?.message || "Failed to connect Google Drive");
+        }
+      }
+
+      if (type === "GOOGLE_DRIVE_ERROR") {
+        setConnecting(false);
+        toast.error(message || "Google authentication failed");
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
   const connectDrive = () => {
-    window.open(`${process.env.NEXT_PUBLIC_LEADSTOR_REST}/services/google/oAuthGoogleDrive.php`, "_blank");
-    toast.info("Please complete authentication in the opened window.");
+    if (connecting) {
+      toast.info("Google Drive connection is already in progress");
+      return;
+    }
+
+    setConnecting(true);
+
+    const popup = window.open(
+      `/api/google/connect?corporateId=${encodeURIComponent(String(Corporate?._id || ""))}`,
+      "_blank",
+      "width=560,height=720"
+    );
+
+    if (!popup) {
+      setConnecting(false);
+      toast.error("Popup blocked. Please allow popups and try again.");
+      return;
+    }
+
+    toast.info("Complete Google login in the opened tab");
+
+    const popupTimer = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(popupTimer);
+        setConnecting(false);
+      }
+    }, 500);
   };
 
   const disconnectDrive = async () => {
@@ -89,9 +183,17 @@ export default function GoogleDriveConnect() {
           {loading
             ? "Checking Google Drive status..."
             : isAuthorized
-            ? "Connected With Your Google Drive!"
+            ? "Connected to Google Drive"
             : "Connect Your Google Drive!"}
         </h1>
+        {!loading && (
+          <p className="mt-2 text-sm font-medium text-gray-700">
+            Status:{" "}
+            <span className={isAuthorized ? "text-green-600" : "text-orange-600"}>
+              {isAuthorized ? "Connected" : "Not connected"}
+            </span>
+          </p>
+        )}
 
         {/* Description */}
         <p className="text-gray-600 text-sm mt-3">
@@ -105,9 +207,10 @@ export default function GoogleDriveConnect() {
             {!isAuthorized ? (
               <button
                 onClick={connectDrive}
+                disabled={connecting}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow"
               >
-                Connect Google Drive
+                {connecting ? "Connecting..." : "Connect Google Drive"}
               </button>
             ) : (
               <button
