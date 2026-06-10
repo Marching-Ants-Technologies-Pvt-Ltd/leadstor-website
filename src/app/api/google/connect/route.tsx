@@ -9,6 +9,7 @@ export async function GET(req: NextRequest) {
     JSON.stringify({ corporateId })
   ).toString("base64url");
 
+  
   const url =
     "https://accounts.google.com/o/oauth2/v2/auth?" +
     new URLSearchParams({
