@@ -63,6 +63,9 @@ export default function LeadsMenu({
   const userRoles = Array.isArray(User.role) 
     ? User.role.map(r => String(r).trim())
     : [String(User.role).trim()];
+  const canViewLeadSettings = userRoles.some(
+    (role) => ['admin', 'administrator'].includes(String(role).trim().toLowerCase())
+  );
     
   // Sync with parent status counts when they change
   useEffect(() => {
@@ -530,9 +533,11 @@ export default function LeadsMenu({
                 )}
               </div>
 
-              <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
-                <i className="ri-settings-3-line" title="Settings" />
-              </button>
+              {canViewLeadSettings && (
+                <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
+                  <i className="ri-settings-3-line" title="Settings" />
+                </button>
+              )}
           
           <button
             className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`}

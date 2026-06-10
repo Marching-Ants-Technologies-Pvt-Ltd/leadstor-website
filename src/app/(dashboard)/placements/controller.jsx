@@ -22,7 +22,7 @@ export default function PlacementReadyController() {
     const [selectedIds, setSelectedIds] = useState([])
 
     const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(10)         // ← now changeable
+    const [limit, setLimit] = useState(1000)         // ← now changeable
 
     const [sortField, setSortField] = useState(null)
     const [sortDirection, setSortDirection] = useState('ASC')
@@ -257,8 +257,8 @@ export default function PlacementReadyController() {
       try {
         const params = {
           corporateId: String(corporateId),
-          offset: String((reportPage - 1) * 10),
-          limit: '10',
+          offset: String((reportPage - 1) * 1000),
+          limit: '1000',
           search: '',
           order: 'asc',
           time: Date.now()

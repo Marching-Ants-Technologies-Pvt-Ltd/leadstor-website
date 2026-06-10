@@ -28,7 +28,7 @@ export default function SendToPlacementReady({
 
   // Pagination (client-side)
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(1000);
 
   // Filter candidates based on search term
   const filteredCandidates = candidates.filter(candidate => {
@@ -403,6 +403,7 @@ export default function SendToPlacementReady({
                       <option value={50}>50</option>
                       <option value={100}>100</option>
                       <option value={500}>500</option>
+                      <option value={1000}>1000</option>
                     </select>
                     <span className="text-gray-600 font-medium">per page</span>
                   </div>
