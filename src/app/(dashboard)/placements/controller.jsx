@@ -22,7 +22,7 @@ export default function PlacementReadyController() {
     const [selectedIds, setSelectedIds] = useState([])
 
     const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(1000)         // ← now changeable
+    const [limit, setLimit] = useState(50)         // ← now changeable
 
     const [sortField, setSortField] = useState(null)
     const [sortDirection, setSortDirection] = useState('ASC')

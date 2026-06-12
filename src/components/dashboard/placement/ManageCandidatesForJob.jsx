@@ -41,7 +41,7 @@ export default function ManageCandidatesForJob({
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 1000;
+  const itemsPerPage = 50;
 
   const filteredCandidates = candidates.filter(
     (c) =>

@@ -28,7 +28,7 @@ export default function SendToPlacementReady({
 
   // Pagination (client-side)
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(1000);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   // Filter candidates based on search term
   const filteredCandidates = candidates.filter(candidate => {

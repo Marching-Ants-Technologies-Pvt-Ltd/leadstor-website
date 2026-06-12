@@ -13,7 +13,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [searchTerm, setSearchTerm] = useState('')
 
-  const limit = 1000 // Increased for higher pagination size
+  const limit = 50 // Increased for higher pagination size
   
   // Filter report data based on search term
   const filteredReportData = originalReportData.filter(row => {

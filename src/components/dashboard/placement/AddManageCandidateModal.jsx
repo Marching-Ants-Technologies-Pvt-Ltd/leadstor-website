@@ -23,7 +23,7 @@ export default function AddManageCandidateModal({
 
   // Pagination (client-side)
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 1000;
+  const itemsPerPage = 50;
 
   const presentIdsSet = new Set(presentIds.split(',').filter(Boolean));
   const filteredCandidates = candidates.filter(
