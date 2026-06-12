@@ -26,7 +26,7 @@ export default function JobPostingsController() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(1000);
+  const [limit, setLimit] = useState(50);
   const [ownerMap, setOwnerMap] = useState({});
 
   // ─── Modals & Views ──────────────────────────────────────────────────────

@@ -11,7 +11,7 @@ export default function JobNotifications({ corporateId, institutes, onBack }) {
   const [selectedInstitute, setSelectedInstitute] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(1000);
+  const [limit, setLimit] = useState(50);
   const [totalRecords, setTotalRecords] = useState(0);
 
   // Fetch all notifications (once per institute change)
