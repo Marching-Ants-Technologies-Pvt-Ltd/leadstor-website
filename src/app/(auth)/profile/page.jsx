@@ -99,6 +99,8 @@ export default function Profile() {
                     router.push('/payments');
                 } else if(userRoles.includes("Placement Officer")) {
                     router.push('/placements');
+                } else if(userRoles.includes("Trainer")) {
+                    router.push('/batches');
                 } else {
                     router.push('/leads');
                 }

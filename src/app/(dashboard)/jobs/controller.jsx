@@ -90,7 +90,10 @@ export default function JobPostingsController() {
   const filteredJobs = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return allJobs;
-    return allJobs.filter((job) => (job?.title || '').toLowerCase().includes(term));
+    return allJobs.filter((job) =>
+      (job?.title || '').toLowerCase().includes(term) ||
+      (job?.companyName || '').toLowerCase().includes(term)
+    );
   }, [allJobs, search]);
 
   const total = filteredJobs.length;
