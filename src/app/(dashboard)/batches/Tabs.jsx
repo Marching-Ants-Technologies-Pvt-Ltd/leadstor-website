@@ -29,7 +29,7 @@ export default function BatchesTabs() {
   }, [router]);
 
   // Trainer or Telecaller → show only Attendance Management (no tabs)
-  if (User?.role === 'Trainer' || User?.role === 'Telecaller') {
+  if(userRoles.includes("Trainer") || userRoles.includes("Telecaller")) {
     return (
       <div className="h-full flex flex-col bg-slate-50">
         <div className="flex-1 overflow-hidden">
