@@ -13,7 +13,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [searchTerm, setSearchTerm] = useState('')
 
-  const limit = 50 // Increased for higher pagination size
+  const limit = 20 // Increased for higher pagination size
   
   // Filter report data based on search term
   const filteredReportData = originalReportData.filter(row => {
@@ -255,9 +255,14 @@ export default function PlacementReportView({ corporateId, onBack }) {
             {/* Compact Pagination */}
             <div className="px-4 py-3 border-t bg-white flex flex-col sm:flex-row justify-between items-center gap-3 text-[13px] text-gray-600">
               <div>
-                Showing <strong>{(reportPage - 1) * limit + 1}</strong>–
-                <strong>{Math.min(reportPage * limit, filteredReportData.length)}</strong> of{' '}
-                <strong>{filteredReportData.length.toLocaleString()}</strong> {searchTerm && `(filtered from ${reportTotal})`}
+                Showing{' '}
+                <strong>{(reportPage - 1) * limit + 1}</strong>
+                –
+                <strong>
+                  {Math.min((reportPage - 1) * limit + currentReportData.length, reportTotal)}
+                </strong>
+                {' '}of{' '}
+                <strong>{reportTotal.toLocaleString()}</strong>
               </div>
 
               <div className="flex items-center gap-1 flex-wrap">
