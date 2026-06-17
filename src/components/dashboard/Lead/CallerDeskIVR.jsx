@@ -29,6 +29,21 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose, on
   const [isServiceDropdownOpen, setIsServiceDropdownOpen] = useState(false);
   const [owner, setOwner] = useState([]);
 
+  const getCandidateOwnerId = () => {
+    const ownerId = candidate?.assignedUserId ?? candidate?.assignedTo ?? candidate?.owner;
+    return ownerId === null || ownerId === undefined ? '' : String(ownerId).trim();
+  };
+
+  const findAgentById = (agentList, id) => {
+    if (!id) return null;
+    return agentList.find((agent) => String(agent.id) === String(id));
+  };
+
+  const findAgentByNumber = (agentList, number) => {
+    if (!number) return null;
+    return agentList.find((agent) => agent.formattedMobile === number);
+  };
+
   // ── New: error states ────────────────────────────────────────
   const [clientNumberError, setClientNumberError] = useState('');
   const [agentNumberError,  setAgentNumberError]  = useState('');
@@ -72,16 +87,36 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose, on
 			}));
 			}
 
-			setAgents(agentList);
 
-			// Set default agent (current user) if possible
-			if (User?._id) {
-			const current = agentList.find(a => a.id === String(User._id));
-			if (current && current.formattedMobile) {
-				setAgentInput(current.formattedMobile);
-				setCurrentUserMobile(current.formattedMobile);
-			}
-			}
+			const setDefaultAgentSelection = (availableAgents) => {
+				const ownerId = getCandidateOwnerId();
+				const ownerAgent = findAgentById(availableAgents, ownerId);
+				const currentAgent = findAgentById(availableAgents, String(User?._id));
+				const fallbackNumber = getCurrentUserMobile() || '';
+
+				const ownerAgentMobile = ownerAgent ? (ownerAgent.formattedMobile || convertToCallNumber(ownerAgent.mobile || '')) : '';
+				const currentAgentMobile = currentAgent ? (currentAgent.formattedMobile || convertToCallNumber(currentAgent.mobile || '')) : '';
+
+				if (ownerAgentMobile) {
+					setAgentInput(ownerAgentMobile);
+					setCurrentUserMobile(ownerAgentMobile);
+					return;
+				}
+
+				if (currentAgentMobile) {
+					setAgentInput(currentAgentMobile);
+					setCurrentUserMobile(currentAgentMobile);
+					return;
+				}
+
+				if (fallbackNumber) {
+					setAgentInput(convertToCallNumber(fallbackNumber));
+					setCurrentUserMobile(convertToCallNumber(fallbackNumber));
+				}
+			};
+
+			setAgents(agentList);
+			setDefaultAgentSelection(agentList);
 		} catch (error) {
 			console.error('Error fetching agents:', error);
 			toast.error('Failed to load agent list for transfer');
@@ -120,7 +155,13 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose, on
     setClientNumber(clientFmt);
 
     // Agent
-    let agentRaw = agentNumber || getCurrentUserMobile() || '';
+    const ownerId = getCandidateOwnerId();
+    let agentRaw = agentNumber || '';
+
+    if (!ownerId) {
+      agentRaw = agentNumber || getCurrentUserMobile() || '';
+    }
+
     if (!agentRaw && isAdmin) {
       // optional: you could fetch from /getUsers here too
     }
@@ -128,6 +169,17 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose, on
     setAgentInput(agentFmt);
     setCurrentUserMobile(agentFmt);
   }, [candidate?.mobile, agentNumber, isAdmin]);
+
+  useEffect(() => {
+    if (!agents || agents.length === 0) return;
+    const ownerId = getCandidateOwnerId();
+    const ownerAgent = findAgentById(agents, ownerId);
+    if (ownerAgent && ownerAgent.formattedMobile) {
+      setAgentInput(ownerAgent.formattedMobile);
+      setCurrentUserMobile(ownerAgent.formattedMobile);
+      return;
+    }
+  }, [candidate, agents]);
 
   // ── Load IVR services ────────────────────────────────────────
   useEffect(() => {
@@ -507,7 +559,7 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose, on
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Agent Number {User?.name ? `(${User.name})` : ''}
+                Agent Number
               </label>
               
               {agents.length > 0 ? (
@@ -523,8 +575,15 @@ export default function CallerDeskIVR({ candidate, agentNumber = '', onClose, on
                     >
                       	<span className="text-gray-900">
 							{(() => {
-								const agent = agentInput ? agents.find(a => a.formattedMobile === agentInput) : null;
-								return agent ? `${agent.name} — ${agent.mobile || agent.formattedMobile}` : (agentInput || 'Select an agent...');
+						const selectedAgent = agentInput ? agents.find(a => a.formattedMobile === agentInput) : null;
+						const ownerAgent = findAgentById(agents, getCandidateOwnerId());
+						if (selectedAgent) {
+							return `${selectedAgent.name} — ${selectedAgent.mobile || selectedAgent.formattedMobile}`;
+						}
+						if (ownerAgent) {
+							return `${ownerAgent.name}${ownerAgent.formattedMobile ? ' — ' + ownerAgent.formattedMobile : ''}`;
+						}
+						return agentInput || 'Select an agent...';
 							})()}
 						</span>
                       <svg

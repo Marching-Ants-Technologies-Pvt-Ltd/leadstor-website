@@ -6,53 +6,66 @@ import { xFetch } from '@/utility/xFetch' // Adjust import path as needed
 
 export default function PlacementReportView({ corporateId, onBack }) {
   const [reportData, setReportData] = useState([])
-  const [originalReportData, setOriginalReportData] = useState([])
   const [reportTotal, setReportTotal] = useState(0)
   const [reportPage, setReportPage] = useState(1)
   const [reportLoading, setReportLoading] = useState(false)
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [searchTerm, setSearchTerm] = useState('')
+  const [limit, setLimit] = useState(20)
 
-  const limit = 20 // Increased for higher pagination size
-  
-  // Filter report data based on search term
-  const filteredReportData = originalReportData.filter(row => {
-    const searchTermLower = searchTerm.toLowerCase();
-    return (
-      row.candidateId?.toString().toLowerCase().includes(searchTermLower) ||
-      row.name?.toLowerCase().includes(searchTermLower) ||
-      row.email?.toLowerCase().includes(searchTermLower) ||
-      row.mobile?.toLowerCase().includes(searchTermLower)
-    );
-  });
-  
+  const limitOptions = [20, 50, 100, 200, 500]
+
   const totalPages = Math.ceil(reportTotal / limit);
-  const currentReportData = filteredReportData;
+  const currentReportData = reportData;
+
+  const renderPageButtons = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, idx) => idx + 1)
+    }
+
+    const pages = [1]
+    const windowStart = Math.max(2, reportPage - 1)
+    const windowEnd = Math.min(totalPages - 1, reportPage + 1)
+
+    if (windowStart > 2) {
+      pages.push('start-ellipsis')
+    }
+
+    for (let p = windowStart; p <= windowEnd; p += 1) {
+      pages.push(p)
+    }
+
+    if (windowEnd < totalPages - 1) {
+      pages.push('end-ellipsis')
+    }
+
+    pages.push(totalPages)
+    return pages
+  }
 
   // Load main report data
   const loadReportData = async () => {
     setReportLoading(true)
     try {
-      const params = {
+      const payload = {
+        corporateId: String(corporateId),
         offset: String((reportPage - 1) * limit),
         limit: String(limit),
+        order: 'asc',
+        time: Date.now()
+      }
+
+      if (searchTerm.trim()) {
+        payload.search = searchTerm.trim()
       }
 
       const response = await xFetch({
         path: '/services/job/getPlacementReadyReport',
-        payload: {
-          corporateId: String(corporateId),
-          offset: String((reportPage - 1) * limit),
-          limit: String(limit),
-          search: '',
-          order: 'asc',
-          time: Date.now()
-        },
+        payload,
       })
 
       const rows = response?.rows || response?.data || response || []
-      setOriginalReportData(rows) // Store original data for filtering
-      setReportData(rows) // Also update reportData for backward compatibility if needed
+      setReportData(rows)
       setReportTotal(response?.total || rows.length || 0)
     } catch (err) {
       console.error('Report load error:', err)
@@ -118,7 +131,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
 
   useEffect(() => {
     loadReportData()
-  }, [reportPage, corporateId])
+  }, [reportPage, corporateId, limit, searchTerm])
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -254,6 +267,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
 
             {/* Compact Pagination */}
             <div className="px-4 py-3 border-t bg-white flex flex-col sm:flex-row justify-between items-center gap-3 text-[13px] text-gray-600">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
               <div>
                 Showing{' '}
                 <strong>{(reportPage - 1) * limit + 1}</strong>
@@ -264,6 +278,24 @@ export default function PlacementReportView({ corporateId, onBack }) {
                 {' '}of{' '}
                 <strong>{reportTotal.toLocaleString()}</strong>
               </div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <label className="flex items-center gap-2">
+                  <span className="text-gray-700">Rows per page</span>
+                  <select
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value))
+                      setReportPage(1)
+                    }}
+                    className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                  >
+                    {limitOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
 
               <div className="flex items-center gap-1 flex-wrap">
                 <button
@@ -274,25 +306,31 @@ export default function PlacementReportView({ corporateId, onBack }) {
                   Prev
                 </button>
 
-                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                  const num = reportPage - 3 + i
-                  if (num < 1 || num > totalPages) return null
+                {renderPageButtons().map((pageKey) => {
+                  if (pageKey === 'start-ellipsis' || pageKey === 'end-ellipsis') {
+                    return (
+                      <span key={pageKey} className="px-2 text-gray-500">
+                        ...
+                      </span>
+                    )
+                  }
+
                   return (
                     <button
-                      key={num}
-                      onClick={() => setReportPage(num)}
+                      key={pageKey}
+                      onClick={() => setReportPage(pageKey)}
                       className={`px-3 py-1 border rounded min-w-[32px] ${
-                        num === reportPage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'
+                        pageKey === reportPage ? 'bg-blue-600 text-white border-blue-600' : 'hover:bg-gray-100'
                       }`}
                     >
-                      {num}
+                      {pageKey}
                     </button>
                   )
                 })}
 
                 <button
                   disabled={reportPage >= totalPages}
-                  onClick={() => setReportPage(p => p + 1)}
+                  onClick={() => setReportPage(p => Math.min(totalPages, p + 1))}
                   className="px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
                 >
                   Next
