@@ -157,6 +157,33 @@ export default function UpdateLead({ selectedLead, onCancel, onSuccess }) {
         );
       }
 
+      // ENQUIRY TIME field - DD-MMM-YY HH:mm
+      if (item.dataField === "createdDate") {
+        return (
+          <div key={index} className="field-card">
+            <label className="label-crm">{label}</label>
+            <input
+              type="text"
+              placeholder="DD-MMM-YY HH:mm  e.g. 18-Jun-26 14:30"
+              value={value}
+              onChange={(e) => handleChange(item.dataField, e.target.value)}
+              onBlur={(e) => {
+                const val = e.target.value.trim();
+                if (val === "") return;
+                const regex = /^\d{2}-[A-Za-z]{3}-\d{2} \d{2}:\d{2}$/;
+                if (!regex.test(val)) {
+                  toast.error("Invalid format. Please use DD-MMM-YY HH:mm  e.g. 18-Jun-26 14:30");
+                  handleChange(item.dataField, "");
+                }
+              }}
+              className={`input-crm ${hasError ? "input-error" : ""}`}
+            />
+            <span className="text-xs text-slate-400 mt-1 block">
+              Format: DD-MMM-YY HH:mm (e.g. 18-Jun-26 14:30)
+            </span>
+          </div>
+        );
+      }
       return (
         <div key={index} className="field-card">
           <label className="label-crm">

@@ -248,7 +248,17 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           source: users.map((u) => u.name),
           strict: false,
         };
-
+      
+      // changes
+      case "createdDate":
+      return {
+        data: field.dataField,
+        type: "text",
+        validator: function(value, callback) {
+          callback(normalizeEnquiryTime(value).ok);
+        },
+        allowInvalid: false,
+      };
       default:
         return {
           data: field.dataField,
@@ -334,6 +344,47 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
   /* ---------- Excel Import (XLSX) ---------- */
 
+  const ENQUIRY_TIME_FORMAT_MESSAGE =
+    "Enquiry Time must be DD-MM-YY HH:MM or DD-MM-YY HH:MM:SS";
+
+  const normalizeEnquiryTime = (value) => {
+    if (value === null || value === undefined || String(value).trim() === "") {
+      return { ok: true, value: "" };
+    }
+
+    const trimmed = String(value).trim();
+    const match = trimmed.match(
+      /^(\d{2})-(\d{2})-(\d{2}) (\d{2}):(\d{2})(?::(\d{2}))?$/
+    );
+
+    if (!match) {
+      return { ok: false, value: trimmed };
+    }
+
+    const [, day, month, year, hour, minute, second = "00"] = match;
+    const dayNum = Number(day);
+    const monthNum = Number(month);
+    const fullYear = 2000 + Number(year);
+    const hourNum = Number(hour);
+    const minuteNum = Number(minute);
+    const secondNum = Number(second);
+    const parsed = new Date(fullYear, monthNum - 1, dayNum, hourNum, minuteNum, secondNum);
+
+    const isValidDate =
+      parsed.getFullYear() === fullYear &&
+      parsed.getMonth() === monthNum - 1 &&
+      parsed.getDate() === dayNum &&
+      parsed.getHours() === hourNum &&
+      parsed.getMinutes() === minuteNum &&
+      parsed.getSeconds() === secondNum;
+
+    if (!isValidDate) {
+      return { ok: false, value: trimmed };
+    }
+
+    return { ok: true, value: `${day}-${month}-${year} ${hour}:${minute}:${second}` };
+  };
+
   const handleImportExcel = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -344,7 +395,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
 
       if (!rows.length) {
         toast.error("The sheet is empty!");
@@ -361,8 +412,12 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       }
 
       // Build rows mapped to your fields (array of objects)
-      const newRows = rows.map((row) => {
+      const newRows = [];
+
+      for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+        const row = rows[rowIndex];
         const obj = {};
+
         fields.forEach((f) => {
           const df = f.dataField;
           const candidates = [f.displayName, f.fieldName, f.dataField]
@@ -378,10 +433,22 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
             }
           }
 
-          obj[df] = matchedHeader ? row[matchedHeader] : "";
+          const rawValue = matchedHeader ? row[matchedHeader] : "";
+          if (df === 'createdDate') {
+            const normalized = normalizeEnquiryTime(rawValue);
+            if (!normalized.ok) {
+              toast.error(
+                `Row ${rowIndex + 2}: Invalid Enquiry Time "${normalized.value}". ${ENQUIRY_TIME_FORMAT_MESSAGE}`
+              );
+              throw new Error("INVALID_ENQUIRY_TIME");
+            }
+            obj[df] = normalized.value;
+          } else {
+            obj[df] = rawValue;
+          }
         });
-        return obj;
-      });
+        newRows.push(obj);
+      }
 
       // Load into Handsontable as array-of-objects (columns have data keys)
       const hot = tableRef.current?.hotInstance;
@@ -394,6 +461,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
       toast.success("Excel imported! Please review before submitting.");
     } catch (err) {
+      if (err?.message === "INVALID_ENQUIRY_TIME") {
+        return;
+      }
       console.error(err);
       toast.error("Failed to import Excel.");
     } finally {
@@ -504,6 +574,9 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       else if (df.includes("status")) {
         columnTypes.status = colIndex;
       }
+      else if (df === "createddate") {
+        columnTypes.createdDate = colIndex;
+      }
     });
 
     // 2. Now use these instead of findCol()
@@ -517,6 +590,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     const courseCol    = columnTypes.course   ?? -1;
     const ownerCol     = columnTypes.owner    ?? -1;
     const statusCol    = columnTypes.status   ?? -1;
+    const createdDateCol = columnTypes.createdDate ?? -1;
 
     const raw = hot.getSourceData(); // array of objects (since data is array-of-objects)
 
@@ -584,6 +658,26 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       // Collect valid values for duplicate check
       if (hasValidEmail)  emails.push(emailRaw.toLowerCase());
       if (hasValidMobile) phones.push(mobileNorm);
+
+      if (createdDateCol >= 0) {
+        const dateField = fields[createdDateCol]?.dataField;
+        const enquiryTimeRaw = row[dateField] ?? "";
+        const normalized = normalizeEnquiryTime(enquiryTimeRaw);
+
+        if (!normalized.ok) {
+          hot.setCellMeta(r, createdDateCol, "className", "htInvalid");
+          hot.render();
+          return {
+            ok: false,
+            message: `Row ${r + 1}: Invalid Enquiry Time "${normalized.value}". ${ENQUIRY_TIME_FORMAT_MESSAGE}`,
+          };
+        }
+
+        if (String(enquiryTimeRaw ?? "").trim() !== normalized.value) {
+          hot.setDataAtCell(r, createdDateCol, normalized.value, "normalizeEnquiryTime");
+          row[dateField] = normalized.value;
+        }
+      }
 
       // 6. Optional: Validate dropdown / autocomplete fields
       // if (sourceCol >= 0) {
@@ -795,7 +889,11 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
       const contacts = cleanedRows.map((row) => {
         const obj = {};
         fields.forEach((f) => {
-          obj[f.dataField] = row[f.dataField] ?? "";
+          const rawValue = row[f.dataField] ?? "";
+          obj[f.dataField] =
+            f.dataField === "createdDate"
+              ? normalizeEnquiryTime(rawValue).value
+              : rawValue;
 
           if (f.dataField === "assignedUserId") {
             obj[f.dataField] = getOwnerIdByName(row[f.dataField] ?? "");
@@ -977,6 +1075,10 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
             <p className="text-[11px] text-slate-500">
               Fast multi-lead entry. Use Tab to move across fields quickly.
             </p>
+            <p className="text-xs text-orange-600 mt-1">
+              Note: Enquiry Time format must be DD-MM-YY HH:MM or DD-MM-YY HH:MM:SS
+              (Example: 10-06-26 11:07:00)
+            </p>
           </div>
 
           {/* ACTION BUTTONS */}
@@ -1058,6 +1160,11 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
             columns={columns}
             rowHeaders={true}
             licenseKey="non-commercial-and-evaluation"
+            afterValidate={(isValid, value, row, prop) => {
+              if (!isValid && prop === "createdDate") {
+                toast.error(`${ENQUIRY_TIME_FORMAT_MESSAGE} e.g. 18-06-26 14:30:00`);
+              }
+            }}
             copyPaste={{
               copyPasteEnabled: true,
               rowsLimit: 10000,
