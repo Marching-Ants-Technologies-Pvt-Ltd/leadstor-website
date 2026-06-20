@@ -15,6 +15,21 @@ export default function ManageCandidatesForJob({
   corporateId,
   onBack,
 }) {
+  const ensureInterviewDoneStatus = (statuses) => {
+    const list = Array.isArray(statuses) ? [...statuses] : [];
+    const hasInterviewDone = list.some((item) => {
+      const value =
+        typeof item === 'string' ? item : (item?.status || item?.name || '');
+      return value.trim().toLowerCase() === 'interview done';
+    });
+
+    if (!hasInterviewDone) {
+      list.push('Interview Done');
+    }
+
+    return list;
+  };
+
   const [candidates, setCandidates] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -270,7 +285,7 @@ export default function ManageCandidatesForJob({
       payload: { corporateId: String(corporateId) },
     });
 
-    return Array.isArray(data) ? data : [];
+    return ensureInterviewDoneStatus(Array.isArray(data) ? data : []);
   };
 
   const openBulkStatusControls = async () => {
@@ -535,6 +550,7 @@ export default function ManageCandidatesForJob({
                       <option value="Interested">Interested</option>
                       <option value="Not Interested">Not Interested</option>
                       <option value="Shortlisted">Shortlisted</option>
+                      <option value="Interview Done">Interview Done</option>
                       <option value="Rejected">Rejected</option>
                       <option value="Issue">Issue</option>
                     </>
@@ -863,6 +879,7 @@ export default function ManageCandidatesForJob({
                       <option value="Interested">Interested</option>
                       <option value="Not Interested">Not Interested</option>
                       <option value="Shortlisted">Shortlisted</option>
+                      <option value="Interview Done">Interview Done</option>
                       <option value="Rejected">Rejected</option>
                       <option value="Issue">Issue</option>
                     </>

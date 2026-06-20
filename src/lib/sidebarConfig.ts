@@ -17,7 +17,7 @@ export const menuItems = [
     icon: 'ri-stack-line',
     label: 'Batches',
     href: '/batches',
-    allowedRoles: ['Admin', 'Administrator', 'Telecaller'],
+    allowedRoles: ['Admin', 'Administrator', 'Telecaller','Trainer'],
   },
   {
     icon: 'ri-briefcase-line',
