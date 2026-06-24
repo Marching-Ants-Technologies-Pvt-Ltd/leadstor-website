@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useMemo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { xFetch } from '@/utility/xFetch';
@@ -131,6 +131,43 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
     reader.readAsArrayBuffer(file);
   };
 
+  // Enquiry Time must be typed as text in DD-MM-YY HH:MM or DD-MM-YY HH:MM:SS.
+  // HH:MM is normalized to HH:MM:00 before upload.
+  const convertExcelDate = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return { value: '', valid: true };
+    }
+
+    const str = String(value).trim();
+    const pattern = /^(\d{2})-(\d{2})-(\d{2})\s(\d{2}):(\d{2})(?::(\d{2}))?$/;
+    const match = str.match(pattern);
+
+    if (!match) {
+      return { value: '', valid: false, reason: `Invalid Enquiry Time format: "${str}". Use DD-MM-YY HH:MM or DD-MM-YY HH:MM:SS` };
+    }
+
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    const year = parseInt(match[3], 10);
+    const hour = parseInt(match[4], 10);
+    const minute = parseInt(match[5], 10);
+    const second = match[6] === undefined ? 0 : parseInt(match[6], 10);
+    const fullYear = year >= 70 ? 1900 + year : 2000 + year;
+    const parsedDate = new Date(fullYear, month - 1, day, hour, minute, second);
+    const isRealDate = parsedDate.getFullYear() === fullYear
+      && parsedDate.getMonth() === month - 1
+      && parsedDate.getDate() === day
+      && parsedDate.getHours() === hour
+      && parsedDate.getMinutes() === minute
+      && parsedDate.getSeconds() === second;
+
+    if (!isRealDate) {
+      return { value: '', valid: false, reason: `Invalid Enquiry Time value: "${str}". Use DD-MM-YY HH:MM or DD-MM-YY HH:MM:SS` };
+    }
+
+    return { value: `${match[1]}-${match[2]}-${match[3]} ${match[4]}:${match[5]}:${String(second).padStart(2, '0')}`, valid: true };
+  };
+
   // Row validation (matches backend validation logic)
   const validateRows = (rows) => {
     const valid = [];
@@ -151,11 +188,17 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
       if (!mobile || !/^\d{10}$/.test(mobile)) errors.push('Invalid mobile (must be exactly 10 digits)');
       if (!dynamicValue) errors.push(`Missing ${columnConfig?.label || dynamicLabel}`);
 
+      // Validate Enquiry Time here, in the same pass as everything else, so a
+      // bad time disqualifies the row before it's ever considered "valid".
+      const timeResult = convertExcelDate(row['Enquiry Time']);
+      if (!timeResult.valid) {
+        errors.push(timeResult.reason);
+      }
+
       if (errors.length > 0) {
         invalid.push({ row, errors, lineNumber: idx + 2 });
       } else {
-        // Push the whole object for robust backend mapping
-        valid.push(row);
+        valid.push({ ...row, 'Enquiry Time': timeResult.value });
       }
     });
 
@@ -204,6 +247,11 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
 
   // Main import function (EXACTLY matches backend requirements)
   const handleImport = async () => {
+    if (invalidRows.length > 0) {
+      toast.error('Import rejected. Fix all invalid rows before uploading.');
+      return;
+    }
+
     setUploading(true);
     setProgress(0);
     setError('');
@@ -297,23 +345,24 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
         chunks.push(uniqueRowsFiltered.slice(i, i + chunkSize));
       }
 
+      // Upload in chunks
       for (let i = 0; i < chunks.length; i++) {
         try {
           const formData = new FormData();
-          // Append contacts as multi-dimensional array, legacy style
           chunks[i].forEach((contact, idx) => {
-            const contactArr = [
-              contact['First Name'] || '',
-              contact['Last Name'] || '',
-              contact[columnConfig?.email || 'Email'] || '',
-              contact[columnConfig?.mobile || 'Mobile'] || '',
-              contact[columnConfig?.label || dynamicLabel] || '',
-              contact['Location'] || '',
-              contact[columnConfig?.source || 'Source'] || '',
-              contact[columnConfig?.remarks || 'Remarks'] || ''
-            ];
-            contactArr.forEach((val, j) => {
-              formData.append(`contacts[${idx}][${j}]`, val);
+            const contactFields = {
+              firstName: contact['First Name'] || '',
+              lastName: contact['Last Name'] || '',
+              emailId: contact[columnConfig?.email || 'Email'] || '',
+              mobile: contact[columnConfig?.mobile || 'Mobile'] || '',
+              course: contact[columnConfig?.label || dynamicLabel] || '',
+              location: contact['Location'] || '',
+              source: contact[columnConfig?.source || 'Source'] || '',
+              remarks: contact[columnConfig?.remarks || 'Remarks'] || '',
+              createdDate: contact['Enquiry Time'] || ''
+            };
+            Object.entries(contactFields).forEach(([key, val]) => {
+              formData.append(`contacts[${idx}][${key}]`, val);
             });
           });
           formData.append('testId', payload.testId);
@@ -329,17 +378,18 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
-              // DO NOT set Content-Type, browser will set it for FormData
             },
             body: formData,
             redirect: 'follow'
           });
+
           let response;
           try {
             response = await fetchResponse.json();
           } catch (e) {
             throw new Error('Invalid server response');
           }
+
           if (response && (response.status === 'OK' || response.success === true || response.message === 'Success')) {
             // Success case
           } else if (response && response.errors && Array.isArray(response.errors)) {
@@ -351,10 +401,9 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
           } else if (!response) {
             throw new Error('No response from server');
           }
-          // If we reach here, assume success
 
-          // Update progress
           setProgress(Math.round(((i + 1) / chunks.length) * 100));
+
         } catch (chunkError) {
           console.error(`Error uploading chunk ${i + 1}:`, chunkError);
           throw new Error(`Failed to upload chunk ${i + 1}: ${chunkError.message}`);
@@ -364,8 +413,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
       setUploadComplete(true);
       setUploadFailed(false);
       toast.success(`Uploaded ${uniqueRowsFiltered.length} record${uniqueRowsFiltered.length === 1 ? '' : 's'} successfully`);
-      
-      // Refresh table if function exists
+
       if (typeof window !== 'undefined' && typeof window.tableRefresh === 'function') {
         window.tableRefresh();
       }
@@ -520,7 +568,7 @@ export default function ImportEnquiryDropBox({ onCancel, testId, onSwitchToManua
           <button
             className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg shadow-md transition border-2 border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
             onClick={handleImport}
-            disabled={validRows.length === 0}
+            disabled={validRows.length === 0 || invalidRows.length > 0}
           >
             Import
           </button>
