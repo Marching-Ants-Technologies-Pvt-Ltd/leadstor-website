@@ -423,9 +423,52 @@ export default function LeadsTable({
     const refreshLeads = () => {
         xLeads();
     };
+
+    const handleAbortAICall = async (row) => {
+        const invitationId = row?.invitationId;
+        if (!invitationId) {
+            return;
+        }
+
+        const confirmed = window.confirm("Do you want to abort the furthur AI calls?");
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+            const res = await xFetch({
+                path: '/services/xtremeGen/abortAIcall',
+                method: 'POST',
+                payload: { invitationId }
+            });
+
+            if (res?.status === false) {
+                throw new Error(res?.error || res?.message || 'Failed to abort AI call');
+            }
+
+            setLeads((prev) =>
+                prev.map((lead) =>
+                    lead.invitationId === invitationId
+                        ? { ...lead, status: 'AI Abort' }
+                        : lead
+                )
+            );
+        } catch (error) {
+            console.error('AI abort failed:', error);
+            alert(error?.message || 'Unable to abort AI call');
+        }
+    };
     
     const renderStatusTimelineCell = (row) => {
         const status = row.status || "-";
+        const currentCorporateId = Number(
+            branchId || Corporate?._id || Corporate?.id || Corporate?.corporateId || 0
+        );
+        const normalizedStatus = typeof status === 'string' ? status.trim().toUpperCase() : '';
+        const shouldShowAIAbort =
+            currentCorporateId === 658 &&
+            normalizedStatus.startsWith('AI') &&
+            normalizedStatus !== 'AI ABORT';
 
         // Status pill color mapping (same as before)
         const STATUS_MAP = {
@@ -486,6 +529,17 @@ export default function LeadsTable({
             </button>
         );
 
+        const aiAbortIcon = shouldShowAIAbort ? (
+            <button
+                type="button"
+                className="text-rose-600 hover:text-rose-700 transition-colors"
+                title="AI Abort"
+                onClick={() => handleAbortAICall(row)}
+            >
+                <i className="ri-stop-circle-line text-xl" />
+            </button>
+        ) : null;
+
         let extraIcons = null;
         if (status.toLowerCase().includes("meeting")) {
             extraIcons = (
@@ -499,6 +553,7 @@ export default function LeadsTable({
                 >
                 <i className="ri-video-chat-line text-xl" />
                 </button>
+                {aiAbortIcon}
             </div>
             );
         }
@@ -514,8 +569,13 @@ export default function LeadsTable({
             {/* Trainer Name */}
             {trainerName}
 
-            {/* Icons (timeline always, + video if Meeting) */}
-            {extraIcons || timelineIcon}
+            {/* Icons (timeline always, + video if Meeting, + AI Abort if eligible) */}
+            {extraIcons || (
+                <div className="flex items-center gap-3">
+                    {timelineIcon}
+                    {aiAbortIcon}
+                </div>
+            )}
 
             {/* Trainer name as fallback if no extra icons */}
             {!extraIcons && trainerName}
