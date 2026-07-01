@@ -56,6 +56,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     owner: [],
     courseMode: '',
     probability: [],
+    associatedCenters: [],
     enquiryDateFrom: '',
     enquiryDateTo: '',
     updatedDateFrom: '',
@@ -215,7 +216,9 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
       if (response.industries) {
         optionsMap.industry = transformOptions(response.industries);
       }
-
+      if (response.associatedCenters) {
+          optionsMap.associatedCenters = transformOptions(response.associatedCenters);
+      }
       setFilterOptions(optionsMap);
     } catch (e) {
       console.error('Error fetching filter options:', e);
@@ -419,6 +422,13 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
         return;
       }
 
+      if (query === "associatedCenters") {
+          hydrated.associatedCenters = String(filter.value || "")
+              .split(",")
+              .filter(Boolean);
+          return;
+      }
+
       const col = safeCols.find(c => c.dataField === query);
       if (!col && !Object.prototype.hasOwnProperty.call(hydrated, query)) {
         hydrated[query] = [];
@@ -517,7 +527,9 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
         if (parameters.workingOrganizations) optionsMap.workingOrganization = transformOptions(parameters.workingOrganizations);
         if (parameters.categories) optionsMap.category = transformOptions(parameters.categories);
         if (parameters.industries) optionsMap.industry = transformOptions(parameters.industries);
-
+        if (parameters.associatedCenters) {
+            optionsMap.associatedCenters = transformOptions(parameters.associatedCenters);
+        }
         setFilterOptions(optionsMap);
         toast.success('Filters refreshed successfully');
       } else {
@@ -764,6 +776,7 @@ const FilterDrawer = ({ isOpen, onClose, onApplyFilters }) => {
     return (
       selectedFilters.owner?.length > 0 ||
       selectedFilters.courseMode ||
+      selectedFilters.associatedCenters?.length > 0 ||
       selectedFilters.probability.length > 0 ||
       selectedFilters.enquiryDateFrom ||
       selectedFilters.enquiryDateTo ||

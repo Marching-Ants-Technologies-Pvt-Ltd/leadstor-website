@@ -82,6 +82,7 @@ export default function CandidateFormModal({
     lastCTC: '',
     expectedCTC: '',
     remarks: '',
+    associatedCenters: '',
     receiveJobOpportunities: 'Yes',
     candidateFile: null,
   })
@@ -90,6 +91,7 @@ export default function CandidateFormModal({
   const [locationsOptions, setLocationsOptions] = useState([])
   const [loadingOptions, setLoadingOptions] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [associatedCentersOptions, setAssociatedCentersOptions] = useState([]);
 
   // 1. Fetch dropdown options
   useEffect(() => {
@@ -106,6 +108,17 @@ export default function CandidateFormModal({
 
         const locRes = await xFetch({ path: '/services/job/getCities' })
         setLocationsOptions(Array.isArray(locRes) ? locRes : locRes?.rows || locRes?.data || [])
+
+        const centerRes = await xFetch({
+          path: '/services/profile/getAssociatedCenters'
+        });
+
+        setAssociatedCentersOptions(
+          Array.isArray(centerRes)
+            ? centerRes
+            : centerRes?.rows || centerRes?.data || []
+        );
+
       } catch (err) {
         toast.error('Failed to load dropdown options')
       } finally {
@@ -149,6 +162,7 @@ export default function CandidateFormModal({
         expectedJobType: [],
         jobTags: [],
         expectedLocationPreference: [],
+        associatedCenters: '',
         lastDesignation: '',
         expectedDesignation: '',
         lastCTC: '',
@@ -186,6 +200,7 @@ export default function CandidateFormModal({
       remarks: initialData.remarks || '',
       receiveJobOpportunities: initialData.receiveJobOpportunities || 'Yes',
       candidateFile: null, // file cannot be pre-filled
+      associatedCenters: initialData.associatedCenters || '',
     })
   }, [isOpen, mode, initialData, jobTagsOptions]) // ← re-run when initialData changes (edit mode)
 
@@ -488,6 +503,30 @@ export default function CandidateFormModal({
                                 {loc.text}
                             </option>
                             ))}
+                        </select>
+                        <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                    </div>
+                </div>
+
+                <div className="col-span-2">
+                  <div>
+                        <label className="block text-sm font-medium text-gray-700">Associated Centers</label>
+                        <select
+                          name="associatedCenters"
+                          value={formData.associatedCenters || ''}
+                          onChange={handleChange}
+                          className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-teal-500 focus:border-teal-500"
+                        >
+                          <option value="">-- Select Associated Center --</option>
+
+                          {associatedCentersOptions.map((center) => (
+                            <option
+                              key={center.id}
+                              value={center.associatedCenter}
+                            >
+                              {center.associatedCenter}
+                            </option>
+                          ))}
                         </select>
                         <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
                     </div>
