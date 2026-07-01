@@ -466,7 +466,7 @@ export default function LeadsTable({
         );
         const normalizedStatus = typeof status === 'string' ? status.trim().toUpperCase() : '';
         const shouldShowAIAbort =
-            currentCorporateId === 64 &&
+            currentCorporateId === 658 &&
             normalizedStatus.startsWith('AI') &&
             normalizedStatus !== 'AI ABORT';
 
