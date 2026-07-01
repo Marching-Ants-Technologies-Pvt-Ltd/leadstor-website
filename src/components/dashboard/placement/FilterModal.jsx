@@ -195,7 +195,7 @@ export default function FilterModal({
           {renderMultiSelect('Functional Experience', 'relevantExperience', options.relevantExperiences)}
           {renderMultiSelect('Expected CTC', 'expectedCTC', options.expectedCTCs)}
           {renderMultiSelect('Educational Qualification', 'educationalQualification', options.educationalQualifications)}
-
+          {renderMultiSelect('Associated Center', 'associatedCenters', options.associatedCenters)}
           {/* Year of Passing */}
           <div className="space-y-3">
             <label className="block text-sm font-medium text-gray-700">Year Of Passing</label>
