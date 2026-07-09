@@ -331,10 +331,6 @@ export default function PaymentsSectionController() {
         setDownloadReport(false);
     };
 
-    // const downloadPaymentReceipt = (payload) => {
-    //     xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
-    // }
-
     const downloadPaymentReceipt = async (payload) => {
         try {
             await xDownloadBlob(
