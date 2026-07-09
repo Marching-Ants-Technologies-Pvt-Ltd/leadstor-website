@@ -355,6 +355,91 @@ export async function xDownload(nextTarget) {
   }, 60000);
 }
 
+export async function xDownloadBlob(path) {
+  if (typeof window === 'undefined') return;
+
+  const token = localStorage.getItem('access_token');
+
+  if (!token) {
+    throw new Error('access_token not found');
+  }
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_LEADSTOR_REST?.replace(/\/$/, '');
+
+  const cleanPath = path.replace(/^\//, '');
+
+  const response = await fetch(
+    `${baseUrl}/${cleanPath}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/pdf'
+      }
+    }
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    throw new Error(
+      `Download failed: ${response.status} ${errorText}`
+    );
+  }
+
+  const contentType =
+    response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/pdf')) {
+    const errorText = await response.text();
+
+    throw new Error(
+      `Expected PDF but received ${contentType}: ${errorText}`
+    );
+  }
+
+  const blob = await response.blob();
+
+  if (!blob.size) {
+    throw new Error('Downloaded PDF is empty');
+  }
+
+  const disposition =
+    response.headers.get('content-disposition') || '';
+
+  let fileName = 'receipt.pdf';
+
+  const utf8Match = disposition.match(
+    /filename\*=UTF-8''([^;]+)/
+  );
+
+  const normalMatch = disposition.match(
+    /filename="?([^"]+)"?/
+  );
+
+  if (utf8Match?.[1]) {
+    fileName = decodeURIComponent(utf8Match[1]);
+  } else if (normalMatch?.[1]) {
+    fileName = normalMatch[1];
+  }
+
+  const blobUrl = URL.createObjectURL(blob);
+
+  const anchor = document.createElement('a');
+
+  anchor.href = blobUrl;
+  anchor.download = fileName;
+
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(blobUrl);
+  }, 1000);
+}
+
 
 // React Hook for auth state
 export function useAuth() {

@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
-import { xFetch, jsonToQueryParams, xDownload } from '@/utility/xFetch';
+import { xFetch, jsonToQueryParams, xDownload, xDownloadBlob} from '@/utility/xFetch';
 import { Corporate,User } from '@/utility/TinyDB';
 import { Users, ArrowLeft } from 'lucide-react';
 import PaymentsTable from './table';
@@ -331,9 +331,25 @@ export default function PaymentsSectionController() {
         setDownloadReport(false);
     };
 
-    const downloadPaymentReceipt = (payload) => {
-        xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
-    }
+    // const downloadPaymentReceipt = (payload) => {
+    //     xDownload(`services/joinees/generateReceipt?${jsonToQueryParams(payload)}`);
+    // }
+
+    const downloadPaymentReceipt = async (payload) => {
+        try {
+            await xDownloadBlob(
+            `services/joinees/generateReceipt?${jsonToQueryParams(payload)}`
+            );
+
+            toast.success('Receipt downloaded successfully');
+        } catch (error) {
+            console.error('Receipt download failed', error);
+
+            toast.error(
+            error?.message || 'Unable to download receipt'
+            );
+        }
+    };
 
     const base64Encode = (str) => {
         const bytes = new TextEncoder().encode(str);
