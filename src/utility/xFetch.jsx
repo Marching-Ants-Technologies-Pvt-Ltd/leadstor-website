@@ -1,7 +1,7 @@
 "use client";
 
 // Re-export auth-enhanced xFetch
-export { xFetch, xDownload, useAuth, authService } from './auth';
+export { xFetch, xDownload, xDownloadBlob, useAuth, authService } from './auth';
 
 // Legacy export for backward compatibility
 export function jsonToQueryParams(json) {

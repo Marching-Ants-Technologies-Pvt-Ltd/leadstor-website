@@ -112,13 +112,22 @@ export default function JoineeInstallmentForm({
                 [key]: value
             };
 
-            const hasReceiptDate = Boolean(next?.receipt_date || next?.receiptDate);
+            const hasReceiptDate = Boolean(
+                next?.receipt_date || next?.receiptDate
+            );
+
             if (key === 'status' && value !== '0' && !hasReceiptDate) {
                 const now = new Date();
+
                 const defaultReceiptDate = formatDateTime(
                     now,
-                    `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+                    `${String(now.getHours()).padStart(2, '0')}:${String(
+                        now.getMinutes()
+                    ).padStart(2, '0')}:${String(
+                        now.getSeconds()
+                    ).padStart(2, '0')}`
                 );
+
                 next.receipt_date = defaultReceiptDate;
                 next.receiptDate = defaultReceiptDate;
             }
@@ -128,16 +137,21 @@ export default function JoineeInstallmentForm({
 
         if (key === 'date') {
             const parsedInstallmentDate = parseDate(value);
+
             if (parsedInstallmentDate) {
                 setInstallmentDate(parsedInstallmentDate);
-                setInstallmentMonth(parsedInstallmentDate);
+                setInstallmentMonth(
+                    new Date(
+                        parsedInstallmentDate.getFullYear(),
+                        parsedInstallmentDate.getMonth(),
+                        1
+                    )
+                );
             }
         }
 
-        if (key === 'status' && value !== '0') {
-            setDatePickerType('receipt');
-        }
-    }
+        // REMOVE automatic switching to receipt calendar
+    };
 
     function parseDate(dateStr) {
         if (!dateStr || typeof dateStr !== "string") return undefined;
@@ -280,13 +294,16 @@ export default function JoineeInstallmentForm({
                                     onSelect={(date) => {
                                         if(!date) return;
                                         setInstallmentDate(date);
-                                        setInstallmentMonth(date);
-                                        onRecChange("date", formatDateTime(date));
+                                        setInstallmentMonth(new Date(date.getFullYear(), date.getMonth(), 1));
+                                        setRecord((prev) => ({
+                                            ...prev,
+                                            date: formatDateTime(date)
+                                        }));
                                     }}
                                     numberOfMonths={1}
                                     captionLayout="dropdown"
                                     fromYear={new Date().getFullYear() - 2}
-                                    toYear={new Date().getFullYear()}
+                                    toYear={new Date().getFullYear() + 10}
                                     className="mx-auto"
                                 />
                             ) : (
@@ -310,7 +327,7 @@ export default function JoineeInstallmentForm({
                                     numberOfMonths={1}
                                     captionLayout="dropdown"
                                     fromYear={new Date().getFullYear() - 2}
-                                    toYear={new Date().getFullYear()}
+                                    toYear={new Date().getFullYear() + 10}
                                     className="mx-auto"
                                 />
                             )}
