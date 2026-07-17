@@ -89,6 +89,7 @@ export default function LeadsTable({
     const userRoles = Array.isArray(User.role) 
     ? User.role.map(r => String(r).trim())
     : [String(User.role).trim()];
+    const isAdmin = userRoles.some(r => r.toLowerCase() === 'administrator');
 
     const dataFormatters = {
         assignedUserId: (row) => {
@@ -307,20 +308,23 @@ export default function LeadsTable({
        NAME + BOOKMARK
     ======================= */
     const renderNameCell = (row) => {
-        
+        const canEditLead = isAdmin || row.status !== 'Joined';
+
         return (
             <div className="flex items-center gap-2">
                 <span className="font-medium text-slate-800">{`${row.firstName} ${row.lastName}`}
                     {/* Edit */}
-                    <i
-                        className="ri-pencil-fill ml-1.5 text-amber-500 cursor-pointer text-[14px]"
-                        title="Edit Lead"
-                        onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedCandidate(row);
-                        setShowUpdatePopup(true);
-                        }}
-                    />
+                    {canEditLead && (
+                        <i
+                            className="ri-pencil-fill ml-1.5 text-amber-500 cursor-pointer text-[14px]"
+                            title="Edit Lead"
+                            onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCandidate(row);
+                            setShowUpdatePopup(true);
+                            }}
+                        />
+                    )}
                 </span>
             </div>
         );
