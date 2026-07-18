@@ -18,6 +18,7 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
   const [timelineData, setTimelineData] = useState([]);
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
   const [owner, setOwner] = useState([]);
+  const [copied, setCopied] = useState(false);
 
    const fetchOwners = () => {
       xFetch({
@@ -196,6 +197,40 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
           </div>
       );
   };
+
+  const handleCopyTimeline = async () => {
+    if (!timelineData || timelineData.length === 0) return;
+
+    const lines = timelineData.map((item) => {
+      const status = item.status || "Action";
+      const updatedBy = getUpdatedBy(item);
+      const followUpInfo = getFollowUpStatus(item.datetimeKey, status);
+
+      let entry = `${item.displayDate} — ${status}\nUpdated by: ${updatedBy}`;
+
+      if (item.remarks) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = item.remarks;
+        const plainRemarks = (tmp.textContent || tmp.innerText || "").trim();
+        if (plainRemarks) entry += `\nRemarks: ${plainRemarks}`;
+      }
+
+      if (followUpInfo) entry += `\n${followUpInfo}`;
+
+      return entry;
+    });
+
+    const fullText = `${headerName}\n\n${lines.join("\n\n")}`;
+
+    try {
+      await navigator.clipboard.writeText(fullText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("Copy failed:", err);
+    }
+  };
+
 
   const handleEditClick = () => {
     setShowUpdatePopup(true);
@@ -381,7 +416,14 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex justify-end">
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex justify-end gap-3">
+            <button
+              onClick={handleCopyTimeline}
+              disabled={timelineData.length === 0}
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
             <button
               onClick={handleEditClick}
               className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
