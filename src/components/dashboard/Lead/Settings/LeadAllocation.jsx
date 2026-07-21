@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Loader2,
@@ -13,7 +14,9 @@ import {
   Trash2,
   X,
   Check,
-  Pencil
+  Pencil,
+  Sparkles,
+  ArrowRight
 } from "lucide-react";
 
 import { toast, ToastContainer, Bounce } from "react-toastify";
@@ -23,7 +26,9 @@ import { xFetch } from "@/utility/xFetch";
 import { Corporate } from "@/utility/TinyDB";
 
 export default function LeadAllocationSettings() {
+  const router = useRouter();
   const corporateId = Corporate?._id;
+  const isAdvancedAllocationEnabled = Number(corporateId) === 64;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,7 +109,7 @@ export default function LeadAllocationSettings() {
     setSaving(true);
 
     xFetch({
-      path: "/services/profile/addLeadAllocationForSettings",
+      path: "/services/advancedLeadAllocation/addLeadAllocationForSettings",
       method: "POST",
       payload: {
         corporateId,
@@ -307,6 +312,22 @@ const deleteCourse = async (name) => {
   toast.success("Course mapping deleted");
   init();
 };
+
+const openAdvancedAllocation = async () => {
+  try {
+    await xFetch({
+      path: "/services/advancedLeadAllocation/activateRule",
+      method: "POST",
+      payload: {
+        corporateId,
+        leadAllocationRule: "BY_ADVANCED_COURSE",
+      }
+    });
+    router.push("/leads/settings/lead-allocation/advanced");
+  } catch {
+    toast.error("Unable to activate advanced lead allocation");
+  }
+};
   
 
   return (
@@ -314,15 +335,52 @@ const deleteCourse = async (name) => {
       <ToastContainer transition={Bounce} autoClose={2200} />
 
       <div className="bg-white rounded-2xl border shadow-sm p-6 mb-6">
-        <div className="flex gap-3 items-center">
-          <div className="bg-blue-100 p-3 rounded-xl">
-            <Settings2 className="text-blue-600" />
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex gap-3 items-center">
+            <div className="bg-blue-100 p-3 rounded-xl">
+              <Settings2 className="text-blue-600" />
+            </div>
+
+            <div>
+              <h1 className="text-2xl font-semibold">Lead Allocation Settings</h1>
+              <p className="text-sm text-slate-500">Configure lead routing logic</p>
+            </div>
           </div>
 
-          <div>
-            <h1 className="text-2xl font-semibold">Lead Allocation Settings</h1>
-            <p className="text-sm text-slate-500">Configure lead routing logic</p>
-          </div>
+          {isAdvancedAllocationEnabled && (
+            <button
+              type="button"
+              onClick={openAdvancedAllocation}
+              className="
+                group flex items-center gap-3 rounded-2xl
+                border border-indigo-200
+                bg-gradient-to-r from-indigo-50 via-violet-50 to-blue-50
+                px-4 py-3 text-left
+                transition-all duration-200
+                hover:-translate-y-0.5
+                hover:border-indigo-300
+                hover:shadow-md
+              "
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+                <Sparkles size={20} />
+              </span>
+
+              <span>
+                <span className="block text-sm font-semibold text-slate-900">
+                  Advanced Lead Allocation
+                </span>
+                <span className="block text-xs text-slate-500">
+                  Group, ratios, limits and advisor controls
+                </span>
+              </span>
+
+              <ArrowRight
+                size={18}
+                className="ml-2 text-indigo-600 transition-transform group-hover:translate-x-1"
+              />
+            </button>
+          )}
         </div>
       </div>
 
