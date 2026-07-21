@@ -90,7 +90,7 @@ export default function LeadsTable({
     ? User.role.map(r => String(r).trim())
     : [String(User.role).trim()];
     const isAdmin = userRoles.some(r => r.toLowerCase() === 'administrator');
-
+    
     const dataFormatters = {
         assignedUserId: (row) => {
             const id = Number(row?.assignedUserId);

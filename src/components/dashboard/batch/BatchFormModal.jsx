@@ -26,7 +26,7 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
     end: '08:30',
     status: 'upcoming',
     maxBatchSize: '',
-    batchProgress: '0',
+    batchProgress: '',
     batchId: ''
   }
 
@@ -34,67 +34,43 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
 
   // Pre-fill form in edit mode – with robust date/time normalization
   useEffect(() => {
-    if (mode === 'edit' && batch) {
-      // Normalize status: replace spaces with underscore, lowercase
-      const normalizedStatus = (batch.status || 'upcoming')
-        .toLowerCase()
-        .replace(/\s+/g, '_')
+    if (mode !== 'edit' || !batch?.batchId) return;
 
-      // Normalize dates: convert dd/mm/yyyy → yyyy-mm-dd
-      const normalizeDate = (dateStr) => {
-        if (!dateStr) return ''
-        let cleaned = dateStr.split(' ')[0] // remove time if present
-        if (cleaned.includes('/')) {
-          const [dd, mm, yyyy] = cleaned.split('/')
-          return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`
-        }
-        if (cleaned.includes('-')) {
-          // already yyyy-mm-dd or similar
-          const parts = cleaned.split('-')
-          if (parts[0].length === 4) return cleaned // yyyy-mm-dd
-          if (parts[2].length === 4) {
-            // dd-mm-yyyy
-            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`
-          }
-        }
-        return ''
+    const loadBatch = async () => {
+      try {
+        const data = await xFetch({
+          path: `/services/attendance/getBatchDetails?BatchId=${batch.batchId}`
+        });
+
+        const normalizedStatus = (data.status || 'upcoming')
+          .toLowerCase()
+          .replace(/\s+/g, '_');
+
+        setForm({
+            batchId: batch.batchId,
+            label: data.labelId,
+            batchName: data.batchName,
+            batchStartDate: data.batchStartDate,
+            batchEndDate: data.batchEndDate,
+            start: data.startTime,
+            end: data.endTime,
+            status: data.status,
+            batchProgress: data.batchProgress ?? '',
+            maxBatchSize: data.batchTotalAllowedCount ?? ''
+        });
+      } catch (err) {
+        toast.error('Failed to load batch details');
       }
+    };
 
-      // Normalize time: "8:00 AM" → "08:00" (24h)
-      const normalizeTime = (timeStr) => {
-        if (!timeStr) return '08:00'
-        let cleaned = timeStr.trim().toUpperCase()
-        if (cleaned.includes('AM') || cleaned.includes('PM')) {
-          let [time, period] = cleaned.split(' ')
-          let [h, m] = time.split(':').map(Number)
-          if (period === 'PM' && h !== 12) h += 12
-          if (period === 'AM' && h === 12) h = 0
-          return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
-        }
-        // already HH:mm
-        return cleaned
-      }
-
-      setForm({
-        label: batch.labelId || '',
-        batchName: batch.batchName || '',
-        batchStartDate: normalizeDate(batch.batchStartDate),
-        batchEndDate: normalizeDate(batch.batchEndDate),
-        start: normalizeTime(batch.startTime),
-        end: normalizeTime(batch.endTime),
-        status: normalizedStatus,
-        maxBatchSize: batch.batchTotalAllowedCount || batch.maxBatchSize || '',
-        batchProgress: batch.batchProgress || '0',
-        batchId: batch.batchId || ''
-      })
-    }
-  }, [mode, batch])
+    loadBatch();
+  }, [mode, batch]);
 
   // Load labels + decode entities
   useEffect(() => {
     const fetchLabels = async () => {
       try {
-        const data = await xFetch({ path: '/services/attendance/getBatches' })
+        const data = await xFetch({ path: '/services/attendance/getLabels' })
         if (Array.isArray(data)) {
           const decoded = data.map(item => ({
             ...item,
@@ -146,11 +122,6 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
       return toast.error('Max batch size must be between 0 and 500')
     }
 
-    const progress = Number(form.batchProgress)
-    if (isNaN(progress) || progress < 0 || progress > 100) {
-      return toast.error('Progress must be between 0 and 100')
-    }
-
     setLoading(true)
 
     try {
@@ -163,13 +134,12 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
         start: form.start,
         end: form.end,
         status: form.status,
-        batchProgress: form.batchProgress,
-        maxBatchSize: form.maxBatchSize
+        maxBatchSize: form.maxBatchSize,
+        ...(isEdit && { batchProgress: form.batchProgress })
       }
-
       const endpoint = mode === 'add'
         ? '/services/attendance/addBatch'
-        : '/services/attendance/editBatch'
+        : '/services/attendance/editBatch';
 
       await xFetch({
         path: endpoint,
@@ -208,10 +178,10 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
           {/* Hidden fields */}
           {isEdit && <input type="hidden" name="batchId" value={form.batchId} />}
 
-          {/* Label */}
+          {/* Course */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-              <span className="text-red-500">*</span> Label
+              <span className="text-red-500">*</span> Course
             </label>
             <select
               name="label"
@@ -220,7 +190,7 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
               required
               className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
-              <option value="">-- Select Label --</option>
+              <option value="">-- Select Course --</option>
               {labels.map(l => (
                 <option key={l.labelId} value={l.labelId}>
                   {l.labelName}
@@ -326,24 +296,23 @@ export default function BatchFormModal({ mode = 'add', batch = null, onClose, on
             </select>
           </div>
 
-          {/* Progress */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
-              <span className="text-red-500">*</span> Progress (%)
-            </label>
-            <input
-              type="number"
-              name="batchProgress"
-              value={form.batchProgress}
-              onChange={handleChange}
-              min={0}
-              max={100}
-              step={1}
-              required
-              className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="0–100"
-            />
-          </div>
+          {isEdit && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                Batch Progress (%)
+              </label>
+              <input
+                type="number"
+                name="batchProgress"
+                value={form.batchProgress}
+                onChange={handleChange}
+                min={0}
+                max={100}
+                className="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Enter progress"
+              />
+            </div>
+          )}
 
           {/* Max Batch Size */}
           <div>
