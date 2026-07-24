@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { ToastContainer, toast, Bounce } from 'react-toastify';
 import { xFetch } from '@/utility/xFetch';
 import { Corporate } from '@/utility/TinyDB';
@@ -15,21 +15,58 @@ import SendToPlacementReady from '@/components/dashboard/placement/SendToPlaceme
 import ManageCandidatesForJob from '@/components/dashboard/placement/ManageCandidatesForJob';
 import ScheduledEmailStatus from '@/components/dashboard/placement/ScheduledEmailStatus';
 
+const normalizeJobsResponse = (jobsRes, fallbackPage, fallbackLimit) => {
+  const rows = Array.isArray(jobsRes) ? jobsRes : jobsRes?.data || [];
+  const pagination = jobsRes?.pagination || {};
+
+  const totalRecordsRaw =
+    pagination.totalRecords ??
+    jobsRes?.totalRecords ??
+    jobsRes?.total ??
+    rows.length ??
+    0;
+  const totalRecords = Number(totalRecordsRaw) || 0;
+
+  const limitRaw = pagination.limit ?? jobsRes?.limit ?? fallbackLimit;
+  const limit = Number(limitRaw) || fallbackLimit;
+
+  const totalPagesRaw =
+    pagination.totalPages ??
+    jobsRes?.totalPages ??
+    (limit > 0 ? Math.ceil(totalRecords / limit) : 0);
+  const totalPages = Number(totalPagesRaw) || 0;
+
+  const pageRaw = pagination.page ?? jobsRes?.page ?? fallbackPage;
+  const page = Number(pageRaw) || fallbackPage;
+
+  return {
+    rows,
+    pagination: {
+      page,
+      limit,
+      totalRecords,
+      totalPages,
+    },
+  };
+};
+
 export default function JobPostingsController() {
   const router = useRouter();
   const corporateId = Corporate?._id;
-  const recruiterId = Corporate?.recruiterId || corporateId;
 
-  // ─── Job List States ─────────────────────────────────────────────────────
-  const [allJobs, setAllJobs] = useState([]);
+  // Job list states
+  const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [ownerMap, setOwnerMap] = useState({});
+  const requestSeq = useRef(0);
 
-  // ─── Modals & Views ──────────────────────────────────────────────────────
+  // Modals & Views
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('add');
   const [selectedJob, setSelectedJob] = useState(null);
@@ -38,69 +75,80 @@ export default function JobPostingsController() {
   const [showSendToPlacement, setShowSendToPlacement] = useState(false);
   const [showManageCandidates, setShowManageCandidates] = useState(false);
   const [showScheduledStatus, setShowScheduledStatus] = useState(false);
-  const [activeJob, setActiveJob] = useState(null); // shared for send, log, manage
+  const [activeJob, setActiveJob] = useState(null);
 
   const getOwnerDisplayName = useCallback((ownerValue) => {
     if (ownerValue === null || ownerValue === undefined || ownerValue === '') return '';
     return ownerMap[String(ownerValue)] || String(ownerValue);
   }, [ownerMap]);
 
-  // ─── Fetch Jobs ──────────────────────────────────────────────────────────
+  // Fetch jobs from server with pagination and search
   const reloadJobs = useCallback(async () => {
+    if (!corporateId) return;
+
+    const requestId = ++requestSeq.current;
     setLoading(true);
     try {
       const params = {
         corporateId: String(corporateId),
-        search: search.trim() || undefined,
+        page: String(page),
+        limit: String(limit),
       };
+
+      const trimmedSearch = search.trim();
+      if (trimmedSearch) {
+        params.search = trimmedSearch;
+      }
+
       const [jobsRes, ownersRes] = await Promise.all([
         xFetch({ path: '/services/job/getJobs', payload: params }),
         xFetch({ path: '/services/profile/getUsers', payload: { basic: 1 } }).catch(() => ({})),
       ]);
-      const list = Array.isArray(jobsRes) ? jobsRes : jobsRes?.rows || jobsRes?.data || [];
+
+      const normalized = normalizeJobsResponse(jobsRes, page, limit);
+      const list = normalized.rows;
+      const pagination = normalized.pagination;
+
       const owners = ownersRes && typeof ownersRes === 'object' ? ownersRes : {};
       const normalizedOwnerMap = Object.fromEntries(
         Object.entries(owners).map(([id, name]) => [String(id), String(name)])
       );
+
+      if (requestId !== requestSeq.current) return;
+
       setOwnerMap(normalizedOwnerMap);
-      setAllJobs(list);
+      setJobs(list);
+      setTotalRecords(pagination.totalRecords);
+      setTotalPages(pagination.totalPages);
+
+      if (pagination.page !== page) {
+        setPage(pagination.page);
+      }
     } catch (err) {
+      if (requestId !== requestSeq.current) return;
       toast.error('Failed to load job postings');
     } finally {
-      setLoading(false);
+      if (requestId === requestSeq.current) {
+        setLoading(false);
+      }
     }
-  }, [search, corporateId]);
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [search]);
+  }, [corporateId, page, limit, search]);
 
   useEffect(() => {
-    if (!showNotifications && !showSendToPlacement && !showManageCandidates && !showScheduledStatus ) {
+    if (!showNotifications && !showSendToPlacement && !showManageCandidates && !showScheduledStatus) {
       reloadJobs();
     }
-  }, [search, showNotifications, showSendToPlacement, showManageCandidates, showScheduledStatus, reloadJobs]);
+  }, [page, limit, search, showNotifications, showSendToPlacement, showManageCandidates, showScheduledStatus, reloadJobs]);
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [page, limit, search]);
 
   useEffect(() => {
     router.prefetch('/jobs/settings');
   }, [router]);
 
-  // ─── Client-side Search + Pagination ─────────────────────────────────────
-  const filteredJobs = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return allJobs;
-    return allJobs.filter((job) =>
-      (job?.title || '').toLowerCase().includes(term) ||
-      (job?.companyName || '').toLowerCase().includes(term)
-    );
-  }, [allJobs, search]);
-
-  const total = filteredJobs.length;
-  const totalPages = Math.ceil(total / limit);
-  const jobs = filteredJobs.slice((page - 1) * limit, page * limit);
-
-  // ─── Handlers ────────────────────────────────────────────────────────────
+  // Handlers
   const openAddModal = () => {
     setModalMode('add');
     setSelectedJob(null);
@@ -112,16 +160,16 @@ export default function JobPostingsController() {
     setSelectedJob(job);
     setIsModalOpen(true);
   };
-   
+
   const handleOpenSendToPlacement = (job) => {
     setActiveJob(job);
     setShowSendToPlacement(true);
   };
 
-    const handleCheckScheduledStatus = (job) => {
-        setActiveJob(job);
-        setShowScheduledStatus(true);
-    };
+  const handleCheckScheduledStatus = (job) => {
+    setActiveJob(job);
+    setShowScheduledStatus(true);
+  };
 
   const handleManageCandidates = (job) => {
     setActiveJob(job);
@@ -177,7 +225,6 @@ export default function JobPostingsController() {
     toast.success('Exported successfully');
   };
 
-  // ─── Render ──────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-gray-100">
       <ToastContainer theme="colored" transition={Bounce} position="top-right" autoClose={2200} />
@@ -187,7 +234,6 @@ export default function JobPostingsController() {
       !showManageCandidates &&
       !showScheduledStatus ? (
         <>
-          {/* ── Toolbar ──────────────────────────────────────────────────────── */}
           <div className="bg-white border-b border-gray-200 px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex flex-wrap gap-2">
               <button
@@ -226,7 +272,10 @@ export default function JobPostingsController() {
                   className="w-full sm:w-64 pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Search jobs..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                 />
                 <i className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
               </div>
@@ -257,7 +306,6 @@ export default function JobPostingsController() {
             </div>
           </div>
 
-          {/* ── Job Table ────────────────────────────────────────────────────── */}
           <div className="flex-1 flex flex-col min-h-0 px-5 pb-6 overflow-hidden">
             <div className="flex-1 overflow-auto border border-gray-200/80 rounded-2xl bg-white shadow-lg">
               {loading ? (
@@ -293,85 +341,80 @@ export default function JobPostingsController() {
               )}
             </div>
 
-            {/* Pagination controls */}
-            {!loading && total > 0 && (
+            {!loading && totalRecords > 0 && (
               <div className="mt-5 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-gray-600 px-2">
                 <div className="flex items-center gap-3">
-                    <span className="font-medium">
-                      Showing <strong className="text-blue-600">{(page - 1) * limit + 1}</strong>–
-                      <strong className="text-blue-600">{Math.min(page * limit, total)}</strong> of <strong className="text-blue-600">{total.toLocaleString()}</strong>
-                    </span>
+                  <span className="font-medium">
+                    Showing <strong className="text-blue-600">{(page - 1) * limit + 1}</strong>-
+                    <strong className="text-blue-600">{Math.min(page * limit, totalRecords)}</strong> of <strong className="text-blue-600">{totalRecords.toLocaleString()}</strong>
+                  </span>
 
-                    <select
-                      value={limit}
-                      onChange={(e) => {
-                        setLimit(Number(e.target.value))
-                        setPage(1) // reset to first page
-                      }}
-                      className="border border-gray-300 rounded-full px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
-                    >
-                      <option value={10}>10</option>
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value={500}>500</option>
-                      <option value={1000}>1000</option>
-                    </select>
+                  <select
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setPage(1);
+                    }}
+                    className="border border-gray-300 rounded-full px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white font-medium"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                  </select>
 
-                    <span className="font-medium">per page</span>
-                  </div>
+                  <span className="font-medium">per page</span>
+                </div>
 
-                  {/* Page navigation */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      disabled={page === 1}
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
-                    >
-                      Previous
-                    </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
+                  >
+                    Previous
+                  </button>
 
-                    {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
-                      const pageNum = i + 1
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setPage(pageNum)}
-                          className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
-                            page === pageNum
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
-                              : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      )
-                    })}
+                  {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+                    const pageNum = i + 1;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setPage(pageNum)}
+                        className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
+                          page === pageNum
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
+                            : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
 
-                    {totalPages > 10 && (
-                      <>
-                        <span className="px-2 text-gray-400">...</span>
-                        <button
-                          onClick={() => setPage(totalPages)}
-                          className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
-                            page === totalPages
-                              ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
-                              : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
-                          }`}
-                        >
-                          {totalPages}
-                        </button>
-                      </>
-                    )}
+                  {totalPages > 10 && (
+                    <>
+                      <span className="px-2 text-gray-400">...</span>
+                      <button
+                        onClick={() => setPage(totalPages)}
+                        className={`px-4 py-2 rounded-full min-w-[40px] transition-all font-bold ${
+                          page === totalPages
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-110'
+                            : 'border border-gray-300 hover:bg-blue-50 hover:border-blue-300 hover:shadow-md'
+                        }`}
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
 
-                    <button
-                      disabled={page >= totalPages}
-                      onClick={() => setPage(p => p + 1)}
-                      className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
-                    >
-                      Next
-                    </button>
-                  </div>
+                  <button
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="px-4 py-2 border border-gray-300 rounded-full hover:bg-blue-50 hover:border-blue-300 disabled:opacity-40 transition-all font-semibold hover:shadow-md"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -379,7 +422,7 @@ export default function JobPostingsController() {
       ) : showNotifications ? (
         <JobNotifications
           corporateId={corporateId}
-          institutes={[]} // ← fetch if needed
+          institutes={[]}
           onBack={() => setShowNotifications(false)}
         />
       ) : showSendToPlacement && activeJob ? (
@@ -406,21 +449,20 @@ export default function JobPostingsController() {
           onBack={() => {
             setShowManageCandidates(false);
             setActiveJob(null);
-            reloadJobs(); // optional - refresh job list
+            reloadJobs();
           }}
         />
       ) : showScheduledStatus && activeJob ? (
         <ScheduledEmailStatus
-            jobId={activeJob.id}
-            title={activeJob.title || 'Scheduled Emails'}
-            onBack={() => {
+          jobId={activeJob.id}
+          title={activeJob.title || 'Scheduled Emails'}
+          onBack={() => {
             setShowScheduledStatus(false);
             setActiveJob(null);
-            }}
+          }}
         />
-    ) : null}
+      ) : null}
 
-      {/* Create / Edit Modal */}
       {isModalOpen && (
         <JobPostingFormModal
           isOpen={isModalOpen}
