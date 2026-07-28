@@ -18,6 +18,8 @@ export default function Category() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
+  const [highlightedId, setHighlightedId] = useState(null);
+
   const fetchData = () => {
     setLoading(true);
     xFetch({
@@ -80,6 +82,13 @@ export default function Category() {
         fetchData();
       })
       .catch((error) => {
+        if (error.status === 409 && error.body?.error === "duplicate") {
+          toast.error(error.body.message || "This category already exists");
+          setShowModal(false);
+          setHighlightedId(error.body.existingId);
+          setTimeout(() => setHighlightedId(null), 2500);
+          return;
+        }
         console.error("Error saving category", error);
         toast.error("Failed to save category");
       })
@@ -218,7 +227,9 @@ export default function Category() {
                 {paginated.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-t hover:bg-gray-50 transition-colors"
+                    className={`border-t hover:bg-gray-50 transition-colors duration-500 ${
+                      highlightedId === row.id ? "bg-yellow-100" : ""
+                    }`}
                   >
                     <td className="p-2">
                       <input

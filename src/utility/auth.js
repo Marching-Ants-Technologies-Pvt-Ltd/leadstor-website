@@ -254,11 +254,25 @@ export async function xFetch({
             if (!skipAuthCheck && !authService.isLoggingOut) {
               await authService.handleTokenExpired('Your session has expired. Please login again.');
             }
-            throw new Error(`HTTP error! Status: ${response.status}`);
+            const err = new Error(`HTTP error! Status: ${response.status}`);
+            err.status = response.status;
+            throw err;
           }
-          
-          // For other errors, still throw but don't logout
-          throw new Error(`HTTP error! Status: ${response.status}`);
+
+          // For other errors, try to read the JSON body so callers
+          // can act on structured error info (e.g. duplicate-entry checks)
+          let body = null;
+          try {
+            const text = await response.text();
+            body = text ? JSON.parse(text) : null;
+          } catch (parseErr) {
+            // body wasn't JSON, ignore
+          }
+
+          const err = new Error(`HTTP error! Status: ${response.status}`);
+          err.status = response.status;
+          err.body = body;
+          throw err;
         }
 
         if (responseType === 'blob') {
