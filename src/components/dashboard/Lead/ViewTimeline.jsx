@@ -272,8 +272,6 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
           });
 
         setTimelineData(entries);
-        console.log("leadDetails:", leadDetails);
-        console.log("timeline entries:", entries);
       }
     } catch (e) {
       console.error("Timeline fetch failed", e);
@@ -299,14 +297,10 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
   };
 
   const getOwnerName = (assignedUserId) => {
-    if (!assignedUserId) return "Unassigned";
-    const id = String(assignedUserId).trim();
+    const id = assignedUserId?.toString().trim();
+    if (!id) return "Unassigned";
     if (id === "-1") return "Admin";
-    if (owner && typeof owner === "object" && !Array.isArray(owner)) {
-      const name = owner[id];
-      if (name && typeof name === "string" && name.trim()) return name.trim();
-    }
-    return "Unassigned";
+    return owner?.[id]?.trim() || "Unassigned";
   };
 
   const headerName = `${leadDetails?.firstName || "Unknown Lead"} ${
