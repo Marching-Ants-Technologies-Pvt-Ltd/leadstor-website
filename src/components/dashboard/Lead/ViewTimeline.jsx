@@ -10,6 +10,10 @@ import {
   CalendarCheck,
   History,
   Rocket,
+  Star,
+  Copy,
+  Pencil,
+  User as UserIcon,
 } from "lucide-react";
 import { xFetch } from "@/utility/xFetch";
 import UpdateLead from "@/components/dashboard/Lead/UpdateLead";
@@ -62,6 +66,13 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
         pill: "bg-red-50 text-red-800",
       },
       "Registered": {
+        type: "success",
+        Icon: CheckCircle2,
+        color: "#10b981",
+        ring: "ring-emerald-400",
+        pill: "bg-emerald-50 text-emerald-800",
+      },
+      "Joined": {
         type: "success",
         Icon: CheckCircle2,
         color: "#10b981",
@@ -285,6 +296,13 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
     return "Unknown";
   };
 
+  const getOwnerName = (assignedUserId) => {
+    const id = assignedUserId?.toString().trim();
+    if (!id) return "Unassigned";
+    if (id === "-1") return "Admin";
+    return owner?.[id]?.trim() || "Unassigned";
+  };
+
   const headerName = `${leadDetails?.firstName || "Unknown Lead"} ${
     leadDetails?.mobile ? `(${leadDetails.mobile})` : ""
   }`;
@@ -310,13 +328,58 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
             </button>
           </div>
 
-          {/* AI Next Action (if exists) */}
-          {leadDetails?.aINextStep && (
-            <div className="relative mx-6 mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
-              <div className="absolute -top-2 left-6 rounded-full bg-amber-600 px-2.5 py-0.5 text-xs font-semibold text-white">
-                AI Next Action
+          {/* Info bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border-b border-gray-200 px-6 py-3 bg-white text-sm">
+            <div>
+              <div className="text-xs text-gray-500 mb-0.5">Lead Stage</div>
+              <span
+                className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  (STATUS_CONFIG[leadDetails?.status] || STATUS_CONFIG.default).pill
+                }`}
+              >
+                {leadDetails?.status || "-"}
+              </span>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 mb-0.5">Next Follow-up</div>
+              <div className="font-medium text-gray-800">
+                {leadDetails?.followupDate?.trim() ? leadDetails.followupDate : "Not set"}
               </div>
-              <p className="mt-1 font-medium">{leadDetails.aINextStep}</p>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 mb-0.5">Last Activity</div>
+              <div className="font-medium text-gray-800">
+                {leadDetails?.updateTime || "-"}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-gray-500 mb-0.5">Owner</div>
+              <div className="font-medium text-gray-800 flex items-center gap-1">
+                <UserIcon size={14} />
+                {getOwnerName(leadDetails?.assignedUserId)}
+              </div>
+            </div>
+          </div>
+
+          {/* Next Action */}
+          {leadDetails?.aINextStep && (
+            <div className="mx-6 mt-4 flex items-center justify-between gap-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+                  <Star size={16} className="text-amber-600" fill="currentColor" />
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                    Next Action
+                  </div>
+                  <p className="text-sm text-gray-800">{leadDetails.aINextStep}</p>
+                </div>
+              </div>
+              {leadDetails?.mobile && (
+                <a href={`tel:${leadDetails.mobile}`} className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-300 bg-white text-amber-600 hover:bg-amber-100 transition" title="Call">
+                  <Phone size={16} />
+                </a>
+              )}
             </div>
           )}
 
@@ -362,17 +425,7 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
                           )}
                         </div>
 
-                          {/* Remarks Section */}
-                          {item.status && (
-                            <div className="mb-1">
-                              <p className="text-sm text-gray-500">
-                                Status:{" "}
-                                <span className="font-medium text-gray-700">
-                                  {item.status}
-                                </span>
-                              </p>
-                            </div>
-                          )}
+                          
 
                       {/* Remarks Section */}
                       {item.remarks && (
@@ -396,16 +449,24 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
 
                       {/* Follow-up warning (only relevant for Follow Up) */}
                       {followUpInfo && (
-                        <div className="mt-2">
+                        <div className="mt-2 flex items-center justify-between gap-3">
                           <p
-                            className={`text-sm font-medium ${
-                              followUpInfo.includes("Overdue")
-                                ? "text-red-600"
-                                : "text-amber-700"
+                            className={`text-sm font-medium flex items-center gap-1 ${
+                              followUpInfo.includes("overdue") ? "text-red-600" : "text-amber-700"
                             }`}
                           >
-                            {followUpInfo}
+                            {followUpInfo.includes("overdue") && <AlertCircle size={14} />}
+                            {followUpInfo.toUpperCase()}
                           </p>
+                          {followUpInfo.includes("overdue") && (
+                            <button
+                              title="Mark as resolved"
+                              // TODO: hook this up to an actual resolve/update API call once confirmed
+                              className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition"
+                            >
+                              <CheckCircle2 size={14} />
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -416,19 +477,21 @@ const Timeline = ({ leadDetails, isOpen, onClose, xLeads }) => {
           </div>
 
           {/* Footer */}
-          <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex justify-end gap-3">
+          <div className="border-t border-gray-200 bg-gray-50 px-6 py-3 flex justify-end gap-2">
             <button
               onClick={handleCopyTimeline}
               disabled={timelineData.length === 0}
-              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              title={copied ? "Copied!" : "Copy timeline"}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {copied ? "Copied!" : "Copy"}
+              {copied ? <CheckCircle2 size={16} className="text-green-600" /> : <Copy size={16} />}
             </button>
             <button
               onClick={handleEditClick}
-              className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+              title="Edit Lead"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
             >
-              Edit Lead
+              <Pencil size={16} />
             </button>
           </div>
         </div>
