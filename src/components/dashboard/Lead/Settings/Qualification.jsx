@@ -15,6 +15,7 @@ export default function Qualification() {
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [selected, setSelected] = useState([]);
+  const [highlightedId, setHighlightedId] = useState(null);
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -80,6 +81,13 @@ export default function Qualification() {
         fetchData();
       })
       .catch((error) => {
+        if (error.status === 409 && error.body?.error === "duplicate") {
+          toast.error(error.body.message || "This qualification already exists");
+          setShowModal(false);
+          setHighlightedId(error.body.existingId);
+          setTimeout(() => setHighlightedId(null), 2500);
+          return;
+        }
         console.error("Error saving qualification", error);
         toast.error("Failed to save qualification");
       })
@@ -168,7 +176,7 @@ export default function Qualification() {
           <button
             onClick={() => {
               setEditing(false);
-              setForm({ id: null, qualification: "" });
+              setForm({ id: null, studyLevelName: "" });
               setShowModal(true);
             }}
             className="flex items-center gap-1 bg-green-600 text-white px-3 py-2 rounded hover:bg-green-700"
@@ -218,7 +226,9 @@ export default function Qualification() {
                 {paginated.map((row) => (
                   <tr
                     key={row.id}
-                    className="border-t hover:bg-gray-50 transition-colors"
+                    className={`border-t hover:bg-gray-50 transition-colors duration-500 ${
+                      highlightedId === row.id ? "bg-yellow-100" : ""
+                    }`}
                   >
                     <td className="p-2">
                       <input

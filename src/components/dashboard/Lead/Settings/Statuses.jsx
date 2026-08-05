@@ -18,6 +18,8 @@ export default function Statuses() {
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
+  const [highlightedId, setHighlightedId] = useState(null);
+
   const fetchData = () => {
     setLoading(true);
     xFetch({ path: "/services/profile/getStatuses" })
@@ -68,7 +70,17 @@ export default function Statuses() {
         setEditing(false);
         fetchData();
       })
-      .catch(() => toast.error("Failed to save"));
+      .catch((error) => {
+        if (error.status === 409 && error.body?.error === "duplicate") {
+          toast.error(error.body.message || "This status already exists");
+          setModalOpen(false);
+          setHighlightedId(error.body.existingId);
+          setTimeout(() => setHighlightedId(null), 2500);
+          return;
+        }
+        toast.error("Failed to save");
+      });
+  
   };
 
   const handleDelete = (id) => {
@@ -166,7 +178,12 @@ export default function Statuses() {
               </thead>
               <tbody>
                 {currentRecords.map((row) => (
-                  <tr key={row.id} className="border-t hover:bg-gray-50">
+                  <tr
+                      key={row.id}
+                      className={`border-t hover:bg-gray-50 transition-colors duration-500 ${
+                        highlightedId === row.id ? "bg-yellow-100" : ""
+                      }`}
+                    >
                     <td className="p-2">
                       <input
                         type="checkbox"
