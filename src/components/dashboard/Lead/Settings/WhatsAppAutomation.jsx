@@ -7,21 +7,19 @@ import { Corporate, User, Test } from "@/utility/TinyDB";
 
 // Lucide icons
 import {
-    Search,
     Trash2,
     Play,
     Square,
-    RefreshCcw,
     Edit,
-    Power,
-    PowerOff,
-    Plus, Check , X
 } from "lucide-react";
 
 export default function WhatsappAutomation() {
   const [loading, setLoading] = useState(false);
   const [triggers, setTriggers] = useState([]);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recordsPerPage, setRecordsPerPage] = useState(10);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [attributeValue, setAttributeValue] = useState({}); // expected object map key->label
 
@@ -75,15 +73,21 @@ export default function WhatsappAutomation() {
   }, []);
 
   const loadTriggers = useCallback(async () => {
-    const res = await xFetch({ path: "/services/profile/getWhatsappTriggers", method: "GET" });
-    // server might return array or object with rows/data
-    const data = Array.isArray(res) ? res : res?.rows ?? res?.data ?? [];
-    // normalize attributes for each row to array form
-    return (data || []).map((r) => ({
-      ...r,
-      attributes: safeParseAttributes(r.attributes),
-    }));
-  }, []);
+      const offset = (currentPage - 1) * recordsPerPage;
+
+      const res = await xFetch({
+          path: `/services/profile/getWhatsappTriggersV3?search=${encodeURIComponent(search)}&offset=${offset}&limit=${recordsPerPage}`,
+          method: "GET"
+      });
+
+      setTotalRecords(res.total || 0);
+
+      return (res.rows || []).map(r => ({
+          ...r,
+          attributes: safeParseAttributes(r.attributes)
+      }));
+
+  }, [currentPage, recordsPerPage, search]);
 
   const getAttribute = useCallback(async () => {
     const res = await xFetch({ path: `/services/profile/getAttribute`, method: "GET" });
@@ -97,25 +101,46 @@ export default function WhatsappAutomation() {
     return typeof res === "object" ? res : {};
   }, []);
 
-  // Load all initial data in parallel
   const loadAll = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [filters, trs, attrs] = await Promise.all([loadFilterParams(), loadTriggers(), getAttribute()]);
-      setFilterParameters(filters);
-      setTriggers(trs);
-      setAttributeValue(attrs);
-    } catch (err) {
-      console.error("Initial load failed:", err);
-      toast.error("Failed to load initial data");
-    } finally {
-      setLoading(false);
-    }
-  }, [loadFilterParams, loadTriggers, getAttribute]);
+      setLoading(true);
+
+      try {
+
+          const [filters, attrs] = await Promise.all([
+              loadFilterParams(),
+              getAttribute()
+          ]);
+
+          setFilterParameters(filters);
+          setAttributeValue(attrs);
+
+      } finally {
+          setLoading(false);
+      }
+
+  }, [loadFilterParams, getAttribute]);
 
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+      loadAll();
+  }, []);
+
+  useEffect(() => {
+
+      setLoading(true);
+
+      loadTriggers()
+          .then(setTriggers)
+          .finally(() => setLoading(false));
+
+  }, [loadTriggers]);
+
+  useEffect(()=>{
+    loadTriggers().then(setTriggers);
+  },[
+      currentPage,
+      recordsPerPage,
+      search
+  ]);
 
   // ---------- Form helpers ----------
   const openCreateModal = useCallback((trigger = null) => {
@@ -297,18 +322,40 @@ export default function WhatsappAutomation() {
     });
   }, []);
 
-  const clearSelection = useCallback(() => setSelectedRows(new Set()), []);
-  const selectAll = useCallback(() => setSelectedRows(new Set(triggers.map((t) => t.id))), [triggers]);
 
-  // Filtered list memoized
-  const filtered = useMemo(() => {
-    const s = (search || "").toLowerCase().trim();
-    if (!s) return triggers;
-    return triggers.filter((t) => {
-      const text = `${t.template_name || ""} ${t.course_label || t.course || ""} ${t.status_label || t.status || ""}`.toLowerCase();
-      return text.indexOf(s) > -1;
-    });
-  }, [triggers, search]);
+  const totalPages = Math.max(
+      1,
+      Math.ceil(totalRecords / recordsPerPage)
+  );
+  
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
+
+  const pageStart = totalRecords === 0 ? 0 : ((currentPage - 1) * recordsPerPage) + 1;
+  const pageEnd = Math.min(currentPage * recordsPerPage, totalRecords);
+
+  const currentPageIds = useMemo(
+    () => triggers.map((row) => row.id).filter((id) => id !== undefined && id !== null),
+    [triggers]
+  );
+
+  const isCurrentPageSelected =
+    currentPageIds.length > 0 && currentPageIds.every((id) => selectedRows.has(id));
+
+  const toggleCurrentPageSelection = useCallback(
+    (checked) => {
+      setSelectedRows((prev) => {
+        const next = new Set(prev);
+        currentPageIds.forEach((id) => {
+          if (checked) next.add(id);
+          else next.delete(id);
+        });
+        return next;
+      });
+    },
+    [currentPageIds]
+  );
 
   // small helper to render attribute names safely
   const renderAttrNames = (row) => {
@@ -317,13 +364,16 @@ export default function WhatsappAutomation() {
   };
 
   return (
-    <div className="p-4">
+    <div
+        className="flex max-w-full flex-col gap-3 p-4"
+        style={{ height: "calc(100vh - 70px)" }}
+      >
       <ToastContainer />
-      <div className="mb-3 p-3 bg-yellow-50 border rounded">
+      <div className="shrink-0 rounded border bg-yellow-50 p-3">
         <strong>Note:</strong> This automation feature is in <b>BETA</b> and currently supports automation with <b>WATI</b> templates only.
       </div>
 
-      <div className="flex items-center gap-2 mb-3">
+      <div className="shrink-0 flex flex-wrap items-center gap-2">
         <button className="btn" onClick={() => openCreateModal(null)}>＋</button>
         <button
           className="btn"
@@ -339,7 +389,10 @@ export default function WhatsappAutomation() {
           <input
             placeholder="Search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="px-3 py-2 
                 border border-gray-300 rounded-md 
                 bg-white text-black 
@@ -350,23 +403,28 @@ export default function WhatsappAutomation() {
         </div>
       </div>
 
-      <div className="overflow-auto border rounded">
-        <table className="w-full">
-          <thead className="bg-gray-100">
+      <div
+            className="overflow-auto rounded border"
+            style={{
+                height: "60vh",
+            }}
+        >
+        <table className="w-full table-fixed">
+          <thead className="sticky top-0 z-10 bg-gray-100">
             <tr>
               <th style={{ width: 40 }}>
                 <input
                   type="checkbox"
-                  checked={selectedRows.size > 0 && selectedRows.size === triggers.length && triggers.length > 0}
-                  onChange={(e) => (e.target.checked ? selectAll() : clearSelection())}
+                  checked={isCurrentPageSelected}
+                  onChange={(e) => toggleCurrentPageSelection(e.target.checked)}
                 />
               </th>
               <th style={{ width: 60 }}>#</th>
-              <th>Status</th>
-              <th>Course</th>
-              <th>Template</th>
-              <th>Attributes</th>
-              <th style={{ width: 220 }}>Actions</th>
+              <th style={{ width: 160 }}>Status</th>
+              <th style={{ width: 160 }}>Course</th>
+              <th style={{ width: 220 }}>Template</th>
+              <th style={{ width: 220 }}>Attributes</th>
+              <th style={{ width: 160 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -376,65 +434,118 @@ export default function WhatsappAutomation() {
               </tr>
             )}
 
-            {!loading && filtered.length === 0 && (
+            {!loading && triggers.length === 0 && (
               <tr>
                 <td colSpan={7} className="p-6 text-center text-gray-500">No matching records found</td>
               </tr>
             )}
 
-            {!loading && filtered.map((row, idx) => (
+            {!loading && triggers.map((row, idx) => (
               <tr key={row.id ?? idx} className="border-t">
                 <td className="p-2 text-center">
                   <input type="checkbox" checked={selectedRows.has(row.id)} onChange={() => toggleSelect(row.id)} />
                 </td>
-                <td className="p-2">#{row.count ?? (idx + 1)}</td>
-                <td className="p-2">
+                <td className="p-2 whitespace-nowrap">#{row.count ?? ((currentPage - 1) * recordsPerPage + idx + 1)}</td>
+                <td className="p-2 truncate" title={String(row.status_label ?? row.status ?? "")}>
                   {row.status_label ?? row.status}
                   <span style={{ marginLeft: 8, color: (row.status > 0 ? "#4caf50" : "#f44336") }}>●</span>
                 </td>
-                <td className="p-2">{row.course_label ?? row.course}</td>
-                <td className="p-2">{row.template_name}</td>
-                <td className="p-2">{renderAttrNames(row)}</td>
-                <td className="p-2 text-center flex items-center justify-center gap-2">
+                <td className="p-2 truncate" title={String(row.course_label ?? row.course ?? "")}>{row.course_label ?? row.course}</td>
+                <td className="p-2 truncate" title={String(row.template_name ?? "")}>{row.template_name}</td>
+                <td className="p-2 truncate" title={renderAttrNames(row)}>{renderAttrNames(row)}</td>
+                <td className="p-2 text-center">
+                  <div className="flex items-center justify-center gap-2">
                     <button
-                        className="icon-btn bg-gray-200 hover:bg-gray-300 text-black"
-                        onClick={() =>
-                        updateActiveStatus([row.id], row.status > 0 ? 0 : 1)
-                        }
-                        title={row.status > 0 ? "Stop" : "Start"}
+                      className={`icon-btn ${row.status > 0 ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}`}
+                      onClick={() => updateActiveStatus([row.id], row.status > 0 ? 0 : 1)}
+                      title={row.status > 0 ? "Stop" : "Start"}
                     >
-                        {row.status > 0 ? (
-                        <button className="bg-green-600 hover:bg-green-700 p-2 rounded">
-                            <Square size={16} className="text-white" />
-                        </button>
-                        ) : (
-                            <button className="bg-red-600 hover:bg-red-700 p-2 rounded">
-                                <Play size={16} className="text-white" />
-                            </button>
-                        )}
+                      {row.status > 0 ? (
+                        <Square size={16} className="text-white" />
+                      ) : (
+                        <Play size={16} className="text-white" />
+                      )}
                     </button>
 
                     <button
-                        className="icon-btn bg-blue-500 hover:bg-blue-600"
-                        onClick={() => openCreateModal(row)}
-                        title="Edit"
+                      className="icon-btn bg-blue-500 hover:bg-blue-600"
+                      onClick={() => openCreateModal(row)}
+                      title="Edit"
                     >
-                        <Edit size={16} />
+                      <Edit size={16} />
                     </button>
 
                     <button
-                        className="icon-btn bg-red-500 hover:bg-red-600"
-                        onClick={() => deleteTriggers([row.id])}
-                        title="Delete"
+                      className="icon-btn bg-red-500 hover:bg-red-600"
+                      onClick={() => deleteTriggers([row.id])}
+                      title="Delete"
                     >
-                        <Trash2 size={16} />
+                      <Trash2 size={16} />
                     </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {!loading && triggers.length > 0 && (
+        <div className="sticky bottom-0 z-20 shrink-0 rounded border bg-white px-3 py-2 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              <span>
+                Showing <strong>{pageStart}</strong> to{" "}
+                <strong>{pageEnd}</strong> of{" "}
+                <strong>{totalRecords}</strong>
+              </span>
+              <select
+                value={recordsPerPage}
+                onChange={(e) => {
+                  setRecordsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-gray-300 rounded-md px-3 py-2 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-100"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={30}>30</option>
+              </select>
+              <span>per page</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                className="btn"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .slice(Math.max(0, currentPage - 3), Math.max(0, currentPage - 3) + 5)
+                .map((page) => (
+                  <button
+                    key={page}
+                    className={`btn ${page === currentPage ? "btn-success" : ""}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+              <button
+                className="btn"
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {modalOpen && (
