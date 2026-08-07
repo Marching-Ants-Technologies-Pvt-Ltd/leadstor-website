@@ -38,7 +38,6 @@ export default function JobEmailTemplates() {
     try {
       const response = await xFetch({
         path: '/services/job/getAllEmailTemplates',
-        payload: corporateId ? { corporateId } : {},
       });
       setData(Array.isArray(response) ? response : []);
     } catch (error) {
@@ -110,7 +109,6 @@ export default function JobEmailTemplates() {
         payload: {
           id: editing ? form.id : 0,
           candidateStatus: form.candidateStatus,
-          corporateId: Number(corporateId),
           subject: form.subject.trim(),
           template: form.template,
           isActive: form.isActive,
