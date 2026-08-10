@@ -36,6 +36,7 @@ export default function JobPostingFormModal({
   const [fetching, setFetching] = useState(false);
   const [jobTagsOptions, setJobTagsOptions] = useState([]);
   const [owners, setOwners] = useState([]);
+  const [errors, setErrors] = useState({});
   const editor = useRef(null); // Ref for JoditEditor
   const statuses = ['In Progress', 'Placed', 'Closed'];
   const getJobTagValue = (tag) => String(
@@ -138,6 +139,23 @@ export default function JobPostingFormModal({
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === 'minSal' || name === 'maxSal') {
+      const errorMsg = validateSalary(value);
+      setErrors((prev) => ({ ...prev, [name]: errorMsg }));
+    }
+  };
+
+  const validateSalary = (value) => {
+    if (value === '' || value === null || value === undefined) return ''; // not required, empty is fine
+    const salaryRegex = /^\d{1,3}(\.\d{1,2})?$/; // up to 3 digits, optional 2 decimal places
+    if (!salaryRegex.test(String(value))) {
+      return 'Enter a valid salary (e.g. 4 or 4.5), max 2 decimal places';
+    }
+    const num = Number(value);
+    if (num <= 0) return 'Salary must be greater than 0';
+    if (num > 999) return 'Salary seems too high — check the value';
+    return '';
   };
 
   const handleTagsChange = (e) => {
@@ -163,6 +181,22 @@ export default function JobPostingFormModal({
     // Validation: Job Description is mandatory
     if (!formData.description?.trim()) {
       toast.error('Job Description is required');
+      setLoading(false);
+      return;
+    }
+
+    const minErr = validateSalary(formData.minSal);
+    const maxErr = validateSalary(formData.maxSal);
+
+    if (minErr || maxErr) {
+      setErrors((prev) => ({ ...prev, minSal: minErr, maxSal: maxErr }));
+      toast.error('Please fix the salary field(s) before submitting');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.minSal && formData.maxSal && Number(formData.minSal) > Number(formData.maxSal)) {
+      toast.error('Min Salary cannot be greater than Max Salary');
       setLoading(false);
       return;
     }
@@ -407,24 +441,34 @@ export default function JobPostingFormModal({
                       <input
                         type="number"
                         step="0.1"
+                        min="0"
+                        max="999"
                         name="minSal"
                         value={formData.minSal}
                         onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 text-sm sm:text-base"
+                        className={`w-full px-3.5 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
+                          errors.minSal ? 'border-red-500' : 'border-gray-300 focus:border-blue-400'
+                        }`}
                         placeholder="4"
                       />
+                      {errors.minSal && <p className="text-xs text-red-500 mt-1">{errors.minSal}</p>}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">Max Salary (LPA)</label>
                       <input
                         type="number"
                         step="0.1"
+                        min="0"
+                        max="999"
                         name="maxSal"
                         value={formData.maxSal}
                         onChange={handleChange}
-                        className="w-full px-3.5 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 text-sm sm:text-base"
+                        className={`w-full px-3.5 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
+                          errors.maxSal ? 'border-red-500' : 'border-gray-300 focus:border-blue-400'
+                        }`}
                         placeholder="12"
                       />
+                      {errors.maxSal && <p className="text-xs text-red-500 mt-1">{errors.maxSal}</p>}
                     </div>
                   </div>
 
