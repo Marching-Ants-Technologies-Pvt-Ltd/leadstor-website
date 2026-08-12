@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { RiArrowDownSLine, RiArrowRightSLine } from 'react-icons/ri';
 import JobProfileSettings from '@/components/dashboard/placement/JobProfileSettings';
+import JobEmailTemplates from '@/components/dashboard/placement/JobEmailTemplates';
 
 export default function JobSettingsPage() {
   const router = useRouter();
@@ -15,7 +16,10 @@ export default function JobSettingsPage() {
       {
         label: 'Job Posting',
         key: 'jobPosting',
-        children: [{ key: 'jobProfile', label: 'Job Profile' }],
+        children: [
+          { key: 'jobProfile', label: 'Job Profile' },
+          { key: 'jobEmailTemplates', label: 'Email Templates' },
+        ],
       },
     ],
     []
@@ -25,6 +29,8 @@ export default function JobSettingsPage() {
     switch (activeMenu) {
       case 'jobProfile':
         return <JobProfileSettings />;
+      case 'jobEmailTemplates':
+        return <JobEmailTemplates />;
       default:
         return <div className="text-gray-500">Select an item from the menu</div>;
     }
