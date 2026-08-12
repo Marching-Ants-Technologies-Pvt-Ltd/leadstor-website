@@ -39,6 +39,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
   const [statuses, setStatuses] = useState([]);
 
   const [loading, setLoading] = useState(false);
+  const duplicateHighlightRef = useRef({});
 
   // register plugin client-side only
   useEffect(() => {
@@ -762,7 +763,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         phones: normalizedPhones.join(","), 
         testId: testId || "" 
       };
-      
+
       const res = await xFetch({ 
         method: "POST", 
         path: "/services/invite/checkDuplicatesOnManualImport", 
@@ -796,6 +797,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
     let matched = 0;
     const duplicateRows = new Set();
+    const nextHighlightMap = {};
     const raw = hot.getData();
 
     // Create a Set for faster lookup
@@ -813,6 +815,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         if (email && duplicateSet.has(email)) {
           matched++;
           duplicateRows.add(r);
+          nextHighlightMap[`${r}:${emailColIndex}`] = true;
           hot.setCellMeta(r, emailColIndex, "className", "htInvalid");
         }
       }
@@ -835,10 +838,12 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
         if (phoneDigits && duplicateSet.has(phoneDigits)) {
           matched++;
           duplicateRows.add(r);
+          nextHighlightMap[`${r}:${phoneColIndex}`] = true;
           hot.setCellMeta(r, phoneColIndex, "className", "htInvalid");
         }
       }
     }
+    duplicateHighlightRef.current = nextHighlightMap;
     hot.render();
     return matched;
   };
@@ -858,6 +863,11 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
     }
     return chunks;
   };
+
+  const waitForNextPaint = () =>
+    new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
 
   const processManualImport = async (c) => {
       const hot = tableRef.current?.hotInstance;
@@ -986,6 +996,10 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           // Duplicates found - highlight and ask user
           const matchedCount = highlightDuplicateInTable(duplicates, emailCol, phoneCol);
           const msg = dupRes.message || `${matchedCount} duplicate(s) found.`;
+
+          // Let Handsontable paint the red cells before the native confirm dialog blocks the UI.
+          await waitForNextPaint();
+
           const ok = window.confirm(`${msg} Would you like to proceed and import anyway?`);
           if (!ok) {
             toast.info("Import aborted due to duplicates.");
@@ -1155,6 +1169,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
           >
           <HotTable
             ref={tableRef}
+            className="custom-hot"
             data={data}
             colHeaders={colHeaders}
             columns={columns}
@@ -1187,6 +1202,13 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
             allowInsertRow={false}
             autoWrapRow={false}
             autoWrapCol={false}
+            afterRenderer={(td, row, col) => {
+              if (!td) return;
+              const key = `${row}:${col}`;
+              const shouldHighlight = !!duplicateHighlightRef.current[key];
+
+              td.classList.toggle("htInvalid", shouldHighlight);
+            }}
             afterChange={(changes) => {
               if (!changes) return;
               const hot = tableRef.current?.hotInstance;
@@ -1196,6 +1218,7 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
                 const colIndex =
                   typeof prop === "number" ? prop : hot.propToCol(prop);
                 hot.setCellMeta(row, colIndex, "className", "");
+                delete duplicateHighlightRef.current[`${row}:${colIndex}`];
               });
 
               hot.render();
@@ -1206,19 +1229,19 @@ export default function AddLeadDynamic({ onClose, onRefreshTable }) {
 
       {/* HANDSONTABLE STYLES */}
       <style jsx>{`
-        .htInvalid {
+        :global(.htInvalid) {
           background: #ffe6e6 !important;
         }
 
-        .custom-hot .ht_clone_top th,
-        .custom-hot th {
+        :global(.custom-hot .ht_clone_top th),
+        :global(.custom-hot th) {
           background: #f8fafc !important;
           color: #475569 !important;
           font-size: 12px !important;
           font-weight: 600;
         }
 
-        .custom-hot td {
+        :global(.custom-hot td) {
           background: #ffffff !important;
           font-size: 12px !important;
         }
