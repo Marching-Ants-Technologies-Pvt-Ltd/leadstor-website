@@ -18,10 +18,14 @@ export default function DateRangeModal({
     if (!open) return null;
 
     const handleConfirm = () => {
-        if (!range.from || !range.to) return;
+        if (!range?.from) return;
+
+        const startDate = range.from;
+        const endDate = range.to || range.from;
+
         onConfirm?.({
-            startDate: range.from,
-            endDate: range.to
+            startDate,
+            endDate
         });
         onClose?.();
     };
@@ -40,7 +44,7 @@ export default function DateRangeModal({
                 <DayPicker
                     mode="range"
                     selected={range}
-                    onSelect={setRange}
+                    onSelect={(nextRange) => setRange(nextRange ?? { from: null, to: null })}
                     numberOfMonths={1}
                     captionLayout="dropdown"
                     fromYear={(new Date().getFullYear() - 2)}
@@ -57,9 +61,9 @@ export default function DateRangeModal({
                     </button>
 
                     <button
-                        disabled={!range.from || !range.to}
+                        disabled={!range?.from}
                         onClick={handleConfirm}
-                        className={`px-4 py-2 text-sm rounded text-white ${range.from && range.to ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-400 cursor-not-allowed"}`}>
+                        className={`px-4 py-2 text-sm rounded text-white ${range?.from ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-400 cursor-not-allowed"}`}>
                         Apply
                     </button>
                 </div>
