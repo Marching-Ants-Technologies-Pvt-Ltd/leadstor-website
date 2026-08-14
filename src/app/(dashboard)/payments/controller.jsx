@@ -307,7 +307,8 @@ export default function PaymentsSectionController() {
             C18: { key: "assignedTrainerId", value: "Trainer" },
             C19: { key: "status", value: "Status" },
             C20: { key: "lastPaymentRefNo", value: "Payment Ref No" },
-            C21: { key: "uniqueId", value: "Unique Id" }
+            C21: { key: "associatedCenters", value: "Associated Centers" },
+            C22: { key: "uniqueId", value: "Unique Id" }
         };
 
         const exportFilters = Object.fromEntries(
@@ -463,7 +464,9 @@ export default function PaymentsSectionController() {
             <DatePickerModal
                 open={openDatePicker}
                 onConfirm={(date) => {
-                    let value = `${date.startDate.getFullYear()}-${pad(date.startDate.getMonth() + 1)}-${pad(date.startDate.getDate())},${date.endDate.getFullYear()}-${pad(date.endDate.getMonth() + 1)}-${pad(date.endDate.getDate())}`;
+                    const startDate = date?.startDate;
+                    const endDate = date?.endDate || date?.startDate;
+                    let value = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-${pad(startDate.getDate())},${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())}`;
                     let [type, interval] = openDatePicker?.split('@')
                     let payload = {
                         type,
