@@ -87,6 +87,7 @@ export default function Teams() {
       (m) =>
         (m.name || '').toLowerCase().includes(q) ||
         (m.email || '').toLowerCase().includes(q) ||
+        (m.customId || '').toLowerCase().includes(q) ||
         (m.roles || []).join(',').toLowerCase().includes(q)
     );
   }, [members, query]);
@@ -374,7 +375,7 @@ export default function Teams() {
           <>
             {/* SCROLL WRAPPER */}
             <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
-              <table className="min-w-[1500px] w-full text-[13px] border-collapse">
+              <table className="min-w-[1600px] w-full text-[13px] border-collapse">
                 <thead className="bg-gray-100 sticky top-0 z-10">
                   <tr className="border-b border-gray-200">
                     <th className="p-3 w-10 text-center">
@@ -382,6 +383,7 @@ export default function Teams() {
                     </th>
                     <th className="p-3 text-left">Name</th>
                     <th className="p-3 text-left">Email</th>
+                    <th className="p-3 text-left">Custom Id</th>
                     <th className="p-3 text-left">Mobile</th>
                     <th className="p-3 text-left">Password</th>
                     <th className="p-3 text-left">Salary</th>
@@ -395,7 +397,7 @@ export default function Teams() {
                 <tbody>
                   {paginatedMembers.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="p-8 text-center text-gray-500">
+                      <td colSpan={11} className="p-8 text-center text-gray-500">
                         No team members found
                       </td>
                     </tr>
@@ -416,6 +418,7 @@ export default function Teams() {
                           </button>
                         </td>
                         <td className="p-3">{member.email}</td>
+                        <td className="p-3">{member.customId || '-'}</td>
                         <td className="p-3">{member.mobile}</td>
                         <td className="p-3">{member.password}</td>
                         <td className="p-3">{member.salary}</td>
@@ -537,6 +540,7 @@ export default function Teams() {
               {[
                 { name: "name", icon: "ri-user-line", placeholder: "Name", required: true },
                 { name: "email", icon: "ri-mail-line", placeholder: "Email", required: true },
+                { name: "customId", icon: "ri-barcode-line", placeholder: "Custom Id", required: false },
                 { name: "mobile", icon: "ri-phone-line", placeholder: "Mobile", required: false },
                 { name: "password", icon: "ri-lock-line", placeholder: "Password", required: !editMember },
                 { name: "salary", icon: "ri-money-rupee-circle-line", placeholder: "Salary (Optional)", required: false },
