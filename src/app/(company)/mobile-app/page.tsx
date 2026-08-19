@@ -18,7 +18,15 @@ export const metadata: Metadata = {
     description: "Preview the Leadstor mobile app and download it from the App Store or Google Play.",
 };
 
-export default function MobileAppPage() {
+type MobileAppPageProps = {
+    searchParams?: {
+        os?: string;
+    };
+};
+
+export default function MobileAppPage({ searchParams }: MobileAppPageProps) {
+    const initialOs = (searchParams?.os ?? "").trim().toLowerCase();
+
     return (
         <>
             <Navbar />
@@ -47,7 +55,10 @@ export default function MobileAppPage() {
                                     Preview the Leadstor app interface, explore how teams stay on top of new enquiries, and download the app from your preferred store.
                                 </p>
 
-                                <MobileAppActions playStoreUrl="https://play.google.com/store/apps/details?id=com.leadstor.Leadstor" />
+                                <MobileAppActions
+                                    playStoreUrl="https://play.google.com/store/apps/details?id=com.leadstor.Leadstor"
+                                    initialOs={initialOs}
+                                />
 
                                 <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-slate-600">
                                     <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm ring-1 ring-slate-200">
