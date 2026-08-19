@@ -1,22 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Apple, ExternalLink, Play, X } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 
 type MobileAppActionsProps = {
     playStoreUrl: string;
+    initialOs?: string;
 };
 
-export default function MobileAppActions({ playStoreUrl }: MobileAppActionsProps) {
-    const searchParams = useSearchParams();
-    const [showIosModal, setShowIosModal] = useState(false);
-
-    const os = useMemo(() => {
-        return (searchParams.get("os") ?? "").trim().toLowerCase();
-    }, [searchParams]);
+export default function MobileAppActions({ playStoreUrl, initialOs = "" }: MobileAppActionsProps) {
+    const [showIosModal, setShowIosModal] = useState(initialOs === "ios");
 
     useEffect(() => {
+        const os = initialOs.trim().toLowerCase();
+
         if (os === "android") {
             window.location.replace(playStoreUrl);
             return;
@@ -25,7 +22,7 @@ export default function MobileAppActions({ playStoreUrl }: MobileAppActionsProps
         if (os === "ios") {
             setShowIosModal(true);
         }
-    }, [os, playStoreUrl]);
+    }, [initialOs, playStoreUrl]);
 
     return (
         <>
