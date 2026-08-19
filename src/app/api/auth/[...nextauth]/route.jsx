@@ -5,7 +5,6 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import oauth from "@/lib/conceptninjas/oauth";
 import { error } from "console";
 
-let currentUser = {};
 const handler = NextAuth({
     session: {
         strategy: 'jwt',
@@ -44,10 +43,23 @@ const handler = NextAuth({
                     type: "text"
                 }
             },
+            
             async authorize(credentials) {
-
                 if (!credentials?.email || !credentials?.password) return null;
-                return true;
+
+                const response = await oauth({
+                    email: credentials.email,
+                    password: credentials.password,
+                    first_name: credentials.first_name ?? '',
+                    last_name: credentials.last_name ?? '',
+                    auth_provider: 'EMAIL'
+                });
+
+                if (response.error) {
+                    throw new Error(JSON.stringify(response));
+                }
+
+                return { ...response, auth_provider: 'Email' };
             }
         })
     ],
@@ -56,13 +68,13 @@ const handler = NextAuth({
 
         async jwt({ token, user, account }) {
             if (user) {
-                token.id = currentUser.id;
-                token.uuid = currentUser.uuid;
-                token.name = currentUser.name;
-                token.email = currentUser.email;
-                token.image = currentUser.image;
-                token.api_token = currentUser.api_token;
-                token.auth_provider = currentUser.auth_provider;
+                token.id = user.id;
+                token.uuid = user.uuid;
+                token.name = user.name;
+                token.email = user.email;
+                token.image = user.image;
+                token.api_token = user.api_token;
+                token.auth_provider = user.auth_provider;
             }
             return token;
         },
@@ -79,29 +91,14 @@ const handler = NextAuth({
             return session;
         },
 
-        async signIn({ account, credentials, profile }) {
+        async signIn({ user, account, credentials, profile }) {
 
             if (account.provider === "credentials") {
-
-                const response = await oauth({
-                    email: credentials.email,
-                    password: credentials.password,
-                    first_name: credentials.first_name??'',
-                    last_name: credentials.last_name??'',
-                    auth_provider: 'EMAIL'
-                });
-
-                if (response.error) {
-                    throw new Error(JSON.stringify(response));
-                }
-
-                currentUser = response;
-                currentUser.auth_provider = 'Email';
                 return true;
             }
 
             if (account.provider === "google" && profile.email_verified) {
-                
+
                 const response = await oauth({
                     email: profile.email,
                     uuid: profile.sub,
@@ -115,13 +112,11 @@ const handler = NextAuth({
                     throw new Error(JSON.stringify(response));
                 }
 
-                currentUser = response;
-                currentUser.auth_provider = 'Google';
+                Object.assign(user, response, { auth_provider: 'Google' });
                 return true;
             }
 
             if (account.provider === 'facebook') {
-                //Braking name into first & last name
                 let name_array = profile.name.split(' ');
                 let f_name = name_array[0];
                 name_array.shift();
@@ -132,7 +127,7 @@ const handler = NextAuth({
                     uuid: profile.id,
                     first_name: f_name,
                     last_name: l_name,
-                    image: profile.picture?.data?.url??'',
+                    image: profile.picture?.data?.url ?? '',
                     auth_provider: 'FACEBOOK'
                 });
 
@@ -140,9 +135,10 @@ const handler = NextAuth({
                     throw new Error(JSON.stringify(response));
                 }
 
-                currentUser = response;
-                currentUser.image = profile.picture?.data?.url??'';
-                currentUser.auth_provider = 'Facebook';
+                Object.assign(user, response, {
+                    image: profile.picture?.data?.url ?? '',
+                    auth_provider: 'Facebook'
+                });
                 return true;
             }
 
