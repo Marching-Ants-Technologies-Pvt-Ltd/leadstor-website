@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { xFetch } from '@/utility/xFetch' // Adjust import path as needed
+import { createPortal } from 'react-dom'
 
 export default function PlacementReportView({ corporateId, onBack }) {
   const [reportData, setReportData] = useState([])
@@ -15,6 +16,37 @@ export default function PlacementReportView({ corporateId, onBack }) {
 
   const limitOptions = [20, 50, 100, 200, 500]
 
+  const [tooltipPos, setTooltipPos] = useState(null) // { top, left, openAbove }
+
+  const TOOLTIP_WIDTH = 288 // matches w-72
+
+  const handleInterestedJobsHover = (candidateId, e) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+
+    // Clamp horizontally so it never spills off-screen
+    let left = rect.left + rect.width / 2 - TOOLTIP_WIDTH / 2
+    const margin = 8
+    left = Math.max(margin, Math.min(left, window.innerWidth - TOOLTIP_WIDTH - margin))
+
+    // Flip above if not enough room below
+    const spaceBelow = window.innerHeight - rect.bottom
+    const openAbove = spaceBelow < 220 // rough tooltip height
+
+    setTooltipPos({
+      top: openAbove ? rect.top - 8 : rect.bottom + 8,
+      left,
+      openAbove,
+      anchorCenter: rect.left + rect.width / 2, // for the arrow
+    })
+
+    setHoveredCandidateId(candidateId)
+    fetchInterestedJobs(candidateId)
+  }
+
+  const closeTooltip = () => {
+    setHoveredCandidateId(null)
+    setTooltipPos(null)
+  }
   const totalPages = Math.ceil(reportTotal / limit);
   const currentReportData = reportData;
 
@@ -129,6 +161,36 @@ export default function PlacementReportView({ corporateId, onBack }) {
     }
   }
 
+  // New state, alongside your existing useState declarations
+  const [interestedJobsCache, setInterestedJobsCache] = useState({}) // { [candidateId]: jobs[] }
+  const [hoveredCandidateId, setHoveredCandidateId] = useState(null)
+  const [tooltipLoading, setTooltipLoading] = useState(false)
+
+  // Fetch + filter on hover (only if not already cached)
+  const fetchInterestedJobs = async (candidateId) => {
+    if (interestedJobsCache[candidateId]) return
+
+    setTooltipLoading(true)
+    try {
+      const data = await xFetch({
+        path: '/services/job/getPlacementReportByCandidateId',
+        method: 'POST',
+        payload: { candidateId },
+      })
+
+      const interested = (data?.notification || []).filter(n => n.status !== 'Notified')
+
+      setInterestedJobsCache(prev => ({
+        ...prev,
+        [candidateId]: interested,
+      }))
+    } catch (err) {
+      console.error('Failed to load interested jobs:', err)
+    } finally {
+      setTooltipLoading(false)
+    }
+  }
+
   useEffect(() => {
     loadReportData()
   }, [reportPage, corporateId, limit, searchTerm])
@@ -216,7 +278,15 @@ export default function PlacementReportView({ corporateId, onBack }) {
                         <td className="px-3 py-2 whitespace-nowrap">{row.email || '-'}</td>
                         <td className="px-3 py-2 whitespace-nowrap">{row.mobile || '-'}</td>
                         <td className="px-3 py-2 text-center font-medium">{row.job_notification_count || 0}</td>
-                        <td className="px-3 py-2 text-center font-medium">{row.interested_job_count || 0}</td>
+                        <td className="px-3 py-2 text-center font-medium relative">
+                          <span
+                            onMouseEnter={(e) => handleInterestedJobsHover(row.candidateId, e)}
+                            onMouseLeave={closeTooltip}
+                            className="cursor-default inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 rounded-full transition-colors hover:bg-teal-50"
+                          >
+                            {row.interested_job_count || 0}
+                          </span>
+                        </td>
                       </tr>
 
                       {expandedRows.has(row.candidateId) && (
@@ -340,6 +410,74 @@ export default function PlacementReportView({ corporateId, onBack }) {
           </div>
         )}
       </div>
+      {hoveredCandidateId && tooltipPos && (() => {
+        const row = reportData.find(r => r.candidateId === hoveredCandidateId)
+        if (!row || !row.interested_job_count) return null
+
+        return createPortal(
+          <div
+            style={{
+              position: 'fixed',
+              top: tooltipPos.openAbove ? undefined : tooltipPos.top,
+              bottom: tooltipPos.openAbove ? window.innerHeight - tooltipPos.top : undefined,
+              left: tooltipPos.left,
+              width: TOOLTIP_WIDTH,
+            }}
+            className="z-50 animate-in fade-in zoom-in-95 duration-150"
+          >
+            {/* Arrow */}
+            <div
+              style={{ left: tooltipPos.anchorCenter - tooltipPos.left - 6 }}
+              className={`absolute w-3 h-3 bg-white border-gray-200 rotate-45 ${
+                tooltipPos.openAbove
+                  ? 'bottom-[-6px] border-r border-b'
+                  : 'top-[-6px] border-l border-t'
+              }`}
+            ></div>
+
+            <div className="bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
+              <div className="bg-teal-600 px-3 py-2 flex items-center justify-between">
+                <span className="text-white text-xs font-semibold tracking-wide">Interested Jobs</span>
+                <span className="bg-white/20 text-white text-[11px] font-medium px-1.5 py-0.5 rounded-full">
+                  {row.interested_job_count}
+                </span>
+              </div>
+
+              <div className="max-h-56 overflow-y-auto">
+                {tooltipLoading && !interestedJobsCache[hoveredCandidateId] ? (
+                  <div className="flex items-center justify-center gap-2 text-gray-500 py-4 text-xs">
+                    <div className="animate-spin h-3.5 w-3.5 border-2 border-teal-400 border-t-transparent rounded-full"></div>
+                    Loading...
+                  </div>
+                ) : interestedJobsCache[hoveredCandidateId]?.length > 0 ? (
+                  <ul className="divide-y divide-gray-100">
+                    {interestedJobsCache[hoveredCandidateId].map((job, i) => (
+                      <li key={i} className="px-3 py-2 hover:bg-gray-50">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="font-medium text-gray-800 text-xs truncate">{job.job_title}</div>
+                            {job.company && (
+                              <div className="text-gray-500 text-[11px] mt-0.5 truncate">{job.company}</div>
+                            )}
+                          </div>
+                          <span className="shrink-0 text-[10px] text-gray-400 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                            #{job.job_id}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-gray-500 py-4 text-center text-xs">
+                    Candidate has not shown interest to any jobs.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      })()}
     </div>
   )
 }
