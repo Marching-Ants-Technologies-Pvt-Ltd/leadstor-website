@@ -195,6 +195,13 @@ export default function PaymentsTable({
                 </thead>
 
                 <tbody className="divide-y">
+                    {rows.length === 0 && (
+                        <tr>
+                            <td colSpan={hasSubServices ? 22 : 21} className="p-8 text-center text-gray-500">
+                                No records found.
+                            </td>
+                        </tr>
+                    )}
                     {rows.map(item => (
                         <tr
                             className={`${
