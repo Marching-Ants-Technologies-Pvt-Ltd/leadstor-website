@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
 import { xFetch } from '@/utility/xFetch' // Adjust import path as needed
 import { createPortal } from 'react-dom'
+import { useRef } from 'react'
 
 export default function PlacementReportView({ corporateId, onBack }) {
   const [reportData, setReportData] = useState([])
@@ -19,6 +20,23 @@ export default function PlacementReportView({ corporateId, onBack }) {
   const [tooltipPos, setTooltipPos] = useState(null) // { top, left, openAbove }
 
   const TOOLTIP_WIDTH = 288 // matches w-72
+
+  const closeTimerRef = useRef(null)
+
+  const cancelClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+  }
+
+  const scheduleClose = () => {
+    cancelClose()
+    closeTimerRef.current = setTimeout(() => {
+      setHoveredCandidateId(null)
+      setTooltipPos(null)
+    }, 200)
+  }
 
   const handleInterestedJobsHover = (candidateId, e) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -280,8 +298,8 @@ export default function PlacementReportView({ corporateId, onBack }) {
                         <td className="px-3 py-2 text-center font-medium">{row.job_notification_count || 0}</td>
                         <td className="px-3 py-2 text-center font-medium relative">
                           <span
-                            onMouseEnter={(e) => handleInterestedJobsHover(row.candidateId, e)}
-                            onMouseLeave={closeTooltip}
+                            onMouseEnter={(e) => { cancelClose(); handleInterestedJobsHover(row.candidateId, e) }}
+                            onMouseLeave={scheduleClose}
                             className="cursor-default inline-flex items-center justify-center min-w-[24px] px-2 py-0.5 rounded-full transition-colors hover:bg-teal-50"
                           >
                             {row.interested_job_count || 0}
@@ -416,6 +434,8 @@ export default function PlacementReportView({ corporateId, onBack }) {
 
         return createPortal(
           <div
+            onMouseEnter={cancelClose}
+            onMouseLeave={scheduleClose}
             style={{
               position: 'fixed',
               top: tooltipPos.openAbove ? undefined : tooltipPos.top,
@@ -436,11 +456,28 @@ export default function PlacementReportView({ corporateId, onBack }) {
             ></div>
 
             <div className="bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
-              <div className="bg-teal-600 px-3 py-2 flex items-center justify-between">
+              <div className="bg-teal-600 px-3 py-2 flex items-center justify-between gap-2">
                 <span className="text-white text-xs font-semibold tracking-wide">Interested Jobs</span>
-                <span className="bg-white/20 text-white text-[11px] font-medium px-1.5 py-0.5 rounded-full">
-                  {row.interested_job_count}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="bg-white/20 text-white text-[11px] font-medium px-1.5 py-0.5 rounded-full">
+                    {row.interested_job_count}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const jobs = interestedJobsCache[hoveredCandidateId] || []
+                      const text = jobs
+                        .map(job => `${job.job_title}${job.company ? ' - ' + job.company : ''} (#${job.job_id})`)
+                        .join('\n')
+                      navigator.clipboard.writeText(text)
+                      toast.success('Copied all jobs')
+                    }}
+                    disabled={tooltipLoading && !interestedJobsCache[hoveredCandidateId]}
+                    className="text-white/80 hover:text-white p-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Copy all"
+                  >
+                    <i className="ri-file-copy-2-line text-xs"></i>
+                  </button>
+                </div>
               </div>
 
               <div className="max-h-56 overflow-y-auto">
@@ -452,7 +489,7 @@ export default function PlacementReportView({ corporateId, onBack }) {
                 ) : interestedJobsCache[hoveredCandidateId]?.length > 0 ? (
                   <ul className="divide-y divide-gray-100">
                     {interestedJobsCache[hoveredCandidateId].map((job, i) => (
-                      <li key={i} className="px-3 py-2 hover:bg-gray-50">
+                      <li key={i} className="px-3 py-2 hover:bg-gray-50 group">
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="font-medium text-gray-800 text-xs truncate">{job.job_title}</div>
@@ -460,9 +497,21 @@ export default function PlacementReportView({ corporateId, onBack }) {
                               <div className="text-gray-500 text-[11px] mt-0.5 truncate">{job.company}</div>
                             )}
                           </div>
-                          <span className="shrink-0 text-[10px] text-gray-400 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
-                            #{job.job_id}
-                          </span>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-[10px] text-gray-400 font-mono bg-gray-100 px-1.5 py-0.5 rounded">
+                              #{job.job_id}
+                            </span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${job.job_title}${job.company ? ' - ' + job.company : ''}`)
+                                toast.success('Copied')
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-teal-600 p-0.5"
+                              title="Copy"
+                            >
+                              <i className="ri-file-copy-line text-xs"></i>
+                            </button>
+                          </div>
                         </div>
                       </li>
                     ))}
