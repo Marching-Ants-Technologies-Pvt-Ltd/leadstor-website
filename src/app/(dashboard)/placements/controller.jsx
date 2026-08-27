@@ -23,7 +23,7 @@ export default function PlacementReadyController() {
     const [selectedIds, setSelectedIds] = useState([])
 
     const [page, setPage] = useState(1)
-    const [limit, setLimit] = useState(50)         // ← now changeable
+    const [limit, setLimit] = useState(10)         // ← now changeable
 
     const [sortField, setSortField] = useState(null)
     const [sortDirection, setSortDirection] = useState('ASC')
@@ -510,9 +510,6 @@ export default function PlacementReadyController() {
                       <option value={10}>10</option>
                       <option value={25}>25</option>
                       <option value={50}>50</option>
-                      <option value={100}>100</option>
-                      <option value={500}>500</option>
-                      <option value={1000}>1000</option>
                     </select>
 
                     <span className="font-medium">per page</span>
