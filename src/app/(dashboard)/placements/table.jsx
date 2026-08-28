@@ -20,13 +20,14 @@ export default function PlacementReadyTable({
 
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedCandidateForStatus, setSelectedCandidateForStatus] = useState(null);
+  const [expandedRemarks, setExpandedRemarks] = useState({});
   const [statusFormData, setStatusFormData] = useState({
     placementStatus: '',
     placedDate: '',
     placedOrganization: ''
   });
   const [updatingStatus, setUpdatingStatus] = useState(false);
-
+  
   const isAllSelected = allIds.length > 0 && allIds.every(id => selectedSet.has(id));
 
   const handleSelectAll = () => {
@@ -167,6 +168,13 @@ export default function PlacementReadyTable({
     if (!status) return 'Placement Ready';
     // Remove <br> tags and get just the status text
     return status.replace(/<br\s*\/?>/gi, ' | ').replace(/\s+/g, ' ').trim();
+  };
+
+  const toggleRemarks = (id) => {
+    setExpandedRemarks(prev => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   };
 
   return (
@@ -391,8 +399,32 @@ export default function PlacementReadyTable({
                 <td className="p-3 text-center text-gray-600 align-top">
                   {item.expectedCTC ? `₹${item.expectedCTC} L` : '-'}
                 </td>
-                <td className="p-3 text-gray-600 align-top max-w-xs truncate" title={item.remarks}>
-                  {item.remarks || '-'}
+                <td className="p-3 text-gray-600 align-top max-w-xs">
+                  {item.remarks ? (
+                    <div className="max-w-xs">
+                      <div
+                        className={`text-sm leading-5 whitespace-pre-wrap break-words ${
+                          expandedRemarks[item.id]
+                            ? ''
+                            : 'line-clamp-2'
+                        }`}
+                      >
+                        {item.remarks}
+                      </div>
+
+                      {item.remarks.length > 100 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleRemarks(item.id)}
+                          className="mt-1 text-blue-600 hover:text-blue-800 text-xs font-semibold hover:underline"
+                        >
+                          {expandedRemarks[item.id] ? 'View Less' : 'View More'}
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    '-'
+                  )}
                 </td>
                 <td className="p-3 text-gray-600 align-top">{item.receiveJobOpportunities || '-'}</td>
                 <td className="p-3 text-gray-500 align-top text-xs">
