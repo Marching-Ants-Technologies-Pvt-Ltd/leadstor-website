@@ -38,7 +38,7 @@ export default function JobPostingFormModal({
   const [owners, setOwners] = useState([]);
   const [errors, setErrors] = useState({});
   const editor = useRef(null); // Ref for JoditEditor
-  const statuses = ['In Progress', 'Placed', 'Closed', 'No Response from company side'];
+  const statuses = ['In Progress', 'Placed', 'Closed', 'On Hold', 'No Response from company side'];
   const getJobTagValue = (tag) => String(
     tag?.id ??
     tag?.value ??
