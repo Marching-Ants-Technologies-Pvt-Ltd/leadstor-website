@@ -10,6 +10,7 @@ import PlacementReadyTable from './table'
 import CandidateFormModal from '@/components/dashboard/placement/CandidateFormModal'
 import FilterModal from '@/components/dashboard/placement/FilterModal'
 import PlacementReportView from '@/components/dashboard/placement/PlacementReportView'
+import BatchRemarksModal from '@/components/dashboard/placement/BatchRemarksModal'
 
 export default function PlacementReadyController() {
     const corporateId = Corporate?._id
@@ -30,6 +31,7 @@ export default function PlacementReadyController() {
     const [modalMode, setModalMode] = useState('add')
     const [selectedCandidate, setSelectedCandidate] = useState(null)
     const totalPages = Math.ceil(total / limit)
+    const [isBatchRemarksOpen, setIsBatchRemarksOpen] = useState(false)
 
     // Filter states
     const [filters, setFilters] = useState({})
@@ -366,7 +368,18 @@ export default function PlacementReadyController() {
                   <Trash2 size={16} />
                   Delete {selectedIds.length ? `(${selectedIds.length})` : ''}
                 </button>
-
+                
+                <button
+                  onClick={() => setIsBatchRemarksOpen(true)}
+                  disabled={!selectedIds.length}
+                  className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-full shadow-md transition-all hover:-translate-y-0.5 ${
+                    selectedIds.length
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white hover:shadow-lg'
+                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  Update Remarks {selectedIds.length ? `(${selectedIds.length})` : ''}
+                </button>
                 <button
                   onClick={() => setShowFilterModal(true)}
                   className={`
@@ -571,6 +584,25 @@ export default function PlacementReadyController() {
             initialData={selectedCandidate}
             corporateId={corporateId}
         />
+        )}
+
+        {isBatchRemarksOpen && (
+          <BatchRemarksModal
+            isOpen={isBatchRemarksOpen}
+            onClose={() => setIsBatchRemarksOpen(false)}
+            onSuccess={() => {
+              reloadCandidates()
+              setSelectedIds([])
+            }}
+            selectedCandidates={candidates
+              .filter((c) => selectedIds.includes(c.id))
+              .map((c) => ({
+                candidateId: c.candidateId,
+                name: c.name,
+                mobile: c.mobile,
+                email: c.email,
+              }))}
+          />
         )}
 
         {/* Filter Modal */}
