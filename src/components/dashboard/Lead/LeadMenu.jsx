@@ -335,7 +335,7 @@ export default function LeadsMenu({
       <div className="bg-white border-b px-4 py-3 flex justify-between items-center">
         {/* SEARCH */}
 
-        <div className="relative w-80">
+        <div className="relative w-80 leads-search-bar">
           <input
             type="text"
             placeholder="Search by name, email, mobile..."
@@ -379,7 +379,7 @@ export default function LeadsMenu({
 
           {/* Show only Filter menu for Counsellor role */}
 
-              <button onClick={handleAddLead} className="btn-primary-crm action-chip">
+              <button onClick={handleAddLead} className="btn-primary-crm action-chip leads-add-btn">
                 <i className="ri-user-add-line" />
                 Add
               </button>
@@ -391,7 +391,7 @@ export default function LeadsMenu({
                       e.stopPropagation();
                       setOpenMenu(openMenu === 'ai' ? null : 'ai');
                     }}
-                    className="action-chip"
+                    className="action-chip leads-ai-sales-insight-btn"
                     title="AI performance audit"
                   >
                     <span className="sparkle">✨</span>
@@ -423,7 +423,7 @@ export default function LeadsMenu({
               {/* EXPORT */}
                 <div className="relative">
                   <button
-                    className="action-chip"
+                    className="action-chip leads-export-btn"
                     onClick={(e) => {
                       e.stopPropagation();
                       setOpenMenu(openMenu === 'export' ? null : 'export');
@@ -456,7 +456,7 @@ export default function LeadsMenu({
               {/* FILTER */}
               <div className="relative">
                 <button
-                  className="action-chip"
+                  className="action-chip leads-filter-btn"
                   onClick={(e) => {
                     e.stopPropagation();
                     setOpenMenu(openMenu === 'filter' ? null : 'filter');
@@ -534,13 +534,13 @@ export default function LeadsMenu({
               </div>
 
               {canViewLeadSettings && (
-                <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
+                <button className="icon-btn leads-settings-btn" onClick={() => router.push('/leads/settings')}>
                   <i className="ri-settings-3-line" title="Settings" />
                 </button>
               )}
           
           <button
-            className={`icon-btn refresh-btn ${refreshing ? 'spinning' : ''}`}
+            className={`icon-btn refresh-btn leads-refresh-btn ${refreshing ? 'spinning' : ''}`}
             onClick={() => resetAndRefreshLeads()}
           >
             <i className="ri-refresh-line" title="Refresh" />
