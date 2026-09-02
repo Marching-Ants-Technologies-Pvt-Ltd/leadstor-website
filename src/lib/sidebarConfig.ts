@@ -4,7 +4,7 @@ export const menuItems = [
     icon: 'ri-dashboard-line',
     label: 'Leads',
     href: '/leads',
-    allowedRoles: ['Admin', 'Administrator', 'Super Counsellor', 'Counsellor', 'Telecaller'],
+    allowedRoles: ['Admin', 'Administrator', 'Super Counsellor', 'Counsellor', 'Telecaller', 'Read Only Super User'],
   },
   {
     icon: 'ri-bank-card-line',

@@ -242,9 +242,10 @@ export default function LeadsMenu({
   };
 
   const getLeadStatusSummary = async() => {
-      const res = await xFetch({
-        path: `/services/dashboard/getLeadStatusSummary?userId=${User?._id}`,
-      });
+    const effectiveUserId = userRoles.includes("Read Only Super User") ? -1 : User?._id;
+    const res = await xFetch({
+      path: `/services/dashboard/getLeadStatusSummary?userId=${effectiveUserId}`,
+    });
       if (!res) return;
       setStatusCounts({
         overdue: res.data.overdue || 0,
@@ -379,10 +380,12 @@ export default function LeadsMenu({
 
           {/* Show only Filter menu for Counsellor role */}
 
-              <button onClick={handleAddLead} className="btn-primary-crm action-chip">
-                <i className="ri-user-add-line" />
-                Add
-              </button>
+              {!userRoles.includes("Read Only Super User") && (
+                <button onClick={handleAddLead} className="btn-primary-crm action-chip">
+                  <i className="ri-user-add-line" />
+                  Add
+                </button>
+              )}
 
               {(Corporate?.is_ai_nextstep_enabled == "1" && userRoles.includes("Admin")|| userRoles.includes("Administrator")) && (
                 <div className="relative">
@@ -487,51 +490,53 @@ export default function LeadsMenu({
               </div>
 
               {/* ACTIONS */}
-              <div className="relative">
-                <button
-                  className="action-chip"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMenu(openMenu === 'actions' ? null : 'actions');
-                  }}
-                >
-                  <i className="ri-apps-2-line text-sky-600" />
-                  Actions
-                  <i className="ri-arrow-down-s-line text-xs opacity-60" />
-                </button>
+              {!userRoles.includes("Read Only Super User") && (
+                <div className="relative">
+                  <button
+                    className="action-chip"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenu(openMenu === 'actions' ? null : 'actions');
+                    }}
+                  >
+                    <i className="ri-apps-2-line text-sky-600" />
+                    Actions
+                    <i className="ri-arrow-down-s-line text-xs opacity-60" />
+                  </button>
 
-                {openMenu === 'actions' && (
-                  <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
-                    {selectedLeadIds.length > 0 && 
-                      userRoles.some(role => ['Admin', 'Administrator'].includes(role)) && (
-                        <button
-                          className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
-                          onClick={() => {
-                            onDeleteSelected();
-                            setOpenMenu(null);
-                          }}
-                        >
-                          <i className="ri-delete-bin-line" />
-                          Delete Invite ({selectedLeadIds.length})
-                        </button>
-                    )}
-                    <button className="drop-item" onClick={() => setShowSendEmail(true)}>
-                      <i className="ri-mail-line text-indigo-500" />
-                      Send Email
-                    </button>
-                    <button
-                      className="drop-item"
-                      onClick={() => {
-                        if (!selectedLeadIds.length) toast.error('Select at least one record');
-                        else setShowBulkUpdateDrawer(true);
-                      }}
-                    >
-                      <i className="ri-database-2-line text-purple-500" />
-                      Bulk Update
-                    </button>
-                  </div>
-                )}
-              </div>
+                  {openMenu === 'actions' && (
+                    <div className="dropdown-panel" onClick={e => e.stopPropagation()}>
+                      {selectedLeadIds.length > 0 && 
+                        userRoles.some(role => ['Admin', 'Administrator'].includes(role)) && (
+                          <button
+                            className="drop-item flex items-center gap-2 text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              onDeleteSelected();
+                              setOpenMenu(null);
+                            }}
+                          >
+                            <i className="ri-delete-bin-line" />
+                            Delete Invite ({selectedLeadIds.length})
+                          </button>
+                      )}
+                      <button className="drop-item" onClick={() => setShowSendEmail(true)}>
+                        <i className="ri-mail-line text-indigo-500" />
+                        Send Email
+                      </button>
+                      <button
+                        className="drop-item"
+                        onClick={() => {
+                          if (!selectedLeadIds.length) toast.error('Select at least one record');
+                          else setShowBulkUpdateDrawer(true);
+                        }}
+                      >
+                        <i className="ri-database-2-line text-purple-500" />
+                        Bulk Update
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {canViewLeadSettings && (
                 <button className="icon-btn" onClick={() => router.push('/leads/settings')}>
