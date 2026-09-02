@@ -91,6 +91,7 @@ export default function LeadsTable({
     : [String(User.role).trim()];
     const ADMIN_ROLES = ['administrator', 'admin'];
     const isAdmin = userRoles.some(r => ADMIN_ROLES.includes(r.toLowerCase().trim()));
+    const isReadOnlySuperUser = userRoles.includes("Read Only Super User");
 
     const dataFormatters = {
         assignedUserId: (row) => {
@@ -163,8 +164,8 @@ export default function LeadsTable({
 
     useEffect(() => {
         const fetchSubordinates = async () => {
-            if (!userRoles.includes("") || User._id == -1) {
-                setSubOrdinates([String(User._id)]);
+            if (!userRoles.includes("") || User._id == -1 || userRoles.includes("Read Only Super User")) {
+                setSubOrdinates(userRoles.includes("Read Only Super User") ? ['-1'] : [String(User._id)]);
                 setIsSubordinatesLoaded(true);
                 return;
             }
@@ -309,8 +310,7 @@ export default function LeadsTable({
        NAME + BOOKMARK
     ======================= */
     const renderNameCell = (row) => {
-        const canEditLead = isAdmin || row.status !== 'Joined';
-
+        const canEditLead = !isReadOnlySuperUser && (isAdmin || row.status !== 'Joined');
         return (
             <div className="flex items-center gap-2">
                 <span className="font-medium text-slate-800">{`${row.firstName} ${row.lastName}`}
